@@ -108,6 +108,174 @@ chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.comma
   <code>PaperExecutionAdapter</code> là sandbox khớp lệnh ảo cho demo và test.
 </p>
 
+<h3 id="order-kinds">Order hoạt động cùng nhau, và có hiệu lực trong bao lâu</h3>
+<p>
+  Intent của một order (<code>chart.placeOrderIntent</code>, <code>placeOrder</code> của adapter) cho biết nhiều hơn
+  giá của nó:
+</p>
+<ul>
+  <li>
+    <strong><code>ocoGroup</code></strong>: một tên dùng chung cho các order trong đó một order huỷ các order còn lại, như một target
+    và một stop cho cùng một lần thoát. Khi một order khớp, phần còn lại của nhóm bị huỷ. Tag của chúng trên biểu đồ ghi
+    OCO.
+  </li>
+  <li>
+    <strong><code>timeInForce</code></strong>: <code>'gtc'</code> (hiệu lực đến khi huỷ), <code>'day'</code>,
+    <code>'gtd'</code> (hiệu lực đến một ngày: <code>expireTime</code>, tính bằng mili giây), và <code>'ioc'</code> hoặc
+    <code>'fok'</code> cho order khớp ngay hoặc không khớp.
+  </li>
+  <li>
+    <strong><code>type: 'stopLimit'</code></strong>: <code>stopPrice</code> là mức mà order bắt đầu hoạt động và
+    <code>price</code> là giá giới hạn mà sau đó order hoạt động. Đường của order trên biểu đồ là giá giới hạn của nó: trên tài khoản paper,
+    kéo đường này dời stop đi cùng khoảng đó.
+  </li>
+</ul>
+<pre><code>{`// A target and a stop for one exit: whichever fills first takes the other off
+chart.placeOrderIntent({ side: 'sell', type: 'limit', price: 66_000, quantity: 1, ocoGroup: 'exit' })
+chart.placeOrderIntent({ side: 'sell', type: 'stop', price: 63_000, stopPrice: 63_000, quantity: 1, ocoGroup: 'exit' })
+
+// Works until midnight UTC
+chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1, timeInForce: 'gtd', expireTime: Date.UTC(2027, 0, 1) })`}</code></pre>
+<p>
+  Tài khoản paper xử lý từng loại như một broker. Trong một nhóm, order khớp đầu tiên huỷ các order còn lại. Một
+  stop-limit thành lệnh giới hạn tại <code>price</code> của nó khi giá chạm stop của nó, và chỉ khớp
+  trong giới hạn đó (tại giá đã chạm stop, khi giá đó nằm trong giới hạn). Order <code>'gtd'</code>
+  được gỡ khi thời gian truyền cùng <code>setMarkPrice</code> tới ngày của nó (thời gian của đồng hồ, khi không truyền
+  thời gian), và order có ngày đã qua thì bị từ chối. Lệnh giới hạn <code>'ioc'</code> hoặc <code>'fok'</code> khớp
+  ngay, tại giá đang có, khi giá đó nằm trong giới hạn, và bị từ chối khi không (<code>executionError</code>). Thị trường paper không có khối lượng riêng, nên ở đó hai loại này
+  giống nhau, trừ khi nó được cho một khối lượng (<a href="#partial-fills">bên dưới</a>). Order ticket của widget có cả hai cho lệnh giới hạn, và panel tài khoản của widget ghi OCO cạnh
+  order thuộc một nhóm và ghi ngày của order có ngày. Tài khoản paper để <code>'day'</code> cho app, vì app biết khi nào ngày giao dịch của thị trường kết thúc.
+</p>
+<p>
+  <strong>Một position net.</strong> Mặc định tài khoản paper mở một position cho mỗi order đã khớp, position mua
+  nằm cạnh position bán (<code>positions: 'hedge'</code>). <code>{`new PaperExecutionAdapter({ positions: 'net' })`}</code>
+  giữ một position, như tài khoản futures: fill cùng chiều cộng thêm vào position tại giá trung bình của chúng,
+  fill ngược chiều trừ bớt position và thực hiện lãi/lỗ của phần đó (<code>pnl</code> trên fill), còn fill lớn hơn thì đảo chiều
+  position, phần còn lại mở tại giá của fill. Fill cộng thêm vào position mang theo stop của nó khi có; fill
+  trừ bớt giữ nguyên stop của position; fill đảo chiều mang stop của chính nó.
+</p>
+<h3 id="partial-fills">Order khớp từng phần</h3>
+<p>
+  Một lệnh giới hạn nằm chờ trên thị trường và được khớp khi các lệnh khác tới với nó, thường là từng phần một. Khi có
+  <code>fillSize</code>, tài khoản paper khớp không quá chừng đó của một lệnh giới hạn tại một giá: lệnh lớn hơn
+  khớp một phần tại mỗi giá chạm giới hạn của nó (mỗi lần <code>setMarkPrice</code>), và tiếp tục chờ cho
+  phần còn lại. Order ở lại trong <code>chart.getOrders()</code> cùng <code>filledQuantity</code> của nó; mỗi phần là một
+  fill riêng (<code>executionFill</code>), với <code>remaining</code> là phần nó để lại còn chờ, và
+  phần cuối gỡ order. Biểu đồ ghi phần đã khớp trên tag của order (<code>2/5</code>), và
+  panel tài khoản của widget ghi trong dòng của order; các tag trên stop và target của order ghi mức lãi/lỗ của phần còn lại,
+  vì phần đã khớp là một position có tag riêng.
+</p>
+<pre><code>{`const broker = new PaperExecutionAdapter({ fillSize: 2 })   // two of a limit order at each price
+chart.connectExecution(broker)
+chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 95, quantity: 5 })
+
+chart.on('executionFill', (e) => console.log(e.payload.quantity, e.payload.remaining))   // 2 3, then 2 1, then 1 undefined
+chart.on('ordersChange', (e) => console.log(e.payload.orders[0]?.filledQuantity))        // 2, 4, then no order`}</code></pre>
+<p>
+  Các phần của một order dựng thành một position, tại giá trung bình của chúng; trên tài khoản net, chúng cộng thêm vào
+  position của tài khoản, hoặc trừ bớt. Position có cắt lỗ, chốt lời và các mức của order từ phần
+  đầu tiên, và phần sau không mang chúng tới lần thứ hai: stop mà bạn đã dời sau đó, hoặc đã bỏ, giữ nguyên như bạn
+  để. Phần khớp sau khi position của nó đã đóng thì mở một position khác, lại kèm các stop của order. Một mức là
+  một khối lượng của cả kế hoạch, nên các phần đầu có thể chưa đủ cho nó: mức không lấy nhiều hơn phần đang mở. Stop-limit
+  cũng khớp từng phần, khi nó đã hoạt động như một lệnh giới hạn. Mỗi phần trả phí giao dịch riêng, và phần mà tài khoản không còn đủ tiền để nhận thì huỷ phần còn lại của
+  order (<code>executionError</code>). Phần còn lại có thể được dời, huỷ, hoặc kết thúc vào ngày của nó, và phần
+  đầu tiên huỷ các order còn lại trong nhóm của order. Với order <code>'ioc'</code>, phần khớp được ngay thì khớp và
+  phần còn lại bị bỏ (order mà <code>placeOrder</code> trả về cho biết bao nhiêu:
+  <code>filledQuantity</code> của nó; biểu đồ và widget không báo gì về phần bị bỏ, và fill của nó
+  ít hơn khối lượng đã yêu cầu); order <code>'fok'</code> lớn hơn khối lượng đó thì bị từ chối. Lệnh market và
+  lệnh stop khớp toàn bộ, lệnh đóng cũng vậy: thị trường paper nhận chúng tại giá đang có, và không mô phỏng slippage.
+  Adapter của riêng bạn báo các phần của broker theo cùng cách: order cùng
+  <code>filledQuantity</code> trong <code>orders</code>, và một <code>fill</code> cho mỗi phần.
+</p>
+
+<h3 id="take-profit-levels">Chốt lời từng phần</h3>
+<p>
+  Một position có thể được đóng từng phần. <code>takeProfits</code> trên intent của một order, hoặc trên một position
+  (<code>chart.modifyPositionIntent</code>), là danh sách các mức, mỗi mức gồm một <code>price</code> và
+  <code>quantity</code> đóng tại đó. Khi giá chạm một mức, phần của mức đó được đóng tại giá của mức
+  và mức đó biến mất; phần mà các mức để lại vẫn mở để <code>takeProfit</code> đóng, hoặc cắt lỗ đóng.
+  Cắt lỗ đóng toàn bộ phần còn lại dù còn mức nào đang chờ, mức nằm quá chốt lời thì không bao giờ
+  được chạm tới, và một mức không lấy nhiều hơn phần còn mở.
+  Biểu đồ vẽ một đường và một tag cho mỗi mức (TP1 là mức gần nhất), kèm phần của nó và mức lãi của phần đó, và
+  panel tài khoản của widget ghi mức gần nhất và còn bao nhiêu mức nữa.
+</p>
+<pre><code>{`chart.placeOrderIntent({
+  side: 'buy', type: 'market', price: 64_000, quantity: 3,
+  stopLoss: 63_000,
+  takeProfits: [{ price: 65_000, quantity: 1 }, { price: 66_000, quantity: 1 }],   // a third at each
+  takeProfit: 67_000,                                                              // the rest
+})
+
+chart.modifyPositionIntent({ positionId: 'pos-1', takeProfits: [{ price: 65_500, quantity: 2 }] })   // all of them, anew
+chart.modifyPositionIntent({ positionId: 'pos-1', takeProfits: null })                               // none`}</code></pre>
+<p>
+  Tài khoản paper đóng các phần (mỗi phần một fill, với <code>reason: 'takeProfit'</code> và lãi/lỗ nó
+  đã thực hiện) và tính chúng vào <code>closedQuantity</code> của position. Nó chỉ nhận các mức có
+  lãi so với entry, và trên tài khoản net, order mang theo các mức sẽ đưa các mức đó cho position, như cách nó
+  đưa stop cho position. TP1 trên biểu đồ là mức gần nhất còn đang chờ. Adapter của riêng bạn báo các mức của
+  broker. Trong order ticket của widget, chốt lời có thể đạt qua một, hai hoặc ba mục tiêu
+  (<strong>Số mục tiêu</strong>): khi nhiều hơn một, một phần đều nhau của khối lượng được đóng tại mỗi mục tiêu trên
+  đường đi, cách đều nhau tính từ entry, và chốt lời đóng phần còn lại. Ticket liệt kê phần nào đóng
+  ở đâu trước khi order được đặt.
+</p>
+<p>
+  Mức của một position được kéo trên biểu đồ như cắt lỗ và chốt lời của nó, bằng đường hoặc bằng tag của mức:
+  đường đi theo con trỏ, vị trí cũ của nó hiện mờ phía sau, và thả ra sẽ phát
+  <code>positionModify</code> với toàn bộ <code>takeProfits</code> của position, mức đó đã dời, mức gần nhất
+  trước. Một mức là một khoản lãi, nên mức được thả tại entry hoặc vượt qua entry về phía lỗ sẽ quay về chỗ cũ, và
+  không có gì được phát. Trong hai mức cùng nằm trong tầm một lần nhấn, mức gần hơn được chọn; đường của một order, cắt lỗ
+  hoặc chốt lời ở cùng chỗ được chọn trước một mức, và tag của mức đó vẫn dời được nó. Các mức của một
+  order còn đang chờ là kế hoạch mà order mang theo và không phải là handle; khi các đường bị khoá thì cũng
+  không mức nào là handle.
+</p>
+
+<h3 id="account">Tài khoản có tiền</h3>
+<p>
+  Khi có <code>balance</code>, tài khoản paper giữ tiền như một broker. Lãi hoặc lỗ của một lần đóng
+  được cộng vào số dư, các position đang mở giữ margin (giá trị của chúng, chia cho <code>leverage</code>), và mỗi fill
+  trả <code>commission</code> của nó. Order mà margin khả dụng không đủ cho nó thì bị từ chối
+  (<code>executionError</code>), một lần đảo position cũng vậy; order đang chờ mà tiền đã hết khi
+  giá của nó tới thì bị huỷ, và <code>executionError</code> cũng báo việc đó. <code>multiplier</code> là giá trị của một
+  điểm giá cho một đơn vị, cho hợp đồng futures: hãy truyền
+  <code>contractMultiplier</code> của thị trường, giá trị mà panel của widget dùng để tính lãi của các position. Tài khoản được báo
+  trước fill đã làm nó thay đổi, nên <code>chart.getAccount()</code> trong listener <code>executionFill</code>
+  đọc được tài khoản như fill để lại. Không có <code>balance</code> thì không có tài khoản, và mọi order đều được nhận, như
+  trước.
+</p>
+<p>
+  Khi các position đang giữ margin, tài khoản cho biết equity của nó so với margin thế nào: <code>marginLevel</code>,
+  equity tính theo tỷ lệ so với margin đã dùng (<code>1.5</code> là 150%). Hai mức tác động lên nó, mỗi mức không có trừ khi
+  được truyền. Dưới <code>marginCallLevel</code>, tài khoản cảnh báo một lần, event <code>marginCall</code>, và
+  chỉ cảnh báo lại sau khi equity đã trở lại trên mức đó; nó không đóng gì. Dưới
+  <code>stopOutLevel</code>, tài khoản đóng các position tại giá đang có, position lỗ nhiều nhất trước, cho đến khi
+  trở lại trên mức đó hoặc không còn giữ position nào: đóng một position giải phóng margin của nó, và có thể vậy là đủ. Mỗi lần đóng là một fill có
+  <code>reason: 'liquidation'</code>. Cả hai được tính khi mỗi giá tới, sau các order và các stop mà giá đó
+  chạm, nên cắt lỗ đóng position của nó trước, và fill đưa equity xuống dưới một mức thì được xử lý
+  ở giá kế tiếp. Margin của một position được giữ theo giá entry của nó, nên mức margin chỉ thay đổi theo
+  equity. Stop-out để các order đang chờ tiếp tục chờ: order mà tiền đã hết thì bị huỷ khi giá của nó
+  tới. Không có mức nào trong hai mức thì không có gì bị đóng và số dư có thể xuống dưới 0.
+</p>
+<pre><code>{`const broker = new PaperExecutionAdapter({
+  balance: 10_000,
+  leverage: 10,                                 // a position holds a tenth of its value
+  commission: { rate: 0.0004, min: 0.1 },       // 0.04% of each fill's value, no less than 0.1; perUnit: an amount a unit
+  positions: 'net',
+  marginCallLevel: 1,                           // warn when the equity falls under the margin held
+  stopOutLevel: 0.5,                            // close positions when it falls under half of it
+})
+chart.connectExecution(broker)
+
+chart.getAccount()   // { balance, equity, unrealisedPnl, realisedPnl, marginUsed, freeMargin, commission, marginLevel? } or null
+chart.on('accountChange', (e) => console.log(e.payload.account?.equity))
+chart.on('executionFill', (e) => console.log(e.payload.commission, e.payload.reason))   // 'liquidation' for a stop-out
+chart.on('marginCall', (e) => warn(e.payload))   // { marginLevel: 0.9, level: 1, equity, marginUsed }`}</code></pre>
+<p>
+  Panel tài khoản của widget đặt số dư, equity và margin khả dụng ở đầu phần tổng, cùng mức
+  margin khi có; panel hiện một margin call dưới dạng cảnh báo, và ghi tên fill của một stop-out trong lịch sử của nó.
+  Adapter của riêng bạn làm điều tương tự bằng cách implement <code>getAccount()</code> và phát <code>account</code>
+  kèm một <code>AccountSummary</code> khi tiền của nó thay đổi, và <code>marginCall</code> khi broker của nó cảnh báo.
+</p>
+
 <h2>Thao tác với order và position trên biểu đồ</h2>
 <p>
   Đường order và position có các nút nhỏ ở đầu bên phải: <strong>×</strong>
@@ -130,8 +298,7 @@ chart.modifyPositionIntent({ positionId: 'pos-1', trailingStop: 150 }) // the st
   Adapter đảo được position trong một bước thì implement <code>reversePosition</code>;
   nếu không có, biểu đồ đóng position và gửi một market order theo chiều ngược lại.
   Order nhận <code>stopLoss</code>, <code>takeProfit</code> và
-  <code>timeInForce</code> (<code>'gtc'</code> hoặc <code>'day'</code>), được chuyển sang
-  position mà order mở.
+  một khoảng cách trailing, được chuyển sang position mà order mở.
 </p>
 <p>
   <strong>Cho người viết adapter:</strong> trong <code>PositionModifyIntent</code>,
@@ -203,8 +370,8 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
 <h2>Order ticket và panel tài khoản (ChartWidget)</h2>
 <p>
   <strong>Tài khoản</strong> trong menu <strong>Giao dịch</strong> của toolbar mở panel tài khoản bên dưới biểu đồ: các position đang mở
-  kèm lãi/lỗ, các order đang chờ, và các fill tới nay kèm P&amp;L
-  đã thực hiện. Mỗi dòng có thể đóng, đảo hoặc huỷ. <strong>Order mới</strong> mở
+  kèm lãi/lỗ, các order đang chờ, các fill tới nay kèm P&amp;L
+  đã thực hiện, và nhật ký những gì đã xảy ra với các order. Mỗi dòng có thể đóng, đảo hoặc huỷ. <strong>Order mới</strong> mở
   order ticket: mua hoặc bán, market, limit hoặc stop, khối lượng, giá, cắt lỗ và
   chốt lời tuỳ chọn, và time in force. Ticket kiểm tra order trong lúc nhập
   (lệnh giới hạn mua phải dưới giá thị trường, cắt lỗ phải ở phía lỗ của entry…)
@@ -233,13 +400,36 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   căn phải bằng font mono, tiền tệ theo số chữ số thập phân của bước giá và theo number locale; trên điện thoại mỗi dòng là một thẻ
   gồm các con số có tên.
 </p>
+<p>
+  <strong>Tab Nhật ký</strong> liệt kê những gì đã xảy ra với các order, mới nhất trước: từng order được đặt, dời,
+  huỷ hoặc khớp, và những gì broker từ chối kèm lý do. Biểu đồ giữ nhật ký này, cho cả biểu đồ của riêng
+  bạn: <code>chart.getActivityLog()</code> trả về 200 mục mới nhất, cũ nhất trước, mỗi mục là
+  <code>{`{ time, kind, orderId, side, type, quantity, price, reason, pnl, message }`}</code> với những gì
+  <code>kind</code> của nó có (<code>'placed'</code>, <code>'moved'</code>, <code>'cancelled'</code>,
+  <code>'filled'</code>, <code>'rejected'</code>). Nhật ký được đọc từ các order, fill và lỗi mà biểu đồ được báo,
+  qua execution adapter hoặc qua <code>setOrders</code> và <code>addFill</code>. Các order đã có khi nhật ký bắt đầu
+  thì không nằm trong đó, và các order đã có khi một adapter được kết nối hoặc gỡ ra, hoặc (khi không có adapter) khi mã
+  thay đổi, cũng không: chúng là những gì đang có, không phải order được đặt. Order đã khớp một phần rồi được gỡ thì được ghi là
+  đã huỷ. <code>chart.clearActivityLog()</code> xoá hết nhật ký.
+</p>
+<p>
+  <strong>Bán và Mua trên biểu đồ.</strong> Khi có execution adapter đang kết nối, widget hiện hai
+  nút dưới legend của biểu đồ, mỗi nút kèm giá mà nó sẽ giao dịch: bid tốt nhất trên Bán và ask tốt nhất
+  trên Mua, với spread ở giữa (<code>chart.setBidAsk</code>, hoặc một feed có tick mang theo chúng), nếu không thì
+  giá cuối trên cả hai, như trong replay hoặc khi feed chỉ cho một phía. Nhấn nút sẽ mở order ticket ở
+  chiều đó. <code>executionChange</code> báo khi một adapter được kết nối hoặc gỡ ra, <code>bidAskChange</code>
+  báo khi bid và ask thay đổi, và công tắc <code>tradeButtons</code> tắt các nút này.
+</p>
 <pre><code>{`const widget = new ChartWidget(host, {
   trading: true,         // default
   accountPanel: true,    // default when trading is on
+  features: { tradeButtons: true },   // default: Sell and Buy under the legend, with a broker connected
 })
 widget.getChart().connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
 widget.toggleAccountPanel(true)
-// The panel follows ordersChange, positionsChange, executionFill and each tick.`}</code></pre>
+// The panel follows ordersChange, positionsChange, executionFill and each tick.
+
+widget.getChart().getActivityLog().at(-1)   // { time, kind: 'filled', side: 'buy', quantity: 1, price: 64_000, reason: 'order' }`}</code></pre>
 <p>
   Dấu fill thuộc về mã đang hiển thị: khi chuyển mã trong widget, mã tiếp theo
   bắt đầu không có dấu nào.
@@ -261,7 +451,8 @@ chart.cancelOrderDraft()`}</code></pre>
   kéo ba đường để chỉnh entry, rủi ro và lợi nhuận. Xác nhận bằng
   <kbd>Enter</kbd> (hoặc nút Đặt), huỷ bằng <kbd>Esc</kbd>. Trong
   widget, các mũi tên xanh/đỏ trên toolbar tạo bracket long/short. Biểu đồ
-  phát một event <code>bracketPlace</code> duy nhất để backend của bạn xử lý.
+  phát một event <code>bracketPlace</code> duy nhất, và gửi bracket tới execution adapter đang
+  kết nối (bên dưới); khi không có adapter, event này để backend của bạn xử lý.
 </p>
 <p>
   <strong>Kích cỡ.</strong> Bracket dành cho khối lượng theo kích cỡ của nó. <code>{`{ quantity: 2 }`}</code> là

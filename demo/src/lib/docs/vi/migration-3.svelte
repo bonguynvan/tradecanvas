@@ -64,6 +64,12 @@ chart.startBracket('buy', undefined, { risk: 50 })   // khối lượng sẽ l�
   (một <code>switch</code> không có default, một <code>Record&lt;TimeInForce, …&gt;</code>) cần thêm ba giá trị
   mới; execution adapter của riêng bạn có thể từ chối những loại nó không nhận.
 </p>
+<p>
+  <code>FillReason</code> cũng có <code>'liquidation'</code>, cho position mà tài khoản paper đã đóng trong một
+  stop-out, và <code>ExecutionEventType</code> có <code>'marginCall'</code>. Cả hai không xảy ra trừ khi tài khoản
+  paper được truyền <code>stopOutLevel</code> hoặc <code>marginCallLevel</code>, nhưng code xử lý mọi giá trị
+  thì cần chúng.
+</p>
 
 <h2 id="unchanged">Không thay đổi</h2>
 <ul>

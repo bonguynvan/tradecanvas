@@ -48,7 +48,7 @@
 <table>
   <thead><tr><th>Método</th><th>Función</th></tr></thead>
   <tbody>
-    <tr><td><code>setChartType(type)</code></td><td>Uno de los 18 tipos; consulta <a href={href('/docs/chart-types')}>Tipos de gráfico</a>.</td></tr>
+    <tr><td><code>setChartType(type)</code></td><td>Uno de los 24 tipos; consulta <a href={href('/docs/chart-types')}>Tipos de gráfico</a>.</td></tr>
     <tr><td><code>getChartType()</code></td><td>El tipo con que se dibuja el gráfico (<code>'candlestick'</code> por defecto).</td></tr>
     <tr><td><code>setTheme(name | theme)</code></td><td>Cambia entre los temas integrados, o fija el tuyo. <code>getTheme()</code> lo devuelve tal como se fijó.</td></tr>
     <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>Da estilo a cualquier parte del gráfico por clave (<code>'grid.vertical.visible'</code>, <code>'series.candlestick.upColor'</code>…); <code>null</code> quita una clave. Ver <a href={href('/docs/styling#overrides')}>Estilos</a>.</td></tr>
@@ -79,7 +79,7 @@
     <tr><td><code>removeIndicators(instanceIds)</code></td><td>Quita varios, en un solo paso de deshacer.</td></tr>
     <tr><td><code>removeAll(what?)</code></td><td>Quita todos los dibujos (<code>'drawings'</code>), todos los indicadores (<code>'indicators'</code>) o ambos (<code>'all'</code>), en un solo paso de deshacer; los dibujos bloqueados se quedan. Devuelve cuántos se quitaron de cada uno.</td></tr>
     <tr><td><code>takeBackDrawing(id)</code></td><td>Retira un dibujo recién hecho, como un Cancelar justo después: junto con el paso que lo hizo cuando es el último, así no queda nada que deshacer ni rehacer. El evento <code>drawingCreate</code> trae <code>drawn: true</code> para un dibujo que el puntero acaba de hacer.</td></tr>
-    <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>Colores, grosores, opacidad, y el trazo y la visibilidad de cada plot (<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
+    <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>Colores, grosores, opacidad, y el trazo y la visibilidad de cada plot (<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>), y <code>shape</code> y <code>size</code> de un plot de marcadores.</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>Con qué estilo empiezan desde ahora los indicadores de un tipo.</td></tr>
     <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>Las temporalidades en las que se muestra (<code>{`{ minutes: false, hours: [1, 4] }`}</code>); <code>null</code>: todas. Se guarda con el diseño.</td></tr>
     <tr><td><code>setDataTimeframe(timeframe | null)</code></td><td>La temporalidad de las barras dadas con <code>setData</code>: la línea de título de la leyenda la nombra, y los indicadores limitados a algunas temporalidades la siguen.</td></tr>
@@ -340,6 +340,134 @@ chart.exportVisibleData('json', undefined, { indicators: false })
 const text = chart.getExportText('csv', { range: 'visible' })
 const { bars, columns } = chart.getExportData()          // columns: { name, values }[]`}</code></pre>
 
+<h3 id="pictures">Imágenes, impresión y PDF</h3>
+<p>
+  El gráfico como imagen: guardada en un archivo, copiada, o leída como una URL de datos, como bytes o como un
+  canvas. Si no se pide nada más, se lee de los canvas del gráfico tal como están en pantalla. Pide más píxeles
+  (<code>pixelRatio</code>) u otro tema (<code>theme</code>) y el fotograma se dibuja de nuevo para la
+  imagen, en Canvas 2D dibuje con lo que dibuje el propio gráfico: al gráfico de la página ni se le cambia el
+  tamaño ni se le avisa. Un <code>width</code> o un <code>height</code> dispone de nuevo el gráfico a ese tamaño,
+  con las barras que tiene a la vista a la vista también allí, y devuelve la disposición de la página: una imagen
+  para una diapositiva o una hoja de papel a partir de un gráfico en una barra lateral. Las barras son tan anchas
+  como las hace el tamaño, dentro de lo que puede medir una barra: pasado eso, se ven más o menos barras, en
+  torno al mismo centro. A un tamaño propio, la imagen no tiene nada de lo que sigue al puntero (la cruz, una
+  medición), ni un canvas que la aplicación puso sobre el gráfico, y un tamaño sin sitio para el área del gráfico
+  no da ninguna imagen. <code>type</code> es <code>'png'</code> (por defecto), <code>'jpeg'</code> o
+  <code>'webp'</code>, con <code>quality</code> para los dos últimos.
+</p>
+<pre><code>{`chart.screenshot('btc-1h')                                   // btc-1h.png, as on the screen
+chart.screenshot('btc-1h', { pixelRatio: 3, type: 'webp' })  // drawn again at three times the pixels
+await chart.copyScreenshot()                                 // a PNG on the clipboard; false where the browser refuses
+const url = chart.screenshotDataURL({ theme: 'light' })      // in the light theme; the chart stays as it is
+const blob = await chart.screenshotBlob({ type: 'jpeg', quality: 0.9 })
+const canvas = chart.toCanvas({ pixelRatio: 2 })             // to draw on, or to read yourself
+const slide = await chart.screenshotBlob({ width: 1920, height: 1080 })   // laid out again at that size`}</code></pre>
+<p>
+  <code>print()</code> abre el diálogo de impresión del navegador solo para el gráfico: una página que contiene su
+  imagen y nada de la página en la que está; devuelve <code>false</code> cuando no había imagen que imprimir.
+  <code>toPdf()</code> da un PDF de una página, con la imagen guardada sin pérdida y tan grande como quepa dentro
+  de los márgenes. Ambos dibujan el gráfico de nuevo para papel, en el tema claro y
+  con el doble de píxeles salvo que indiques otra cosa. <code>chartsToPdf</code> hace un solo PDF de varios
+  gráficos, una página cada uno: el gráfico de precios, los <a href={href('/docs/finance')}>gráficos financieros</a> o un canvas tuyo.
+</p>
+<pre><code>{`import { chartsToPdf } from '@tradecanvas/chart'
+
+chart.print({ title: 'BTCUSDT, 1h' })
+const pdf = await chart.toPdf({ pageSize: 'letter', margin: 12, title: 'BTCUSDT' })   // a Blob
+const full = await chart.toPdf({ width: 1123, height: 794 })   // laid out in the page's own shape: as large as its margins allow
+const report = await chartsToPdf([chart, equityChart, allocationChart], { title: 'March', theme: 'dark' })`}</code></pre>
+<p>
+  <code>pageSize</code> es <code>'a4'</code> (por defecto), <code>'a3'</code>, <code>'letter'</code>,
+  <code>'legal'</code> o los dos lados del papel en milímetros; <code>orientation</code> es
+  <code>'landscape'</code> (por defecto) o <code>'portrait'</code>; <code>margin</code> va en milímetros. El
+  PDF no contiene texto propio, así que no necesita ninguna fuente: las palabras del gráfico están en su imagen, en
+  cualquier idioma. Una imagen se limita a lo que un navegador puede dibujar (ningún lado de más de 16.384 píxeles,
+  unos 16 millones en total), así que un gráfico muy grande recibe menos píxeles de los pedidos. Los píxeles se
+  comprimen sin pérdida con el <code>CompressionStream</code> del navegador, que todos los navegadores actuales
+  tienen; uno que no lo tenga recibe un JPEG que conserva casi toda la imagen. Al imprimir, la imagen se pone en
+  un marco como URL <code>data:</code>, así que una página con una política de seguridad de contenido tiene que
+  permitirlas para las imágenes.
+</p>
+<p>
+  Lo que la imagen tiene es lo que el gráfico dibuja en sus canvas: el área del gráfico, los ejes, la leyenda, la
+  cruz si se está mostrando, y un canvas que la aplicación puso sobre el gráfico (salvo que esté oculto, o contenga
+  una imagen de otro sitio, que ninguna página puede leer de vuelta). Lo que está hecho de elementos de la página no sale en ella: los tooltips, y las barras del widget y sus filas de nombres de indicadores. Con
+  <code>features.screenshot</code> apagado no hay imagen, impresión ni PDF. ChartWidget tiene
+  <strong>Imprimir gráfico</strong> y <strong>Guardar gráfico como PDF</strong> en la paleta de comandos, y
+  <code>widget.printChart()</code> y <code>widget.saveChartPdf()</code>, ambos con el símbolo y la temporalidad del
+  gráfico por título, con un aviso cuando no había nada que imprimir o guardar; van con el interruptor
+  <code>screenshot</code>.
+</p>
+
+<h3 id="no-page">El gráfico dibujado sin página</h3>
+<p>
+  <code>renderPriceChart</code> dibuja el gráfico de precios en un contexto 2D tuyo, donde no hay página:
+  un canvas creado en Node, para una imagen en un correo, un informe o un mensaje de un bot, o un
+  <code>OffscreenCanvas</code> en un worker. Es un solo fotograma, armado como <code>Chart</code> arma el
+  suyo: al mismo tamaño es la imagen que un gráfico en una página da de las mismas barras una vez que
+  <code>chart.fitContent()</code> tiene todas las barras a la vista (o <code>chart.setVisibleRange()</code>, con
+  <code>visibleRange</code>).
+</p>
+<pre><code>{`import { createCanvas, Path2D } from '@napi-rs/canvas'   // or another canvas for Node that has Path2D
+import { renderPriceChart } from '@tradecanvas/chart'
+
+const canvas = createCanvas(1920, 1080)
+const ctx = canvas.getContext('2d')
+ctx.scale(2, 2)                                            // a 960 × 540 chart at twice the pixels
+renderPriceChart(ctx, {
+  data: bars,                                              // every bar is on view when they fit
+  symbol: 'BTCUSDT',
+  timeframe: '1d',
+  theme: 'light',
+  timeZone: 'Asia/Ho_Chi_Minh',
+  indicators: [
+    { id: 'ema', params: { period: 21 } },
+    { id: 'rsi', instanceId: 'momentum' },                 // a pane of its own under the prices
+    { id: 'stochastic', pane: 'momentum' },                // in that pane, on its scale
+  ],
+  drawings: [
+    { type: 'horizontalLine', anchors: [{ time: bars[0].time, price: 64000 }], style: { color: '#2266ff' } },
+    { type: 'horizontalLine', anchors: [{ time: bars[0].time, price: 70 }], paneId: 'momentum' },  // on that pane
+  ],
+  markers: [{ time: bars[40].time, price: bars[40].low, direction: 'long', confidence: 0.8, source: 'strategy', label: 'Buy' }],
+  path2D: Path2D,                                          // Node has no Path2D of its own
+}, { width: 960, height: 540 })
+const png = canvas.toBuffer('image/png')`}</code></pre>
+<p>
+  Las opciones son las de <code>Chart</code> donde dicen cómo se ve el gráfico: <code>chartType</code> y
+  <code>chartTypeOptions</code>, <code>theme</code>, <code>font</code>, <code>overrides</code>,
+  <code>density</code>, <code>logScale</code>, <code>numberLocale</code>, <code>priceFormat</code>,
+  <code>watermark</code>, y <code>features</code> para dejar fuera el volumen, la cuadrícula, un eje o la
+  leyenda. Lo que a un gráfico en una página se le da con llamadas, este lo recibe como opciones: <code>data</code>,
+  <code>symbol</code> y <code>timeframe</code> para la leyenda, <code>indicators</code>,
+  <code>drawings</code> (como recibe uno <code>addDrawing</code>), <code>markers</code> (como recibe uno
+  <code>addSignalMarker</code>), <code>visibleRange</code> (los tiempos de la primera y la última
+  barra a la vista), <code>pricePrecision</code>, <code>timeZone</code> (sin ella, la de la propia máquina: nombra la
+  zona en la que están tus lectores) y <code>symbolSeries</code> (las barras de otros símbolos, para
+  <code>'compareSymbol'</code>, <code>'spread'</code> y las correlaciones). Un indicador se lee como el de un diseño
+  guardado, así que <code>chart.getIndicatorSetup()</code> y <code>chart.getDrawings()</code> entran tal
+  cual, y con ellos un dibujo en el panel de un indicador: un gráfico que alguien configuró en el navegador se dibuja de nuevo
+  en el servidor. <code>plugins</code> recibe un indicador, un tipo de gráfico, una herramienta de dibujo o una capa
+  tuyos.
+</p>
+<p>
+  Dibuja el tamaño que das en las unidades propias del contexto, sobre el fondo del tema: escala primero el contexto
+  para más píxeles. Las barras se dibujan con <code>Path2D</code>, que Node no tiene:
+  <code>@napi-rs/canvas</code> y <code>skia-canvas</code> exportan cada uno el suyo, para darlo como
+  <code>path2D</code>; un worker tiene el suyo. El texto va en la fuente del tema, así que nombra con
+  <code>font</code> una que tu canvas tenga. Nada sigue a un puntero: no hay cruz, cuenta atrás ni tooltip. Las órdenes
+  y posiciones, las alertas, las líneas de comparación, los perfiles de volumen y de mercado, el sombreado de sesión y los
+  límites de precio de un mercado todavía no se dibujan así. Un gráfico financiero se dibuja de la misma manera con
+  <code>renderFinanceChart</code>, e <code>imagesToPdf</code> pone en un PDF las imágenes hechas así.
+</p>
+<p>
+  Lo que está mal en las opciones se dice antes de dibujar nada, con el nombre de la opción: un
+  <code>RangeError</code> para un indicador, un tema o una zona horaria que no conoce, dos indicadores con un mismo
+  <code>instanceId</code> y un número fuera de lo que puede ser; un <code>TypeError</code> para una opción que
+  es otra clase de cosa. Una barra que no es una barra se deja fuera, como la deja fuera un gráfico. El contexto
+  queda como se encontró; si un plugin tuyo lanza un error mientras dibuja, dibuja el siguiente gráfico en otro.
+</p>
+
 <h3>Perfil de volumen</h3>
 <p>
   Histograma horizontal del volumen negociado, agrupado por precio, sobre el rango
@@ -483,6 +611,7 @@ chart.on('dataUpdate', e => /* { kind: 'bars', length } con setData y barras nue
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
+chart.on('marginCall', e => /* { marginLevel, level, equity, marginUsed }: se avisó a la cuenta de su margen */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* pueden haber cambiado los dibujos, indicadores, alertas, el tipo de gráfico o el tema */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
@@ -1246,6 +1375,10 @@ grid.applyOverrides({ 'grid.vertical.visible': false })   // el aspecto de todos
 grid.setFeatures({ 'toolbar.replay': false })               // los interruptores de todos los gráficos, y de los que añada después
 grid.getActiveWidget().getChart()
 grid.getLayoutSession()?.saveAs('Majors')
+
+// Los gráficos como una sola imagen, cada uno en su celda: un archivo, el diálogo de impresión, un PDF
+grid.screenshot('majors', { pixelRatio: 2 })
+const sheet = await grid.toPdf({ title: 'Majors' })   // en claro y con el doble de píxeles, como el de un gráfico
 
 // Cada gráfico según se crea (al inicio y al crecer la cuadrícula)
 new ChartWidgetGrid(host, {

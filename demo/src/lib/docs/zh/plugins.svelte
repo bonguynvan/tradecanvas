@@ -53,6 +53,81 @@ chart.plugins.list()`}</code></pre>
   </tbody>
 </table>
 
+<h2 id="define">自定义指标：简便方式</h2>
+<p>
+  <code>defineIndicator</code> 用指标的输入和一个处理K线的函数生成指标：不需要类，也不需要绘图代码。
+  <code>calculate</code> 接收按列给出的K线（<code>bars.close[i]</code>）、各输入的值，以及
+  <code>ta</code>（构成指标的各种计算），并按键返回它的各条线。图表会绘制它们、为其窗格定坐标、
+  把它们列入图例，并在设置对话框中为每个输入提供一个输入框。
+</p>
+<pre><code>{`import { defineIndicator } from '@tradecanvas/chart'
+
+const emaCross = defineIndicator({
+  id: 'emaCross',
+  name: 'EMA Crossover',
+  placement: 'overlay',                       // on the prices; 'panel' (the default) is a pane of its own
+  inputs: {
+    fast: { default: 9, kind: 'int', min: 1 },
+    slow: { default: 21, kind: 'int', min: 2 },
+  },
+  plots: [
+    { key: 'fast', title: 'Fast', color: 0 },
+    { key: 'slow', title: 'Slow', color: 1 },
+    { key: 'buy', title: 'Buy', color: 2, kind: 'markers', shape: 'arrowUp', position: 'belowBar' },
+    { key: 'sell', title: 'Sell', color: 3, kind: 'markers', shape: 'arrowDown', position: 'aboveBar' },
+  ],
+  calculate({ bars, inputs, ta }) {
+    const fast = ta.ema(bars.close, inputs.fast)
+    const slow = ta.ema(bars.close, inputs.slow)
+    return { fast, slow, buy: ta.crossover(fast, slow), sell: ta.crossunder(fast, slow) }
+  },
+})
+
+chart.registerIndicator(emaCross)
+chart.addIndicator('emaCross', { fast: 12 })`}</code></pre>
+<ul>
+  <li>
+    <strong>输入。</strong>每个输入有一个 <code>default</code>，它的类型就是该输入的类型，另有设置对话框显示它所需的内容：
+    <code>kind</code>、<code>min</code>、<code>max</code>、<code>step</code>，
+    选项用的 <code>options</code>，价格来源用的 <code>source: true</code>（此时指标把它读作
+    <code>bars.close</code>）。<code>calculate</code> 得到的每个数字都在其 <code>min</code> 和
+    <code>max</code> 之内，<code>kind: 'int'</code> 的为整数，选项的值则是它的可选项之一。
+  </li>
+  <li>
+    <strong>线。</strong>每根K线一个值；没有值的地方为 <code>undefined</code>、<code>null</code> 或 <code>NaN</code>。
+    <code>true</code> 标记一根K线，用于主图上 <code>kind: 'markers'</code> 的线条：
+    按其 <code>position</code> 位于K线上方或下方，否则位于K线的收盘价处。独立窗格中的标记是一个数字，
+    即它所绘制处的数值。没有 <code>plots</code> 时，返回的每条线都按主题的序列颜色画成一条线；
+    在K线太少时不返回任何线的指标，要声明它们。
+  </li>
+  <li>
+    <strong>外观。</strong><code>plots</code>（一条线、<code>'histogram'</code>、<code>'step'</code>、
+    <code>'dots'</code>、<code>'markers'</code>，各有其颜色、宽度和线型），用于两条线之间色带的 <code>fills</code>，
+    用于窗格的 <code>scale</code> 和 <code>levels</code>，与下文<a href="#descriptor">描述符</a>中的相同。
+  </li>
+  <li>
+    <strong><code>ta</code></strong> 包含 <code>sma</code>、<code>ema</code>、<code>wma</code>、<code>rma</code>、
+    <code>stdev</code>、<code>highest</code>、<code>lowest</code>、<code>change</code>、<code>rsi</code>、
+    <code>macd</code>、<code>atr</code>、<code>bollinger</code>、<code>crossover</code> 和
+    <code>crossunder</code>。每个都接收每根K线一个值的序列，并返回同样的序列，所以一个的结果可以交给下一个
+    （<code>ta.ema(ta.rsi(bars.close, 14), 9)</code>）。<code>rsi</code>、<code>macd</code>、<code>atr</code> 和
+    <code>bollinger</code> 运行的就是内置指标本身，所以它们的数值与图表的一致。
+  </li>
+  <li>
+    <strong><code>ta.indicator(id, input, params)</code></strong> 运行任意一个内置指标，并按键返回它的各条线：
+    <code>{`ta.indicator('stochastic', bars, { kPeriod: 14 }).k`}</code>、
+    <code>{`ta.indicator('supertrend', bars).value`}</code>。id、输入和线就是
+    <a href={href('/docs/indicators')}>指标</a>页面上的那些，并且带有类型。<code>input</code> 是K线，
+    或每根K线一个值的序列，指标会把它读作自己的价格（<code>{`ta.indicator('ema', rsi, { period: 5 })`}</code>）。
+    每根K线一个值的序列没有成交量，也没有时间，所以基于成交量或当日交易时段的指标（OBV、MFI、VWAP…）需要K线。
+    读取另一个品种K线的那五个指标不在其中。它也单独导出：<code>{`import { ta } from '@tradecanvas/chart'`}</code>。
+  </li>
+</ul>
+<p>
+  每个 tick 它都对全部K线重新计算，对这类计算来说很快。慢到能让人察觉的指标，
+  或绘制的不是每根K线一个值的指标，应写成带 <code>update</code> 的类：也就是下文较长的那种方式。
+</p>
+
 <h2>自定义指标</h2>
 <p>
   指标是一个 <code>IndicatorPlugin</code>：一个说明它是什么、外观如何的 <code>descriptor</code>，以及一个为每根K线给出数值的
@@ -115,7 +190,7 @@ class TurningMacd extends IndicatorBase {
   不会被绘制、不参与坐标计算，也不会显示；它是供线条的 <code>tone</code> 使用的。
 </p>
 
-<h3>描述符</h3>
+<h3 id="descriptor">描述符</h3>
 <ul>
   <li><strong>线条（plots）</strong>各绘制一个字段：<code>'line'</code>（默认）、<code>'step'</code>、
     <code>'histogram'</code>、<code>'dots'</code>（以点绘制的线），或 <code>'markers'</code>：在该字段有值的K线上画一个形状
@@ -201,7 +276,10 @@ chart.addIndicator('turning-macd', { fast: 8 })`}</code></pre>
   <li><strong>价格轴</strong>标出这些线的最新数值。</li>
   <li><strong>CSV 导出</strong>为其中每条线各设一列，以图例中的名称命名；线条不止一条时，再加上该线的 <code>title</code>。</li>
   <li><strong>设置对话框</strong>编辑各项输入，列出每条线及其颜色、是否显示，线和阶梯线还有线型，并可编辑水平线。</li>
-  <li><strong>“指标”对话框</strong>在其 <code>category</code> 下以 <code>name</code> 列出它。</li>
+  <li><strong>“指标”对话框</strong>在其 <code>category</code> 下以 <code>name</code> 列出它：一个类别
+    （<code>'oscillators'</code>、<code>'volume'</code>…），或你自己的分组 <code>{`{ id: 'my-app', label: 'My App' }`}</code>，
+    它把你的应用的指标一起放在它的名称下，排在内置类别之前（有多个分组时，按各组第一个指标注册的顺序排列）。
+    搜索也能按这个名称找到它们。</li>
   <li><strong>其他指标</strong>可以把它的线（即这些线条）作为数据源读取。</li>
 </ul>
 <p>

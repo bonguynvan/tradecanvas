@@ -202,11 +202,28 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 
 <h2>Chỉ báo tự viết</h2>
 <p>
-  Kế thừa <code>IndicatorBase</code> và khai báo những gì chỉ báo vẽ (<code>plots</code>), thang của pane,
+  Cách ngắn là <code>defineIndicator</code>: các tham số của chỉ báo, và một hàm trả về các đường của nó từ
+  các nến, với <code>ta</code> cho các phép tính (<code>ta.ema</code>, <code>ta.rsi</code>, <code>ta.crossover</code>…).
+</p>
+<pre><code>{`import { defineIndicator } from '@tradecanvas/chart'
+
+chart.registerIndicator(defineIndicator({
+  id: 'smoothRsi',
+  name: 'Smoothed RSI',
+  inputs: { period: { default: 14, kind: 'int', min: 2 }, smooth: { default: 5, kind: 'int', min: 1 } },
+  scale: { min: 0, max: 100 },
+  levels: [30, 70],
+  calculate: ({ bars, inputs, ta }) => ({ value: ta.ema(ta.rsi(bars.close, inputs.period), inputs.smooth) }),
+}))
+chart.addIndicator('smoothRsi')`}</code></pre>
+<p>
+  Với chỉ báo phải theo kịp tick trên một lịch sử dài, hoặc vẽ thứ gì đó của riêng nó, hãy kế thừa
+  <code>IndicatorBase</code> và khai báo những gì chỉ báo vẽ (<code>plots</code>), thang của pane,
   các mức và tham số; biểu đồ tự vẽ chỉ báo, co giãn pane, gắn nhãn giá trị và liệt kê chỉ báo trong
   legend và phần cài đặt của widget mà không cần code render riêng. <code>category</code> của chỉ báo
   (<code>'oscillators'</code>, <code>'volume'</code>…) đặt nó vào nhóm tương ứng trong dialog Chỉ báo;
-  không có category thì nó nằm trong nhóm Khác. Xem
+  không có category thì nó nằm trong nhóm Khác. Một nhóm của riêng bạn, <code>{`{ id: 'my-app', label: 'My App' }`}</code>,
+  liệt kê các chỉ báo của app cùng nhau dưới tên của nhóm, trước các loại có sẵn. Xem
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">recipe chỉ báo tự viết</a>.
   Chỉ báo gom nến theo ngày, tuần hoặc tháng đọc múi giờ của sàn qua
   <code>config.exchangeTimeZone</code> (do biểu đồ đặt; không đặt thì là UTC). Khi đổi múi giờ, biểu đồ chỉ tính lại
@@ -247,11 +264,18 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 fills: [{ between: ['upper', 'lower'], color: 0, opacity: 0.1 }],`}</code></pre>
 <p>
   Plot có <code>kind: 'markers'</code> đánh dấu các nến mà trường của nó có giá trị (điểm đảo chiều, tín hiệu) bằng một
-  <code>shape</code>, <code>'dot'</code>, <code>'triangleUp'</code> hoặc <code>'triangleDown'</code>, đặt tại giá trị đó hoặc, trên
+  <code>shape</code> (<code>'triangleUp'</code>, <code>'triangleDown'</code>, <code>'arrowUp'</code>, <code>'arrowDown'</code>,
+  <code>'dot'</code>, <code>'square'</code> hoặc <code>'diamond'</code>), đặt tại giá trị đó hoặc, trên
   pane giá, phía trên giá cao hay phía dưới giá thấp của nến (<code>position: 'aboveBar'</code>, <code>'belowBar'</code>). Đây
   không phải giá trị để đọc: nó không có trong legend, không có nhãn trên trục, không có cột khi export, và không được đưa ra
   làm đường cho chỉ báo khác đọc. Trong pane riêng, các điểm đánh dấu nằm tại giá trị của chúng. Để trống trường đó ở các nến không đánh dấu.
 </p>
+<p>
+  Các điểm đánh dấu rộng theo mức mà nến cho phép, từ 4 đến 8 px. Người xem chọn hình khác và kích thước trong tab
+  Kiểu của chỉ báo, còn code đặt chúng trong style của plot: <code>shape</code>, và <code>size</code> tính bằng pixel theo chiều ngang (2 đến
+  40) hoặc <code>'auto'</code>. Williams Fractals được vẽ theo cách này: một tam giác phía trên một đỉnh và một tam giác phía dưới một đáy.
+</p>
+<pre><code>{`chart.updateIndicatorStyle(fractals, { plots: { up: { shape: 'arrowUp', size: 14 }, down: { size: 'auto' } } });`}</code></pre>
 <pre><code>{`plots: [
   { key: 'value', title: 'MACD', color: 0 },
   { key: 'turn', title: 'Turn', color: 1, kind: 'markers', shape: 'triangleUp', position: 'belowBar' },

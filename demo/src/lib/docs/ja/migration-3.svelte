@@ -62,6 +62,11 @@ chart.startBracket('buy', undefined, { risk: 50 })   // ストップで 50 を�
   <code>TimeInForce</code> は <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code> になりました。すべてのメンバーを扱うコード（default
   のない <code>switch</code>、<code>Record&lt;TimeInForce, …&gt;</code>）には新しい 3 つが必要です。独自の執行アダプターは、受け付けないものを拒否してかまいません。
 </p>
+<p>
+  <code>FillReason</code> には <code>'liquidation'</code> も加わりました。ペーパー口座が強制決済で閉じたポジションのためのものです。
+  <code>ExecutionEventType</code> には <code>'marginCall'</code> が加わりました。ペーパー口座に <code>stopOutLevel</code> または
+  <code>marginCallLevel</code> を指定しない限りどちらも起こりませんが、すべてのメンバーを扱うコードにはこれらが必要です。
+</p>
 
 <h2 id="unchanged">変わっていないもの</h2>
 <ul>

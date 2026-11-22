@@ -101,6 +101,160 @@ chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.comma
   <code>PaperExecutionAdapter</code> 是一个虚拟成交的沙盒，适用于演示和测试。
 </p>
 
+<h3 id="order-kinds">互相配合的订单，以及订单的有效期</h3>
+<p>
+  订单的意图（<code>chart.placeOrderIntent</code>、适配器的 <code>placeOrder</code>）说明的不只是它的价格：
+</p>
+<ul>
+  <li>
+    <strong><code>ocoGroup</code></strong>：一组订单共用的名称，其中一个会撤销其余的，例如同一次出场的目标单和止损单。
+    一个成交后，组内其余订单被撤销。它们在图表上的标签显示 OCO。
+  </li>
+  <li>
+    <strong><code>timeInForce</code></strong>：<code>'gtc'</code>（撤销前有效）、<code>'day'</code>、
+    <code>'gtd'</code>（到某个日期前有效：<code>expireTime</code>，以毫秒计），以及 <code>'ioc'</code> 或
+    <code>'fok'</code>，用于立即成交、否则完全不成交的订单。
+  </li>
+  <li>
+    <strong><code>type: 'stopLimit'</code></strong>：<code>stopPrice</code> 是它开始生效的价格，
+    <code>price</code> 是它此后所按的限价。它在图表上的线是它的限价：在模拟账户上，
+    拖动这条线会让止损价移动同样的距离。
+  </li>
+</ul>
+<pre><code>{`// A target and a stop for one exit: whichever fills first takes the other off
+chart.placeOrderIntent({ side: 'sell', type: 'limit', price: 66_000, quantity: 1, ocoGroup: 'exit' })
+chart.placeOrderIntent({ side: 'sell', type: 'stop', price: 63_000, stopPrice: 63_000, quantity: 1, ocoGroup: 'exit' })
+
+// Works until midnight UTC
+chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1, timeInForce: 'gtd', expireTime: Date.UTC(2027, 0, 1) })`}</code></pre>
+<p>
+  模拟账户对每一种都按经纪商的做法处理。一组订单中，最先成交的会撤销其余的。
+  止损限价单在价格到达其止损价后，变成按其 <code>price</code> 的限价单，并且只在该限价之内成交
+  （到达止损价的那个价格在限价之内时，按那个价格成交）。<code>'gtd'</code> 订单在随
+  <code>setMarkPrice</code> 给出的时间到达其日期时撤下（未给出时间时按时钟的时间），日期已过的订单会被拒绝。
+  <code>'ioc'</code> 或 <code>'fok'</code> 限价单在当前价格处于其限价之内时，立即按当前价格成交，
+  不在限价之内时被拒绝（<code>executionError</code>）。模拟市场本身没有可成交数量，所以两者在那里相同，
+  除非给它设定一个（见<a href="#partial-fills">下文</a>）。组件的下单窗口为限价单提供这两种选项，
+  账户面板会在属于某一组的订单旁写上 OCO，并写出带日期订单的日期。它把 <code>'day'</code> 留给应用处理，因为应用知道其市场的交易日何时结束。
+</p>
+<p>
+  <strong>一个净持仓。</strong>默认情况下，模拟账户为每笔成交的订单开一个持仓，买入的与卖出的并存
+  （<code>positions: 'hedge'</code>）。<code>{`new PaperExecutionAdapter({ positions: 'net' })`}</code>
+  只保留一个持仓，与期货账户相同：同方向的成交按两者价格的平均值加到持仓上，
+  反方向的成交从持仓中减去并实现这一部分的盈亏（成交上的 <code>pnl</code>），更大的反向成交会让持仓反转，
+  其余部分按成交价开仓。加到持仓上的成交带有止损止盈时，会把它们带给持仓；
+  从持仓中减去的成交让持仓的止损止盈保持原样；让持仓反转的成交带来它自己的。
+</p>
+<h3 id="partial-fills">部分成交的订单</h3>
+<p>
+  限价单挂在市场中，随着对手单到来而成交，往往一次成交一部分。给出
+  <code>fillSize</code> 后，模拟账户在一个价格上成交的限价单数量不超过它：更大的订单在每个到达其限价的价格
+  （每次 <code>setMarkPrice</code>）成交一部分，其余部分继续挂单。订单留在 <code>chart.getOrders()</code> 中，
+  带有它的 <code>filledQuantity</code>；每一部分都是一笔独立的成交（<code>executionFill</code>），
+  其 <code>remaining</code> 是它留下的仍在挂单的数量，最后一部分把订单撤下。图表把已成交的数量写在订单的标签上
+  （<code>2/5</code>），组件的账户面板写在订单的行里；订单的止损和目标上的标签显示的是其余部分到达时的盈亏，
+  因为已成交的部分是一个带有自己标签的持仓。
+</p>
+<pre><code>{`const broker = new PaperExecutionAdapter({ fillSize: 2 })   // two of a limit order at each price
+chart.connectExecution(broker)
+chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 95, quantity: 5 })
+
+chart.on('executionFill', (e) => console.log(e.payload.quantity, e.payload.remaining))   // 2 3, then 2 1, then 1 undefined
+chart.on('ordersChange', (e) => console.log(e.payload.orders[0]?.filledQuantity))        // 2, 4, then no order`}</code></pre>
+<p>
+  一个订单的各部分构成一个持仓，价格为各部分价格的平均值；在净持仓账户上，它们加到账户的持仓上，或从中减去。
+  持仓从订单的第一部分得到订单的止损、止盈和止盈档位，之后的部分不会再带来一次：
+  你此后移动过或取消了的止损，保持你留下的样子。在其持仓已平仓之后才成交的部分会另开一个持仓，
+  并再次带上订单的止损止盈。止盈档位的数量是按整个计划定的，所以最初的几部分可能不够它平：
+  它平掉的数量不超过当前持有的数量。止损限价单一旦作为限价单生效，也会分部分成交。
+  每一部分各自支付手续费，账户已无力承担的那一部分会撤销订单的剩余部分（<code>executionError</code>）。
+  剩余部分可以移动、撤销，或在其日期到期，第一部分成交会撤销订单所在组的其余订单。
+  <code>'ioc'</code> 订单中能立即成交的部分成交，其余被丢弃（<code>placeOrder</code> 返回的订单说明成交了多少：
+  它的 <code>filledQuantity</code>；图表和组件对被丢弃的其余部分不作任何提示，它的成交数量少于所要求的）；
+  超过可成交数量的 <code>'fok'</code> 订单被拒绝。市价单和止损单整笔成交，平仓也是如此：
+  模拟市场按当前价格接受它们，不模拟滑点。你自己的适配器以同样的方式上报其经纪商的部分成交：
+  在 <code>orders</code> 中给出带 <code>filledQuantity</code> 的订单，并为每一部分给出一个 <code>fill</code>。
+</p>
+
+<h3 id="take-profit-levels">分批止盈</h3>
+<p>
+  持仓可以分批平掉。订单意图上的 <code>takeProfits</code>，或持仓上的（<code>chart.modifyPositionIntent</code>），
+  是一个档位列表，每一档有一个 <code>price</code> 和在该处平掉的 <code>quantity</code>。价格到达某一档时，它的那一部分按该档的价格平仓，该档随之消失；
+  各档平完后剩下的部分继续持有，由 <code>takeProfit</code> 或止损来平。
+  无论还有哪些档位在等待，止损都会平掉剩下的全部；越过止盈价的档位永远不会到达；一档平掉的数量不超过仍持有的数量。
+  图表为每一档画一条线和一个标签（TP1 是最近的一档），标出它的那一部分以及这一部分的盈亏，
+  组件的账户面板写出最近的一档以及还有多少档。
+</p>
+<pre><code>{`chart.placeOrderIntent({
+  side: 'buy', type: 'market', price: 64_000, quantity: 3,
+  stopLoss: 63_000,
+  takeProfits: [{ price: 65_000, quantity: 1 }, { price: 66_000, quantity: 1 }],   // a third at each
+  takeProfit: 67_000,                                                              // the rest
+})
+
+chart.modifyPositionIntent({ positionId: 'pos-1', takeProfits: [{ price: 65_500, quantity: 2 }] })   // all of them, anew
+chart.modifyPositionIntent({ positionId: 'pos-1', takeProfits: null })                               // none`}</code></pre>
+<p>
+  模拟账户负责平掉各个部分（每一部分一笔成交，带 <code>reason: 'takeProfit'</code> 和它实现的盈亏），
+  并把它们计入持仓的 <code>closedQuantity</code>。它只接受相对开仓价为盈利的档位；在净持仓账户上，
+  带有档位的订单会把它的档位交给持仓，就像把止损止盈交给持仓一样。图表上的 TP1 是仍在等待的最近一档。
+  你自己的适配器上报其经纪商的档位。在组件的下单窗口中，止盈可以分一、二或三档到达（<strong>止盈档数</strong>）：多于一档时，途中的每一档平掉数量中相等的一份，各档从开仓价起等距排列，
+  止盈平掉剩下的部分。下单之前，下单窗口会列出在哪里平掉多少。
+</p>
+<p>
+  持仓的档位可以在图表上拖动，与它的止损和止盈一样，拖它的线或它的标签都可以：
+  线跟随指针，原来的位置以淡色留在后面，松开时发出 <code>positionModify</code>，带有该持仓的全部
+  <code>takeProfits</code>，其中这一档已移动，最近的排在最前。档位是盈利的，所以在开仓价处、
+  或越过开仓价到了亏损一侧松开的档位会回到原处，不发出任何事件。按下时触及范围内有两档的，取较近的一档；
+  同一位置上有订单线、止损或止盈时，先取它们而不是档位，此时档位仍可通过它的标签移动。
+  仍在等待的订单的档位是订单带来的计划，不是可拖动的手柄；线被锁定时，任何档位也都不是。
+</p>
+
+<h3 id="account">有资金的账户</h3>
+<p>
+  给出 <code>balance</code> 后，模拟账户像经纪商那样管理它的资金。平仓的盈亏计入余额，
+  未平仓的持仓占用保证金（持仓价值除以 <code>leverage</code>），每笔成交支付它的 <code>commission</code>。
+  可用保证金承担不了的订单会被拒绝（<code>executionError</code>），反手也是如此；
+  挂单在其价格到来时资金已经不够的，会被撤销，<code>executionError</code> 同样会说明。
+  <code>multiplier</code> 是价格变动一个单位时每一单位的价值，用于期货合约：把市场的
+  <code>contractMultiplier</code> 传给它，组件的面板就是按它计算持仓盈亏的。
+  账户的变化先于引起它的那笔成交通知出去，所以在 <code>executionFill</code> 监听器中调用
+  <code>chart.getAccount()</code>，读到的是这笔成交之后的账户。没有 <code>balance</code> 就没有账户，
+  任何订单都会被接受，与以前一样。
+</p>
+<p>
+  持仓占用保证金期间，账户会给出净值相对保证金的情况：<code>marginLevel</code>，
+  即净值占已用保证金的比例（<code>1.5</code> 即 150%）。有两个水平据此起作用，不给出就不启用。
+  低于 <code>marginCallLevel</code> 时，账户警告一次，即 <code>marginCall</code> 事件，
+  只有净值回到该水平之上以后才会再次警告；它不平任何仓。低于
+  <code>stopOutLevel</code> 时，它按当前价格平掉持仓，亏损最多的先平，
+  直到回到该水平之上或不再有持仓：平掉一个持仓会释放它的保证金，这可能就够了。每一次都是一笔
+  <code>reason: 'liquidation'</code> 的成交。两者都在每个价格到来时计算，排在该价格到达的订单和止损止盈之后，
+  所以止损会先平掉它的持仓，而让净值跌破某个水平的成交要到下一个价格才处理。
+  持仓的保证金按其开仓价占用，所以该比例只随净值变动。强制平仓不影响仍在等待的订单，它们继续挂单：
+  资金已经不够的订单在其价格到来时被撤销。两个水平都不给时，不会平任何仓，余额可以跌到零以下。
+</p>
+<pre><code>{`const broker = new PaperExecutionAdapter({
+  balance: 10_000,
+  leverage: 10,                                 // a position holds a tenth of its value
+  commission: { rate: 0.0004, min: 0.1 },       // 0.04% of each fill's value, no less than 0.1; perUnit: an amount a unit
+  positions: 'net',
+  marginCallLevel: 1,                           // warn when the equity falls under the margin held
+  stopOutLevel: 0.5,                            // close positions when it falls under half of it
+})
+chart.connectExecution(broker)
+
+chart.getAccount()   // { balance, equity, unrealisedPnl, realisedPnl, marginUsed, freeMargin, commission, marginLevel? } or null
+chart.on('accountChange', (e) => console.log(e.payload.account?.equity))
+chart.on('executionFill', (e) => console.log(e.payload.commission, e.payload.reason))   // 'liquidation' for a stop-out
+chart.on('marginCall', (e) => warn(e.payload))   // { marginLevel: 0.9, level: 1, equity, marginUsed }`}</code></pre>
+<p>
+  组件的账户面板在汇总数字的最前面显示余额、净值和可用保证金，有保证金比例时也显示它；
+  它把追加保证金通知显示为一条警告，并在历史中标明强制平仓的成交。你自己的适配器要做到同样的事，
+  需实现 <code>getAccount()</code>，在资金变化时发出带 <code>AccountSummary</code> 的 <code>account</code>，
+  并在其经纪商发出警告时发出 <code>marginCall</code>。
+</p>
+
 <h2>在图表上操作订单和持仓</h2>
 <p>
   订单线和持仓线的右端带有小按钮：<strong>×</strong> 撤销订单或平掉持仓，
@@ -121,9 +275,7 @@ chart.modifyPositionIntent({ positionId: 'pos-1', trailingStop: 150 }) // the st
 <p>
   能一步完成反手的适配器可实现 <code>reversePosition</code>；
   若未实现，图表会先平仓，再按相反方向发送一笔市价单。
-  订单可以带 <code>stopLoss</code>、<code>takeProfit</code> 和
-  <code>timeInForce</code>（<code>'gtc'</code> 或 <code>'day'</code>），这些设置会延续到
-  该订单开出的持仓上。
+  订单可以带 <code>stopLoss</code>、<code>takeProfit</code> 和追踪距离，这些设置会延续到该订单开出的持仓上。
 </p>
 <p>
   <strong>适配器作者请注意：</strong>在 <code>PositionModifyIntent</code> 中，
@@ -190,8 +342,8 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
 
 <h2>下单窗口和账户面板（ChartWidget）</h2>
 <p>
-  工具栏 <strong>交易</strong> 菜单中的 <strong>账户</strong> 会在图表下方打开账户面板：显示当前持仓及其盈亏、挂单，以及迄今为止的成交
-  和已实现盈亏。每一行都可以平仓、反手或撤单。<strong>新建委托</strong>会打开下单窗口：
+  工具栏 <strong>交易</strong> 菜单中的 <strong>账户</strong> 会在图表下方打开账户面板：显示当前持仓及其盈亏、挂单、迄今为止的成交
+  和已实现盈亏，以及一份记录订单经过的日志。每一行都可以平仓、反手或撤单。<strong>新建委托</strong>会打开下单窗口：
   买入或卖出，市价、限价或止损，数量、价格、可选的止损和止盈，以及有效期。填写时它会实时检查订单
   （限价买单应低于市价，止损应位于入场价亏损的一侧……），并显示盈亏比。
   下单时会发出 <code>orderPlace</code> 意图。
@@ -213,13 +365,36 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   账户面板的顶部在每个标签页都显示浮动盈亏和已实现盈亏。数字以等宽字体右对齐，金额按最小价位的小数位数和数字区域格式书写；
   在手机上每一行是一张标明各项数字的卡片。
 </p>
+<p>
+  <strong>日志标签页</strong>列出订单经历的事情，最新的在前：每一笔下单、改价、撤单或成交，
+  以及经纪商拒绝的订单及其原因。日志由图表保存，你自己的图表也可以使用：
+  <code>chart.getActivityLog()</code> 给出最近的 200 条，最早的在前，每条为
+  <code>{`{ time, kind, orderId, side, type, quantity, price, reason, pnl, message }`}</code>，带有其
+  <code>kind</code>（<code>'placed'</code>、<code>'moved'</code>、<code>'cancelled'</code>、
+  <code>'filled'</code>、<code>'rejected'</code>）所具有的字段。它根据图表得知的订单、成交和错误生成，
+  来源是执行适配器，或 <code>setOrders</code> 和 <code>addFill</code>。日志开始时已有的订单不在其中，
+  连接或移除适配器时已有的订单也不在其中，（没有适配器时）切换品种时已有的订单同样不在其中：
+  它们是已经存在的订单，不是新下的订单。部分成交后被撤下的订单记为已撤单。
+  <code>chart.clearActivityLog()</code> 清空日志。
+</p>
+<p>
+  <strong>图表上的卖出和买入。</strong>连接了执行适配器期间，组件在图表图例下方显示两个按钮，
+  各自带有它将成交的价格：卖出按钮上是最优买价，买入按钮上是最优卖价，两者之间是价差
+  （<code>chart.setBidAsk</code>，或 tick 中带有它们的数据源），否则两个按钮上都是最新价，
+  例如回放时，或数据源只给出一侧时。按下会打开该方向的下单窗口。
+  <code>executionChange</code> 在适配器连接或移除时发出，<code>bidAskChange</code>
+  在买价和卖价变化时发出，<code>tradeButtons</code> 开关可关闭这两个按钮。
+</p>
 <pre><code>{`const widget = new ChartWidget(host, {
   trading: true,         // default
   accountPanel: true,    // default when trading is on
+  features: { tradeButtons: true },   // default: Sell and Buy under the legend, with a broker connected
 })
 widget.getChart().connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
 widget.toggleAccountPanel(true)
-// The panel follows ordersChange, positionsChange, executionFill and each tick.`}</code></pre>
+// The panel follows ordersChange, positionsChange, executionFill and each tick.
+
+widget.getChart().getActivityLog().at(-1)   // { time, kind: 'filled', side: 'buy', quantity: 1, price: 64_000, reason: 'order' }`}</code></pre>
 <p>
   成交标记属于图表上当前的品种：在组件中切换品种后，新的品种从没有任何标记开始。
 </p>
@@ -239,7 +414,8 @@ chart.cancelOrderDraft()`}</code></pre>
   创建一个可拖动的括号单——入场价加上止损区和止盈区——然后
   拖动这三条线来调整入场、风险和收益。按 <kbd>Enter</kbd>（或“下单”按钮）确认，
   按 <kbd>Esc</kbd> 取消。在组件中，工具栏上的绿色 / 红色箭头分别创建做多 / 做空括号单。
-  图表会发出一个 <code>bracketPlace</code> 事件，由你的后端处理。
+  图表会发出一个 <code>bracketPlace</code> 事件，并把括号单发给已连接的执行适配器（见下文）；
+  没有适配器时，该事件由你的后端处理。
 </p>
 <p>
   <strong>规模。</strong>括号单按其规模对应的数量下单。<code>{`{ quantity: 2 }`}</code> 就是该数量。
@@ -262,7 +438,6 @@ chart.cancelOrderDraft()`}</code></pre>
 </p>
 <pre><code>{`chart.startBracket('buy')          // entry defaults to the latest close
 chart.startBracket('sell', 64_800) // or pin the entry price
-
 chart.startBracket('buy', undefined, { quantity: 2 })                   // for two
 chart.startBracket('buy', undefined, { risk: 50, quantityStep: 0.001 }) // for what loses 50 at the stop
 chart.setBracketSize({ quantity: 3 })   // while it is placed

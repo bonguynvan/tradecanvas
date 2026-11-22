@@ -53,6 +53,84 @@ chart.plugins.list()`}</code></pre>
   </tbody>
 </table>
 
+<h2 id="define">Chỉ báo tự viết, cách ngắn</h2>
+<p>
+  <code>defineIndicator</code> tạo một chỉ báo từ các tham số của nó và một hàm của các nến: không cần class và không cần
+  code vẽ. <code>calculate</code> nhận các nến dạng cột (<code>bars.close[i]</code>), giá trị của các
+  tham số và <code>ta</code>, các phép tính tạo nên chỉ báo, rồi trả về các đường của nó theo key. Biểu đồ vẽ chúng,
+  co giãn pane của chúng, liệt kê chúng trong legend, và cho mỗi tham số một ô trong dialog cài đặt.
+</p>
+<pre><code>{`import { defineIndicator } from '@tradecanvas/chart'
+
+const emaCross = defineIndicator({
+  id: 'emaCross',
+  name: 'EMA Crossover',
+  placement: 'overlay',                       // on the prices; 'panel' (the default) is a pane of its own
+  inputs: {
+    fast: { default: 9, kind: 'int', min: 1 },
+    slow: { default: 21, kind: 'int', min: 2 },
+  },
+  plots: [
+    { key: 'fast', title: 'Fast', color: 0 },
+    { key: 'slow', title: 'Slow', color: 1 },
+    { key: 'buy', title: 'Buy', color: 2, kind: 'markers', shape: 'arrowUp', position: 'belowBar' },
+    { key: 'sell', title: 'Sell', color: 3, kind: 'markers', shape: 'arrowDown', position: 'aboveBar' },
+  ],
+  calculate({ bars, inputs, ta }) {
+    const fast = ta.ema(bars.close, inputs.fast)
+    const slow = ta.ema(bars.close, inputs.slow)
+    return { fast, slow, buy: ta.crossover(fast, slow), sell: ta.crossunder(fast, slow) }
+  },
+})
+
+chart.registerIndicator(emaCross)
+chart.addIndicator('emaCross', { fast: 12 })`}</code></pre>
+<ul>
+  <li>
+    <strong>Input.</strong> Mỗi tham số có một <code>default</code>, kiểu của nó là kiểu của tham số, và những gì
+    dialog cài đặt cần để hiển thị nó: <code>kind</code>, <code>min</code>, <code>max</code>, <code>step</code>,
+    <code>options</code> cho một choice, <code>source: true</code> cho một nguồn giá (khi đó chỉ báo đọc nó
+    qua <code>bars.close</code>). <code>calculate</code> nhận mỗi số nằm trong <code>min</code> và
+    <code>max</code> của nó, là số nguyên với <code>kind: 'int'</code>, và một choice là một trong các option của nó.
+  </li>
+  <li>
+    <strong>Đường.</strong> Mỗi nến một giá trị; <code>undefined</code>, <code>null</code> hoặc <code>NaN</code> ở chỗ
+    không có. <code>true</code> đánh dấu một nến, cho plot có <code>kind: 'markers'</code> trên pane giá:
+    phía trên hoặc phía dưới nến theo <code>position</code> của nó, nếu không thì tại giá đóng cửa của nến. Điểm đánh dấu trong pane riêng là
+    một số, giá trị mà nó được vẽ tại đó. Không có <code>plots</code>, mọi đường trả về được vẽ thành đường theo
+    các màu series của theme; chỉ báo không trả về đường nào khi có quá ít nến thì khai báo chúng.
+  </li>
+  <li>
+    <strong>Kiểu hiển thị.</strong> <code>plots</code> (một đường, <code>'histogram'</code>, <code>'step'</code>,
+    <code>'dots'</code>, <code>'markers'</code>, mỗi loại có màu, độ dày và kiểu nét đứt riêng), <code>fills</code> cho một
+    dải giữa hai đường, <code>scale</code> và <code>levels</code> cho một pane, như trong
+    <a href="#descriptor">descriptor</a> bên dưới.
+  </li>
+  <li>
+    <strong><code>ta</code></strong> có <code>sma</code>, <code>ema</code>, <code>wma</code>, <code>rma</code>,
+    <code>stdev</code>, <code>highest</code>, <code>lowest</code>, <code>change</code>, <code>rsi</code>,
+    <code>macd</code>, <code>atr</code>, <code>bollinger</code>, <code>crossover</code> và
+    <code>crossunder</code>. Mỗi hàm nhận mỗi nến một giá trị và trả về mỗi nến một giá trị, nên hàm này đưa vào hàm kia được
+    (<code>ta.ema(ta.rsi(bars.close, 14), 9)</code>). <code>rsi</code>, <code>macd</code>, <code>atr</code> và
+    <code>bollinger</code> chạy chính các chỉ báo có sẵn, nên giá trị của chúng là giá trị của biểu đồ.
+  </li>
+  <li>
+    <strong><code>ta.indicator(id, input, params)</code></strong> chạy bất kỳ chỉ báo có sẵn nào và trả về
+    các đường của nó theo key: <code>{`ta.indicator('stochastic', bars, { kPeriod: 14 }).k`}</code>,
+    <code>{`ta.indicator('supertrend', bars).value`}</code>. Các id, tham số và đường là những gì có trên trang
+    <a href={href('/docs/indicators')}>Chỉ báo</a>, và chúng có kiểu. <code>input</code> là các nến, hoặc
+    mỗi nến một giá trị mà chỉ báo khi đó đọc làm giá của nó (<code>{`ta.indicator('ema', rsi, { period: 5 })`}</code>).
+    Mỗi nến một giá trị thì không có khối lượng và không có thời gian, nên chỉ báo về khối lượng hoặc về các phiên trong ngày (OBV, MFI, VWAP…)
+    cần các nến. Năm chỉ báo đọc nến của mã khác không nằm trong số đó. Nó
+    cũng được export riêng: <code>{`import { ta } from '@tradecanvas/chart'`}</code>.
+  </li>
+</ul>
+<p>
+  Nó tính trên toàn bộ các nến ở mỗi tick, việc này nhanh với các phép tính như trên. Chỉ báo chậm đến mức
+  thấy được điều đó, hoặc chỉ báo vẽ thứ khác ngoài mỗi nến một giá trị, là một class có <code>update</code>:
+  cách dài, bên dưới.
+</p>
+
 <h2>Chỉ báo tự viết</h2>
 <p>
   Một chỉ báo là một <code>IndicatorPlugin</code>: một <code>descriptor</code> mô tả chỉ báo là gì và hiển thị
@@ -117,7 +195,7 @@ class TurningMacd extends IndicatorBase {
   (<code>up</code> ở trên) không được vẽ, không ảnh hưởng thang và không hiển thị; nó tồn tại để <code>tone</code> của một plot đọc.
 </p>
 
-<h3>Descriptor</h3>
+<h3 id="descriptor">Descriptor</h3>
 <ul>
   <li><strong>Plot</strong>: mỗi plot vẽ một trường: <code>'line'</code> (mặc định), <code>'step'</code>,
     <code>'histogram'</code>, <code>'dots'</code> (đường vẽ bằng các chấm), hoặc <code>'markers'</code>, một hình
@@ -213,7 +291,10 @@ chart.addIndicator('turning-macd', { fast: 8 })`}</code></pre>
     nhiều hơn một plot, theo <code>title</code> của plot.</li>
   <li><strong>Dialog cài đặt</strong> sửa các tham số, liệt kê từng plot với màu, trạng thái hiện/ẩn, và kiểu
     nét đứt cho line hoặc step, và sửa các mức.</li>
-  <li><strong>Dialog Chỉ báo</strong> liệt kê chỉ báo theo <code>name</code> trong nhóm <code>category</code> của nó.</li>
+  <li><strong>Dialog Chỉ báo</strong> liệt kê chỉ báo theo <code>name</code> trong nhóm <code>category</code> của nó: một loại
+    (<code>'oscillators'</code>, <code>'volume'</code>…) hoặc một nhóm của riêng bạn, <code>{`{ id: 'my-app', label: 'My App' }`}</code>,
+    nhóm này đặt các chỉ báo của app cùng nhau dưới tên của nó, trước các loại có sẵn (nhiều nhóm thì theo
+    thứ tự chỉ báo đầu tiên của chúng được đăng ký). Tìm kiếm cũng tìm được chúng theo tên đó.</li>
   <li><strong>Chỉ báo khác</strong> có thể đọc các đường của nó (chính các plot đó) làm nguồn dữ liệu.</li>
 </ul>
 <p>

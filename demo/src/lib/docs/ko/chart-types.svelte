@@ -1,10 +1,10 @@
 <svelte:head>
   <title>차트 유형 — TradeCanvas 문서</title>
-  <meta name="description" content="내장 차트 유형 18종: 캔들스틱, OHLC, 고가-저가, 하이킨아시, 렌코, 카기, 포인트 앤 피겨, 이퀴볼륨 등." />
+  <meta name="description" content="내장 차트 유형 24종: 캔들스틱, OHLC 바와 HLC 바, 컬럼, 곡선, 계단 영역, 고가-저가, 하이킨아시와 평활 하이킨아시, 렌코, 카기, 포인트 앤 피겨, 이퀴볼륨 등." />
 </svelte:head>
 
 <h1>차트 유형</h1>
-<p>내장 차트 유형 18종을 제공합니다. 런타임에 <code>chart.setChartType(type)</code>으로 전환합니다.</p>
+<p>내장 차트 유형 24종을 제공합니다. 런타임에 <code>chart.setChartType(type)</code>으로 전환합니다.</p>
 
 <h2>기본</h2>
 <table>
@@ -20,6 +20,11 @@
     <tr><td><code>hollowCandle</code></td><td>종가 &gt; 이전 종가이면 몸통을 비웁니다.</td></tr>
     <tr><td><code>hlcArea</code></td><td>고가-저가 밴드와 종가 선.</td></tr>
     <tr><td><code>hiLo</code></td><td>각 봉의 저가에서 고가까지 막대 하나로 그리고 방향에 따라 색을 칠합니다. 너비가 넓은 막대에는 고가와 저가가 표시됩니다.</td></tr>
+    <tr><td><code>hlcBars</code></td><td>각 봉의 저가에서 고가까지의 줄기와 종가의 틱으로 그리며, 시가는 없습니다. 종가를 이전 종가와 비교해 색을 칠합니다.</td></tr>
+    <tr><td><code>columns</code></td><td>각 종가까지 올라가는 기둥으로, 종가를 이전 종가와 비교해 색을 칠합니다. 기둥은 화면에 보이는 가장 낮은 종가 바로 아래에 서며, 거래량과 겹치지 않습니다.</td></tr>
+    <tr><td><code>stepArea</code></td><td>계단식 선과 그 아래를 채운 영역.</td></tr>
+    <tr><td><code>spline</code></td><td>종가들을 지나는 부드러운 곡선으로, 높은 종가 위로도 낮은 종가 아래로도 넘어가지 않습니다.</td></tr>
+    <tr><td><code>dots</code></td><td>각 종가에 점 하나.</td></tr>
   </tbody>
 </table>
 
@@ -28,6 +33,7 @@
   <thead><tr><th>유형</th><th>설명</th></tr></thead>
   <tbody>
     <tr><td><code>heikinAshi</code></td><td>하이킨아시 변환으로 평활화한 캔들 시리즈.</td></tr>
+    <tr><td><code>smoothedHeikinAshi</code></td><td>먼저 <code>period</code>개 봉으로 평균한 가격의 하이킨아시(기본 10, 1에서 500까지의 정수. 위젯 설정에서는 평활 기간): 캔들이 더 늦게, 더 드물게 방향을 바꾸므로 추세가 한 가지 색의 연속으로 읽힙니다. <code>{`chart.setChartTypeOptions({ smoothedHeikinAshi: { period: 20 } })`}</code>.</td></tr>
     <tr><td><code>renko</code></td><td>고정 가격 벽돌 차트. 시간과 무관합니다.</td></tr>
     <tr><td><code>kagi</code></td><td>반전하는 양/음 선. 반전 폭은 퍼센트(기본 4) 또는 가격으로 지정합니다.</td></tr>
     <tr><td><code>lineBreak</code></td><td>종가가 최근 선들(기본 3개)을 돌파하면 새 선을 긋는 패턴.</td></tr>

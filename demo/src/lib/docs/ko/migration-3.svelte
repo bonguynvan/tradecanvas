@@ -62,6 +62,12 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 손절가에서 50을 �
   없는 <code>switch</code>, <code>Record&lt;TimeInForce, …&gt;</code>)에는 새 멤버 세 개가 필요합니다. 직접 만든 실행 어댑터는
   받지 않는 유형을 거부해도 됩니다.
 </p>
+<p>
+  <code>FillReason</code>에는 모의 계좌가 강제 청산한 포지션을 위한 <code>'liquidation'</code>도 있고,
+  <code>ExecutionEventType</code>에는 <code>'marginCall'</code>이 있습니다. 모의 계좌에
+  <code>stopOutLevel</code>이나 <code>marginCallLevel</code>을 주지 않으면 둘 다 일어나지 않지만, 모든 멤버를 처리하는 코드에는
+  이들이 필요합니다.
+</p>
 
 <h2 id="unchanged">달라지지 않은 것</h2>
 <ul>

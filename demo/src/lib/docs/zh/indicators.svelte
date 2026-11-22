@@ -190,10 +190,27 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 
 <h2>自定义指标</h2>
 <p>
-  继承 <code>IndicatorBase</code>，声明它要绘制的内容（<code>plots</code>）、窗格坐标、
+  简便的方式是 <code>defineIndicator</code>：给出它的输入，以及一个根据K线返回其线条的函数，
+  计算由 <code>ta</code> 提供（<code>ta.ema</code>、<code>ta.rsi</code>、<code>ta.crossover</code>…）。
+</p>
+<pre><code>{`import { defineIndicator } from '@tradecanvas/chart'
+
+chart.registerIndicator(defineIndicator({
+  id: 'smoothRsi',
+  name: 'Smoothed RSI',
+  inputs: { period: { default: 14, kind: 'int', min: 2 }, smooth: { default: 5, kind: 'int', min: 1 } },
+  scale: { min: 0, max: 100 },
+  levels: [30, 70],
+  calculate: ({ bars, inputs, ta }) => ({ value: ta.ema(ta.rsi(bars.close, inputs.period), inputs.smooth) }),
+}))
+chart.addIndicator('smoothRsi')`}</code></pre>
+<p>
+  对于要在很长的历史数据上跟上 tick 的指标，或要自己绘制某些内容的指标，请继承
+  <code>IndicatorBase</code>，声明它要绘制的内容（<code>plots</code>）、窗格坐标、
   水平线和参数；图表会负责绘制、缩放窗格、标注数值，并把它列入组件的图例和设置中，
   你无需编写任何渲染代码。它的 <code>category</code>（<code>'oscillators'</code>、<code>'volume'</code>…）
-  会把它放进“指标”对话框中的对应分组；未设置时归入“其他”。参见
+  会把它放进“指标”对话框中的对应分组；未设置时归入“其他”。你自己的分组 <code>{`{ id: 'my-app', label: 'My App' }`}</code>
+  会把你的应用的指标一起列在它的名称下，排在内置类别之前。参见
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">自定义指标示例</a>。
   按日、周或月分组K线的指标可从 <code>config.exchangeTimeZone</code> 读取交易所时区（由图表设置；未设置时为 UTC）。时区改变时，只有读取它的指标以及读取这些指标线条的指标会重新计算：
   你自己的指标若不读取时区，可在 descriptor 中写 <code>readsExchangeTimeZone: false</code>，从而保持不变。
@@ -229,11 +246,18 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 ],
 fills: [{ between: ['upper', 'lower'], color: 0, opacity: 0.1 }],`}</code></pre>
 <p>
-  <code>kind: 'markers'</code> 的线条会在其字段有值的K线上（转向、信号）用一个 <code>shape</code> 做标记：
-  <code>'dot'</code>、<code>'triangleUp'</code> 或 <code>'triangleDown'</code>，位于该值处，或在主图上位于K线最高价之上或最低价之下
+  <code>kind: 'markers'</code> 的线条会在其字段有值的K线上（转向、信号）用一个
+  <code>shape</code> 做标记（<code>'triangleUp'</code>、<code>'triangleDown'</code>、<code>'arrowUp'</code>、<code>'arrowDown'</code>、
+  <code>'dot'</code>、<code>'square'</code> 或 <code>'diamond'</code>），位于该值处，或在主图上位于K线最高价之上或最低价之下
   （<code>position: 'aboveBar'</code>、<code>'belowBar'</code>）。它不是供读取的数值：在图例中没有数值，在坐标轴上没有标签，
   导出中也没有对应的列，并且不会作为其他指标可读取的线提供。在副图窗格中，标记位于其数值处。没有标记的K线，不要设置该字段。
 </p>
+<p>
+  它的标记宽度随K线的宽度而定，4 到 8 px。查看者可在指标的“样式”标签页中选择另一种形状和大小，
+  代码则在线条的样式中设置它们：<code>shape</code>，以及以像素计的宽度 <code>size</code>（2 到
+  40）或 <code>'auto'</code>。Williams Fractals 就是这样绘制的：高点上方一个三角形，低点下方一个三角形。
+</p>
+<pre><code>{`chart.updateIndicatorStyle(fractals, { plots: { up: { shape: 'arrowUp', size: 14 }, down: { size: 'auto' } } });`}</code></pre>
 <pre><code>{`plots: [
   { key: 'value', title: 'MACD', color: 0 },
   { key: 'turn', title: 'Turn', color: 1, kind: 'markers', shape: 'triangleUp', position: 'belowBar' },

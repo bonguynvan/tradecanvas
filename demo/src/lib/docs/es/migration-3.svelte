@@ -64,6 +64,12 @@ chart.startBracket('buy', undefined, { risk: 50 })   // la cantidad que pierde 5
   sus miembros (un <code>switch</code> sin default, un <code>Record&lt;TimeInForce, …&gt;</code>) necesita los tres
   nuevos; un adaptador de ejecución propio puede rechazar los que no acepte.
 </p>
+<p>
+  <code>FillReason</code> tiene también <code>'liquidation'</code>, para una posición que la cuenta de simulación cerró en un
+  stop-out, y <code>ExecutionEventType</code> tiene <code>'marginCall'</code>. Ninguno de los dos ocurre salvo que a la
+  cuenta de simulación se le dé <code>stopOutLevel</code> o <code>marginCallLevel</code>, pero el código que trata todos los
+  miembros los necesita.
+</p>
 
 <h2 id="unchanged">Sin cambios</h2>
 <ul>

@@ -33,6 +33,14 @@
     <tr><td><code>WaterfallChart</code></td><td>Pasos de un inicio a un final: atribución de ganancias y pérdidas, flujos de caja.</td></tr>
     <tr><td><code>DepthChart</code></td><td>Compras y ventas acumuladas de un libro de órdenes.</td></tr>
     <tr><td><code>EquityCurveChart</code></td><td>El valor de una cuenta a lo largo del tiempo, con sus drawdowns y un índice de referencia.</td></tr>
+    <tr><td><code>PayoffChart</code></td><td>Lo que una posición de opciones gana o pierde al vencimiento, según el precio del subyacente: un spread, un straddle, un cóndor.</td></tr>
+    <tr><td><code>CurveChart</code></td><td>Valores frente a un strike o un plazo, una línea por serie: una sonrisa de volatilidad, una estructura temporal, una curva de tipos.</td></tr>
+    <tr><td><code>BoxPlotChart</code></td><td>Cómo se reparten los valores de cada grupo: rentabilidades por día de la semana, por mes, por estrategia.</td></tr>
+    <tr><td><code>RadarChart</code></td><td>Varias medidas a la vez, un radio cada una: la tarjeta de puntuación de una estrategia junto a la de un índice de referencia.</td></tr>
+    <tr><td><code>SunburstChart</code></td><td>Partes de un todo y las partes dentro de ellas: una asignación por clase de activo, luego por sector, luego por posición.</td></tr>
+    <tr><td><code>StackedAreaChart</code></td><td>Varias series una sobre otra a lo largo del tiempo: de qué se compone un total, o cómo cambia su mezcla.</td></tr>
+    <tr><td><code>SurfaceChart</code></td><td>Valores sobre dos ejes como una lámina en una caja 3D que giras arrastrando: volatilidad implícita por strike y vencimiento, una ganancia por precio y día o, en cortes, la profundidad de un libro de órdenes a lo largo del tiempo.</td></tr>
+    <tr><td><code>Bar3DChart</code></td><td>Una columna por cada valor, en filas hacia el fondo, una por serie, en la misma caja: rentabilidades por trimestre y clase de activo, volumen por hora y día de la semana.</td></tr>
     <tr><td><code>PerformanceDashboard</code></td><td>Un informe de estrategia a partir de un backtest: estadísticas, capital, drawdown y rentabilidades mensuales.</td></tr>
   </tbody>
 </table>
@@ -42,7 +50,8 @@
 
 chart.setOptions({ mode: 'stacked' })   // cualquier opción, se combina
 chart.setTheme('light')                 // 'dark' | 'light' | un Theme
-chart.destroy()                         // quita el canvas y sus listeners`}</code></pre>
+chart.screenshot('flows', { pixelRatio: 2 })   // una imagen: ver más abajo
+chart.destroy()                        // quita el canvas y sus listeners`}</code></pre>
 <p>
   En una pantalla táctil, un toque muestra el tooltip, que permanece hasta que tocas en otro lugar; arrastrar sigue desplazando la página. Los gráficos se dibujan sobre los píxeles propios de la pantalla, así que las líneas se ven nítidas con cualquier zoom. Los gráficos de profundidad, de equity y de cascada ajustan sus márgenes a sus etiquetas, como los gráficos más nuevos.
 </p>
@@ -56,6 +65,49 @@ chart.destroy()                         // quita el canvas y sus listeners`}</co
   <code>ariaLabel</code> lo dice con tus palabras, por ejemplo en el idioma de tu página. Los números se muestran con
   <code>valueFormat</code> (o <code>xFormat</code> / <code>yFormat</code>); si no, como 1,234.5 y, a partir de
   diez mil, como 12.3K.
+</p>
+
+<h2 id="pictures">Imágenes, papel y dibujar sin página</h2>
+<p>
+  Cada gráfico da una imagen de sí mismo, como el gráfico de precios: <code>screenshot(filename, options)</code>
+  guarda una, <code>copyScreenshot()</code> pone un PNG en el portapapeles, y <code>screenshotDataURL()</code>,
+  <code>screenshotBlob()</code> y <code>toCanvas()</code> la entregan. El gráfico se dibuja de nuevo para la
+  imagen, sin nada que siga al puntero: a su propio tamaño por la relación de píxeles de la pantalla, o con
+  el <code>pixelRatio</code>, el <code>theme</code> y el <code>width</code> y el <code>height</code> que dan las
+  opciones (para otro tamaño se dispone de nuevo). <code>print()</code> abre el diálogo de impresión solo para el
+  gráfico y <code>toPdf()</code> da un PDF de una página, ambos en el tema claro y con el doble de
+  píxeles salvo que se indique otra cosa; <code>chartsToPdf</code> hace un solo PDF de varios gráficos
+  (<a href={href('/docs/api')}>Imágenes, impresión y PDF</a> tiene las opciones).
+</p>
+<pre><code>{`import { chartsToPdf } from '@tradecanvas/chart'
+
+equity.screenshot('equity', { pixelRatio: 3 })                 // equity.png
+const wide = flows.screenshotDataURL({ width: 1200, height: 400, type: 'jpeg' })
+allocation.print({ title: 'Allocation' })
+const report = await chartsToPdf([equity, flows, allocation], { title: 'March' })`}</code></pre>
+<p>
+  <code>renderFinanceChart</code> dibuja un gráfico en un contexto 2D tuyo, sin página: un canvas creado en
+  Node, para una imagen en un correo, un informe o un mensaje de un bot, o un <code>OffscreenCanvas</code> en un
+  worker. Su segundo argumento nombra el gráfico, por el nombre de su clase sin <code>Chart</code> y con la primera
+  letra en minúscula (<code>'bar'</code>, <code>'equityCurve'</code>, <code>'boxPlot'</code>,
+  <code>'surface'</code>, <code>'bar3d'</code>; <code>FINANCE_CHART_KINDS</code> los lista), y el tercero
+  son las opciones propias de ese gráfico. Dibuja el tamaño que das en las unidades propias del contexto, sobre el
+  fondo del tema: escala primero el contexto para más píxeles.
+</p>
+<pre><code>{`import { createCanvas } from '@napi-rs/canvas'        // u otro canvas para Node
+import { renderFinanceChart } from '@tradecanvas/chart'
+
+const canvas = createCanvas(1600, 800)
+const ctx = canvas.getContext('2d')
+ctx.scale(2, 2)                                        // un gráfico de 800 × 400 con el doble de píxeles
+renderFinanceChart(ctx, 'equityCurve', { data: equity, theme: 'light', font: { family: 'Inter' } }, { width: 800, height: 400 })
+const png = canvas.toBuffer('image/png')`}</code></pre>
+<p>
+  El contexto tiene que tener lo que tiene el de un navegador: trazados, texto y su medición, y
+  <code>getTransform</code>. El texto se dibuja en la tipografía del tema, así que nombra con
+  <code>font</code> una que tu canvas tenga. Nada sigue a un puntero y nada se mueve: un indicador de aguja está en
+  su valor. El panel de rendimiento está hecho de elementos de la página y no se dibuja así; sus gráficos, sí. El
+  gráfico de precios tiene el suyo: <code>renderPriceChart</code>, en la página de la API.
 </p>
 
 <h2>Gráfico de barras</h2>
@@ -256,6 +308,240 @@ new EquityCurveChart(el, { data: equity, benchmark, drawdown: true })`}</code></
   ],
 })
 chart.setOptions({ levels: [{ value: 42_000, label: 'CHoCH' }] })`}</code></pre>
+
+<h2>Payoff de opciones</h2>
+<p>
+  <code>PayoffChart</code> dibuja lo que una posición de opciones gana o pierde al vencimiento, según el precio del
+  subyacente: la ganancia teñida por encima de cero y la pérdida por debajo, una línea discontinua en cada punto de
+  equilibrio y en <code>spot</code>, el precio actual. Una pata es una <code>'call'</code> o una <code>'put'</code>,
+  comprada (<code>'long'</code>) o vendida (<code>'short'</code>), con su <code>strike</code> y la
+  <code>premium</code> de una unidad; una pata <code>'underlying'</code> es el subyacente que se tiene junto a ellas,
+  a su <code>entry</code>. <code>multiplier</code> son las unidades que cubre un contrato. Los precios dibujados
+  están en torno a los strikes, o son el <code>range</code> dado. El puntero lee la ganancia o la pérdida en su precio.
+</p>
+<pre><code>{`import { PayoffChart, payoffStats, optionPayoff } from '@tradecanvas/chart'
+
+const condor = [
+  { type: 'put', side: 'long', strike: 90, premium: 1 },
+  { type: 'put', side: 'short', strike: 95, premium: 2.5 },
+  { type: 'call', side: 'short', strike: 105, premium: 2.5 },
+  { type: 'call', side: 'long', strike: 110, premium: 1 },
+]
+const chart = new PayoffChart(el, { legs: condor, multiplier: 100, spot: 101.4, spotLabel: 'Spot' })
+chart.update(otherLegs)
+
+payoffStats(condor, 100)    // { maxProfit: 300, maxLoss: -200, breakevens: [92, 108] }
+optionPayoff(condor, 100, 100)   // 300: lo que ganan las patas con el subyacente en 100
+
+// Antes del vencimiento: una segunda línea, discontinua, según un modelo
+chart.setOptions({ model: { daysToExpiry: 30, volatility: 0.25, rate: 0.03 } })
+positionValue(condor, 100, { daysToExpiry: 30, volatility: 0.25 }, 100)   // lo que ganan las patas cuando quedan 30 días
+optionPrice('call', 100, 105, { years: 30 / 365, volatility: 0.25 })      // el precio de una opción`}</code></pre>
+<p>
+  <code>payoffStats</code> da lo máximo que ganan las patas y lo máximo que pierden al vencimiento
+  (<code>null</code> donde no hay límite: una call comprada, una call vendida sola) y los precios en los que quedan
+  en equilibrio. Una pata sin su strike, o el subyacente sin su entrada, no cuenta para nada.
+</p>
+<p>
+  Con <code>model</code> el gráfico dibuja lo que la posición gana o pierde cuando aún quedan esos días,
+  en discontinuo, sobre el payoff, nombra las dos líneas encima del área del gráfico, cada una junto a un tramo de su propia línea
+  (<code>expiryLabel</code> y <code>model.label</code> las dicen con tus palabras) y lee ambas bajo el
+  puntero. Cada opción se valora
+  como una europea con Black-Scholes a la <code>volatility</code> del modelo (la de un año, como fracción:
+  <code>0.25</code> es el 25%), con <code>rate</code> y <code>dividendYield</code> donde se den; la
+  <code>volatility</code> y los <code>daysToExpiry</code> propios de una pata sustituyen a los del modelo, para un skew o un calendar
+  spread. Es la respuesta de un modelo, no una cotización: una opción americana, o una cuya volatilidad se mueve con el
+  precio, vale otra cosa. <code>positionValue</code> y <code>optionPrice</code> son los cálculos, exactos
+  hasta más o menos una parte en un millón de un precio; cuando no quedan días <code>positionValue</code> es
+  <code>optionPayoff</code>, y con el subyacente en nada una put vale su strike, descontado.
+</p>
+
+<h2>Curvas: una sonrisa de volatilidad, una estructura temporal</h2>
+<p>
+  <code>CurveChart</code> dibuja valores frente a un strike, un plazo o un vencimiento, una línea por serie. Las
+  líneas se redondean a través de sus puntos sin pasar de un valor que no alcanzan
+  (<code>smooth: false</code> los une con rectas), una serie con <code>dashed</code> es la de ayer junto a
+  la de hoy, y <code>markers</code> son líneas con etiqueta en una x. Con <code>ticks</code> el eje x lo
+  nombras tú, un plazo en cada número de días. El puntero se ajusta a la x más cercana que tiene una cotización y lee
+  allí cada curva, a lo largo de la línea tal como se dibuja. <code>curveValueAt(points, x)</code> lee una curva en código,
+  en línea recta entre sus puntos, o a lo largo de la línea redondeada con <code>true</code> como tercer argumento.
+</p>
+<pre><code>{`import { CurveChart } from '@tradecanvas/chart'
+
+// Una sonrisa: volatilidad implícita frente al strike, una línea por vencimiento.
+new CurveChart(el, {
+  series: [
+    { name: '1M', points: [{ x: 90, y: 31 }, { x: 100, y: 24 }, { x: 110, y: 27 }] },
+    { name: '3M', points: [{ x: 90, y: 28 }, { x: 100, y: 25 }, { x: 110, y: 26 }] },
+  ],
+  markers: [{ x: 101.4, label: 'ATM' }],
+  valueFormat: (v) => v.toFixed(1) + '%',
+})
+
+// Una estructura temporal: plazos a lo largo de x, en días.
+new CurveChart(el, {
+  series: [
+    { name: 'Today', points: [{ x: 30, y: 26 }, { x: 90, y: 25 }, { x: 365, y: 27 }] },
+    { name: 'A week ago', points: [{ x: 30, y: 24 }, { x: 90, y: 25 }, { x: 365, y: 26 }], dashed: true },
+  ],
+  ticks: [{ x: 30, label: '1M' }, { x: 90, label: '3M' }, { x: 365, label: '1Y' }],
+})`}</code></pre>
+
+<h2>Diagrama de caja</h2>
+<p>
+  <code>BoxPlotChart</code> muestra cómo se reparten los valores de cada grupo: una caja del primer cuartil al tercero
+  con una línea en la mediana, bigotes hasta los valores más lejanos dentro de <code>whiskers</code> alturas de caja
+  desde la caja (1.5 si se omite; <code>Infinity</code> para el más bajo y el más alto), y un anillo por cada valor
+  más alejado. Un grupo da sus <code>values</code> sin procesar, o sus números en <code>stats</code> cuando
+  se calcularon en otro sitio. <code>boxPlotStats(values)</code> es el mismo cálculo en código, y
+  <code>labels</code> pone las palabras de la lectura en otro idioma. <code>onBoxClick</code> da el grupo
+  sobre el que cae un clic y sus cinco números: en cualquier punto, arriba o abajo, del lugar del grupo a lo ancho del
+  gráfico, tal como lo elige la lectura.
+</p>
+<pre><code>{`import { BoxPlotChart, boxPlotStats } from '@tradecanvas/chart'
+
+new BoxPlotChart(el, {
+  data: [{ label: 'Mon', values: mondayReturns }, { label: 'Tue', values: tuesdayReturns }],
+  colorBySign: true,                     // según la mediana de cada caja
+  valueFormat: (v) => v.toFixed(1) + '%',
+  onBoxClick: (group, stats) => openDay(group.label, stats.median),
+})
+
+boxPlotStats([1, 2, 3, 4, 5, 6, 7, 8, 9, 100])
+// { min: 1, q1: 3.25, median: 5.5, q3: 7.75, max: 9, outliers: [100] }`}</code></pre>
+
+<h2>Radar</h2>
+<p>
+  <code>RadarChart</code> pone varias medidas en radios alrededor de un centro, en el sentido de las agujas del reloj
+  desde las doce, y une los valores de cada serie en una figura. Un radio va de su <code>min</code> en el centro (0 si
+  se omite, o el valor más bajo que haya en él cuando está por debajo de cero) a su <code>max</code> en el borde, el valor más alto
+  que haya en él cuando no se da ninguno: da a cada radio el
+  suyo cuando las medidas difieren en magnitud. Necesita tres radios. El puntero lee todas las series en el radio más
+  cercano, y <code>onAxisClick</code> da ese radio para un clic: su etiqueta, su lugar entre
+  <code>axes</code> y el valor de cada serie en él.
+</p>
+<pre><code>{`import { RadarChart } from '@tradecanvas/chart'
+
+new RadarChart(el, {
+  axes: [{ label: 'Sharpe', max: 3 }, { label: 'Sortino', max: 3 }, { label: 'Calmar', max: 3 }, { label: 'Win rate', max: 100 }],
+  series: [{ name: 'Strategy', values: [1.8, 2.4, 1.5, 58] }, { name: 'Benchmark', values: [1.0, 1.3, 0.7, 51] }],
+  onAxisClick: ({ axis, index, values }) => explain(axis, values),   // 'Sortino', 1, [{ series: 'Strategy', value: 2.4 }, …]
+})`}</code></pre>
+
+<h2>Sunburst</h2>
+<p>
+  <code>SunburstChart</code> dibuja partes de un todo y las partes dentro de ellas, un anillo por nivel. Una parte con
+  <code>children</code> es tan grande como todos ellos juntos; una sin ellos toma su <code>value</code>. El primer
+  anillo toma los colores de la paleta y cada anillo exterior el de su padre, más pálido. Se dibujan cuatro anillos como máximo
+  (<code>maxDepth</code> para menos o más), <code>innerRadius: 0</code> cierra el hueco, y
+  <code>centerLabel</code> y <code>centerValue</code> se escriben en él. Un clic da la parte y las
+  etiquetas que llevan hasta ella. Los nombres se escriben a lo largo de sus anillos donde caben.
+</p>
+<pre><code>{`import { SunburstChart } from '@tradecanvas/chart'
+
+new SunburstChart(el, {
+  data: [
+    { label: 'Stocks', children: [{ label: 'Banks', value: 22 }, { label: 'Technology', value: 14 }] },
+    { label: 'Bonds', value: 23 },
+    { label: 'Cash', value: 18 },
+  ],
+  centerLabel: 'Total', centerValue: '1.2B',
+  onNodeClick: (node, path) => openHoldings(path),   // ['Stocks', 'Banks']
+})`}</code></pre>
+
+<h2>Áreas apiladas</h2>
+<p>
+  <code>StackedAreaChart</code> apila varias series sobre los mismos puntos, la primera abajo: de qué se
+  compone un total a lo largo del tiempo. Con <code>normalized</code> los valores de cada punto son partes de su total y
+  las áreas llenan la altura: cómo cambia una mezcla. Un valor por debajo de cero cuenta como ninguno. El puntero lee
+  todas las series y su total en el punto más cercano.
+</p>
+<pre><code>{`import { StackedAreaChart } from '@tradecanvas/chart'
+
+const chart = new StackedAreaChart(el, {
+  categories: ['Jan', 'Feb', 'Mar', 'Apr'],
+  series: [{ name: 'Stocks', values: [40, 44, 47, 52] }, { name: 'Bonds', values: [30, 29, 27, 25] }, { name: 'Cash', values: [30, 27, 26, 23] }],
+  normalized: true,
+})
+chart.update(nextSeries, nextCategories)`}</code></pre>
+
+<h2>Superficie 3D</h2>
+<p>
+  <code>SurfaceChart</code> dibuja valores sobre dos ejes como una lámina en una caja: <code>x</code> a lo ancho,
+  <code>y</code> hacia el fondo y <code>values[yIndex][xIndex]</code> hacia arriba. Los números a lo largo de un eje se
+  colocan según su valor, y se dibujan de menor a mayor sea cual sea su orden; los nombres se espacian de forma uniforme en
+  el orden dado, así que una lista de plazos (<code>'1W'</code>, <code>'1M'</code>, <code>'1Y'</code>) no queda apretada en su extremo corto.
+  Un valor que falta o que no es un número deja un hueco, y un lugar a lo largo de un eje que no es un número se deja fuera
+  con sus valores.
+</p>
+<pre><code>{`import { SurfaceChart } from '@tradecanvas/chart'
+
+const chart = new SurfaceChart(el, {
+  x: [80, 90, 100, 110, 120],              // strikes
+  y: ['1W', '1M', '3M', '6M', '1Y'],       // vencimientos
+  values: impliedVolatility,               // values[expiry][strike]
+  xLabel: 'Strike', yLabel: 'Expiry', valueLabel: 'IV',
+  valueFormat: (v) => (v * 100).toFixed(1) + '%',
+  onPointClick: (point) => openChain(point.x, point.y),
+})
+chart.update(nextValues)                   // o update(values, { x, y }) cuando también cambiaron los ejes`}</code></pre>
+<p>
+  Arrastrar gira el gráfico: un ratón lo gira y lo inclina, un dedo solo lo gira, para que la página siga desplazándose
+  bajo él. Desde el teclado, una vez que Tab ha llegado al gráfico, las flechas lo giran y lo inclinan 5 grados (15
+  con Mayús) e Inicio vuelve atrás; a un lector de pantalla se le dicen las teclas, y después de cada una desde dónde se ve
+  el gráfico (<code>describeView</code> lo dice con tus palabras). Un doble clic vuelve a la <code>view</code> que
+  dieron las opciones
+  (<code>{'{'} yaw: -35, pitch: 28 {'}'}</code> cuando no dan ninguna: <code>yaw</code> gira el gráfico sobre su
+  eje vertical, <code>pitch</code> es a qué altura sobre el suelo está el ojo, de 0 a 90 grados).
+  <code>getView()</code> lee desde dónde se ve ahora, <code>setView()</code> lo fija,
+  <code>onViewChange</code> lo sigue, y <code>rotate: false</code> lo mantiene quieto. El gráfico se dibuja
+  sin perspectiva, así que las líneas que son paralelas en los datos siguen paralelas en la pantalla, y conserva un
+  mismo tamaño mientras se gira.
+</p>
+<p>
+  <code>style</code> es <code>'surface'</code> (una lámina sombreada, el valor por defecto), <code>'wireframe'</code> (solo sus
+  líneas) o <code>'slices'</code> (cada <code>y</code> una línea rellena propia, una detrás de otra).
+  Los valores se colorean según <code>colorRamp</code>: por defecto un solo tono, desde cerca del fondo del gráfico hasta su más
+  intenso, sobre el rango de los valores; da <code>colors</code> (dos o más, primero el del valor más bajo) y
+  <code>min</code> y <code>max</code> para los tuyos, como un color de pérdida, uno neutro y uno de ganancia
+  a cada lado de cero. El puntero lee el punto más cercano de la celda sobre la que está, la de delante donde la
+  lámina se pliega sobre sí misma. Una cuadrícula de más de 120 puntos a lo largo de un eje se reduce a esos, conservando ambos extremos, y
+  a 60 mientras se está girando, para que una cuadrícula grande gire con fluidez.
+</p>
+<p>
+  <code>depthSurface(snapshots, {'{'} levels {'}'})</code> convierte una serie de libros de órdenes en los
+  <code>x</code>, <code>y</code> y <code>values</code> de una superficie: los precios a lo ancho, los tiempos de los libros hacia el fondo, y en cada uno el
+  volumen que espera desde el mejor precio hasta ese precio, como lo tiene un gráfico de profundidad. <code>levels</code> es cuántos
+  precios (48 si se omite, 1.000 como máximo), y <code>from</code> y <code>to</code> se limitan a una ventana de
+  precios.
+</p>
+<pre><code>{`import { SurfaceChart, depthSurface } from '@tradecanvas/chart'
+
+// books: { time, bids: [{ price, volume }], asks: [...] }[], el más antiguo primero
+const chart = new SurfaceChart(el, {
+  ...depthSurface(books, { levels: 48 }),
+  style: 'slices',
+  xLabel: 'Price', yLabel: 'Time', valueLabel: 'Depth',
+  yFormat: (ms) => new Date(ms).toISOString().slice(11, 16),
+})`}</code></pre>
+
+<h2>Barras 3D</h2>
+<p>
+  <code>Bar3DChart</code> levanta una columna sobre cada valor, en filas hacia el fondo, una por serie: <code>categories</code> a lo ancho
+  y una fila por cada una de las <code>series</code>, la primera al frente del eje <code>y</code>. Las columnas empiezan
+  en cero; una por debajo de cero cuelga del nivel de cero, que se dibuja como una lámina a través de la caja. Acepta
+  <code>view</code>, <code>rotate</code> y el resto de lo que una superficie acepta para girar, y
+  <code>onBarClick</code> da la categoría, la serie y el valor. No se dibujan más de 120 categorías y 120
+  series.
+</p>
+<pre><code>{`import { Bar3DChart } from '@tradecanvas/chart'
+
+const chart = new Bar3DChart(el, {
+  categories: ['Q1', 'Q2', 'Q3', 'Q4'],
+  series: [{ name: 'Stocks', values: [4.2, 6.1, -2.4, 5.3] }, { name: 'Bonds', values: [1.1, 0.8, 1.6, -0.5] }],
+  valueFormat: (v) => v.toFixed(1) + '%',
+})
+chart.update(nextSeries, nextCategories)`}</code></pre>
 
 <h2>Panel de rendimiento</h2>
 <p>
