@@ -1275,12 +1275,19 @@ grid.getLayoutSession()?.saveAs('Majors')
 
 // 차트들을 각자의 칸에 담은 한 장의 이미지: 파일, 인쇄 대화상자, PDF
 grid.screenshot('majors', { pixelRatio: 2 })
+await grid.copyScreenshot()                             // PNG로 클립보드에
 const sheet = await grid.toPdf({ title: 'Majors' })   // 차트 하나일 때처럼 라이트 테마와 두 배의 픽셀로
 
 // 각 차트가 만들어질 때마다 (처음, 그리고 그리드가 커질 때)
 new ChartWidgetGrid(host, {
   onChartAdd: (widget, index) => widget.getChart().addIndicator('ema', { period: 21 }),
 })`}</code></pre>
+<p>
+  막대의 카메라 버튼은 같은 일을 메뉴에서 합니다. 차트들을 담은 이미지를 저장하거나, 복사하거나, 인쇄하거나,
+  PDF로 저장하며, 파일 이름은 표시 중인 종목에서 따옵니다(셋을 넘으면 <code>charts</code>).
+  <code>picture: false</code>는 버튼을 없앱니다. 차트의 <code>screenshot</code> 스위치가 꺼져 있는 동안에도 숨겨지고,
+  <code>copyImage</code>가 꺼져 있으면 복사 항목이 없습니다.
+</p>
 <p>
   십자선 동기화는 포인터 아래의 시간을 모든 차트에 표시하고, 시간 축 동기화는 사용 중인 차트에 맞춰
   나머지 차트를 스크롤하고 확대/축소하며, 그림은 같은 종목을 보여 주는 차트로 복사됩니다(이 동기화를 켜면

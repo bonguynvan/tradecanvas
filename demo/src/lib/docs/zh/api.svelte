@@ -1207,12 +1207,18 @@ grid.getLayoutSession()?.saveAs('Majors')
 
 // 所有图表合成一张图片，各在自己的格子里：文件、打印对话框、PDF
 grid.screenshot('majors', { pixelRatio: 2 })
+await grid.copyScreenshot()                             // 以 PNG 复制到剪贴板
 const sheet = await grid.toPdf({ title: 'Majors' })   // 浅色主题、两倍像素，与单个图表的一样
 
 // 每个图表创建时（初始时，以及网格变大时）
 new ChartWidgetGrid(host, {
   onChartAdd: (widget, index) => widget.getChart().addIndicator('ema', { period: 21 }),
 })`}</code></pre>
+<p>
+  工具条上的相机按钮通过菜单完成同样的事：把各图表合成的图片保存为文件、复制、打印或保存为 PDF，
+  文件以所显示的品种命名（超过三个时为 <code>charts</code>）。<code>picture: false</code> 去掉该按钮；
+  图表的 <code>screenshot</code> 开关关闭时它也会隐藏，<code>copyImage</code> 关闭时菜单里没有复制一项。
+</p>
 <p>
   十字光标同步会在每个图表上显示指针所在的时间；时间同步会让其他图表随正在操作的图表一起滚动和缩放；
   画线会复制到显示同一品种的图表上（开启时会把这些图表的画线合并到一起，不会丢失任何画线）；

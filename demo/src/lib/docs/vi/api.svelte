@@ -1341,12 +1341,19 @@ grid.getLayoutSession()?.saveAs('Majors')
 
 // The charts as one picture, each in its cell: a file, the print dialog, a PDF
 grid.screenshot('majors', { pixelRatio: 2 })
+await grid.copyScreenshot()                             // onto the clipboard, as a PNG
 const sheet = await grid.toPdf({ title: 'Majors' })   // light and at twice the pixels, as a chart's
 
 // Each chart as it is made (at the start, and when the grid grows)
 new ChartWidgetGrid(host, {
   onChartAdd: (widget, index) => widget.getChart().addIndicator('ema', { period: 21 }),
 })`}</code></pre>
+<p>
+  Nút máy ảnh trên thanh của grid làm các việc đó từ một menu: lưu ảnh các chart thành file ảnh,
+  chép ảnh, in, hoặc lưu thành PDF, đặt tên theo các mã đang hiện (<code>charts</code> khi có hơn
+  ba mã). <code>picture: false</code> bỏ nút này; nút cũng ẩn khi switch <code>screenshot</code>
+  của các chart tắt, và không có mục chép ảnh khi <code>copyImage</code> tắt.
+</p>
 <p>
   Đồng bộ crosshair hiển thị thời gian dưới con trỏ trên mọi chart; đồng bộ thời gian
   cuộn và zoom các chart khác theo chart đang thao tác; hình vẽ được copy

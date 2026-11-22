@@ -4451,7 +4451,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  margin-right: 4px;
+  margin-inline-end: 4px;
   font-size: var(--tcw-font-size-xs);
   font-weight: var(--tcw-weight-strong);
   letter-spacing: var(--tcw-label-tracking);
@@ -4475,6 +4475,9 @@
   display: grid;
   gap: 1px;
   background: var(--tcw-border);
+  /* The charts stand where their arrangement says ("one large on the left") in a grid written either way,
+     as a chart's own time runs left to right; each chart's widget has its own direction. */
+  direction: ltr;
 }
 .tcw-grid-cell {
   position: relative;

@@ -1397,7 +1397,8 @@ const workspace = new ChartWidgetGrid(document.getElementById('grid')!, {
   sync: { crosshair: true, interval: true },
 });
 workspace.getActiveWidget().getChart().addIndicator('rsi', { period: 14 });
-workspace.screenshot('majors', { pixelRatio: 2 }); // the charts as one picture, each in its cell; also toCanvas, screenshotBlob, print, toPdf
+workspace.screenshot('majors', { pixelRatio: 2 }); // the charts as one picture, each in its cell; also toCanvas, screenshotBlob, copyScreenshot, print, toPdf
+// The bar's camera button does these from a menu; `picture: false` leaves it out.
 ```
 
 ## Named layouts on your own server

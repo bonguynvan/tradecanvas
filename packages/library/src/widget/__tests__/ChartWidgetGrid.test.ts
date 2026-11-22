@@ -149,6 +149,24 @@ describe('ChartWidgetGrid', () => {
     expect(grid.getWidget(3)!.isFeatureOn('sidebar')).toBe(true);
   });
 
+  it('is written right to left in a language that is, its bar as its charts, unless told a direction', () => {
+    const direction = () => host.querySelector<HTMLElement>('.tcw-grid')!.dir;
+    make({ widget: { watchlist: false, locale: 'ar', messages: {} } });
+    expect(direction()).toBe('rtl');
+    grid.destroy();
+    host.replaceChildren();
+    make({ widget: { watchlist: false, locale: 'ar', messages: {}, dir: 'ltr' } });
+    expect(direction()).toBe('ltr');
+    grid.destroy();
+    host.replaceChildren();
+    make({ widget: { watchlist: false, dir: 'rtl' } });
+    expect(direction()).toBe('rtl');
+    grid.destroy();
+    host.replaceChildren();
+    make();
+    expect(direction()).toBe('ltr');
+  });
+
   it('puts away the charts it shrinks from, and brings them back as they were', async () => {
     make({ layout: '1x3', cells: [{ symbol: 'AAA' }, { symbol: 'BBB' }, { symbol: 'CCC' }] });
     charts()[2].drawings = ['kept'];
@@ -496,5 +514,155 @@ describe('ChartWidgetGrid — narrow (a phone)', () => {
     expect(tabs()[1].textContent).toBe('ZZZ · 5m');
     grid.setLayout('1x3');
     expect(tabs()).toHaveLength(3);
+  });
+});
+
+describe('the charts’ picture, from the grid’s bar', () => {
+  const pictureButton = () => host.querySelector<HTMLButtonElement>('.tcw-grid-bar .tcw-grid-picture');
+  const menuLabels = () => [...host.querySelectorAll<HTMLElement>('.tcw-context-menu:not([hidden]) .tcw-context-label')].map((l) => l.textContent);
+  const pick = (label: string) => {
+    pictureButton()!.click();
+    const item = [...host.querySelectorAll<HTMLElement>('.tcw-context-menu:not([hidden]) [role="menuitem"]')].find((i) => i.querySelector('.tcw-context-label')?.textContent === label);
+    item!.click();
+  };
+  const settle = () => new Promise((r) => setTimeout(r, 0));
+  const toasts = () => vi.spyOn(grid.getActiveWidget(), 'toast').mockImplementation(() => undefined);
+
+  it('has a button on the bar that opens a menu: save, copy, print, PDF', () => {
+    make();
+    const btn = pictureButton()!;
+    expect(btn.getAttribute('aria-label')).toBe('Picture of the charts');
+    expect(btn.title).toBe('Picture of the charts');
+    expect(btn.getAttribute('aria-haspopup')).toBe('menu');
+    btn.click();
+    expect(menuLabels()).toEqual(['Save image', 'Copy image', 'Print', 'Save as PDF']);
+    expect(btn.getAttribute('aria-expanded')).toBe('true');
+    // Pressed again, it shuts its menu.
+    btn.click();
+    expect(menuLabels()).toEqual([]);
+    expect(btn.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('saves the picture under the symbols the charts show', () => {
+    make();
+    const saved = vi.spyOn(grid, 'screenshot').mockImplementation(() => undefined);
+    pick('Save image');
+    expect(saved).toHaveBeenCalledWith('AAA-BBB');
+  });
+
+  it('names a picture of many symbols “charts”, and one symbol once', async () => {
+    make({ layout: '2x2' });
+    const saved = vi.spyOn(grid, 'screenshot').mockImplementation(() => undefined);
+    pick('Save image');
+    expect(saved).toHaveBeenLastCalledWith('charts');
+    for (const widget of grid.getWidgets()) await widget.setSymbol('BTC/USDT');
+    pick('Save image');
+    expect(saved).toHaveBeenLastCalledWith('BTC_USDT');
+  });
+
+  it('copies the picture, and says whether it could', async () => {
+    make();
+    const said = toasts();
+    const copied = vi.spyOn(grid, 'copyScreenshot').mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+    pick('Copy image');
+    await settle();
+    expect(said).toHaveBeenLastCalledWith('Chart image copied', 'info');
+    pick('Copy image');
+    await settle();
+    expect(copied).toHaveBeenCalledTimes(2);
+    expect(said).toHaveBeenLastCalledWith('Copy failed — image clipboard unavailable', 'error');
+  });
+
+  it('prints the charts under their symbols, and says when there was nothing to print', () => {
+    make();
+    const said = toasts();
+    const printed = vi.spyOn(grid, 'print').mockReturnValueOnce(true).mockReturnValueOnce(false);
+    pick('Print');
+    expect(printed).toHaveBeenLastCalledWith({ title: 'AAA, BBB' });
+    expect(said).not.toHaveBeenCalled();
+    pick('Print');
+    expect(said).toHaveBeenLastCalledWith('Could not print the chart', 'error');
+  });
+
+  it('saves the charts as a PDF named after their symbols, and says when none could be made', async () => {
+    make();
+    const said = toasts();
+    const links: { download: string }[] = [];
+    const clicked = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      links.push({ download: this.download });
+    });
+    const urls = vi.fn(() => 'blob:picture');
+    Object.assign(URL, { createObjectURL: urls, revokeObjectURL: vi.fn() });
+    const pdf = vi.spyOn(grid, 'toPdf')
+      .mockResolvedValueOnce(new Blob(['%PDF'], { type: 'application/pdf' }))
+      .mockResolvedValueOnce(null)
+      .mockRejectedValueOnce(new Error('too large'));
+    pick('Save as PDF');
+    await settle();
+    expect(pdf).toHaveBeenLastCalledWith({ title: 'AAA, BBB' });
+    expect(links).toEqual([{ download: 'AAA-BBB.pdf' }]);
+    expect(said).not.toHaveBeenCalled();
+    pick('Save as PDF');
+    await settle();
+    expect(said).toHaveBeenLastCalledWith('Could not make the PDF', 'error');
+    pick('Save as PDF');
+    await settle();
+    expect(said).toHaveBeenCalledTimes(2);
+    expect(links).toHaveLength(1);
+    clicked.mockRestore();
+  });
+
+  it('has no button when told so, and none on a grid with no bar', () => {
+    make({ picture: false });
+    expect(pictureButton()).toBeNull();
+    grid.destroy();
+    host.replaceChildren();
+    make({ bar: false });
+    expect(pictureButton()).toBeNull();
+  });
+
+  it('goes with the charts’ own pictures: no button while screenshots are switched off, no copying while that is', () => {
+    make({ widget: { watchlist: false, features: { screenshot: false } } });
+    expect(pictureButton()!.hidden).toBe(true);
+    grid.setFeatures({ screenshot: true, copyImage: false });
+    expect(pictureButton()!.hidden).toBe(false);
+    pictureButton()!.click();
+    expect(menuLabels()).toEqual(['Save image', 'Print', 'Save as PDF']);
+    pictureButton()!.click();
+    grid.setFeatures({ screenshot: false });
+    expect(pictureButton()!.hidden).toBe(true);
+  });
+
+  it('copies nothing where there is no clipboard for pictures, or no picture', async () => {
+    make();
+    const drawn = vi.spyOn(grid, 'toCanvas');
+    expect(await grid.copyScreenshot()).toBe(false);
+    // Nothing is drawn where there is no clipboard to put it on.
+    expect(drawn).not.toHaveBeenCalled();
+    class Item {
+      constructor(readonly parts: Record<string, Promise<Blob>>) {}
+    }
+    const written: Item[] = [];
+    // As a browser's clipboard: the write fails when the picture it was promised comes to nothing.
+    const write = async (items: Item[]) => {
+      for (const item of items) await item.parts['image/png'];
+      written.push(...items);
+    };
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { write } });
+    (globalThis as { ClipboardItem?: unknown }).ClipboardItem = Item;
+    try {
+      drawn.mockReturnValueOnce(null);
+      expect(await grid.copyScreenshot()).toBe(false);
+      const canvas = document.createElement('canvas');
+      canvas.toBlob = (done: BlobCallback) => done(new Blob(['png'], { type: 'image/png' }));
+      drawn.mockReturnValueOnce(canvas);
+      expect(await grid.copyScreenshot({ pixelRatio: 2 })).toBe(true);
+      expect(drawn).toHaveBeenLastCalledWith({ pixelRatio: 2 });
+      expect(written).toHaveLength(1);
+      expect((await written[0].parts['image/png']).type).toBe('image/png');
+    } finally {
+      delete (globalThis as { ClipboardItem?: unknown }).ClipboardItem;
+      Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+    }
   });
 });

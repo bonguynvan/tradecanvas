@@ -1,14 +1,15 @@
 import type { ChartImageOptions, ChartPdfOptions, ChartPrintOptions, ChartStyleOverrides, ChartStyleOverridesPatch, DataAdapter, DrawingState, Theme, ThemeName, VisibleRangeChangePayload } from '@tradecanvas/commons';
 import { DARK_THEME, LIGHT_THEME, tickerOf } from '@tradecanvas/commons';
-import { canvasBlob, canvasDataURL, canvasesToPdf, downloadImage, imageFileName, printCanvas } from '@tradecanvas/core';
+import { canvasBlob, canvasDataURL, canvasesToPdf, copyImage, downloadImage, imageFileName, printCanvas } from '@tradecanvas/core';
 import { ChartWidget } from './ChartWidget.js';
 import type { ChartWidgetOptions, WidgetLayoutsOptions } from './types.js';
 import { readWidgetFeatures, type WidgetFeatures } from './widgetFeatures.js';
 import { GRID_LAYOUT_SHAPES, GRID_LAYOUTS, gridAreas, gridChartCount, isGridLayout, placeGridCell, type GridLayout, type GridShape } from '../grid/gridShapes.js';
 import { GridLayoutPicker } from './GridLayoutPicker.js';
+import { GridPictureButton } from './GridPictureButton.js';
 import { gridPicture } from './gridPicture.js';
 import { injectWidgetStyles, removeWidgetStyles } from './WidgetStyles.js';
-import { createTranslator, fill, resolveMessages, type MessageKey, type Translator } from './i18n.js';
+import { createTranslator, fill, resolveMessages, writingDirection, type MessageKey, type Translator } from './i18n.js';
 import { createIcon } from './icons.js';
 import { escapeHtml as esc } from './escapeHtml.js';
 import { WidgetLayoutsUI } from './WidgetLayoutsUI.js';
@@ -63,8 +64,14 @@ export interface ChartWidgetGridOptions {
   sync?: Partial<WidgetGridSync>;
   /** Named layouts of the whole grid (arrangement, sync and every chart). Default `true`. */
   layouts?: boolean | WidgetLayoutsOptions;
-  /** The bar above the charts: arrangement, sync, layouts. Default `true`. */
+  /** The bar above the charts: arrangement, sync, the charts' picture, layouts. Default `true`. */
   bar?: boolean;
+  /**
+   * The bar's picture button: the charts together saved as an image, copied,
+   * printed or saved as a PDF. Default `true`. It is hidden as well while
+   * the charts' `screenshot` switch is off.
+   */
+  picture?: boolean;
   /** The chart in use changed (pressed, or the grid shrank). */
   onActiveChange?: (index: number, widget: ChartWidget) => void;
   /** A chart was made: at the start, and when the grid grows. Feed it data, add indicators… */
@@ -139,6 +146,8 @@ export class ChartWidgetGrid {
   private drawingSource: Cell | null = null;
   /** The bar's arrangement button and its menu. */
   private layoutPicker: GridLayoutPicker | null = null;
+  /** The bar's picture button and its menu. */
+  private pictureButton: GridPictureButton | null = null;
   private syncButtons = new Map<keyof WidgetGridSync, HTMLButtonElement>();
   private layoutsButton: HTMLButtonElement | null = null;
   /** A tab per chart: a narrow grid (a phone) shows one chart at a time. */
@@ -165,6 +174,8 @@ export class ChartWidgetGrid {
 
     this.root = document.createElement('div');
     this.root.className = 'tcw-root tcw-grid';
+    // The bar and its menus are written the way the charts are.
+    this.root.dir = writingDirection(options.widget?.dir, options.widget?.locale);
     this.root.dataset.tcwTheme = options.widget?.theme === 'light' ? 'light' : 'dark';
     applyWidgetUI(this.root, resolveWidgetUI(options.widget?.ui), { variables: options.widget?.ui !== undefined });
     if (options.bar !== false) this.root.appendChild(this.buildBar());
@@ -178,6 +189,8 @@ export class ChartWidgetGrid {
     this.applyShape();
     for (let i = 0; i < this.shapeCount(); i++) this.cells.push(this.createCell(i));
     this.markActive();
+    // Now that there are charts to say whether their pictures are switched on.
+    this.pictureButton?.render();
     // The bar takes the charts' theme (a Theme object can be dark or light).
     const theme = this.cells[0]?.el.querySelector<HTMLElement>('.tcw-root')?.dataset.tcwTheme;
     if (theme) this.root.dataset.tcwTheme = theme;
@@ -266,6 +279,19 @@ export class ChartWidgetGrid {
   screenshot(filename = 'charts', options: ChartImageOptions = {}): void {
     const url = this.screenshotDataURL(options);
     if (url) downloadImage(url, imageFileName(filename, options.type ?? 'png'));
+  }
+
+  /**
+   * Copies the grid's picture to the clipboard, as a PNG (`toCanvas`).
+   * False where the browser has no clipboard for pictures or refuses, and
+   * when there was no picture.
+   */
+  async copyScreenshot(options: Omit<ChartImageOptions, 'type' | 'quality'> = {}): Promise<boolean> {
+    // Nothing is drawn where there is no clipboard to put it on.
+    const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
+    if (!clipboard?.write || !(globalThis as { ClipboardItem?: unknown }).ClipboardItem) return false;
+    const canvas = this.toCanvas(options);
+    return copyImage(canvas ? canvasBlob(canvas) : Promise.resolve(null));
   }
 
   /**
@@ -380,6 +406,7 @@ export class ChartWidgetGrid {
     const read = readWidgetFeatures(patch);
     for (const c of this.cells) c.widget.setFeatures(read);
     this.featureSwitches = { ...this.featureSwitches, ...read };
+    this.pictureButton?.render();
   }
 
   /** Every chart's theme. */
@@ -454,6 +481,7 @@ export class ChartWidgetGrid {
     this.session?.destroy();
     this.layoutsUI?.destroy();
     this.layoutPicker?.destroy();
+    this.pictureButton?.destroy();
     for (const c of this.cells) this.destroyCell(c);
     this.cells = [];
     this.root.remove();
@@ -768,6 +796,20 @@ export class ChartWidgetGrid {
     spacer.className = 'tcw-toolbar-spacer';
     bar.append(this.sep(), sync, spacer);
 
+    if (this.options.picture !== false) {
+      this.pictureButton = new GridPictureButton({
+        root: this.root,
+        t: this.t,
+        symbols: () => [...new Set(this.picturedCells().map((c) => c.widget.getSymbol()))],
+        isOn: (feature) => this.cells.some((c) => c.widget.isFeatureOn(feature)),
+        screenshot: (filename) => this.screenshot(filename),
+        copyScreenshot: () => this.copyScreenshot(),
+        print: (options) => this.print(options),
+        toPdf: (options) => this.toPdf(options),
+        toast: (message, kind) => this.toast(message, kind),
+      });
+      bar.appendChild(this.pictureButton.button);
+    }
     if (this.options.layouts !== false) {
       this.layoutsButton = document.createElement('button');
       this.layoutsButton.type = 'button';
@@ -780,6 +822,15 @@ export class ChartWidgetGrid {
     }
     this.renderBar();
     return bar;
+  }
+
+  /** The charts a picture shows: those with room on the page (a narrow grid shows one); all of them where the page is not laid out. */
+  private picturedCells(): Cell[] {
+    const shown = this.cells.filter((c) => {
+      const box = c.el.getBoundingClientRect();
+      return box.width > 0 && box.height > 0;
+    });
+    return shown.length > 0 ? shown : this.cells;
   }
 
   private sep(): HTMLSpanElement {
