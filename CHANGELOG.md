@@ -38,7 +38,7 @@ The `3.0` branch. These move under the version's own heading when it is released
 - **A bracket has a size** (`@tradecanvas/chart`, `@tradecanvas/core`): `chart.startBracket(side, entry, size)` takes `{ quantity }`, or `{ risk, quantityStep, multiplier }` for the quantity that loses `risk` at the stop, which follows the lines as they are dragged. The quantity is written on the entry's tag and sent with `bracketPlace`, so the bracket reaches a connected adapter as an order; one with no quantity is not confirmed then, and stays to be given one (`executionError`, `reason: 'noQuantity'`). `chart.setBracketSize(size)` sizes it anew while it is placed, `chart.getBracket()` reads it, and `bracketQuantity(bracket, size)` is the sum on its own.
 - **The widget's bracket bar has a quantity field** (`@tradecanvas/chart`): it starts at the quantity last typed, else at the market's lot, steps by the lot, and Place is off while it holds no quantity. `widget.startBracket(side, size)` takes a size; a bracket sized by its risk has no field.
 
-## Unreleased
+## 2.17.0 (2026-11-22)
 
 ### Chart
 
