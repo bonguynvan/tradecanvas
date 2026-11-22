@@ -6176,6 +6176,7 @@
     "tradeButtons",
     "bracketOrders",
     "depthLadder",
+    "tape",
     "layouts",
     "indicatorTemplates",
     "compare",
@@ -6233,6 +6234,7 @@
     "dock.dataWindow",
     "dock.symbolInfo",
     "dock.depthLadder",
+    "dock.tape",
     "statusBar.range",
     "statusBar.goToDate",
     "statusBar.market",
@@ -6692,6 +6694,11 @@
         "type": "boolean",
         "doc": "The depth-of-market ladder, a click-to-trade order book on a page of the dock. Off until this is `true` (with trading on); its switch only hides it, so `features: { depthLadder: true }` makes none. Feed it with `widget.setDepth`, open it with `widget.openPanel('depthLadder')`, the Trade menu or its rail button. Clicks emit `orderPlace` intents.",
         "kind": "boolean"
+      },
+      {
+        "name": "tape",
+        "type": "boolean | TapeOptions",
+        "doc": "The tape (time and sales), a page of the dock: the trades of the chart's symbol as they are made, newest on top, each with its time, price and size in the colour of who took it. Off until this is `true` (its switch only hides it), or the settings it starts with."
       },
       {
         "name": "accountPanel",

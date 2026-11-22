@@ -297,6 +297,31 @@ chart.clearFootprint()                                // 別の系列の行を�
   <code>chart.getFootprint()</code> が返す行から描きます。
 </p>
 
+<h2 id="tape">歩み値と、約定そのもの</h2>
+<p>
+  <code>chart.followTrades()</code> は、返す関数が呼ばれるまで、チャートのシンボルの約定を追います：
+  フィードの直近の約定、続いてライブの約定を、<code>trades</code> イベントとして伝えます。フォローする側がいくつあっても
+  フィードに求めるのは一度だけで、フットプリントを表示しているチャートは自分で追います。<code>chart.addTrades()</code>
+  で渡した約定も同じように伝えられます。フィードの約定が二度伝えられることはありません：同じシンボルの別の時間足でも、
+  再接続のあとでも同じで、そのときは取りこぼした分だけが、それより後の約定が先に伝えられていても伝えられます。
+  <code>chart.getTrades()</code> は、最近伝えられた約定を最大二千件まで返します。伝えられたあとに来たリスナーのためのものです。
+</p>
+<pre><code>{`const stop = chart.followTrades()
+chart.on('trades', (e) => {
+  // e.payload.trades：古い順
+  // e.payload.recent：フィードの直近の約定で、たった今の約定ではない
+  for (const trade of e.payload.trades) log(trade.time, trade.price, trade.volume, trade.side)
+})
+stop()   // 誰も追わなくなり、チャートがフットプリントでもなければ、フィードは解放される`}</code></pre>
+<p>
+  ウィジェットでは、<code>tape: true</code> で歩み値（time and sales）がドックに加わります：最新の約定が一番上に並び、
+  それぞれに時刻、価格、数量があり、価格は取った側の色になります。一覧の上のバーは、表示中の行のうち買い手と売り手が
+  それぞれどれだけ取ったかを示し、通常の大きさの十倍の約定は目立つように表示され、最小数量に満たない約定は省けます
+  （<code>{`tape: { minSize: 0.5 }`}</code>、またはパネルに入力）。ウィジェットがフィードの約定を追うのは、
+  歩み値が開いている間だけです。<code>widget.openPanel('tape')</code> で開きます。スイッチは
+  <code>tape</code> と <code>dock.tape</code> です。
+</p>
+
 <h2>市場の状態とニュース</h2>
 <p>
   <code>marketStatus(info, now)</code> は、取引所のタイムゾーンでの取引時間（夏時間の切り替えを含む）から、ある時点で

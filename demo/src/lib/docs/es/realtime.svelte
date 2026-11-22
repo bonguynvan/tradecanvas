@@ -319,6 +319,34 @@ chart.clearFootprint()                                // antes de las filas de o
   como las da <code>chart.getFootprint()</code>.
 </p>
 
+<h2 id="tape">La cinta, y las operaciones mismas</h2>
+<p>
+  <code>chart.followTrades()</code> sigue las operaciones del símbolo del gráfico hasta que se llama a la
+  función que devuelve: las operaciones recientes del feed y después las que llegan en vivo, como eventos
+  <code>trades</code>. Al feed se le pide una sola vez sea cual sea el número de seguidores, y un gráfico que
+  muestra un footprint las sigue por sí mismo. Las operaciones dadas con <code>chart.addTrades()</code> se
+  comunican del mismo modo. Ninguna operación del feed se comunica dos veces: ni en otro marco temporal del
+  símbolo, ni tras una reconexión, cuando solo se comunican las que se perdieron, aunque otras
+  posteriores se hayan comunicado antes. <code>chart.getTrades()</code> da las operaciones comunicadas
+  últimamente, hasta dos mil, para un oyente que llega después de que se comunicaron.
+</p>
+<pre><code>{`const stop = chart.followTrades()
+chart.on('trades', (e) => {
+  // e.payload.trades: de la más antigua a la más nueva
+  // e.payload.recent: las operaciones recientes del feed, no operaciones hechas ahora mismo
+  for (const trade of e.payload.trades) log(trade.time, trade.price, trade.volume, trade.side)
+})
+stop()   // el feed se suelta cuando nadie lo sigue y el gráfico no es un footprint`}</code></pre>
+<p>
+  En el widget, <code>tape: true</code> añade la cinta (time and sales) al dock: las operaciones más nuevas
+  arriba, cada una con su hora, su precio y su tamaño, el precio en el color de quien la tomó. Una barra sobre
+  la lista dice cuánto de las filas tomaron los compradores y cuánto los vendedores, una operación de diez veces
+  el tamaño habitual destaca, y las operaciones por debajo de un tamaño mínimo pueden dejarse fuera
+  (<code>{`tape: { minSize: 0.5 }`}</code>, o escrito en el panel). El widget sigue las operaciones del feed
+  solo mientras la cinta está abierta. <code>widget.openPanel('tape')</code> la abre; sus interruptores son
+  <code>tape</code> y <code>dock.tape</code>.
+</p>
+
 <h2>Estado del mercado y noticias</h2>
 <p>
   <code>marketStatus(info, now)</code> indica si el mercado de un símbolo está abierto en un momento dado, a partir de su

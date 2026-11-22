@@ -476,6 +476,38 @@ before another series' rows; a connected chart starts again by itself on another
 `chart.getFootprint()` gives copies. With no `rowSize`, trades given before the bars are kept until the
 bars say the price a row is worked out from.
 
+## A tape (time and sales), and the trades themselves
+
+`tape: true` adds the tape to the widget's dock: the trades of the symbol newest on top, each with its
+time, price and size in the colour of who took it. The widget follows the feed's trades (a feed with
+`fetchTrades` and `subscribeTrades`) only while the tape is open. Without the widget,
+`chart.followTrades()` and the `trades` event give the trades themselves.
+
+```ts
+import { BinanceAdapter, type Trade } from '@tradecanvas/chart';
+import { ChartWidget } from '@tradecanvas/chart/widget';
+
+const widget = new ChartWidget(document.getElementById('chart')!, {
+  symbol: 'BTCUSDT',
+  timeframe: '1m',
+  adapter: new BinanceAdapter(),
+  tape: { minSize: 0.5 }, // or tape: true; minSize leaves out the smaller trades
+});
+widget.openPanel('tape'); // or its rail button; false when the widget has no tape
+
+// The trades themselves: the feed's recent ones (recent: true), then its live ones, none told twice.
+declare function show(trade: Trade): void;
+const chart = widget.getChart();
+const stop = chart.followTrades(); // the feed is asked once, however many follow
+chart.on('trades', (e) => {
+  for (const trade of e.payload.trades) show(trade); // { time, price, volume, side?: 'buy' | 'sell' }
+});
+stop(); // let go of the feed (a footprint chart keeps following by itself)
+```
+
+Trades given with `chart.addTrades(trades)` are told as `trades` events too, and listed on the tape.
+`chart.getTrades()` gives the trades told lately (up to 2,000), for a listener that comes after them.
+
 ## A Vietnamese stock, and VN30 futures
 
 HOSE's rules on the chart: steps by price band, the day's ceiling and floor,

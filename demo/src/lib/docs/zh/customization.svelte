@@ -60,7 +60,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid 中的每个图表`}</co
 <p>
   开关只负责显示和隐藏组件自身的部分。要禁止图表本身的某件事——绘图、交易、缩放、某个周期——请使用图表的 features
   （<code>chartOptions.features</code>）。会带来数据或存储的部分仍然是选项：<code>trading</code>、<code>watchlist</code>、
-  <code>depthLadder</code> 和 <code>layouts</code> 决定它们是否存在，开关则可以隐藏它们的按钮。打开开关不会添加这些部分：只写 <code>features: &#123; depthLadder: true &#125;</code> 不会创建盘口深度面板。
+  <code>depthLadder</code>、<code>tape</code> 和 <code>layouts</code> 决定它们是否存在，开关则可以隐藏它们的按钮。打开开关不会添加这些部分：只写 <code>features: &#123; depthLadder: true &#125;</code> 不会创建盘口深度面板。
 </p>
 <p>以前的开/关选项就是这些开关，用法不变：</p>
 <table>
@@ -85,7 +85,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid 中的每个图表`}</co
       <code>indicatorSettings</code> <code>drawingSettings</code> <code>dataWindow</code> <code>commandPalette</code>
       <code>hotkeySheet</code> <code>goToDate</code> <code>replay</code> <code>screenshot</code> <code>copyImage</code>
       <code>shareView</code> <code>autoFib</code> <code>themeToggle</code> <code>fullscreen</code> <code>accountPanel</code>
-      <code>orderTicket</code> <code>tradeButtons</code> <code>bracketOrders</code> <code>depthLadder</code> <code>layouts</code>
+      <code>orderTicket</code> <code>tradeButtons</code> <code>bracketOrders</code> <code>depthLadder</code> <code>tape</code> <code>layouts</code>
       <code>indicatorTemplates</code> <code>compare</code> <code>indicatorLegend</code> <code>navigation</code>
       <code>customTimeframes</code> <code>marks</code> <code>intervalTyping</code> <code>symbolTyping</code> <code>dragDropImport</code> <code>hotkeys</code>
       <code>toasts</code> <code>favoritesBar</code>
@@ -101,7 +101,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid 中的每个图表`}</co
     </td></tr>
     <tr><td>停靠区</td><td>
       <code>dock.watchlist</code> <code>dock.alerts</code> <code>dock.objectTree</code> <code>dock.dataWindow</code>
-      <code>dock.symbolInfo</code> <code>dock.depthLadder</code>
+      <code>dock.symbolInfo</code> <code>dock.depthLadder</code> <code>dock.tape</code>
     </td></tr>
     <tr><td>绘图侧栏</td><td>
       <code>sidebar.cursor</code> <code>sidebar.favorites</code> <code>sidebar.lines</code> <code>sidebar.fibonacci</code>

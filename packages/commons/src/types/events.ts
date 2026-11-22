@@ -1,5 +1,5 @@
 import type { OHLCBar, TimeFrame } from './ohlc.js';
-import type { ConnectionInfo } from './realtime.js';
+import type { ConnectionInfo, Trade } from './realtime.js';
 import type { Point } from './rendering.js';
 import type { IndicatorValue } from './indicator.js';
 import type { DrawingToolType } from './drawing.js';
@@ -53,6 +53,7 @@ export type ChartEventType =
   | 'positionsChange'
   | 'accountChange'
   | 'marginCall'
+  | 'trades'
   | 'executionChange'
   | 'bidAskChange'
   | 'executionError'
@@ -469,6 +470,15 @@ export interface ChartEventMap {
   accountChange: { account: AccountSummary | null };
   /** The account was warned: its equity fell under the part of its margin it is to keep (the execution adapter's `marginCall`). */
   marginCall: MarginCall;
+  /**
+   * Trades of the chart's symbol, oldest first: the feed's while they are
+   * followed (`chart.followTrades()`, or a footprint chart), and those given
+   * with `chart.addTrades()`. `recent`: the feed's recent trades, told when
+   * it starts being followed and after a reconnect, not trades made just now.
+   * The feed's recent trades are told once, however often it is asked for
+   * them; `chart.getTrades()` has the ones told before a listener came.
+   */
+  trades: { trades: Trade[]; recent: boolean };
   /** The reverse button on a position's tag was pressed. */
   positionReverse: { positionId: string };
   /** A right-click off any drawing, where it landed: only while something listens. */

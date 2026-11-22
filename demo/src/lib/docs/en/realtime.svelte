@@ -312,6 +312,33 @@ chart.clearFootprint()                                // before another series' 
   <code>chart.getFootprint()</code> gives them.
 </p>
 
+<h2 id="tape">The tape, and the trades themselves</h2>
+<p>
+  <code>chart.followTrades()</code> follows the trades of the chart's symbol until the function it
+  returns is called: the feed's recent trades, then its live ones, as <code>trades</code> events. The
+  feed is asked once for any number of followers, and a chart that shows a footprint follows them by
+  itself. Trades given with <code>chart.addTrades()</code> are told the same way. No trade of the
+  feed's is told twice: not on another timeframe of the symbol, nor after a reconnect, when only the
+  ones missed are, though later ones were told first. <code>chart.getTrades()</code> gives the trades told
+  lately, up to two thousand, for a listener that comes after they were told.
+</p>
+<pre><code>{`const stop = chart.followTrades()
+chart.on('trades', (e) => {
+  // e.payload.trades: oldest first
+  // e.payload.recent: the feed's recent trades, not trades made just now
+  for (const trade of e.payload.trades) log(trade.time, trade.price, trade.volume, trade.side)
+})
+stop()   // the feed is let go of once no one follows it and the chart is no footprint`}</code></pre>
+<p>
+  In the widget, <code>tape: true</code> adds the tape (time and sales) to the dock: the trades newest
+  on top, each with its time, its price and its size, the price in the colour of who took it. A bar
+  over the list says how much of the rows the buyers took and how much the sellers, a trade ten times
+  the usual size stands out, and trades under a least size can be left out
+  (<code>{`tape: { minSize: 0.5 }`}</code>, or typed in the panel). The widget follows the feed's trades
+  only while the tape is open. <code>widget.openPanel('tape')</code> opens it; its switches are
+  <code>tape</code> and <code>dock.tape</code>.
+</p>
+
 <h2>Market status and news</h2>
 <p>
   <code>marketStatus(info, now)</code> tells whether a symbol's market is open at a moment, from its

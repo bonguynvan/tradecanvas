@@ -309,6 +309,33 @@ chart.clearFootprint()                                // trước khi đưa hàn
   <code>footprint</code>, là các hàng đúng như <code>chart.getFootprint()</code> trả về.
 </p>
 
+<h2 id="tape">Tape, và chính các trade</h2>
+<p>
+  <code>chart.followTrades()</code> theo dõi các trade của symbol trên chart cho tới khi hàm nó trả về được gọi:
+  các trade gần nhất của feed, rồi các trade trực tiếp, dưới dạng sự kiện <code>trades</code>. Feed chỉ được hỏi
+  một lần dù có bao nhiêu bên theo dõi, và chart đang hiển thị footprint thì tự theo dõi. Trade đưa vào bằng
+  <code>chart.addTrades()</code> cũng được báo theo cách đó. Không trade nào của feed bị báo hai lần: không khi
+  đổi sang timeframe khác của cùng symbol, cũng không sau khi kết nối lại, lúc đó chỉ những trade bị lỡ mới được báo,
+  dù các trade sau chúng đã được báo trước. <code>chart.getTrades()</code> trả về các trade vừa được báo,
+  tối đa hai nghìn trade, cho bên lắng nghe đến sau khi chúng đã được báo.
+</p>
+<pre><code>{`const stop = chart.followTrades()
+chart.on('trades', (e) => {
+  // e.payload.trades: cũ nhất trước
+  // e.payload.recent: các trade gần nhất của feed, không phải trade vừa khớp
+  for (const trade of e.payload.trades) log(trade.time, trade.price, trade.volume, trade.side)
+})
+stop()   // feed được thả ra khi không còn ai theo dõi và chart không phải footprint`}</code></pre>
+<p>
+  Trong widget, <code>tape: true</code> thêm tape (time and sales) vào dock: các trade mới nhất ở trên cùng,
+  mỗi trade có thời gian, giá và khối lượng, giá mang màu của bên chủ động khớp. Một thanh phía trên danh sách
+  cho biết bên mua và bên bán mỗi bên lấy bao nhiêu trong các hàng đang hiện, trade lớn gấp mười lần cỡ thông
+  thường được làm nổi, và có thể bỏ các trade nhỏ hơn một cỡ tối thiểu
+  (<code>{`tape: { minSize: 0.5 }`}</code>, hoặc gõ ngay trong panel). Widget chỉ theo dõi trade của feed khi
+  tape đang mở. <code>widget.openPanel('tape')</code> mở nó; các công tắc của nó là
+  <code>tape</code> và <code>dock.tape</code>.
+</p>
+
 <h2>Trạng thái thị trường và tin tức</h2>
 <p>
   <code>marketStatus(info, now)</code> cho biết thị trường của một mã có mở cửa tại một thời điểm hay không, dựa trên

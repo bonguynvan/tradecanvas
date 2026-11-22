@@ -28,6 +28,8 @@
     <tr><td><code>updateLastBar(bar)</code></td><td>현재 형성 중인 봉을 변경합니다.</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>틱을 마지막 봉에 병합합니다.</td></tr>
     <tr><td><code>addTrades(trades)</code></td><td>체결을 <a href={href('/docs/realtime#footprint')}>풋프린트</a>에 넣습니다: 각 체결을 그 시각의 봉과 그 가격의 행에, 가져간 쪽으로 계산합니다.</td></tr>
+    <tr><td><code>followTrades()</code></td><td>피드의 체결을, 최근 체결에 이어 실시간 체결을, 돌려주는 함수가 호출될 때까지 <code>trades</code> 이벤트로 따라갑니다. <a href={href('/docs/realtime#tape')}>체결 내역</a>을 참고하세요.</td></tr>
+    <tr><td><code>getTrades()</code></td><td>최근에 알린 체결을 오래된 것부터: 피드의 체결과 직접 넣은 체결. 체결이 알려진 뒤에 온 리스너를 위한 것입니다.</td></tr>
     <tr><td><code>setFootprint(bars)</code> / <code>getFootprint(time?)</code> / <code>clearFootprint()</code></td><td>풋프린트의 행을 봉 단위로: 직접 넣기, 다시 읽기(한 봉의 것, 또는 모든 봉의 것), 지우기.</td></tr>
     <tr><td><code>updateBar(bar)</code></td><td>불러온 봉을 고칩니다. 시리즈 어디에 있든 시각이 같은 봉입니다. 보는 위치는 그대로이며, 그 시각의 봉이 없으면 false를 돌려줍니다.</td></tr>
     <tr><td><code>getData()</code></td><td>원본 OHLC 시리즈를 읽습니다.</td></tr>
@@ -576,6 +578,7 @@ chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('marginCall', e => /* { marginLevel, level, equity, marginUsed }: 계좌가 증거금 경고를 받음 */)
+chart.on('trades', e => /* { trades, recent }: 심볼의 체결. 따라가는 동안(followTrades, 풋프린트) 또는 넣었을 때(addTrades) */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* 그림, 지표, 알림, 차트 유형 또는 테마가 바뀌었을 수 있음 */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
@@ -702,7 +705,7 @@ widget.destroy()`}</code></pre>
   <code>null</code>이 돌아옵니다. <code>onPanelChange</code> 옵션은 어떻게 바뀌었든(레일, 닫기 버튼, 여러분의 코드,
   위젯이 좁아짐) 열린 패널의 id 또는 <code>null</code>을 받습니다.
 </p>
-<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder', or a page's id; false if not there
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder' | 'tape', or a page's id; false if not there
 widget.getOpenPanel()           // the panel open, or null
 widget.closePanel()
 

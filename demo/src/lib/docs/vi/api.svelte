@@ -28,6 +28,8 @@
     <tr><td><code>updateLastBar(bar)</code></td><td>Cập nhật nến đang hình thành.</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>Gộp một tick vào nến cuối.</td></tr>
     <tr><td><code>addTrades(trades)</code></td><td>Đưa trade vào <a href={href('/docs/realtime#footprint')}>footprint</a>: mỗi trade vào nến theo thời gian của nó và hàng giá theo giá của nó, ở bên đã chủ động khớp.</td></tr>
+    <tr><td><code>followTrades()</code></td><td>Theo dõi các trade của feed, các trade gần nhất rồi các trade trực tiếp, dưới dạng sự kiện <code>trades</code>, cho tới khi hàm nó trả về được gọi. Xem <a href={href('/docs/realtime#tape')}>tape</a>.</td></tr>
+    <tr><td><code>getTrades()</code></td><td>Các trade vừa được báo, cũ nhất trước: của feed và các trade đưa vào bằng tay. Dành cho bên lắng nghe đến sau khi trade đã được báo.</td></tr>
     <tr><td><code>setFootprint(bars)</code> / <code>getFootprint(time?)</code> / <code>clearFootprint()</code></td><td>Các hàng giá của footprint, từng nến một: đưa vào bằng tay, đọc lại (của một nến, hoặc của mọi nến), xoá đi.</td></tr>
     <tr><td><code>updateBar(bar)</code></td><td>Sửa một nến đã nạp: nến có cùng time, ở bất kỳ vị trí nào trong chuỗi. View giữ nguyên; trả về false khi không có nến đã nạp nào có time đó.</td></tr>
     <tr><td><code>getData()</code></td><td>Đọc chuỗi OHLC gốc.</td></tr>
@@ -597,6 +599,7 @@ chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('marginCall', e => /* { marginLevel, level, equity, marginUsed }: the account was warned of its margin */)
+chart.on('trades', e => /* { trades, recent }: các trade của symbol, khi chúng được theo dõi (followTrades, footprint) hoặc đưa vào (addTrades) */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* drawings, indicators, alerts, chart type or theme may have changed */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
@@ -731,7 +734,7 @@ widget.destroy()`}</code></pre>
   nhận id của panel đang mở, hoặc <code>null</code>, dù thay đổi đến từ đâu: rail, nút đóng, code của bạn,
   hay widget chuyển sang hẹp.
 </p>
-<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder', or a page's id; false if not there
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder' | 'tape', or a page's id; false if not there
 widget.getOpenPanel()           // the panel open, or null
 widget.closePanel()
 

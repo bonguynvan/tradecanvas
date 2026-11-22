@@ -283,6 +283,29 @@ chart.clearFootprint()                                // 在传入另一序列�
   即 <code>chart.getFootprint()</code> 返回的各行。
 </p>
 
+<h2 id="tape">逐笔成交，以及成交本身</h2>
+<p>
+  <code>chart.followTrades()</code> 会跟随图表品种的成交，直到调用它返回的函数为止：先是数据源最近的成交，
+  然后是实时成交，以 <code>trades</code> 事件发出。无论有多少个跟随者，数据源只被请求一次；显示足迹图的图表会自行跟随。
+  用 <code>chart.addTrades()</code> 传入的成交也以同样方式发出。数据源的成交不会被发出两次：切换到同一品种的另一周期时不会，
+  重新连接之后也不会，那时只发出错过的那些，即使更晚的成交已先发出。
+  <code>chart.getTrades()</code> 返回最近发出的成交，最多两千笔，供在它们发出之后才来的监听者使用。
+</p>
+<pre><code>{`const stop = chart.followTrades()
+chart.on('trades', (e) => {
+  // e.payload.trades：最早的在前
+  // e.payload.recent：数据源最近的成交，而不是刚刚发生的成交
+  for (const trade of e.payload.trades) log(trade.time, trade.price, trade.volume, trade.side)
+})
+stop()   // 当不再有人跟随且图表不是足迹图时，数据源被释放`}</code></pre>
+<p>
+  在组件中，<code>tape: true</code> 会把逐笔成交（time and sales）加入停靠栏：最新的成交在最上面，
+  每笔带有时间、价格和数量，价格的颜色表示主动成交的一方。列表上方的一条横条显示所列各行中买方和卖方各占多少，
+  达到通常大小十倍的成交会被突出显示，小于最小数量的成交可以不列出
+  （<code>{`tape: { minSize: 0.5 }`}</code>，或直接在面板中输入）。只有在逐笔成交面板打开时，组件才跟随数据源的成交。
+  <code>widget.openPanel('tape')</code> 可打开它；它的开关是 <code>tape</code> 和 <code>dock.tape</code>。
+</p>
+
 <h2>市场状态与新闻</h2>
 <p>
   <code>marketStatus(info, now)</code> 根据品种在其交易所时区内的交易时段（包括夏令时切换），判断某一时刻市场是否开放，

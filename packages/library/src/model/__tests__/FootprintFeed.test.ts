@@ -54,53 +54,43 @@ describe('which bar a trade is of', () => {
 });
 
 describe('FootprintFeed', () => {
-  it('holds the live trades until the recent ones are in, then counts those made after them', () => {
-    const { feed, store, bought } = setup();
-    feed.live([trade(T0 + 2 * MIN + 10, 100, 4), trade(T0 + 2 * MIN + 20, 100, 8)]);
-    expect(store.bars()).toEqual([]);
-    // The feed's recent trades end at +2m10: the live one of that moment is the same trade.
-    feed.history([trade(T0 + MIN + 1, 100, 1), trade(T0 + 2 * MIN + 10, 100, 4)], 1000);
+  it('counts the trades it is given, each in the bar of its time', () => {
+    const { feed, bought } = setup();
+    expect(feed.recent([trade(T0 + MIN + 1, 100, 1), trade(T0 + 2 * MIN + 10, 100, 4)], null, null)).toBe(true);
     expect(bought(T0 + MIN)).toBe(1);
-    expect(bought(T0 + 2 * MIN)).toBe(12);
-    // From then on live trades go straight in.
-    feed.live([trade(T0 + 2 * MIN + 30, 100, 2)]);
-    expect(bought(T0 + 2 * MIN)).toBe(14);
+    expect(bought(T0 + 2 * MIN)).toBe(4);
+    expect(feed.live([trade(T0 + 2 * MIN + 30, 100, 2)])).toBe(true);
+    expect(bought(T0 + 2 * MIN)).toBe(6);
   });
 
-  it('leaves out the bar the recent trades began part way through, when the feed had more than it gave', () => {
+  it('leaves out the bar the recent trades began part way through, its live trades too', () => {
     const { feed, store, bought } = setup();
-    feed.history([trade(T0 + MIN + 40_000, 100, 5), trade(T0 + MIN + 50_000, 100, 5), trade(T0 + 2 * MIN + 1, 100, 3)], 3);
+    // The feed had more than it gave: its list begins at +1m40, part way through that bar.
+    feed.recent([trade(T0 + MIN + 40_000, 100, 5), trade(T0 + MIN + 50_000, 100, 5), trade(T0 + 2 * MIN + 1, 100, 3)], T0 + MIN + 40_000, null);
     expect(store.get(T0 + MIN)).toBeNull();
     expect(bought(T0 + 2 * MIN)).toBe(3);
+    // Part of a bar is no footprint of it: a live trade of that bar is left out as well.
+    feed.live([trade(T0 + MIN + 58_000, 100, 9)]);
+    expect(store.get(T0 + MIN)).toBeNull();
+    feed.live([trade(T0 + 2 * MIN + 5, 100, 2)]);
+    expect(bought(T0 + 2 * MIN)).toBe(5);
   });
 
-  it('keeps that bar when the feed gave every trade it had', () => {
-    const { feed, bought } = setup();
-    feed.history([trade(T0 + MIN + 40_000, 100, 5), trade(T0 + 2 * MIN + 1, 100, 3)], 1000);
-    expect(bought(T0 + MIN)).toBe(5);
-  });
-
-  it('counts no trade twice when the recent ones are asked for again', () => {
+  it('drops the bar it had last before a hole in the trades: its end is missing', () => {
     const { feed, store, bought } = setup();
-    feed.history([trade(T0 + 1, 100, 1), trade(T0 + 2, 100, 1)], 1000);
-    const again = new FootprintFeed(store, (time) => barOfTrade(bars(5), time, MIN));
-    again.history([trade(T0 + 1, 100, 1), trade(T0 + 2, 100, 1), trade(T0 + 3, 100, 1)], 1000);
-    expect(bought(T0)).toBe(3);
-  });
-
-  it('counts the live trades from the start when the feed has no recent ones to give', () => {
-    const { feed, bought } = setup();
-    feed.live([trade(T0 + 10, 100, 4)]);
-    feed.skipHistory();
-    expect(bought(T0)).toBe(4);
-    feed.live([trade(T0 + 20, 100, 1)]);
-    expect(bought(T0)).toBe(5);
+    feed.recent([trade(T0 + 10, 100, 1), trade(T0 + MIN + 10, 100, 2)], null, null);
+    expect(bought(T0 + MIN)).toBe(2);
+    // A long break: the recent trades begin at +3m30, and the latest told before them was at +1m10.
+    feed.recent([trade(T0 + 3 * MIN + 30_000, 100, 5), trade(T0 + 4 * MIN + 1, 100, 7)], T0 + 3 * MIN + 30_000, T0 + MIN + 10);
+    expect(bought(T0)).toBe(1);
+    expect(store.get(T0 + MIN)).toBeNull();
+    expect(store.get(T0 + 3 * MIN)).toBeNull();
+    expect(bought(T0 + 4 * MIN)).toBe(7);
   });
 
   it('keeps a trade of a bar still to come, and counts it when the bar is there', () => {
     const series = bars(2);
     const { feed, store, bought } = setup(series);
-    feed.skipHistory();
     feed.live([trade(T0 + 2 * MIN + 5, 100, 7)]);
     expect(store.bars()).toEqual([]);
     // Nothing changes while the bar is not there.
@@ -117,7 +107,6 @@ describe('FootprintFeed', () => {
   it('counts a later trade after the ones kept for it, in the order they were made', () => {
     const series = bars(2);
     const { feed, store } = setup(series);
-    feed.skipHistory();
     // No sides: each is told by the one before it, so the order matters.
     feed.live([{ time: T0 + 2 * MIN + 1, price: 100, volume: 1, side: 'sell' }, { time: T0 + 2 * MIN + 2, price: 101, volume: 2 }]);
     series.push({ ...series[1], time: T0 + 2 * MIN });
@@ -128,18 +117,28 @@ describe('FootprintFeed', () => {
     ]);
   });
 
+  it('keeps the trades that come before the footprint has a row size, and counts them once it has', () => {
+    const store = new FootprintStore();
+    const series = bars(5);
+    const feed = new FootprintFeed(store, (time) => barOfTrade(series, time, MIN));
+    expect(feed.live([trade(T0 + 10, 100, 4)])).toBe(false);
+    feed.settle();
+    expect(store.bars()).toEqual([]);
+    store.setRowSize(1);
+    expect(feed.settle()).toBe(true);
+    expect(store.get(T0)!.levels).toEqual([{ price: 100, buy: 4, sell: 0 }]);
+  });
+
   it('drops a trade from before the first bar, and what is no trade', () => {
     const { feed, store } = setup();
-    feed.skipHistory();
     feed.live([trade(T0 - 5, 100, 1), { time: T0 + 1, price: Number.NaN, volume: 1, side: 'buy' }]);
     expect(store.bars()).toEqual([]);
   });
 
   it('says whether anything was counted, so the chart draws only then', () => {
     const { feed } = setup();
-    expect(feed.live([trade(T0 + 1)])).toBe(false);
-    expect(feed.history([], 1000)).toBe(true);
     expect(feed.live([trade(T0 - 5)])).toBe(false);
+    expect(feed.recent([], null, null)).toBe(false);
     expect(feed.live([trade(T0 + 2)])).toBe(true);
   });
 });
@@ -157,46 +156,6 @@ describe('the row size of rows given by hand', () => {
     expect(rowSizeOf([])).toBeNull();
     expect(rowSizeOf([{ time: T0, levels: [{ price: 100, buy: 1, sell: 1 }] }])).toBeNull();
     expect(rowSizeOf([{ time: T0, levels: [{ price: 100, buy: 1, sell: 1 }, { price: 100, buy: 2, sell: 2 }] }])).toBeNull();
-  });
-});
-
-describe('FootprintFeed: what the review turned up', () => {
-  it('keeps the trades that come before the footprint has a row size, and counts them once it has', () => {
-    const store = new FootprintStore();
-    const series = bars(5);
-    const feed = new FootprintFeed(store, (time) => barOfTrade(series, time, MIN));
-    feed.skipHistory();
-    expect(feed.live([trade(T0 + 10, 100, 4)])).toBe(false);
-    feed.settle();
-    expect(store.bars()).toEqual([]);
-    store.setRowSize(1);
-    expect(feed.settle()).toBe(true);
-    expect(store.get(T0)!.levels).toEqual([{ price: 100, buy: 4, sell: 0 }]);
-  });
-
-  it('drops the bar it had last when the recent trades asked for again begin after it: its end is missing', () => {
-    const { feed, store, bought } = setup();
-    feed.history([trade(T0 + 10, 100, 1), trade(T0 + MIN + 10, 100, 2)], 1000);
-    expect(bought(T0 + MIN)).toBe(2);
-    // A long break: the feed's recent trades no longer reach back to what the footprint has.
-    feed.history([trade(T0 + 3 * MIN + 30_000, 100, 5), trade(T0 + 4 * MIN + 1, 100, 7)], 2);
-    expect(bought(T0)).toBe(1);
-    expect(store.get(T0 + MIN)).toBeNull();
-    expect(store.get(T0 + 3 * MIN)).toBeNull();
-    expect(bought(T0 + 4 * MIN)).toBe(7);
-  });
-
-  it('leaves the live trades of the bar it left out out too: part of a bar is no footprint of it', () => {
-    const { feed, store, bought } = setup();
-    feed.live([trade(T0 + MIN + 55_000, 100, 9)]);
-    // As many as were asked for, all of one bar: the feed had more, from earlier in it.
-    feed.history([trade(T0 + MIN + 40_000, 100, 5), trade(T0 + MIN + 50_000, 100, 5)], 2);
-    expect(store.get(T0 + MIN)).toBeNull();
-    feed.live([trade(T0 + MIN + 58_000, 100, 3)]);
-    expect(store.get(T0 + MIN)).toBeNull();
-    // The next bar is whole from its first trade.
-    feed.live([trade(T0 + 2 * MIN + 1, 100, 2)]);
-    expect(bought(T0 + 2 * MIN)).toBe(2);
   });
 });
 
