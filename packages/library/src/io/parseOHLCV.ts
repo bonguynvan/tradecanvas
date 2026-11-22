@@ -1,5 +1,5 @@
 import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
-import { normalizeBarTime } from '@tradecanvas/commons';
+import { buyVolumeOf, normalizeBarTime } from '@tradecanvas/commons';
 
 /**
  * Best-effort parser for OHLCV CSV / JSON drops.
@@ -26,6 +26,8 @@ const HIGH_KEYS = ['high', 'h'];
 const LOW_KEYS = ['low', 'l'];
 const CLOSE_KEYS = ['close', 'c'];
 const VOL_KEYS = ['volume', 'vol', 'v'];
+/** What the buyers took of the volume, as the chart's own export and the exchanges' files name it. */
+const BUY_VOL_KEYS = ['buyvolume', 'buy volume', 'buy_volume', 'taker_buy_volume', 'taker buy base asset volume', 'bv'];
 
 export function parseOHLCV(text: string): ParseResult {
   const trimmed = text.trim();
@@ -68,7 +70,7 @@ function parseCsv(text: string): ParseResult {
   const looksLikeHeader = header.some(h => isNaN(Number(h)) && h.length > 0);
   const colIdx = looksLikeHeader
     ? buildColumnMap(header)
-    : { time: 0, open: 1, high: 2, low: 3, close: 4, volume: 5 };
+    : { time: 0, open: 1, high: 2, low: 3, close: 4, volume: 5, buyVolume: -1 };
 
   if (colIdx.time < 0 || colIdx.open < 0 || colIdx.high < 0 || colIdx.low < 0 || colIdx.close < 0) {
     throw new Error('CSV is missing required column(s): time, open, high, low, close');
@@ -91,7 +93,8 @@ function parseCsv(text: string): ParseResult {
       skipped++;
       continue;
     }
-    bars.push({ time, open: open!, high: high!, low: low!, close: close!, volume: Number.isFinite(volume) ? volume : 0 });
+    const bar: OHLCBar = { time, open: open!, high: high!, low: low!, close: close!, volume: Number.isFinite(volume) ? volume : 0 };
+    bars.push(withBought(bar, colIdx.buyVolume >= 0 ? cols[colIdx.buyVolume] : undefined));
   }
 
   return finalize(bars, lines.length - (looksLikeHeader ? 1 : 0), skipped);
@@ -131,7 +134,14 @@ function splitLine(line: string, delimiter: string): string[] {
   return out;
 }
 
-function buildColumnMap(header: string[]): { time: number; open: number; high: number; low: number; close: number; volume: number } {
+/** `bar` with what the buyers took of it, when its cell has a number that can be: from nothing to the whole volume. */
+function withBought(bar: OHLCBar, cell: unknown): OHLCBar {
+  if (cell === undefined || cell === null || String(cell).trim() === '') return bar;
+  const bought = buyVolumeOf({ volume: bar.volume, buyVolume: Number(cell) });
+  return bought === null ? bar : { ...bar, buyVolume: bought };
+}
+
+function buildColumnMap(header: string[]): { time: number; open: number; high: number; low: number; close: number; volume: number; buyVolume: number } {
   const find = (keys: string[]) => header.findIndex(h => keys.includes(h));
   return {
     time: find(TIME_KEYS),
@@ -140,6 +150,7 @@ function buildColumnMap(header: string[]): { time: number; open: number; high: n
     low: find(LOW_KEYS),
     close: find(CLOSE_KEYS),
     volume: find(VOL_KEYS),
+    buyVolume: find(BUY_VOL_KEYS),
   };
 }
 
@@ -159,7 +170,8 @@ function coerceObjectRow(row: Record<string, unknown>): OHLCBar | null {
   const close = Number(get(CLOSE_KEYS));
   const volume = Number(get(VOL_KEYS) ?? 0);
   if (time === null || ![open, high, low, close].every(Number.isFinite)) return null;
-  return { time, open, high, low, close, volume: Number.isFinite(volume) ? volume : 0 };
+  // `buyVolume` as the chart's own bars name it, or one of the columns' names.
+  return withBought({ time, open, high, low, close, volume: Number.isFinite(volume) ? volume : 0 }, row.buyVolume ?? get(BUY_VOL_KEYS));
 }
 
 function coerceArrayRow(row: unknown[]): OHLCBar | null {

@@ -13,7 +13,7 @@ import type {
   TimeFrame,
   Trade,
 } from '@tradecanvas/commons';
-import { tickBarCount } from '@tradecanvas/commons';
+import { buyVolumeAfter, tickBarCount } from '@tradecanvas/commons';
 
 /** Trades a tick chart's history is built from. */
 const HISTORY_TRADES = 1000;
@@ -42,15 +42,21 @@ export class TickBarBuilder {
         const time = Math.max(t.time, this.lastTime + 1);
         this.lastTime = time;
         this.bar = { time, open: t.price, high: t.price, low: t.price, close: t.price, volume: t.volume };
+        // What the buyers took, while every trade of the bar says who took it.
+        const bought = buyVolumeAfter(undefined, t, true);
+        if (bought !== undefined) this.bar.buyVolume = bought;
         this.count = 0;
       } else {
+        const { buyVolume: had, ...open } = this.bar;
         this.bar = {
-          ...this.bar,
+          ...open,
           high: Math.max(this.bar.high, t.price),
           low: Math.min(this.bar.low, t.price),
           close: t.price,
           volume: this.bar.volume + t.volume,
         };
+        const bought = buyVolumeAfter(had, t);
+        if (bought !== undefined) this.bar.buyVolume = bought;
       }
       this.count++;
       touched = true;

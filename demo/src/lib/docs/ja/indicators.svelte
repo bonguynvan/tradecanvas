@@ -161,10 +161,12 @@ chart.addIndicator('vwap', { anchor: 'all' })   // 読み込んだ全バー、�
 </table>
 
 <p>
-  <code>voldelta</code>（Volume Delta）は、OHLCV から買い / 売りの圧力を近似します。上昇して引けたバーは
-  出来高をプラス、下落したバーはマイナスとして加えます。<code>mode: 0</code> はバーごとのヒストグラム、
-  <code>mode: 1</code> は累積デルタです。（本来のティックデルタには約定ごとの bid / ask データが必要ですが、
-  OHLCV の系列にはその情報が含まれていません。）
+  <code>voldelta</code>（Volume Delta）は、各バーで買い手が取った出来高から売り手が取った出来高を引いたものです。
+  誰が約定を取ったかを示すバー（その <code>buyVolume</code>）は本当のデルタを返します。示さないバーは引け方から読みます：
+  始値以上で引ければ出来高すべてをプラス、そうでなければマイナスとし、これが OHLCV のバーでできる最も近い値です。
+  <code>mode: 0</code> はバーごとのヒストグラム、<code>mode: 1</code> は累積デルタで、
+  <code>anchor</code> の期間ごとに数え直します（<code>'session'</code>、<code>'week'</code>、<code>'month'</code>。
+  既定の <code>'all'</code> では数え直しません）。
 </p>
 
 <h2>アジアの相場ソフトでおなじみの指標</h2>

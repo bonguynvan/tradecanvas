@@ -1,5 +1,5 @@
 import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
-import { barTimeUnit, mergeBar, normalizeBarTime } from '@tradecanvas/commons';
+import { barTimeUnit, buyVolumeOf, mergeBar, normalizeBarTime } from '@tradecanvas/commons';
 
 /** Whether a bar is one the chart takes: its time and prices numbers, none below zero, its high not under its low, its volume (if any) not below zero. */
 export function isValidBar(bar: OHLCBar): boolean {
@@ -20,22 +20,31 @@ export function isValidBar(bar: OHLCBar): boolean {
 function isSanitized(bar: OHLCBar): boolean {
   return bar.volume !== undefined
     && bar.high >= bar.open && bar.high >= bar.close
-    && bar.low <= bar.open && bar.low <= bar.close;
+    && bar.low <= bar.open && bar.low <= bar.close
+    && (bar.buyVolume === undefined || buyVolumeOf(bar) === bar.buyVolume);
 }
 
-/** Sanitize a bar: clamp high/low to envelope OHLC values, a missing volume 0. */
+/**
+ * Sanitize a bar: clamp high/low to envelope OHLC values, a missing volume
+ * 0, and no split of the volume where the bar's says what cannot be (more
+ * bought than traded, or no number).
+ */
 export function sanitizeBar(bar: OHLCBar): OHLCBar {
-  return {
-    ...bar,
+  const { buyVolume: _said, ...rest } = bar;
+  const clean: OHLCBar = {
+    ...rest,
     high: Math.max(bar.open, bar.high, bar.low, bar.close),
     low: Math.min(bar.open, bar.high, bar.low, bar.close),
     volume: bar.volume !== undefined ? Math.max(0, bar.volume) : 0,
   };
+  const bought = buyVolumeOf({ volume: clean.volume, buyVolume: bar.buyVolume });
+  if (bought !== null) clean.buyVolume = bought;
+  return clean;
 }
 
-/** Whether two bars have the same time, prices and volume. */
+/** Whether two bars have the same time, prices and volume, and the same part of it bought. */
 export function sameBar(a: OHLCBar, b: OHLCBar): boolean {
-  return a === b || (a.time === b.time && a.open === b.open && a.high === b.high && a.low === b.low && a.close === b.close && a.volume === b.volume);
+  return a === b || (a.time === b.time && a.open === b.open && a.high === b.high && a.low === b.low && a.close === b.close && a.volume === b.volume && a.buyVolume === b.buyVolume);
 }
 
 /**
@@ -176,7 +185,7 @@ export class DataManager {
     return { index, changed: true };
   }
 
-  updateLastBarFromTick(tick: { price: number; volume?: number; time: number }): void {
+  updateLastBarFromTick(tick: { price: number; volume?: number; time: number; side?: 'buy' | 'sell' }): void {
     if (this.data.length === 0) return;
     if (!isFinite(tick.price) || tick.price < 0) return;
     if (tick.volume !== undefined && (!isFinite(tick.volume) || tick.volume < 0)) return;

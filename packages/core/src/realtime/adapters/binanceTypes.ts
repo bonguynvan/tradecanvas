@@ -1,5 +1,5 @@
 import type { OHLCBar, Quote, Trade } from '@tradecanvas/commons';
-import { readQuote } from '@tradecanvas/commons';
+import { buyVolumeOf, readQuote } from '@tradecanvas/commons';
 
 /**
  * Binance REST `/klines` returns a 12-element array per kline.
@@ -78,7 +78,17 @@ export function parseRestKline(raw: unknown): OHLCBar | null {
   if (open === null || high === null || low === null || close === null || volume === null) {
     return null;
   }
-  return { time, open, high, low, close, volume };
+  // The tenth field is the taker buy volume: what the buyers took of the bar.
+  return withBought({ time, open, high, low, close, volume }, raw.length > TAKER_BUY_AT ? toFiniteNumber(raw[TAKER_BUY_AT]) : null);
+}
+
+/** Where a REST kline has its taker buy base volume. */
+const TAKER_BUY_AT = 9;
+
+/** `bar` with what the buyers took of it, when the exchange says and it can be. */
+function withBought(bar: OHLCBar, bought: number | null): OHLCBar {
+  const known = bought === null ? null : buyVolumeOf({ volume: bar.volume, buyVolume: bought });
+  return known === null ? bar : { ...bar, buyVolume: known };
 }
 
 /**
@@ -101,7 +111,8 @@ export function parseWsKline(
     return null;
   }
   const closed = typeof raw.x === 'boolean' ? raw.x : false;
-  return { bar: { time, open, high, low, close, volume }, closed };
+  // `V` is the taker buy volume: what the buyers took of the bar so far.
+  return { bar: withBought({ time, open, high, low, close, volume }, raw.V === undefined ? null : toFiniteNumber(raw.V)), closed };
 }
 
 function toFiniteNumber(value: unknown): number | null {
@@ -172,5 +183,7 @@ export function parseAggTrade(raw: unknown): Trade | null {
   const time = num(t.T);
   const price = num(t.p);
   const volume = num(t.q);
-  return time !== undefined && price !== undefined && volume !== undefined ? { time, price, volume } : null;
+  if (time === undefined || price === undefined || volume === undefined) return null;
+  // `m`: the buyer was the maker, so the seller took the trade.
+  return typeof t.m === 'boolean' ? { time, price, volume, side: t.m ? 'sell' : 'buy' } : { time, price, volume };
 }

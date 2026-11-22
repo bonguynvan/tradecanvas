@@ -258,7 +258,7 @@ export class SeriesStore {
   }
 
   /** A trade into the forming bar. One outside the hours shown moves no bar. */
-  mergeTick(tick: { price: number; volume?: number; time: number }): SeriesWrite {
+  mergeTick(tick: { price: number; volume?: number; time: number; side?: 'buy' | 'sell' }): SeriesWrite {
     if (this.aside) {
       this.aside.updateLastBarFromTick(tick);
       return this.wrote('aside', false);

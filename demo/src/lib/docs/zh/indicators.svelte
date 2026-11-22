@@ -154,10 +154,12 @@ chart.addIndicator('vwap', { anchor: 'all' })   // 已加载的全部K线，与�
 </table>
 
 <p>
-  <code>voldelta</code>（Volume Delta）根据 OHLCV 估算买卖压力——收涨的K线计入正成交量，
-  收跌的K线计入负成交量。<code>mode: 0</code> 为逐根K线的柱状图，
-  <code>mode: 1</code> 为累计 delta。（真正的逐笔 delta 需要每笔成交的买价 / 卖价数据，
-  而 OHLCV 序列并不包含这些信息。）
+  <code>voldelta</code>（Volume Delta）是每根K线中主动买入的成交量减去主动卖出的成交量。
+  说明了谁是主动方的K线（它的 <code>buyVolume</code>）给出真实的 delta。没有说明的K线则按收盘方式估算：
+  收盘价不低于开盘价时全部成交量计为正，否则计为负，这是 OHLCV K线所能做到的最接近的结果。
+  <code>mode: 0</code> 为逐根K线的柱状图，<code>mode: 1</code> 为累计 delta，在每个
+  <code>anchor</code> 周期重新开始（<code>'session'</code>、<code>'week'</code> 或 <code>'month'</code>；
+  默认的 <code>'all'</code> 则从不重新开始）。
 </p>
 
 <h2>亚洲行情软件常见的指标</h2>

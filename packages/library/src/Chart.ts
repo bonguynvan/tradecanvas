@@ -1534,8 +1534,13 @@ export class Chart {
     this.scheduleRender();
   }
 
-  /** A trade's price into the forming bar (its high, low, close and volume): the live price, as with `updateLastBar`. */
-  updateLastBarFromTick(tick: { price: number; volume?: number; time: number }): void {
+  /**
+   * A trade's price into the forming bar (its high, low, close and volume):
+   * the live price, as with `updateLastBar`. With the trade's `side`, the
+   * bar's `buyVolume` counts it too; a trade with a volume and no side leaves
+   * the bar with none.
+   */
+  updateLastBarFromTick(tick: { price: number; volume?: number; time: number; side?: 'buy' | 'sell' }): void {
     if (!Number.isFinite(tick.price) || tick.price < 0) return;
     if (tick.volume !== undefined && !(Number.isFinite(tick.volume) && tick.volume >= 0)) return;
     // A tick outside regular hours, while they are hidden, moves the price line and what follows the price, not a bar.
@@ -7320,7 +7325,7 @@ function legendSpacing(spacing: ChartSpacing): { inset: number; top: number; lin
 
 /** `bar` with one more step in it. */
 function mergeBar(bar: OHLCBar, step: OHLCBar): OHLCBar {
-  return {
+  const merged: OHLCBar = {
     time: bar.time,
     open: bar.open,
     high: Math.max(bar.high, step.high),
@@ -7328,4 +7333,7 @@ function mergeBar(bar: OHLCBar, step: OHLCBar): OHLCBar {
     close: step.close,
     volume: (bar.volume ?? 0) + (step.volume ?? 0),
   };
+  // What the buyers took adds up too, while both say.
+  if (bar.buyVolume !== undefined && step.buyVolume !== undefined) merged.buyVolume = bar.buyVolume + step.buyVolume;
+  return merged;
 }

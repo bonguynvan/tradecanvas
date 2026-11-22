@@ -165,10 +165,13 @@ chart.addIndicator('vwap', { anchor: 'all' })   // every bar loaded, as it was b
 </table>
 
 <p>
-  <code>voldelta</code> (Volume Delta) approximates buy/sell pressure from OHLCV — bars closing up
-  add positive volume, down bars negative. <code>mode: 0</code> is the per-bar histogram,
-  <code>mode: 1</code> cumulative delta. (A true tick delta needs per-trade bid/ask data, which an
-  OHLCV series doesn't carry.)
+  <code>voldelta</code> (Volume Delta) is what the buyers took of each bar less what the sellers did.
+  A bar that says who took its trades (its <code>buyVolume</code>) gives its true delta. One that
+  does not is read from the way it closed: all its volume up when it closed at or over its open,
+  down otherwise, which is the nearest an OHLCV bar comes. <code>mode: 0</code> is the per-bar
+  histogram, <code>mode: 1</code> the cumulative delta, which starts again with each
+  <code>anchor</code> period (<code>'session'</code>, <code>'week'</code> or <code>'month'</code>;
+  never with <code>'all'</code>, the default).
 </p>
 
 <h2>Indicators from Asian price boards</h2>

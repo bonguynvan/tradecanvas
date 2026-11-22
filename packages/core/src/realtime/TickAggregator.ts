@@ -1,5 +1,5 @@
 import type { OHLCBar, TimeFrame, RawTick, AggregatedBar, BucketOptions } from '@tradecanvas/commons';
-import { normalizeBarTime, offsetAt, timeframeBucketStart, timeframeSpansDays, timeframeToMs } from '@tradecanvas/commons';
+import { buyVolumeAfter, normalizeBarTime, offsetAt, timeframeBucketStart, timeframeSpansDays, timeframeToMs } from '@tradecanvas/commons';
 import { Emitter } from './Emitter.js';
 
 const MINUTE_MS = 60_000;
@@ -124,6 +124,8 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
     this.currentBar = {
       time, open: bar.open, high: bar.high, low: bar.low, close: bar.close,
       volume: bar.volume ?? 0, closed: false, tickCount: 0,
+      // Carried on with the bar's own count of what was bought, when it has one.
+      ...(bar.buyVolume === undefined ? {} : { buyVolume: bar.buyVolume }),
     };
     this.builtFromTrades = true;
     this.lastTradeAt = null;
@@ -177,6 +179,9 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
         closed: false,
         tickCount: 1,
       };
+      // What the buyers took, while every tick of the bar says who took it.
+      const bought = buyVolumeAfter(undefined, tick, true);
+      if (bought !== undefined) this.currentBar.buyVolume = bought;
       this.builtFromTrades = true;
     } else {
       // Update current bar
@@ -185,6 +190,9 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
       this.currentBar.close = tick.price;
       this.currentBar.volume += tick.volume;
       this.currentBar.tickCount++;
+      const bought = buyVolumeAfter(this.currentBar.buyVolume, tick);
+      if (bought !== undefined) this.currentBar.buyVolume = bought;
+      else delete this.currentBar.buyVolume;
     }
 
     this.emit('bar', this.currentBar);

@@ -15,6 +15,8 @@ describe('parseRestKline', () => {
       low: 100.1,
       close: 101.9,
       volume: 12345.67,
+      // The tenth field, the taker buy volume: what the buyers took of the bar.
+      buyVolume: 500,
     });
   });
 

@@ -227,6 +227,39 @@ await chart.setTimeframe('500T')
 const builder = new TickBarBuilder(100)
 builder.push([{ time, price, volume }])   // → [{ bar, closed }]`}</code></pre>
 
+<h2 id="order-flow">Quién tomó las operaciones</h2>
+<p>
+  Un feed puede decir qué lado tomó cada operación, el que cruzó el spread: <code>side</code> en una
+  operación (<code>'buy'</code> cuando el comprador tomó el ask, <code>'sell'</code> cuando el vendedor
+  golpeó el bid) y <code>buyVolume</code> en una barra, la parte de su <code>volume</code> que tomaron
+  los compradores. Ambos son opcionales. Con <code>buyVolume</code> una barra tiene un delta, lo comprado
+  menos lo vendido: <code>barDelta(bar)</code> lo da, o <code>null</code> para una barra que no lo dice, y
+  el indicador Volume Delta (<code>voldelta</code>) lo dibuja, con su suma acumulada, en lugar de su
+  estimación. <code>BinanceAdapter</code> rellena ambos, a partir del volumen de compra taker del exchange
+  y de sus operaciones agregadas; <code>MockAdapter</code> los inventa.
+</p>
+<pre><code>{`chart.setData([{ time, open, high, low, close, volume: 1200, buyVolume: 700 }])
+chart.addIndicator('voldelta', { mode: 1, anchor: 'session' })   // the cumulative delta, from each session's start
+
+barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</code></pre>
+<p>
+  El gráfico lleva <code>buyVolume</code> allí donde lleva el volumen. Las barras hechas de otras barras
+  (<code>resampleBars</code>, una temporalidad que el feed no tiene) lo suman; las barras de ticks, y las
+  agregadas a partir de ticks, lo cuentan de las operaciones que dicen su <code>side</code>; una barra en
+  replay lo tiene al paso de su volumen; las exportaciones CSV y JSON lo escriben en una columna propia
+  (<code>Buy Volume</code>), que la importación vuelve a leer. Una barra con una parte que no lo dice no
+  lo tiene: medio reparto no es un reparto.
+</p>
+<p>
+  Tres cosas a saber. Una operación enviada con <code>chart.updateLastBarFromTick</code> también cuenta
+  cuando lleva su <code>side</code>; una con volumen y sin side deja la barra en formación sin
+  <code>buyVolume</code>. Renko, Kagi, line break, punto y figura y las barras de rango son barras
+  dibujadas, no las del feed: los indicadores de esos gráficos leen las barras dibujadas, que no tienen
+  reparto, así que allí el delta es la estimación. Y cuando solo algunas barras de una serie lo dicen, el
+  delta acumulado suma deltas reales con estimaciones, cada una de las cuales es todo el volumen de una
+  barra: da un escalón donde se encuentran. Los puentes JS API y UDF no tienen un campo para ello.
+</p>
+
 <h2>Estado del mercado y noticias</h2>
 <p>
   <code>marketStatus(info, now)</code> indica si el mercado de un símbolo está abierto en un momento dado, a partir de su

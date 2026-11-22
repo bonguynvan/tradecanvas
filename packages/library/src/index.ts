@@ -172,7 +172,7 @@ export {
 } from '@tradecanvas/commons';
 
 // Re-export data utilities
-export { normalizeBarTime, normalizeBar, barsAreDaily, barTimeUnit, MS_TIME_THRESHOLD } from '@tradecanvas/commons';
+export { normalizeBarTime, normalizeBar, barsAreDaily, barTimeUnit, MS_TIME_THRESHOLD, barDelta, buyVolumeOf } from '@tradecanvas/commons';
 export type { BarTimeUnit } from '@tradecanvas/commons';
 
 // Timeframes of any length, resampling, and display time zones

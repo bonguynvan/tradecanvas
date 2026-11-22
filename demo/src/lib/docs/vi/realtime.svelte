@@ -222,6 +222,38 @@ await chart.setTimeframe('500T')
 const builder = new TickBarBuilder(100)
 builder.push([{ time, price, volume }])   // → [{ bar, closed }]`}</code></pre>
 
+<h2 id="order-flow">Bên nào chủ động khớp</h2>
+<p>
+  Feed có thể cho biết bên nào chủ động trong mỗi lệnh khớp, tức bên vượt spread: <code>side</code> trên một
+  trade (<code>'buy'</code> khi bên mua khớp vào giá ask, <code>'sell'</code> khi bên bán khớp vào giá
+  bid) và <code>buyVolume</code> trên một nến, là phần <code>volume</code> mà bên mua chủ động lấy. Cả hai
+  đều không bắt buộc. Có <code>buyVolume</code> thì nến có delta, tức mua trừ bán:
+  <code>barDelta(bar)</code> trả về delta đó, hoặc <code>null</code> với nến không ghi, và chỉ báo Volume
+  Delta (<code>voldelta</code>) vẽ delta này cùng tổng cộng dồn của nó thay cho giá trị ước lượng.
+  <code>BinanceAdapter</code> điền cả hai, từ taker buy volume của sàn và các aggregate trade;
+  <code>MockAdapter</code> tự tạo ra chúng.
+</p>
+<pre><code>{`chart.setData([{ time, open, high, low, close, volume: 1200, buyVolume: 700 }])
+chart.addIndicator('voldelta', { mode: 1, anchor: 'session' })   // the cumulative delta, from each session's start
+
+barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</code></pre>
+<p>
+  Chart mang <code>buyVolume</code> đi tới mọi nơi nó mang khối lượng. Nến ghép từ các nến khác
+  (<code>resampleBars</code>, khung thời gian mà feed không có) cộng dồn nó; nến tick, và nến gộp từ tick,
+  đếm nó từ các trade có ghi <code>side</code>; nến đang replay có nó theo cùng tỉ lệ với khối lượng; bản xuất
+  CSV và JSON ghi nó vào một cột riêng (<code>Buy Volume</code>), và bản nhập đọc lại được cột này. Nến có một
+  phần không ghi thì không có giá trị này: biết một nửa thì không tính là biết.
+</p>
+<p>
+  Ba điều cần biết. Trade đưa vào bằng <code>chart.updateLastBarFromTick</code> cũng được đếm khi nó có
+  <code>side</code>; trade có khối lượng mà không có side làm nến đang hình thành không còn
+  <code>buyVolume</code>. Renko, Kagi, line break, point and figure và range bars là nến do chart vẽ ra, không
+  phải nến của feed: chỉ báo trên các chart đó đọc nến được vẽ, vốn không có số liệu này, nên delta ở đó là
+  giá trị ước lượng. Và khi chỉ một số nến của chuỗi có ghi, delta tích luỹ cộng delta thật với giá trị ước
+  lượng, mà mỗi giá trị ước lượng là toàn bộ khối lượng của một nến: đường này nhảy bậc ở chỗ hai loại gặp nhau.
+  Các cầu nối JS API và UDF không có trường cho số liệu này.
+</p>
+
 <h2>Trạng thái thị trường và tin tức</h2>
 <p>
   <code>marketStatus(info, now)</code> cho biết thị trường của một mã có mở cửa tại một thời điểm hay không, dựa trên

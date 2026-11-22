@@ -146,7 +146,12 @@ export function formingAt(path: IntrabarPath, fraction: number): OHLCBar {
     high = Math.max(high, pt.price);
     low = Math.min(low, pt.price);
   }
-  return { time: path.bar.time, open: path.points[0].price, high, low, close, volume: volumeAt(path, f) };
+  const volume = volumeAt(path, f);
+  const forming: OHLCBar = { time: path.bar.time, open: path.points[0].price, high, low, close, volume };
+  // The same part of what was bought as of the volume: the bar's split is all that is known of it.
+  const bought = path.bar.buyVolume;
+  if (bought !== undefined) forming.buyVolume = path.bar.volume > 0 ? (bought * volume) / path.bar.volume : 0;
+  return forming;
 }
 
 /**

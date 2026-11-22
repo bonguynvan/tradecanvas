@@ -119,12 +119,16 @@ function nextBaseStart(time: number, base: TimeFrame, zone?: string): number {
 function compose(time: number, parts: readonly OHLCBar[]): OHLCBar {
   const first = parts[0];
   const out: OHLCBar = { time, open: first.open, high: first.high, low: first.low, close: first.close, volume: first.volume };
+  // What the buyers took is summed too, while every part says.
+  if (first.buyVolume !== undefined) out.buyVolume = first.buyVolume;
   for (let i = 1; i < parts.length; i++) {
     const bar = parts[i];
     if (bar.high > out.high) out.high = bar.high;
     if (bar.low < out.low) out.low = bar.low;
     out.close = bar.close;
     out.volume += bar.volume;
+    if (out.buyVolume !== undefined && bar.buyVolume !== undefined) out.buyVolume += bar.buyVolume;
+    else delete out.buyVolume;
   }
   return out;
 }
