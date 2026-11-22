@@ -141,6 +141,7 @@ import { isValidBar } from './DataManager.js';
 import { SeriesStore, isWholeBar, type LiveChange } from './SeriesStore.js';
 import { PriceFit, hasVolume } from './model/PriceFit.js';
 import { FootprintFeed, barOfTrade, barSpanOf, footprintRowSize } from './model/FootprintFeed.js';
+import { TradeStream } from './model/TradeStream.js';
 import { DisplaySeries } from './model/DisplaySeries.js';
 import { ActivityLog, type ActivityEntry } from './model/ActivityLog.js';
 import { PaneLayout } from './model/PaneLayout.js';
@@ -185,10 +186,11 @@ const LEFT_SCALE_PADDING = 0.08;
 const FOOTPRINT_RECENT_TRADES = 1000;
 /** The slot a chart turned into a footprint opens at: a little over the narrowest whose footprint carries both sides' numbers. */
 const FOOTPRINT_OPENING_SLOT = FOOTPRINT_TEXT_BAR_WIDTH + FOOTPRINT_SLOT_GAP + 8;
-/** The feed whose trades a footprint follows: the series it is of, what counts them, and how to stop listening. */
-interface FootprintLive {
+/** The feed whose trades the chart follows: the series it is of, what counts them into the footprint, what tells them once each, and how to stop listening. */
+interface TradesLive {
   key: string;
   feed: FootprintFeed;
+  told: TradeStream;
   stop: () => void;
 }
 /** How many times a picture at a size of its own fits its bars and sizes its scales: a scale that changes width changes the plot once. */
@@ -388,8 +390,12 @@ export class Chart {
   private readonly footprint = new FootprintStore();
   /** Trades given by hand (`addTrades`), those of bars still to come kept until the bars are there. */
   private footprintByHand = new FootprintFeed(this.footprint, (time) => this.footprintBarOf(time));
-  /** The connected feed's trades, followed while the chart shows a footprint. */
-  private footprintLive: FootprintLive | null = null;
+  /** The connected feed's trades, followed while the chart shows a footprint or someone asked for them. */
+  private tradesLive: TradesLive | null = null;
+  /** How many asked for the feed's trades (`followTrades`). */
+  private tradeFollowers = 0;
+  /** When the latest of the symbol's trades told was made: followed again, the feed tells none a second time. */
+  private tradesToldUntil = -Infinity;
   /** The row size the footprint was told to keep; 'auto': worked out from the rows given, or the price. */
   private footprintRowSet: number | 'auto' = 'auto';
   /** A footprint chosen: zoom in to where its numbers read, once its bars are there. */
@@ -1679,7 +1685,7 @@ export class Chart {
     this.applyTimeSpacing();
     this.updateViewportAndRender(true);
     this.fitFewColumns();
-    this.syncFootprintFeed();
+    this.syncTradeFeed();
     this.markStateChanged();
     // Bricks and boxes draw no marks: a badge under the pointer goes with the bars it stood on.
     if (!this.isTimeAligned()) this.dropMarkHover();
@@ -1722,7 +1728,7 @@ export class Chart {
   setChartTypeOptions(options: ChartTypeOptions): void {
     this.chartTypeOptions = { ...this.chartTypeOptions, ...readChartTypeOptions(options) };
     this.applyFootprintOptions();
-    this.syncFootprintFeed();
+    this.syncTradeFeed();
     this.updateViewportAndRender(true);
     this.fitFewColumns();
     // New settings build other bars: a screen reader hears the new summary, as after a new type.
@@ -3493,7 +3499,7 @@ export class Chart {
       this.snapshotKey = key;
       this.useStreamHistory(config.adapter, config.historyPageSize);
       // The bars the trades are counted into are there now; after a reconnect, the trades made meanwhile are asked for.
-      this.syncFootprintFeed(reconnected);
+      this.syncTradeFeed(reconnected);
     });
 
     // Each bar lands by its time: the last bar again (its latest values, a
@@ -3626,6 +3632,8 @@ export class Chart {
     const previousSymbol = this.announcedSymbol;
     // Another series: its bars are other bars, and the rows kept are not theirs.
     if (symbol !== this.currentSymbol || timeframe !== this.streamTimeframe) this.forgetFootprint();
+    // Another symbol's trades are all new.
+    if (symbol !== this.currentSymbol) this.tradesToldUntil = -Infinity;
     this.currentSymbol = symbol;
     this.streamTimeframe = timeframe;
     this.tickStream = tickBarCount(timeframe) !== null;
@@ -3722,7 +3730,7 @@ export class Chart {
     // A replay's finer bars came from this feed: the next one connected brings its own.
     this.replayLoader?.loader.dispose();
     this.replayLoader = null;
-    this.stopFootprintFeed();
+    this.stopTradeFeed();
     this.streamAdapter = null;
     // Bars set by hand after this aren't tick bars.
     this.tickStream = false;
@@ -4595,12 +4603,35 @@ export class Chart {
    * that is not there yet is kept until it is; one from before the first
    * bar is left out. A chart connected to a feed with trades asks for them
    * itself while it shows a footprint (`chartTypeOptions.footprint.collect`).
+   * They are told as a `trades` event, as the feed's are.
    */
   addTrades(trades: readonly Trade[]): void {
     this.resolveFootprintRow();
     // Trades by hand have no recent ones to wait for.
     this.footprintByHand.skipHistory();
     if (this.footprintByHand.live(trades)) this.footprintChanged();
+    this.tellTrades([...trades], false);
+  }
+
+  /**
+   * Follow the trades of the chart's symbol until the function it returns is
+   * called: the connected feed's recent trades, then its live ones, as
+   * `trades` events (a feed with `fetchTrades` and `subscribeTrades`; any
+   * other tells none). The feed is asked once for any number of followers
+   * and let go when the last one stops, unless the chart shows a footprint,
+   * which follows them by itself. Followed before a feed is connected, it
+   * starts with the connection.
+   */
+  followTrades(): () => void {
+    this.tradeFollowers++;
+    this.syncTradeFeed();
+    let following = true;
+    return () => {
+      if (!following) return;
+      following = false;
+      this.tradeFollowers--;
+      this.syncTradeFeed();
+    };
   }
 
   /**
@@ -4630,13 +4661,13 @@ export class Chart {
   /** Forget every bar's footprint: for a host that gave the rows and now shows another series. */
   clearFootprint(): void {
     this.forgetFootprint();
-    this.syncFootprintFeed();
+    this.syncTradeFeed();
     this.footprintChanged();
   }
 
   /** The rows kept and the trades waiting for their bars are another series': gone, the feed's included. */
   private forgetFootprint(): void {
-    this.stopFootprintFeed();
+    this.stopTradeFeed();
     this.footprint.reset();
     this.footprintByHand = new FootprintFeed(this.footprint, (time) => this.footprintBarOf(time));
   }
@@ -4675,60 +4706,83 @@ export class Chart {
     this.forgetFootprint();
   }
 
-  /**
-   * Follow the feed's trades while the chart shows a footprint of a
-   * connected series whose bars are in, and stop when it no longer does:
-   * its recent trades once, then its live ones.
-   */
-  private syncFootprintFeed(reconnected = false): void {
-    const adapter = this.streamAdapter;
-    const symbol = this.currentSymbol;
-    const wanted = this.options.chartType === 'footprint'
-      && this.chartTypeOptions.footprint?.collect !== false
-      && !!adapter?.fetchTrades && !!adapter.subscribeTrades
-      && this.snapshotKey !== null && this.snapshotKey === this.streamSeriesKey(adapter);
-    const key = wanted ? this.snapshotKey : null;
-    if (key === (this.footprintLive?.key ?? null)) {
-      // The same series after a dropped connection: the trades made while it was down are in the feed's recent ones.
-      if (reconnected && this.footprintLive) this.fetchFootprintTrades(this.footprintLive, adapter, symbol);
-      return;
-    }
-    this.stopFootprintFeed();
-    if (key === null || !adapter?.subscribeTrades) return;
-    const feed = new FootprintFeed(this.footprint, (time) => this.footprintBarOf(time));
-    const live: FootprintLive = { key, feed, stop: () => {} };
-    this.footprintLive = live;
-    live.stop = adapter.subscribeTrades(symbol, (trades) => {
-      if (this.footprintLive !== live) return;
-      this.resolveFootprintRow();
-      if (feed.live(trades)) this.footprintChanged();
-    });
-    this.fetchFootprintTrades(live, adapter, symbol);
+  /** Whether the feed's trades are counted into the footprint: not where the host gives its rows itself. */
+  private collectsFootprint(): boolean {
+    return this.chartTypeOptions.footprint?.collect !== false;
   }
 
-  /** The feed's recent trades into the footprint, while `live` is still the feed followed: those it has are left out. */
-  private fetchFootprintTrades(live: FootprintLive, adapter: DataAdapter | null, symbol: string): void {
+  /**
+   * Follow the feed's trades while the chart shows a footprint or someone
+   * asked for them (`followTrades`), of a connected series whose bars are
+   * in, and stop when no one does: its recent trades once, then its live
+   * ones.
+   */
+  private syncTradeFeed(reconnected = false): void {
+    const adapter = this.streamAdapter;
+    const symbol = this.currentSymbol;
+    const collects = this.collectsFootprint();
+    const wanted = ((this.options.chartType === 'footprint' && collects) || this.tradeFollowers > 0)
+      && !!adapter?.fetchTrades && !!adapter.subscribeTrades
+      && this.snapshotKey !== null && this.snapshotKey === this.streamSeriesKey(adapter);
+    // Counted into the footprint or not is part of what the feed is followed for: a change starts it again.
+    const key = wanted ? `${this.snapshotKey}|${collects ? 'counted' : 'told'}` : null;
+    if (key === (this.tradesLive?.key ?? null)) {
+      // The same series after a dropped connection: the trades made while it was down are in the feed's recent ones.
+      if (reconnected && this.tradesLive) this.fetchRecentTrades(this.tradesLive, adapter, symbol, collects);
+      return;
+    }
+    this.stopTradeFeed();
+    if (key === null || !adapter?.subscribeTrades) return;
+    const feed = new FootprintFeed(this.footprint, (time) => this.footprintBarOf(time));
+    const live: TradesLive = { key, feed, told: new TradeStream(this.tradesToldUntil), stop: () => {} };
+    this.tradesLive = live;
+    live.stop = adapter.subscribeTrades(symbol, (trades) => {
+      if (this.tradesLive !== live) return;
+      if (collects) {
+        this.resolveFootprintRow();
+        if (feed.live(trades)) this.footprintChanged();
+      }
+      this.tellTrades(live.told.live(trades), false);
+    });
+    this.fetchRecentTrades(live, adapter, symbol, collects);
+  }
+
+  /** Trades as a `trades` event, to whoever listens; none, no event. */
+  private tellTrades(trades: Trade[], recent: boolean): void {
+    if (trades.length > 0) this.eventBus.emit('trades', { trades, recent });
+  }
+
+  /** The feed's recent trades, while `live` is still the feed followed: into the footprint where they are counted, and told, those it has left out. */
+  private fetchRecentTrades(live: TradesLive, adapter: DataAdapter | null, symbol: string, collects: boolean): void {
     if (!adapter?.fetchTrades) return;
-    const mine = (): boolean => this.footprintLive === live;
+    const mine = (): boolean => this.tradesLive === live;
     adapter.fetchTrades(symbol, FOOTPRINT_RECENT_TRADES).then(
       (trades) => {
         if (!mine()) return;
-        this.resolveFootprintRow();
-        if (live.feed.history(trades, FOOTPRINT_RECENT_TRADES)) this.footprintChanged();
+        if (collects) {
+          this.resolveFootprintRow();
+          if (live.feed.history(trades, FOOTPRINT_RECENT_TRADES)) this.footprintChanged();
+        }
+        this.tellTrades(live.told.recent(trades), true);
       },
       (error: unknown) => {
         if (!mine()) return;
         // No recent trades: the live ones count from the first.
-        if (live.feed.skipHistory()) this.footprintChanged();
+        if (collects && live.feed.skipHistory()) this.footprintChanged();
+        this.tellTrades(live.told.noRecent(), false);
         const message = error instanceof Error ? error.message : String(error);
         this.eventBus.emit('dataUpdate', { kind: 'error', error: message } satisfies DataUpdatePayload);
       },
     );
   }
 
-  private stopFootprintFeed(): void {
-    this.footprintLive?.stop();
-    this.footprintLive = null;
+  private stopTradeFeed(): void {
+    const live = this.tradesLive;
+    if (!live) return;
+    // Where it left off: followed again, the feed tells no trade a second time.
+    this.tradesToldUntil = Math.max(this.tradesToldUntil, live.told.toldUntil());
+    live.stop();
+    this.tradesLive = null;
   }
 
   /** Trades kept for bars that were still to come: counted when the bars are there. */
@@ -4736,7 +4790,7 @@ export class Chart {
     // Trades kept for want of a row size too: the bars that are there now say the price it is worked out from.
     this.resolveFootprintRow();
     const byHand = this.footprintByHand.settle();
-    const live = this.footprintLive?.feed.settle() ?? false;
+    const live = this.tradesLive?.feed.settle() ?? false;
     if (byHand || live) this.footprintChanged();
   }
 
@@ -6843,7 +6897,7 @@ export class Chart {
     this.a11y?.destroy();
     this.a11y = null;
     this.interactionManager.detach();
-    this.stopFootprintFeed();
+    this.stopTradeFeed();
     this.tradingManager.destroy();
     this.animator.dispose();
     this.crosshairTooltip.destroy();

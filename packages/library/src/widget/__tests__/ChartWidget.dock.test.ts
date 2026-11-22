@@ -25,6 +25,13 @@ class FakeChart {
   }
   paneTitles: boolean[] = [];
   setPaneTitlesVisible(on: boolean): void { this.paneTitles.push(on); }
+  // The feed's trades: how many times they were asked for, and let go of.
+  follows = 0;
+  unfollows = 0;
+  followTrades(): () => void {
+    this.follows++;
+    return () => { this.unfollows++; };
+  }
   resizes = 0;
   resize(): void { this.resizes++; }
   setFeatures(patch: Partial<FeaturesConfig>): void { this.features = { ...this.features, ...patch }; }
@@ -145,6 +152,75 @@ describe('ChartWidget dock', () => {
     expect(railButton('depthLadder').hidden || getComputedStyle(railButton('depthLadder')).display === 'none').toBe(true);
     widget.setFeatures({ depthLadder: false });
     expect(widget.openPanel('depthLadder')).toBe(false);
+  });
+
+  it('holds the tape as a page of its own when the widget has one, and follows the feed’s trades while it is open', () => {
+    make({ tape: true });
+    expect(railPages()).toEqual(['alerts', 'objectTree', 'dataWindow', 'symbolInfo', 'tape']);
+    expect(FakeChart.last.follows).toBe(0);
+    expect(widget.openPanel('tape')).toBe(true);
+    expect(visible(inPanel('.tcw-tape'))).toBe(true);
+    expect(FakeChart.last.follows).toBe(1);
+    // Shut, it lets go of them.
+    widget.closePanel();
+    expect(FakeChart.last.unfollows).toBe(1);
+    widget.openPanel('tape');
+    expect(FakeChart.last.follows).toBe(2);
+    // Its rail button under one switch, the whole tape under another: off, an open tape shuts.
+    widget.setFeatures({ 'dock.tape': false });
+    expect(railButton('tape').hidden || getComputedStyle(railButton('tape')).display === 'none').toBe(true);
+    widget.setFeatures({ tape: false });
+    expect(FakeChart.last.unfollows).toBe(2);
+    expect(widget.openPanel('tape')).toBe(false);
+  });
+
+  it('lists the chart’s trades on the tape, and starts again for another symbol', () => {
+    make({ tape: { minSize: 2 } });
+    widget.openPanel('tape');
+    const rows = () => [...host.querySelectorAll('.tcw-tape-row')];
+    FakeChart.last.emit('trades', { trades: [{ time: 1000, price: 100, volume: 1, side: 'buy' }, { time: 2000, price: 101, volume: 5, side: 'sell' }], recent: true });
+    // Shut and opened again: what it took in is there, the trade under the least size left out.
+    widget.closePanel();
+    widget.openPanel('tape');
+    expect(rows()).toHaveLength(1);
+    expect((rows()[0] as HTMLElement).dataset.side).toBe('sell');
+    expect(rows()[0].children[1].textContent).toBe('101.00');
+    FakeChart.last.emit('symbolChange', { symbol: 'BBB', previous: 'AAA' });
+    expect(rows()).toHaveLength(0);
+  });
+
+  it('writes every size on the tape to the decimals the finest of them needs, so the column lines up', () => {
+    make({ tape: true });
+    widget.openPanel('tape');
+    const sizes = () => [...host.querySelectorAll('.tcw-tape-row .tcw-tape-size')].map((el) => el.textContent);
+    FakeChart.last.emit('trades', { trades: [{ time: 1000, price: 100, volume: 3, side: 'buy' }], recent: false });
+    widget.closePanel();
+    widget.openPanel('tape');
+    expect(sizes()).toEqual(['3']);
+    FakeChart.last.emit('trades', { trades: [{ time: 2000, price: 100, volume: 0.25, side: 'buy' }, { time: 3000, price: 100, volume: 1500, side: 'sell' }], recent: false });
+    widget.closePanel();
+    widget.openPanel('tape');
+    // A size of a thousand and over is shortened, as volumes are.
+    expect(sizes()).toEqual(['1.50K', '0.25', '3.00']);
+    // Another symbol's sizes are its own.
+    FakeChart.last.emit('symbolChange', { symbol: 'BBB', previous: 'AAA' });
+    FakeChart.last.emit('trades', { trades: [{ time: 4000, price: 100, volume: 7, side: 'buy' }], recent: false });
+    widget.closePanel();
+    widget.openPanel('tape');
+    expect(sizes()).toEqual(['7']);
+  });
+
+  it('makes no tape unless asked, whatever its switch says, and lets go of the feed when the widget goes', () => {
+    make({ features: { tape: true } });
+    expect(railPages()).not.toContain('tape');
+    expect(widget.openPanel('tape')).toBe(false);
+    widget.destroy();
+    make({ tape: true });
+    widget.openPanel('tape');
+    const chart = FakeChart.last;
+    widget.destroy();
+    expect(chart.unfollows).toBe(1);
+    make();
   });
 
   // A switch only hides: switches restored from getFeatures() (all on) must not add a ladder.

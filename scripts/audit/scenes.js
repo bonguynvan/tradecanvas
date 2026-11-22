@@ -525,6 +525,50 @@ const SCENES = {
     return { ...s, checks };
   },
 
+  /**
+   * The tape (time and sales) open in the dock: the trades of the chart's
+   * symbol newest on top, each with its time, its price and its size in the
+   * colour of who took it, a large one on its tint, and over them how the
+   * rows split between buyers and sellers.
+   */
+  async tape() {
+    const s = await widget({ tape: true });
+    s.widget.openPanel('tape');
+    // The feed stopped once its bars were in: the trades are given by hand, the same every run.
+    const last = s.chart.getData().at(-1);
+    const trades = [];
+    let price = last.open;
+    for (let i = 0; i < 120; i++) {
+      const up = Math.random() < 0.5;
+      price = Math.min(last.high, Math.max(last.low, price + (up ? 1 : -1) * last.close * 0.0002 * Math.random()));
+      const volume = i % 37 === 20 ? 14 : 0.05 + Math.random() * 1.6;
+      trades.push({ time: last.time + i * 2000, price, volume, side: up ? 'buy' : 'sell' });
+    }
+    s.chart.addTrades(trades);
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const checks = () => {
+      const problems = [];
+      const rows = [...document.querySelectorAll('.tcw-tape-row')];
+      if (rows.length !== trades.length) problems.push(`the tape lists ${rows.length} trades of ${trades.length}`);
+      // Newest on top, each in the colour of who took it.
+      const sides = rows.map((row) => row.dataset.side);
+      const given = trades.map((trade) => trade.side).reverse();
+      if (sides.some((side, i) => side !== given[i])) problems.push('the rows are not the trades newest first, each with its side');
+      const large = document.querySelectorAll('.tcw-tape-row[data-large]').length;
+      if (large !== 3) problems.push(`${large} trades stand out as large, 3 are`);
+      const split = document.querySelector('.tcw-tape-split');
+      const bought = trades.filter((trade) => trade.side === 'buy').reduce((sum, trade) => sum + trade.volume, 0);
+      const all = trades.reduce((sum, trade) => sum + trade.volume, 0);
+      const shown = parseFloat(split?.style.getPropertyValue('--tcw-tape-bought') ?? '');
+      if (!split || split.hidden || Math.abs(shown - (bought / all) * 100) > 0.01) problems.push(`the split says ${shown}% bought, the trades ${(bought / all) * 100}%`);
+      // A row's three figures stay in their cells.
+      const cut = rows.flatMap((row) => [...row.children]).filter((cell) => cell.scrollWidth > cell.clientWidth + 1).length;
+      if (cut > 0) problems.push(`${cut} figures do not fit their cell`);
+      return problems;
+    };
+    return { ...s, checks };
+  },
+
   /** A long bracket being placed with a paper account connected: its quantity in the bar's field and on the entry's tag. */
   async bracketQuantity() {
     const s = await widget({ trading: true });

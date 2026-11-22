@@ -121,6 +121,7 @@ export class WidgetCommands {
       { id: 'objectTree', label: this.host.t('objects.title'), category: 'action' },
       { id: 'dataWindow', label: this.host.t('action.dataWindow'), category: 'action' },
       { id: 'symbolInfo', label: this.host.t('action.symbolInfo'), category: 'action' },
+      { id: 'tape', label: this.host.t('tape.title'), category: 'action' },
       { id: 'screenshot', label: this.host.t('action.screenshot'), category: 'action' },
       { id: 'copyImage', label: this.host.t('action.copyImage'), category: 'action' },
       { id: 'printChart', label: this.host.t('action.printChart'), category: 'action' },
@@ -138,9 +139,10 @@ export class WidgetCommands {
     return items.filter((item) => item.category !== 'action' || (this.commandOn(item.id) && this.commandThere(item.id)));
   }
 
-  /** Whether the widget has what a command works on: a watchlist, a feed to compare from, layouts to save to. */
+  /** Whether the widget has what a command works on: a watchlist, a tape, a feed to compare from, layouts to save to. */
   private commandThere(id: string): boolean {
     if (id === 'watchlist') return this.host.watching.watchlist !== null;
+    if (id === 'tape') return Boolean(this.host.options.tape);
     if (id === 'compare') return this.host.adapter !== null && this.host.options.chartOptions?.features?.compareSymbols !== false;
     if (id === 'saveLayout') return this.host.layoutSession !== null;
     return true;
@@ -176,6 +178,7 @@ export class WidgetCommands {
       case 'watchlist':
       case 'alerts':
       case 'objectTree':
+      case 'tape':
         this.host.openPanel(id);
         break;
       case 'hotkeys':

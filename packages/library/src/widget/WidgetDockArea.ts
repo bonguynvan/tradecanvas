@@ -19,6 +19,7 @@ const PANEL_FEATURES = {
   dataWindow: 'dataWindow',
   symbolInfo: 'symbolInfo',
   depthLadder: 'depthLadder',
+  tape: 'tape',
 } as const satisfies Record<Exclude<WidgetPanel, 'watchlist'>, WidgetFeature>;
 
 /** The built-in panels' ids, which a page of the host's can't take. */
@@ -45,6 +46,7 @@ export interface DockHost {
   readonly root: ChartWidget['root'];
   readonly settingsState: ChartWidget['chartSettings']['settingsState'];
   readonly symbolInfoPanel: ChartWidget['symbolInfoPanel'];
+  readonly tape: ChartWidget['tape'];
   readonly t: ChartWidget['t'];
   readonly toolbar: ChartWidget['toolbar'];
   markOpen: ChartWidget['markOpen'];
@@ -101,7 +103,7 @@ export class WidgetDockArea {
 
   /**
    * Whether the widget has `panel`: the host's pages while they are there,
-   * the watchlist and the ladder only when made with them, every built-in one
+   * the watchlist, the ladder and the tape only when made with them, every built-in one
    * with its switch on.
    */
   private hasPanel(panel: DockPanelId): boolean {
@@ -109,6 +111,7 @@ export class WidgetDockArea {
     if (!BUILT_IN_PANELS.has(panel)) return false;
     if (panel === 'watchlist') return this.host.watching.watchlist !== null;
     if (panel === 'depthLadder' && this.host.trading.depthLadder === null) return false;
+    if (panel === 'tape' && this.host.tape === null) return false;
     return this.host.featureState[PANEL_FEATURES[panel as Exclude<WidgetPanel, 'watchlist'>]];
   }
 
@@ -245,7 +248,7 @@ export class WidgetDockArea {
 
   /**
    * The dock's pages, in the rail's order: the watchlist, alerts, objects,
-   * the data window, the symbol info and the depth ladder, all shut to start
+   * the data window, the symbol info, the depth ladder and the tape, all shut to start
    * with. Each draws itself as it shows, and says so on the toolbar's button.
    */
   setupDock(): void {
@@ -318,6 +321,14 @@ export class WidgetDockArea {
         id: 'depthLadder', label: this.host.t('ladder.title'), icon: 'ladder', element: ladder.element, parts: ['dock.depthLadder', 'depthLadder'],
         onShow: () => ladder.openPanel(),
         onHide: () => ladder.close(),
+      });
+    }
+    const tape = this.host.tape;
+    if (tape) {
+      dock.addPage({
+        id: 'tape', label: this.host.t('tape.title'), icon: 'tape', element: tape.element, parts: ['dock.tape', 'tape'],
+        onShow: () => tape.openPanel(),
+        onHide: () => tape.close(),
       });
     }
     this.syncRail();

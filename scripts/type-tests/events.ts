@@ -71,3 +71,14 @@ chart.on('ordersChange', (e) => {
   const halfRow: import('@tradecanvas/chart').FootprintLevel = { price: 100, buy: 1 };
   void halfRow;
 }
+
+// The trades of the chart's symbol: followed from the feed, told as an event.
+{
+  const stop: () => void = chart.followTrades();
+  stop();
+  chart.on('trades', (e) => [e.payload.trades.map((trade) => [trade.time, trade.price, trade.volume, trade.side]), e.payload.recent]);
+  chart.on('trades', (e) => {
+    // @ts-expect-error The payload holds the trades, not a single trade.
+    return e.payload.price;
+  });
+}

@@ -79,25 +79,44 @@ function tradesOfBar(bar: OHLCBar, trades: number, from: number, to: number): Tr
   const isBuy = (j: number): boolean => Math.floor(((j + 1) * buys) / count) > Math.floor((j * buys) / count);
   // Each trade's share of its side's volume: the most in the middle of the way.
   const weight = (j: number): number => 1 + Math.sin((Math.PI * (j + 0.5)) / count);
-  let buyWeight = 0;
-  let sellWeight = 0;
-  for (let j = 0; j < count; j++) {
-    if (isBuy(j)) buyWeight += weight(j);
-    else sellWeight += weight(j);
-  }
+  const order = Array.from({ length: count }, (_, j) => j);
+  const sizes = new Map<number, number>([
+    ...shared(bought, order.filter(isBuy), weight),
+    ...shared(sold, order.filter((j) => !isBuy(j)), weight),
+  ]);
   const told: Trade[] = [];
-  for (let j = 0; j < count; j++) {
+  for (const j of order) {
+    const volume = sizes.get(j) ?? 0;
+    // A side that took less than it has trades leaves some of them nothing: they are not trades.
+    if (!(volume > 0)) continue;
     const along = ((j + 0.5) / count) * legs;
     const leg = Math.min(legs - 1, Math.floor(along));
-    const buy = isBuy(j);
     told.push({
       time: Math.floor(from + ((to - from) * (j + 0.5)) / count),
       price: path[leg] + (path[leg + 1] - path[leg]) * (along - leg),
-      volume: buy ? (bought * weight(j)) / buyWeight : (sold * weight(j)) / sellWeight,
-      side: buy ? 'buy' : 'sell',
+      volume,
+      side: isBuy(j) ? 'buy' : 'sell',
     });
   }
   return told;
+}
+
+/**
+ * `total` shared among `trades` by their weights. A whole total is shared in
+ * whole sizes that add up to it to the unit: each its share rounded down,
+ * and the units left over to those that lost the most by it.
+ */
+function shared(total: number, trades: readonly number[], weight: (trade: number) => number): [number, number][] {
+  const all = trades.reduce((sum, trade) => sum + weight(trade), 0);
+  if (!(total > 0) || !(all > 0)) return [];
+  const exact = trades.map((trade) => (total * weight(trade)) / all);
+  if (!Number.isInteger(total)) return trades.map((trade, i) => [trade, exact[i]]);
+  const sizes = exact.map(Math.floor);
+  const left = total - sizes.reduce((sum, size) => sum + size, 0);
+  // The largest parts lost to rounding first; the earlier trade of two that lost the same.
+  const byLoss = exact.map((_, i) => i).sort((a, b) => (exact[b] - sizes[b]) - (exact[a] - sizes[a]) || a - b);
+  for (let k = 0; k < left; k++) sizes[byLoss[k % byLoss.length]] += 1;
+  return trades.map((trade, i) => [trade, sizes[i]]);
 }
 
 /**
@@ -125,7 +144,11 @@ export class MockAdapter implements DataAdapter {
   private formingTimeframe: TimeFrame | null = null;
   /** The newest bars it gave, by symbol and timeframe, kept up with the ticks: what its trades are told from. */
   private recent = new Map<string, OHLCBar[]>();
-  /** The timeframe of the bars each symbol was last given in. */
+  /**
+   * The timeframe of the bars each symbol was given in since it last let go
+   * of a stream: what trades asked for before the stream starts are told
+   * from. Once it streams, the series it streams says.
+   */
   private lastGiven = new Map<string, TimeFrame>();
   /** Who listens for trades, each to a symbol's. */
   private tradeListeners = new Set<{ symbol: string; send: (trades: Trade[]) => void }>();
@@ -150,8 +173,9 @@ export class MockAdapter implements DataAdapter {
 
   disconnect(): void {
     this.stopTicking();
-    // The bars it gave are of a series no longer shown: trades asked for now are not theirs.
-    this.recent.clear();
+    // Bars given before this are of a series it no longer streams: trades asked for now, with no bars given
+    // since, are not theirs (a tick chart asks for trades alone). The bars themselves are kept: a stream lets
+    // go and takes up again between loading its bars and starting, and its trades are still those bars'.
     this.lastGiven.clear();
     this.state = 'disconnected';
     this.emitEvent('connectionChange', 'disconnected');
@@ -321,6 +345,7 @@ export class MockAdapter implements DataAdapter {
 
   dispose(): void {
     this.disconnect();
+    this.recent.clear();
     this.listeners.clear();
   }
 

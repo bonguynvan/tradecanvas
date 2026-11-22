@@ -137,7 +137,7 @@
 }
 
 /* One header for every page: its title, its own buttons, and the close at the end. */
-.tcw-dock-page > :is(.tcw-watchlist-header, .tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header, .tcw-ladder-header, .tcw-dock-host-header) {
+.tcw-dock-page > :is(.tcw-watchlist-header, .tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header, .tcw-ladder-header, .tcw-tape-header, .tcw-dock-host-header) {
   position: sticky;
   top: 0;
   z-index: 2;
@@ -164,7 +164,7 @@
   white-space: nowrap;
 }
 
-.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-new, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close, .tcw-dock-host-close) {
+.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-new, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close, .tcw-tape-close, .tcw-dock-host-close) {
   display: inline-grid;
   place-items: center;
   flex: none;
@@ -178,12 +178,12 @@
   cursor: pointer;
 }
 
-.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-new, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close, .tcw-dock-host-close):hover {
+.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-new, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close, .tcw-tape-close, .tcw-dock-host-close):hover {
   background: var(--tcw-hover-bg);
   color: var(--tcw-text);
 }
 
-.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-new, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close, .tcw-dock-host-close):focus-visible {
+.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-new, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close, .tcw-tape-close, .tcw-dock-host-close):focus-visible {
   outline: none;
   box-shadow: var(--tcw-ring);
 }
@@ -246,7 +246,7 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-.tcw-root[data-tcw-narrow] .tcw-dock-page > :is(.tcw-watchlist-header, .tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header, .tcw-ladder-header, .tcw-dock-host-header) {
+.tcw-root[data-tcw-narrow] .tcw-dock-page > :is(.tcw-watchlist-header, .tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header, .tcw-ladder-header, .tcw-tape-header, .tcw-dock-host-header) {
   background: var(--tcw-bg-elevated);
 }
 
@@ -416,4 +416,117 @@
   .tcw-ladder-cell::before { forced-color-adjust: none; background: Highlight; opacity: 0.3; }
   .tcw-ladder-cell:focus-visible { outline: 2px solid Highlight; outline-offset: -2px; }
   .tcw-ladder-own { border: 1px solid CanvasText; }
+}
+
+/* === The tape (time and sales), a page of the dock === */
+
+.tcw-tape-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font: inherit;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The least size a trade is listed from: a short field by the title, its figures as the rows'. */
+.tcw-root .tcw-tape-min {
+  flex: none;
+  box-sizing: border-box;
+  inline-size: 9ch;
+  height: var(--tcw-control-h);
+  padding-inline: var(--tcw-space-3);
+  font-family: var(--tcw-font-mono);
+  font-size: var(--tcw-font-size-xs);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+/* Under the header and staying there: the columns' names, and how the rows split between buyers and sellers. */
+.tcw-tape-top {
+  position: sticky;
+  top: var(--tcw-dock-head-h);
+  z-index: 1;
+  flex: none;
+  border-bottom: 1px solid var(--tcw-divider);
+  background: var(--tcw-bg-surface);
+}
+
+/* Time, price, size: the heading and each row are grids of the same fixed shares, so the columns line up. */
+.tcw-tape-cols,
+.tcw-tape-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--tcw-space-3);
+  padding-inline: var(--tcw-space-5);
+}
+.tcw-tape-cols {
+  height: var(--tcw-space-6);
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-xs);
+  font-weight: var(--tcw-weight-strong);
+  text-transform: var(--tcw-label-case);
+  letter-spacing: var(--tcw-label-tracking);
+}
+.tcw-tape-cols span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.tcw-tape-cols span:not(:first-child),
+.tcw-tape-row span:not(:first-child) {
+  text-align: end;
+}
+
+/* What the buyers took of the rows, from the bar's start, and the sellers the rest. */
+.tcw-tape-split {
+  height: 3px;
+  background: linear-gradient(to right, var(--tcw-green) var(--tcw-tape-bought, 50%), var(--tcw-red) var(--tcw-tape-bought, 50%));
+}
+
+.tcw-tape-body { flex: 1; padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* A row 21 tall, in the mono figures: when, at what price, how much. */
+.tcw-tape-row {
+  height: var(--tcw-space-6);
+  color: var(--tcw-text);
+  font-family: var(--tcw-font-mono);
+  font-size: var(--tcw-font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+/* Figures read left to right in a widget written either way. */
+.tcw-tape-row span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.tcw-tape-time { color: var(--tcw-text-muted); }
+.tcw-tape-row[data-side='buy'] .tcw-tape-price { color: var(--tcw-green); }
+.tcw-tape-row[data-side='sell'] .tcw-tape-price { color: var(--tcw-red); }
+/* A trade several times the usual size: on its side's tint, its size in strong. */
+.tcw-tape-row[data-large][data-side='buy'] { background: var(--tcw-green-soft); }
+.tcw-tape-row[data-large][data-side='sell'] { background: var(--tcw-red-soft); }
+.tcw-tape-row[data-large] .tcw-tape-size { font-weight: var(--tcw-weight-strong); }
+
+.tcw-tape-empty {
+  padding: var(--tcw-space-6);
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-sm);
+  text-align: center;
+}
+
+/* Narrow (a finger, not a pointer): rows a control tall. */
+.tcw-root[data-tcw-narrow] .tcw-tape-row {
+  height: var(--tcw-control-h);
+}
+
+/* Forced colours drop the fills: the split shows in the system's colours, a large trade framed. */
+@media (forced-colors: active) {
+  .tcw-tape-split { forced-color-adjust: none; }
+  .tcw-tape-row[data-large] { outline: 1px solid CanvasText; outline-offset: -1px; }
 }

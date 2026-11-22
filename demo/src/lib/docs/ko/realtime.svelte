@@ -296,6 +296,29 @@ chart.clearFootprint()                                // 다른 시리즈의 행
   행에서 그립니다.
 </p>
 
+<h2 id="tape">체결 내역, 그리고 체결 그 자체</h2>
+<p>
+  <code>chart.followTrades()</code>는 돌려주는 함수가 호출될 때까지 차트 심볼의 체결을 따라갑니다:
+  피드의 최근 체결, 이어서 실시간 체결을 <code>trades</code> 이벤트로 알립니다. 따라가는 쪽이 몇이든 피드에는 한 번만
+  요청하며, 풋프린트를 보여 주는 차트는 스스로 따라갑니다. <code>chart.addTrades()</code>로 넣은 체결도 같은 방식으로
+  알립니다. 피드의 체결은 두 번 알리지 않습니다: 같은 심볼의 다른 타임프레임에서도, 재연결 뒤에도 그렇고, 그때는 놓친 것만
+  알립니다.
+</p>
+<pre><code>{`const stop = chart.followTrades()
+chart.on('trades', (e) => {
+  // e.payload.trades: 오래된 것부터
+  // e.payload.recent: 피드의 최근 체결이며, 방금 이루어진 체결이 아님
+  for (const trade of e.payload.trades) log(trade.time, trade.price, trade.volume, trade.side)
+})
+stop()   // 아무도 따라가지 않고 차트가 풋프린트도 아니면 피드를 놓아 줌`}</code></pre>
+<p>
+  위젯에서는 <code>tape: true</code>가 체결 내역(time and sales)을 도크에 추가합니다: 최신 체결이 맨 위에 오고,
+  각각 시각, 가격, 수량이 있으며, 가격은 가져간 쪽의 색입니다. 목록 위의 막대는 보이는 행 가운데 매수 측과 매도 측이
+  각각 얼마나 가져갔는지를 보여 주고, 보통 크기의 열 배인 체결은 눈에 띄게 표시되며, 최소 수량보다 작은 체결은 뺄 수 있습니다
+  (<code>{`tape: { minSize: 0.5 }`}</code>, 또는 패널에 직접 입력). 위젯은 체결 내역이 열려 있는 동안에만 피드의 체결을
+  따라갑니다. <code>widget.openPanel('tape')</code>로 엽니다. 스위치는 <code>tape</code>와 <code>dock.tape</code>입니다.
+</p>
+
 <h2>시장 상태와 뉴스</h2>
 <p>
   <code>marketStatus(info, now)</code>는 거래소 시간대 기준의 거래 시간(서머타임 전환 포함)으로 특정 시점에 종목의 시장이

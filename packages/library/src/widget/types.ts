@@ -156,6 +156,18 @@ export interface ChartWidgetOptions {
   depthLadder?: boolean;
 
   /**
+   * The tape (time and sales), a page of the dock: the trades of the chart's
+   * symbol as they are made, newest on top, each with its time, price and
+   * size in the colour of who took it. Off until this is `true` (its switch
+   * only hides it), or the settings it starts with. While it is open the
+   * widget follows the feed's trades (a feed with `fetchTrades` and
+   * `subscribeTrades`); trades given with `chart.addTrades` are listed too.
+   * Open it with `widget.openPanel('tape')`, its rail button or the command
+   * palette.
+   */
+  tape?: boolean | import('./WidgetTape.js').TapeOptions;
+
+  /**
    * The account panel at the bottom: open positions with their profit and
    * loss, working orders and the fills so far, with close, reverse and cancel,
    * and an order ticket. A toolbar button opens it. Default `true` when
@@ -809,7 +821,7 @@ export interface DrawingToolGroupDef {
 }
 
 /** A panel of the widget's dock, beside the chart (in a sheet on a phone). */
-export type WidgetPanel = 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder';
+export type WidgetPanel = 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder' | 'tape';
 
 /** A panel of the dock: a built-in one, or the id of a page you added with `addDockPage`. */
 export type DockPanelId = WidgetPanel | (string & {});

@@ -78,6 +78,7 @@ export const UI_ICONS: Readonly<Record<string, IconDef>> = {
   stepForward: { d: 'M18 5v14M5.5 5.5v13l10-6.5z' }, // Replay: one bar on
   replayPick: { d: 'M7.5 3.5V7M7.5 17V20.5M6 7h3a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 9 17H6a1.5 1.5 0 0 1-1.5-1.5v-7A1.5 1.5 0 0 1 6 7z', dash: 'M15 3V21', soft: 'M15 4h4.5a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H15z' }, // Replay: pick the start bar (a candle, the cut, the hidden bars)
   ladder: { d: 'M4 6H11M13 6H17M6 10H11M13 10H20M8 14H11M13 14H15M5 18H11M13 18H19' }, // Depth ladder
+  tape: { d: 'M6 3.5h12v17l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5-2 1.5zM9 8.5h6M9 12.5h6' }, // Time and sales
   save: { d: 'M5.5 3.5h10.5l4.5 4.5v10.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2zM8 3.5v5h7v-5M7.5 20.5v-6h9v6' }, // Save layout
   folder: { d: 'M3.5 7a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z' }, // Open layout
   link: { d: 'M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1.2 1.2M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1.2-1.2' }, // Sync

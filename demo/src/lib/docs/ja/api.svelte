@@ -28,6 +28,7 @@
     <tr><td><code>updateLastBar(bar)</code></td><td>形成中の現在のバーを更新します。</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>ティックを最後のバーに統合します。</td></tr>
     <tr><td><code>addTrades(trades)</code></td><td>約定を<a href={href('/docs/realtime#footprint')}>フットプリント</a>に入れます：各約定を、その時刻のバーとその価格の行に、取った側として数えます。</td></tr>
+    <tr><td><code>followTrades()</code></td><td>フィードの約定を、直近のものに続いてライブのものを、<code>trades</code> イベントとして、返す関数が呼ばれるまで追います。<a href={href('/docs/realtime#tape')}>歩み値</a>を参照してください。</td></tr>
     <tr><td><code>setFootprint(bars)</code> / <code>getFootprint(time?)</code> / <code>clearFootprint()</code></td><td>フットプリントの行をバーごとに：手で渡す、読み返す（ひとつのバーの、またはすべてのバーの）、消す。</td></tr>
     <tr><td><code>updateBar(bar)</code></td><td>読み込み済みのバーを修正します。系列のどこにあっても、時刻が同じバーです。表示位置はそのままで、その時刻のバーがなければ false を返します。</td></tr>
     <tr><td><code>getData()</code></td><td>元の OHLC 系列を取得します。</td></tr>
@@ -577,6 +578,7 @@ chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('marginCall', e => /* { marginLevel, level, equity, marginUsed }: 口座が証拠金について警告を受けた */)
+chart.on('trades', e => /* { trades, recent }：シンボルの約定。追っている間（followTrades、フットプリント）または渡したとき（addTrades） */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* 描画、インジケーター、アラート、チャートタイプ、テーマのいずれかが変わった可能性がある */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
@@ -702,7 +704,7 @@ widget.destroy()`}</code></pre>
   <code>null</code> が返ります。<code>onPanelChange</code> オプションには、どのように変わったか（レール、閉じるボタン、
   自分のコード、ウィジェットが狭くなったこと）にかかわらず、開いているパネルの id か <code>null</code> が渡されます。
 </p>
-<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder', or a page's id; false if not there
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder' | 'tape', or a page's id; false if not there
 widget.getOpenPanel()           // the panel open, or null
 widget.closePanel()
 

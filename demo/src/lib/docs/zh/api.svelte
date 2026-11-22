@@ -28,6 +28,7 @@
     <tr><td><code>updateLastBar(bar)</code></td><td>修改当前正在形成的K线。</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>把一笔 tick 合并进最后一根K线。</td></tr>
     <tr><td><code>addTrades(trades)</code></td><td>向<a href={href('/docs/realtime#footprint')}>足迹图</a>传入成交：每笔按时间计入对应的K线、按价格计入对应的行，记在主动成交的一方。</td></tr>
+    <tr><td><code>followTrades()</code></td><td>跟随数据源的成交，先是最近的成交，然后是实时成交，以 <code>trades</code> 事件发出，直到调用它返回的函数。参见<a href={href('/docs/realtime#tape')}>逐笔成交</a>。</td></tr>
     <tr><td><code>setFootprint(bars)</code> / <code>getFootprint(time?)</code> / <code>clearFootprint()</code></td><td>足迹图的各行，逐根K线：手动传入、读回（某一根K线的，或所有K线的）、清除。</td></tr>
     <tr><td><code>updateBar(bar)</code></td><td>修正一根已加载的K线：时间相同的那根，无论它在序列中的哪个位置。视图保持不变；没有已加载的K线是这个时间时返回 false。</td></tr>
     <tr><td><code>getData()</code></td><td>读取原始 OHLC 序列。</td></tr>
@@ -554,6 +555,7 @@ chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('marginCall', e => /* { marginLevel, level, equity, marginUsed }：账户收到了追加保证金通知 */)
+chart.on('trades', e => /* { trades, recent }：品种的成交，在被跟随（followTrades、足迹图）或被传入（addTrades）时 */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* 画线、指标、提醒、图表类型或主题可能已变化 */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
@@ -671,7 +673,7 @@ widget.destroy()`}</code></pre>
   无论打开的面板如何变化（按钮栏、关闭按钮、你的代码、组件变窄），<code>onPanelChange</code> 选项都会收到打开的面板的 id，
   或 <code>null</code>。
 </p>
-<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder', or a page's id; false if not there
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder' | 'tape', or a page's id; false if not there
 widget.getOpenPanel()           // the panel open, or null
 widget.closePanel()
 

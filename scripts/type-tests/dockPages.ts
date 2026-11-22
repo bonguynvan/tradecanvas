@@ -15,4 +15,10 @@ own?.remove();
 // @ts-expect-error A page has something to show.
 widget.addDockPage({ id: 'empty', label: 'Empty', icon: 'info' });
 new ChartWidget(document.body, { onPanelChange: (panel: DockPanelId | null) => void panel });
+// The tape: a page of the dock made with its option, with the settings it starts with.
+new ChartWidget(document.body, { tape: true });
+new ChartWidget(document.body, { tape: { minSize: 0.5, rows: 100 } });
+widget.openPanel('tape');
+// @ts-expect-error The least size is a number.
+new ChartWidget(document.body, { tape: { minSize: '0.5' } });
 export { open };

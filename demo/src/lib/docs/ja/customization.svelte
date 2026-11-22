@@ -62,7 +62,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid のすべてのチャー
 <p>
   スイッチが表示・非表示にするのはウィジェット自身の部品です。チャートそのものでの操作——描画、取引、ズーム、ある時間足——
   を止めるには、チャートの features（<code>chartOptions.features</code>）を使います。データやストレージを伴う部品は
-  オプションのままです：<code>trading</code>、<code>watchlist</code>、<code>depthLadder</code>、<code>layouts</code>
+  オプションのままです：<code>trading</code>、<code>watchlist</code>、<code>depthLadder</code>、<code>tape</code>、<code>layouts</code>
   がそれ自体の有無を決め、スイッチはそのボタンを隠します。スイッチをオンにしてもこれらは追加されません：<code>features: &#123; depthLadder: true &#125;</code> だけではラダーは作られません。
 </p>
 <p>従来のオン・オフのオプションはこれらのスイッチそのもので、これまでどおり使えます：</p>
@@ -88,7 +88,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid のすべてのチャー
       <code>indicatorSettings</code> <code>drawingSettings</code> <code>dataWindow</code> <code>commandPalette</code>
       <code>hotkeySheet</code> <code>goToDate</code> <code>replay</code> <code>screenshot</code> <code>copyImage</code>
       <code>shareView</code> <code>autoFib</code> <code>themeToggle</code> <code>fullscreen</code> <code>accountPanel</code>
-      <code>orderTicket</code> <code>tradeButtons</code> <code>bracketOrders</code> <code>depthLadder</code> <code>layouts</code>
+      <code>orderTicket</code> <code>tradeButtons</code> <code>bracketOrders</code> <code>depthLadder</code> <code>tape</code> <code>layouts</code>
       <code>indicatorTemplates</code> <code>compare</code> <code>indicatorLegend</code> <code>navigation</code>
       <code>customTimeframes</code> <code>marks</code> <code>intervalTyping</code> <code>symbolTyping</code> <code>dragDropImport</code> <code>hotkeys</code>
       <code>toasts</code> <code>favoritesBar</code>
@@ -104,7 +104,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid のすべてのチャー
     </td></tr>
     <tr><td>ドック</td><td>
       <code>dock.watchlist</code> <code>dock.alerts</code> <code>dock.objectTree</code> <code>dock.dataWindow</code>
-      <code>dock.symbolInfo</code> <code>dock.depthLadder</code>
+      <code>dock.symbolInfo</code> <code>dock.depthLadder</code> <code>dock.tape</code>
     </td></tr>
     <tr><td>描画サイドバー</td><td>
       <code>sidebar.cursor</code> <code>sidebar.favorites</code> <code>sidebar.lines</code> <code>sidebar.fibonacci</code>

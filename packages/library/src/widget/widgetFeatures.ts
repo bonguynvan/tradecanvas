@@ -7,7 +7,7 @@ import type { DrawingMenuAction } from './drawingMenu.js';
  * without a dot is a whole capability, off wherever it shows (its button,
  * its menu entries, its command, its keys); a dotted name is one place.
  * A switch hides; it never adds a part that is off until its option asks
- * for it (`depthLadder: true`, `watchlist: true`).
+ * for it (`depthLadder: true`, `tape: true`, `watchlist: true`).
  * The names are a contract: new ones are added, none is renamed.
  */
 export const WIDGET_FEATURES = [
@@ -16,7 +16,7 @@ export const WIDGET_FEATURES = [
   // Capabilities, wherever they show.
   'alerts', 'objectTree', 'symbolInfo', 'symbolSearch', 'settings', 'indicatorSettings', 'drawingSettings',
   'dataWindow', 'commandPalette', 'hotkeySheet', 'goToDate', 'replay', 'screenshot', 'copyImage', 'shareView',
-  'autoFib', 'themeToggle', 'fullscreen', 'accountPanel', 'orderTicket', 'tradeButtons', 'bracketOrders', 'depthLadder',
+  'autoFib', 'themeToggle', 'fullscreen', 'accountPanel', 'orderTicket', 'tradeButtons', 'bracketOrders', 'depthLadder', 'tape',
   'layouts', 'indicatorTemplates', 'compare', 'indicatorLegend', 'navigation', 'customTimeframes', 'marks',
   'intervalTyping', 'symbolTyping', 'dragDropImport', 'hotkeys', 'toasts', 'favoritesBar',
   // The toolbar's buttons.
@@ -30,7 +30,7 @@ export const WIDGET_FEATURES = [
   'sidebar.zoomArea', 'sidebar.stayInDrawing', 'sidebar.undo', 'sidebar.redo', 'sidebar.clear',
   'sidebar.lockAll', 'sidebar.hideAll',
   // The dock's rail: a button for each panel.
-  'dock.watchlist', 'dock.alerts', 'dock.objectTree', 'dock.dataWindow', 'dock.symbolInfo', 'dock.depthLadder',
+  'dock.watchlist', 'dock.alerts', 'dock.objectTree', 'dock.dataWindow', 'dock.symbolInfo', 'dock.depthLadder', 'dock.tape',
   // The status bar.
   'statusBar.range', 'statusBar.goToDate', 'statusBar.market', 'statusBar.connection', 'statusBar.symbol',
   'statusBar.clock', 'statusBar.scale',
@@ -162,6 +162,7 @@ export const COMMAND_FEATURES: Readonly<Record<string, WidgetFeature>> = {
   autoFib: 'autoFib',
   dataWindow: 'dataWindow',
   symbolInfo: 'symbolInfo',
+  tape: 'tape',
 };
 
 /**

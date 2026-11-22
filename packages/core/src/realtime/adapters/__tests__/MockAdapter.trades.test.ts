@@ -165,3 +165,34 @@ describe('MockAdapter: what the review turned up', () => {
     adapter.dispose();
   });
 });
+
+describe('MockAdapter: trades asked for once it streams', () => {
+  it('still tells its bars’ trades after the stream let go of it and took it up again, as one does between loading and starting', async () => {
+    const adapter = new MockAdapter({ historySize: 60, tickInterval: 60_000 });
+    const bars = await adapter.fetchHistory('BTCUSDT', '1m');
+    // What a stream does once the history is in: out of whatever it was in, then into the new series.
+    adapter.disconnect();
+    adapter.connect({ symbol: 'BTCUSDT', timeframe: '1m' });
+    const trades = await adapter.fetchTrades('BTCUSDT', 1000);
+    const last = bars.at(-1)!;
+    const of = trades.filter((t) => t.time >= last.time);
+    expect(of.length).toBeGreaterThan(10);
+    expect(sum(of)).toBeCloseTo(last.volume, 6);
+    for (const t of of) {
+      expect(t.price).toBeGreaterThanOrEqual(last.low - 1e-9);
+      expect(t.price).toBeLessThanOrEqual(last.high + 1e-9);
+    }
+    adapter.dispose();
+  });
+
+  it('tells its bars’ trades in whole sizes, as its ticks are, adding up to each bar to the unit', async () => {
+    const adapter = new MockAdapter({ historySize: 60 });
+    const bars = await adapter.fetchHistory('BTCUSDT', '1m');
+    const trades = await adapter.fetchTrades('BTCUSDT', 1000);
+    expect(trades.every((t) => Number.isInteger(t.volume) && t.volume > 0)).toBe(true);
+    const last = bars.at(-1)!;
+    const of = trades.filter((t) => t.time >= last.time);
+    expect(sum(of)).toBe(last.volume);
+    expect(sum(of, 'buy')).toBe(last.buyVolume);
+  });
+});

@@ -82,6 +82,8 @@ import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { WidgetQuoteButtons } from './WidgetQuoteButtons.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
+import { WidgetTape } from './WidgetTape.js';
+import { sizeDecimals } from './tapeRows.js';
 import { WidgetDataWindow, PERCENT_DECIMALS as DATA_WINDOW_PERCENT_DECIMALS } from './WidgetDataWindow.js';
 import type { DepthData } from '@tradecanvas/commons';
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
@@ -141,6 +143,8 @@ const DRAWING_BUTTON_ROOM = 44 + 10 * 2;
 const SLOW_LOCAL_SWITCH_MS = 48;
 /** Base series this long are assumed slow to resample before any timing exists. */
 const LARGE_SERIES_BARS = 50_000;
+/** The tape writes a size in full under this, and shortened (1.2K) from it up. */
+const TAPE_SHORT_FROM = 1000;
 
 /** Upper bound on waiting for a paint — rAF never fires in a frame that isn't rendering. */
 const PAINT_WAIT_MAX_MS = 100;
@@ -340,6 +344,12 @@ export class ChartWidget {
   /** The note shown over a signal marker under the pointer. */
   private markerTip: HTMLDivElement | null = null;
   private dataWindow: WidgetDataWindow | null = null;
+  /** The tape (time and sales), a page of the dock: made only with the `tape` option. */
+  private tape: WidgetTape | null = null;
+  /** Lets go of the feed's trades the open tape follows; null while it is shut. */
+  private stopTapeTrades: (() => void) | null = null;
+  /** The decimals the tape writes its sizes to: as many as the finest size it listed needs. */
+  private tapeSizeDecimals = 0;
   private lastHoverIndex: number | null = null;
   /** The bar the crosshair reported at it: on Renko and the like a brick, not a data bar. */
   private lastHoverBar: OHLCBar | null = null;
@@ -1090,6 +1100,29 @@ export class ChartWidget {
     });
     // The indicators' values changed (a tick, or outputs from the indicator worker) under a still pointer.
     this.chart.on('indicatorUpdate', () => this.docking.scheduleDataWindow());
+
+    // The tape (opt-in): the trades of the chart's symbol, the feed's followed while it is open.
+    if (this.options.tape) {
+      const tape = new WidgetTape(this.root, {
+        formatTime: (time) => this.formatTapeTime(time),
+        formatPrice: (p) => this.formatAlertPrice(p),
+        formatSize: (size) => this.formatTapeSize(size),
+        onToggle: (open) => this.followTapeTrades(open),
+        onClose: () => this.docking.closePanelByHand('tape'),
+      }, typeof this.options.tape === 'object' ? this.options.tape : {}, this.t);
+      this.tape = tape;
+      this.chart.on('trades', (e) => {
+        for (const trade of e.payload.trades) {
+          if (trade.volume < TAPE_SHORT_FROM) this.tapeSizeDecimals = Math.max(this.tapeSizeDecimals, sizeDecimals(trade.volume));
+        }
+        tape.push(e.payload.trades);
+      });
+      // Another symbol's trades are another tape.
+      this.chart.on('symbolChange', () => {
+        this.tapeSizeDecimals = 0;
+        tape.clear();
+      });
+    }
     // The bar another chart of a grid points at here, or the latest again when it goes.
     this.chart.on('crosshairSync', (e) => {
       if (this.pointerOnChart) return;
@@ -2240,6 +2273,8 @@ export class ChartWidget {
     this.alerting.alertNotifier?.destroy();
     this.trading.depthLadder?.destroy();
     this.dataWindow?.destroy();
+    this.followTapeTrades(false);
+    this.tape?.destroy();
     if (this.watching.watchlistInterval) clearInterval(this.watching.watchlistInterval);
     if (this.marketTimer) clearInterval(this.marketTimer);
     if (this.clockTimer) clearInterval(this.clockTimer);
@@ -2401,6 +2436,7 @@ export class ChartWidget {
       ['accountPanel', () => this.trading.toggleAccountPanel(false)],
       ['orderTicket', () => this.trading.orderTicket?.close()],
       ['depthLadder', () => this.docking.dock?.closePage('depthLadder')],
+      ['tape', () => this.docking.dock?.closePage('tape')],
       ['goToDate', () => this.goToDate?.close()],
       ['settings', () => this.settings?.close()],
       ['indicatorSettings', () => this.indicatorSettings?.close()],
@@ -3123,6 +3159,26 @@ export class ChartWidget {
    */
   private formatMoney(value: number): string {
     return this.formatNumber(value, Math.min(stepDecimals(this.chart.getPriceStep()), MONEY_DECIMALS));
+  }
+
+  /** Follow the feed's trades for the tape while it is open, and let go of them when it shuts. */
+  private followTapeTrades(open: boolean): void {
+    this.stopTapeTrades?.();
+    this.stopTapeTrades = open ? this.chart.followTrades() ?? null : null;
+  }
+
+  /** A trade's time as the tape writes it: the time of day in the display zone, to the second. */
+  private formatTapeTime(time: number): string {
+    const { time: hoursAndMinutes } = utcToWallTime(time, this.displayTimezone());
+    return `${hoursAndMinutes}:${String(new Date(time).getUTCSeconds()).padStart(2, '0')}`;
+  }
+
+  /** A trade's size as the tape writes it: shortened from a thousand up; below, to the decimals the finest size listed needs, so the column lines up. */
+  private formatTapeSize(size: number): string {
+    if (size >= TAPE_SHORT_FROM) return this.formatVolume(size);
+    const locale = this.chartSettings.settingsState.numberLocale || undefined;
+    const decimals = this.tapeSizeDecimals;
+    return size.toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
   }
 
   /** A volume as the data window shows it: in 만, 억 and 조 when the chart's numbers are Korean. */
@@ -3980,6 +4036,7 @@ export class ChartWidget {
       get root() { return w.root; },
       get settingsState() { return w.chartSettings.settingsState; },
       get symbolInfoPanel() { return w.symbolInfoPanel; },
+      get tape() { return w.tape; },
       get t() { return w.t; },
       get toolbar() { return w.toolbar; },
       get trading() { return w.trading; },
