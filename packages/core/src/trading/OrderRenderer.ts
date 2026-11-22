@@ -1,11 +1,17 @@
 import type { TradingOrder, TradingConfig, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
-import { UI_ICONS, priceTagText } from '@tradecanvas/commons';
+import { UI_ICONS, orderQuantityText, priceTagText } from '@tradecanvas/commons';
 import type { LineButton } from './lineButtons.js';
 import { inPlot, levelLine } from './plot.js';
 import { amountAt, amountDecimals, formatAmount } from './positionFormat.js';
 import { levelTags } from './PositionRenderer.js';
 import { drawAxisBadge, drawTags, type AxisBadge, type TagCell, type TradingTag } from './tradingTags.js';
+
+/** What is left of an order to fill: all of it, less what has filled of one that fills in parts. */
+function leftOf(order: TradingOrder): number {
+  const filled = order.filledQuantity;
+  return typeof filled === 'number' && Number.isFinite(filled) && filled > 0 ? Math.max(0, order.quantity - filled) : order.quantity;
+}
 
 export interface DragState {
   orderId: string;
@@ -97,8 +103,10 @@ export class OrderRenderer {
   }
 
   /**
-   * Each order's tag: its quantity, its side and kind, OCO when it is one
-   * of a group where one cancels the others, and a × that cancels it; a tag on its stop and its target saying what they would make.
+   * Each order's tag: its quantity (how much has filled of how much, once
+   * a part of it has), its side and kind, OCO when it is one of a group
+   * where one cancels the others, and a × that cancels it; a tag on its
+   * stop and its target saying what they would make.
    */
   tags(orders: TradingOrder[], viewport: ViewportState, config: TradingConfig, dragState: DragState | null): TradingTag[] {
     const colors = colorsOf(config);
@@ -108,7 +116,7 @@ export class OrderRenderer {
       const y = priceToY(price, viewport);
       if (inPlot(y, viewport)) {
         const cells: TagCell[] = [
-          { kind: 'stamp', text: String(order.quantity) },
+          { kind: 'stamp', text: orderQuantityText(order) },
           { kind: 'text', text: orderKindText(order) },
         ];
         // One of a group where one cancels the others: its filling takes the rest off.
@@ -119,11 +127,13 @@ export class OrderRenderer {
         const grab = order.draggable === false ? undefined : { kind: 'order' as const, orderId: order.id };
         tags.push({ y, color: order.side === 'buy' ? colors.buy : colors.sell, cells, grab });
       }
+      // What its stop and its target would make is of what is left of it: what has filled is a position, with tags of its own.
+      const left = leftOf(order);
       for (const which of ['stopLoss', 'takeProfit'] as const) {
         const stop = order[which];
         const stopY = stop === undefined ? NaN : priceToY(stop, viewport);
         if (stop === undefined || !inPlot(stopY, viewport)) continue;
-        const amount = amountAt(order.side, price, order.quantity, stop);
+        const amount = amountAt(order.side, price, left, stop);
         tags.push({
           y: stopY,
           color: which === 'stopLoss' ? colors.loss : colors.profit,
@@ -134,6 +144,7 @@ export class OrderRenderer {
           ],
         });
       }
+      // Its levels are sizes of the position's plan, not of what is left of the order: written as planned.
       tags.push(...levelTags(order.takeProfits, order.side, price, order.quantity, viewport, config));
     }
     return tags;

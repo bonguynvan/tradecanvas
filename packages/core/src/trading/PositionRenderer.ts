@@ -1,6 +1,6 @@
 import type { TakeProfitLevel, TradingPosition, TradingConfig, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
-import { UI_ICONS, priceTagText } from '@tradecanvas/commons';
+import { UI_ICONS, priceTagText, quantityText } from '@tradecanvas/commons';
 import {
   amountAt,
   buildPositionLabelContext,
@@ -337,8 +337,7 @@ export function levelTags(
       color: colors.profit,
       cells: [
         { kind: 'stamp', text: `TP${i + 1}` },
-        // To the digits a quantity is written in, with no sum's rounding after them.
-        { kind: 'text', text: String(Number(part.toFixed(8))) },
+        { kind: 'text', text: quantityText(part) },
         { kind: 'text', text: formatAmount(amount, amountDecimals(amount, entry, config.pricePrecision), viewport.numberLocale), color: amount >= 0 ? colors.profit : colors.loss },
       ],
       ...(positionId === undefined ? {} : { grab: { kind: 'level' as const, positionId, index: i } }),

@@ -1,5 +1,6 @@
 import type { ActivityEntry } from '../model/ActivityLog.js';
 import type { AccountSummary, FillEvent, TradingOrder, TradingPosition } from '@tradecanvas/commons';
+import { orderQuantityText } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, type MessageKey, type Translator } from './i18n.js';
 import { markPart } from './widgetFeatures.js';
@@ -526,12 +527,14 @@ export class WidgetAccountPanel {
     const { formatPrice } = this.callbacks;
     const rows = this.snapshot.orders.map((o) => {
       const type = known(ORDER_TYPES, o.type === 'stopLimit' ? 'stop' : o.type, 'limit');
+      // Filled of the whole, once a part of it has filled, as its tag on the chart says: one figure, left to right in any row.
+      const quantity = orderQuantityText(o, ' / ');
       const which = `${this.sideText(o.side, 'trade')} ${o.quantity} @ ${formatPrice(o.price)}`;
       return [
         this.sideCell(o.side, 'trade'),
         // One of a group where one cancels the others says so beside its type, as its tag on the chart does.
         o.ocoGroup ? `${this.t(`ticket.type.${type}` as MessageKey)} · ${this.t('account.oco')}` : this.t(`ticket.type.${type}` as MessageKey),
-        String(o.quantity),
+        quantity === String(o.quantity) ? quantity : ltr(quantity),
         formatPrice(o.price),
         this.price(o.stopLoss),
         this.target(o),
