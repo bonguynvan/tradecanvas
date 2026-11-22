@@ -18,6 +18,24 @@ export type StyleValueKind = 'color' | 'lineStyle' | 'width' | 'boolean';
  *   or fall: the legend's close and change, the crosshair and pinned
  *   tooltips and the measure tool. Unset, they take the main series' up and
  *   down; set, the candles can be hidden (transparent) without them.
+ * - `lastPrice.labelBackground` fills the last price's tag in one colour
+ *   whatever the day's direction, and `lastPrice.labelTextColor` colours its
+ *   text. Unset, the tag is the up or the down colour and its text the one
+ *   that reads on it. The line keeps `upColor` and `downColor` either way.
+ * - `axis.price.valueTagsOutlined` draws an indicator's value tags on the
+ *   price axis (in the price pane and in the indicator panes) outlined:
+ *   the chart's background (a pane's own where it has one), with an edge
+ *   and its text in the line's colour, instead of filled with the line's
+ *   colour. A line too close to the background to be read on it has its
+ *   value written in the scale's text colour.
+ * - `grid.vertical.periodsOnly` rules the vertical grid where a period
+ *   begins, not at the time axis's labels: at each day's first bar on an
+ *   intraday chart, each month's on a chart of days, each year's on a chart
+ *   of weeks or months, in the zone the axis shows. Where those would be
+ *   closer than 40 px (a chart of days zoomed out to years) the next
+ *   coarser period is ruled. No line is drawn where no such period begins
+ *   on view. It needs the time axis: with that switched off the lines are
+ *   as without the key.
  */
 export const CHART_STYLE_KEYS = {
   'background.color': 'color',
@@ -34,6 +52,7 @@ export const CHART_STYLE_KEYS = {
   'grid.vertical.color': 'color',
   'grid.vertical.style': 'lineStyle',
   'grid.vertical.width': 'width',
+  'grid.vertical.periodsOnly': 'boolean',
 
   'crosshair.horizontal.visible': 'boolean',
   'crosshair.horizontal.color': 'color',
@@ -48,6 +67,7 @@ export const CHART_STYLE_KEYS = {
 
   'axis.price.lineColor': 'color',
   'axis.price.textColor': 'color',
+  'axis.price.valueTagsOutlined': 'boolean',
   'axis.time.lineColor': 'color',
   'axis.time.textColor': 'color',
 
@@ -63,6 +83,8 @@ export const CHART_STYLE_KEYS = {
   'lastPrice.downColor': 'color',
   'lastPrice.style': 'lineStyle',
   'lastPrice.width': 'width',
+  'lastPrice.labelBackground': 'color',
+  'lastPrice.labelTextColor': 'color',
 
   'volume.upColor': 'color',
   'volume.downColor': 'color',
@@ -189,19 +211,22 @@ export interface ResolvedLineLook {
  */
 export interface ResolvedChartStyle {
   panes: { background: string; separator: string; title: string };
-  grid: { horizontal: ResolvedLineLook; vertical: ResolvedLineLook };
+  /** `verticalAtPeriods`: the vertical lines only where a period begins. */
+  grid: { horizontal: ResolvedLineLook; vertical: ResolvedLineLook; verticalAtPeriods: boolean };
   crosshair: {
     horizontal: ResolvedLineLook;
     vertical: ResolvedLineLook;
     labelBackground: string;
     labelText: string;
   };
-  axis: { price: { line: string; text: string }; time: { line: string; text: string } };
+  /** `valueTagsOutlined`: an indicator's value tags on the price axis drawn outlined, not filled. */
+  axis: { price: { line: string; text: string; valueTagsOutlined: boolean }; time: { line: string; text: string } };
   /** `up` and `down`: a rise and a fall in the legend, the tooltips and the measure tool. */
   legend: { text: string; label: string; up: string; down: string };
   /** Null: the watermark's own colour, or the theme's. */
   watermark: { color: string | null };
-  lastPrice: { visible: boolean; up: string; down: string; style: LineStyle; width: number };
+  /** `labelBackground` and `labelText`, null: the tag is the up or the down colour, its text the one that reads on it. */
+  lastPrice: { visible: boolean; up: string; down: string; style: LineStyle; width: number; labelBackground: string | null; labelText: string | null };
   /** Null: the session breaks' own settings, or the theme's. */
   sessionBreaks: { color: string | null; style: LineStyle | null; width: number | null };
   /** Null: the high and low lines' own colour. */

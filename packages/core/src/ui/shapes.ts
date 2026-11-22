@@ -40,6 +40,23 @@ export function tagPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: 
 export const AXIS_TAG_TEXT_INSET = 7;
 
 /**
+ * An outlined tag: its box in `edge`, and `ground` inside it, in the
+ * theme's corner shape. The edge is a CSS pixel wide, in whole device
+ * pixels (two where a CSS pixel is one and a half), and inside the box: an
+ * outlined tag is the size of a filled one. Two fills and no stroke, so it
+ * is sharp at any zoom of the page and takes no dash left on the context.
+ */
+export function outlineTag(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, theme: Theme, edge: string, ground: string): void {
+  const scale = ctx.getTransform?.().a || 1;
+  const line = Math.max(1, Math.round(scale)) / scale;
+  ctx.fillStyle = edge;
+  fillTag(ctx, x, y, w, h, theme);
+  if (!(w > 2 * line) || !(h > 2 * line)) return;
+  ctx.fillStyle = ground;
+  fillTag(ctx, x + line, y + line, w - 2 * line, h - 2 * line, theme);
+}
+
+/**
  * Fill a tag's box in the theme's corner shape, with the context's current
  * fill, its edges on whole device pixels (see `crispBox`).
  */

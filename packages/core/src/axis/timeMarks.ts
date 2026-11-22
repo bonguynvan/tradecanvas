@@ -41,6 +41,12 @@ export function markKind(weight: number): MarkKind {
   return 'time';
 }
 
+/** How coarse each kind of mark is: a time of day, then the start of a day, of a month, of a year. */
+const KIND_RANK: Record<MarkKind, number> = { time: 0, day: 1, month: 2, year: 3 };
+const COARSEST_RANK = KIND_RANK.year;
+/** A kind of period is the bars' own where more than this share of them begin one: every bar of a daily chart begins a day. */
+const OWN_PERIOD_SHARE = 0.5;
+
 /** A slot the time axis labels and the grid draws a line down. */
 export interface TimeMark {
   /** The slot: a bar's index, or past the last bar, a slot in the future. */
@@ -115,6 +121,8 @@ export class TimeMarker {
   private revision = 0;
   private chosen: Int32Array = new Int32Array(0);
   private chosenFor: { gapBars: number; extent: number; revision: number } | null = null;
+  /** The bars that begin each kind of period, for the weights of `revision`. */
+  private periodCounts: { revision: number; bars: number; counts: readonly number[] } | null = null;
 
   marks(data: ArrayLike<{ time: number }>, query: TimeMarkQuery): TimeMark[] {
     const n = data.length;
@@ -141,6 +149,58 @@ export class TimeMarker {
       out.push({ index, time: this.times[index], weight: this.weights[index] });
     }
     return out;
+  }
+
+  /**
+   * The slots on view where a period begins, for a grid ruled at periods
+   * and not at the axis's labels: the starts of the finest calendar step
+   * above the bars' own (a day's among bars within a day, a month's among
+   * days, a year's among weeks and months) that are `gapBars` apart or more;
+   * a coarser step's where they would crowd. The step is chosen by the
+   * whole series, so the lines stay with their bars as the chart is moved,
+   * and none is drawn where no such period begins on view.
+   */
+  periods(data: ArrayLike<{ time: number }>, query: TimeMarkQuery): TimeMark[] {
+    const n = data.length;
+    if (n === 0) return [];
+    const lastSlot = query.timesPastData ? Math.max(n - 1, Math.ceil(query.to)) : n - 1;
+    const extent = lastSlot <= n - 1 ? n : Math.ceil((lastSlot + 1 - n) / FUTURE_CHUNK) * FUTURE_CHUNK + n;
+    this.weigh(data, query.tz, query.exchangeZone ?? null, extent);
+    const rank = this.periodRank(n, query.gapBars);
+    if (rank === null) return [];
+    const from = Math.max(0, Math.floor(query.from));
+    const to = Math.min(lastSlot, Math.ceil(query.to));
+    const out: TimeMark[] = [];
+    for (let index = from; index <= to; index++) {
+      const weight = this.weights[index];
+      if (KIND_RANK[markKind(weight)] >= rank) out.push({ index, time: this.times[index], weight });
+    }
+    return out;
+  }
+
+  /** The kind of period the grid is ruled at (its rank), or null where the bars are years themselves. */
+  private periodRank(bars: number, gapBars: number): number | null {
+    const counts = this.periodStartCounts(bars);
+    for (let rank = KIND_RANK.day; rank <= COARSEST_RANK; rank++) {
+      const starts = counts[rank];
+      if (starts > bars * OWN_PERIOD_SHARE) continue;
+      // Far enough apart on average to be read as lines, not as a tint. The coarsest stands whatever its spacing.
+      if (rank === COARSEST_RANK || bars / Math.max(1, starts) >= gapBars) return rank;
+    }
+    return null;
+  }
+
+  /** How many of the series' bars begin a period of each rank or a coarser one; counted once for the weights as they are. */
+  private periodStartCounts(bars: number): readonly number[] {
+    const kept = this.periodCounts;
+    if (kept && kept.revision === this.revision && kept.bars === bars) return kept.counts;
+    const counts = [0, 0, 0, 0];
+    for (let i = 0; i < bars; i++) {
+      const rank = KIND_RANK[markKind(this.weights[i])];
+      for (let r = 1; r <= rank; r++) counts[r]++;
+    }
+    this.periodCounts = { revision: this.revision, bars, counts };
+    return counts;
   }
 
   /**

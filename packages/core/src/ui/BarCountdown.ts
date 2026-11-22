@@ -1,7 +1,6 @@
 import type { ViewportState, Theme, DataSeries } from '@tradecanvas/commons';
 import { barTimeUnit } from '@tradecanvas/commons';
 import { AXIS_TAG_TEXT_INSET, fillTag } from './shapes.js';
-import { labelTextColor } from './axisValueLabels.js';
 import type { LastPriceTag } from '../realtime/CurrentPriceLine.js';
 
 /** Height (px) of the strip the countdown takes under the last-price tag. */
@@ -36,7 +35,7 @@ export class BarCountdown {
     ctx.font = `${theme.font.sizeSmall}px ${theme.font.family}`;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
-    ctx.fillStyle = labelTextColor(tag.color);
+    ctx.fillStyle = tag.textColor;
     ctx.fillText(this.formatRemaining(remainingMs), tag.x + AXIS_TAG_TEXT_INSET, top + COUNTDOWN_HEIGHT / 2);
   }
 
