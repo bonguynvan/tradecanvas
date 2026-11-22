@@ -445,7 +445,7 @@ const pt: SiteMessages = {
       tryThis: [
         'Veja a barra mais nova se preencher linha a linha conforme chegam negócios, e os totais mudarem embaixo dela',
         'Abra o menu no cabeçalho da fita: liste só o comprado ou o vendido, ou agrupe em uma linha os negócios simultâneos',
-        'Digite um tamanho mínimo na fita para ficar com os negócios grandes e afaste o gráfico: as linhas viram barras e os totais continuam',
+        'Digite um tamanho mínimo na fita para ficar com os negócios grandes e afaste o gráfico: os números de cada linha dão lugar a uma barrinha por lado, e os totais continuam',
       ],
     },
     switching: {

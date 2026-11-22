@@ -445,7 +445,7 @@ const tr: SiteMessages = {
       tryThis: [
         'İşlemler geldikçe en yeni çubuğun satır satır dolmasını ve altındaki toplamların değişmesini izleyin',
         'Bandın başlığındaki menüyü açın: yalnızca alınanları ya da satılanları listeleyin veya eşzamanlı işlemleri tek satırda toplayın',
-        'Büyük işlemleri bırakmak için banda bir en küçük boyut yazın, sonra grafiği uzaklaştırın: satırlar çubuğa döner, toplamlar kalır',
+        'Büyük işlemleri bırakmak için banda bir en küçük boyut yazın, sonra grafiği uzaklaştırın: her satırdaki sayılar yerini her taraf için küçük bir şeride bırakır, toplamlar kalır',
       ],
     },
     switching: {

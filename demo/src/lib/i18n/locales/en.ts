@@ -452,7 +452,7 @@ const en = {
       tryThis: [
         'Watch the newest bar fill in row by row as trades come, and its totals change under it',
         'Open the menu in the header of the tape: list only what was bought or sold, or make one row of trades made together',
-        'Type a least size on the tape to keep the large trades, then zoom the chart out: the rows turn to bars and the totals stay',
+        'Type a least size on the tape to keep the large trades, then zoom the chart out: the numbers of each row give way to a small bar for each side, and the totals stay',
       ],
     },
     switching: {

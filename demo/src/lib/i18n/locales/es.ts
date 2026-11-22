@@ -447,7 +447,7 @@ const es: SiteMessages = {
       tryThis: [
         'Mira cómo la barra más nueva se llena fila a fila al llegar operaciones, y cómo cambian sus totales debajo',
         'Abre el menú de la cabecera de la cinta: lista solo lo comprado o lo vendido, o agrupa en una fila las operaciones simultáneas',
-        'Escribe un tamaño mínimo en la cinta para quedarte con las operaciones grandes y aleja el gráfico: las filas pasan a ser barras y los totales siguen',
+        'Escribe un tamaño mínimo en la cinta para quedarte con las operaciones grandes y aleja el gráfico: los números de cada fila dan paso a una barrita por lado, y los totales siguen',
       ],
     },
     switching: {

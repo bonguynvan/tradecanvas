@@ -804,7 +804,7 @@ await chart.setRenderer('webgl')  // cells on the GPU`,
   tape: true,                                  // time and sales, a page of the dock
 })
 widget.openPanel('tape')
-chart.setChartTypeOptions({ footprint: { cells: 'delta' } })   // or 'bidAsk', 'volume'
+const chart = widget.getChart()
 chart.on('trades', (e) => e.payload.trades)    // the feed's trades, for your own use`,
     options: (env) => ({
       symbol: 'BTCUSDT',

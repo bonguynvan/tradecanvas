@@ -445,7 +445,7 @@ const fr: SiteMessages = {
       tryThis: [
         'Regardez la barre la plus récente se remplir ligne par ligne à mesure que les transactions arrivent, et ses totaux changer en dessous',
         'Ouvrez le menu dans l’en-tête du ruban : ne listez que les achats ou les ventes, ou regroupez en une ligne les transactions simultanées',
-        'Saisissez une taille minimale dans le ruban pour ne garder que les grosses transactions, puis dézoomez : les lignes deviennent des barres et les totaux restent',
+        'Saisissez une taille minimale dans le ruban pour ne garder que les grosses transactions, puis dézoomez : les chiffres de chaque ligne laissent place à une petite barre par côté, et les totaux restent',
       ],
     },
     switching: {

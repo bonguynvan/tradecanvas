@@ -88,9 +88,15 @@ describe('the order flow scene', () => {
     expect(opened).toEqual(['tape']);
   });
 
-  it('shows the same calls in its code', () => {
+  it('shows in its code what it does, and nothing it does not', () => {
     for (const call of ["chartType: 'footprint'", 'tape: true', "openPanel('tape')", "chart.on('trades'"]) {
       expect(scene.code).toContain(call);
     }
+    // The chart the sample listens to is the widget's own, named before it is used.
+    expect(scene.code.indexOf('const chart = widget.getChart()')).toBeGreaterThan(-1);
+    expect(scene.code.indexOf('const chart = widget.getChart()')).toBeLessThan(scene.code.indexOf("chart.on('trades'"));
+    // The scene leaves the footprint's settings as they are: so does its sample.
+    expect(scene.code).not.toContain('setChartTypeOptions');
+    expect(scene.options({ binance: () => ({}) } as never).chartOptions).toEqual({ chartType: 'footprint' });
   });
 });
