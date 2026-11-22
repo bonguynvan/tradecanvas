@@ -164,7 +164,7 @@
   white-space: nowrap;
 }
 
-.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-new, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close, .tcw-tape-close, .tcw-dock-host-close) {
+.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-new, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close, .tcw-tape-more, .tcw-tape-close, .tcw-dock-host-close) {
   display: inline-grid;
   place-items: center;
   flex: none;
@@ -178,12 +178,12 @@
   cursor: pointer;
 }
 
-.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-new, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close, .tcw-tape-close, .tcw-dock-host-close):hover {
+.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-new, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close, .tcw-tape-more, .tcw-tape-close, .tcw-dock-host-close):hover {
   background: var(--tcw-hover-bg);
   color: var(--tcw-text);
 }
 
-.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-new, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close, .tcw-tape-close, .tcw-dock-host-close):focus-visible {
+.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-new, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close, .tcw-tape-more, .tcw-tape-close, .tcw-dock-host-close):focus-visible {
   outline: none;
   box-shadow: var(--tcw-ring);
 }
@@ -500,6 +500,11 @@
 }
 [dir='rtl'] .tcw-tape-split {
   background: linear-gradient(to left, var(--tcw-green) var(--tcw-tape-bought, 50%), var(--tcw-red) var(--tcw-tape-bought, 50%));
+}
+
+/* While one side's trades are listed alone, the button that chose it says so. */
+.tcw-dock-page .tcw-tape-more.tcw-active {
+  color: var(--tcw-accent);
 }
 
 /* The tape keeps a reader's place itself when rows come in on top: the browser's own anchoring would move it twice. */

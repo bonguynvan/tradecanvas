@@ -346,6 +346,17 @@ stop()   // el feed se suelta cuando nadie lo sigue y el gráfico no es un footp
   solo mientras la cinta está abierta. <code>widget.openPanel('tape')</code> la abre; sus interruptores son
   <code>tape</code> y <code>dock.tape</code>.
 </p>
+<p>
+  Un menú en la cabecera de la cinta lista solo las operaciones de un lado (compradas o vendidas), y hace una
+  sola fila de las operaciones hechas a la vez: las de un mismo instante, un mismo precio y un mismo lado, con
+  sus tamaños sumados, de modo que una orden de mercado que tomó varias órdenes en espera se lee como la única
+  operación que fue. Esa fila se compara con el tamaño mínimo, y se considera grande, por lo que suma. Ambos
+  pueden fijarse desde el principio (<code>{`tape: { side: 'buy', group: true }`}</code>). Lo que el lector
+  elige en el panel se guarda en el navegador y sigue ahí la próxima vez: el lado y la agrupación para todos
+  los símbolos, el tamaño mínimo para el símbolo en que se eligió, pues un tamaño significa una cosa en un
+  instrumento y otra en el siguiente.
+  Lo que el lector eligió se usa en lugar de la opción de partida, cada elección por separado; <code>persist: false</code> no guarda nada.
+</p>
 
 <h2>Estado del mercado y noticias</h2>
 <p>

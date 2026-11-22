@@ -603,6 +603,15 @@ const SCENES = {
       // A row's three figures stay in their cells.
       const cut = rows.flatMap((row) => [...row.children]).filter((cell) => cell.scrollWidth > cell.clientWidth + 1).length;
       if (cut > 0) problems.push(`${cut} figures do not fit their cell`);
+      // The header holds its name, its least size, its menu's button and its ×, none of them pushed out of it.
+      const header = document.querySelector('.tcw-tape-header');
+      const room = header.getBoundingClientRect();
+      const out = [...header.children].filter((part) => {
+        const box = part.getBoundingClientRect();
+        return box.width === 0 || box.left < room.left - 0.5 || box.right > room.right + 0.5;
+      }).length;
+      if (!header.querySelector('.tcw-tape-more')) problems.push('the tape has no button for its menu');
+      if (out > 0) problems.push(`${out} parts of the tape's header do not fit in it`);
       return problems;
     };
     return { ...s, checks };

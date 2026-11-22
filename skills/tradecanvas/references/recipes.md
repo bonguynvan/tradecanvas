@@ -492,6 +492,9 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
   timeframe: '1m',
   adapter: new BinanceAdapter(),
   tape: { minSize: 0.5 }, // or tape: true; minSize leaves out the smaller trades
+  // also side: 'buy' | 'sell' (one side's trades alone) and group: true (trades made together as one row);
+  // what a reader chooses in the panel is kept in the browser and used over these, the least size by symbol;
+  // persist: false keeps nothing
 });
 widget.openPanel('tape'); // or its rail button; false when the widget has no tape
 

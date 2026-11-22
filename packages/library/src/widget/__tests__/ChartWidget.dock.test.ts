@@ -189,6 +189,118 @@ describe('ChartWidget dock', () => {
     expect(rows()).toHaveLength(0);
   });
 
+  describe('what a reader chose on the tape', () => {
+    const least = () => host.querySelector<HTMLInputElement>('.tcw-tape-min')!;
+    const type = (text: string) => {
+      least().value = text;
+      least().dispatchEvent(new Event('input'));
+    };
+    const choices = () => host.querySelector<HTMLButtonElement>('.tcw-tape-more')!;
+    const pick = (label: string) => {
+      choices().click();
+      [...host.querySelectorAll<HTMLElement>('.tcw-context-menu:not([hidden]) [role^="menuitem"]')].find((entry) => entry.querySelector('.tcw-context-label')?.textContent === label)!.click();
+    };
+    const checked = () => {
+      choices().click();
+      const marks = [...host.querySelectorAll<HTMLElement>('.tcw-context-menu:not([hidden]) [role^="menuitem"]')].map((entry) => entry.getAttribute('aria-checked'));
+      choices().click();
+      return marks;
+    };
+
+    it('is there the next time a widget is made in this browser: the side, the grouping, the symbol’s least size', () => {
+      make({ tape: true });
+      widget.openPanel('tape');
+      pick('Sold');
+      pick('Group trades made together');
+      type('3');
+      widget.destroy();
+      make({ tape: true });
+      widget.openPanel('tape');
+      expect(least().value).toBe('3');
+      expect(checked()).toEqual(['false', 'false', 'true', 'true']);
+    });
+
+    it('keeps a least size for each symbol: another symbol starts with its own, or with none', () => {
+      make({ tape: true });
+      widget.openPanel('tape');
+      type('3');
+      FakeChart.last.emit('symbolChange', { symbol: 'BBB', previous: 'AAA' });
+      expect(least().value).toBe('');
+      type('500');
+      FakeChart.last.emit('symbolChange', { symbol: 'AAA', previous: 'BBB' });
+      expect(least().value).toBe('3');
+      FakeChart.last.emit('symbolChange', { symbol: 'BBB', previous: 'AAA' });
+      expect(least().value).toBe('500');
+    });
+
+    it('starts from the options where the reader has chosen nothing, and from the reader’s choice where they have', () => {
+      make({ tape: { minSize: 0.5, side: 'buy' } });
+      widget.openPanel('tape');
+      expect(least().value).toBe('0.5');
+      expect(checked()).toEqual(['false', 'true', 'false', 'false']);
+      // A symbol with no least size of its own starts from the option too.
+      FakeChart.last.emit('symbolChange', { symbol: 'BBB', previous: 'AAA' });
+      expect(least().value).toBe('0.5');
+      // Cleared by the reader, it stays clear; all trades chosen, they stay chosen.
+      type('');
+      pick('All trades');
+      widget.destroy();
+      make({ symbol: 'BBB', tape: { minSize: 0.5, side: 'buy' } });
+      widget.openPanel('tape');
+      expect(least().value).toBe('');
+      expect(checked()).toEqual(['true', 'false', 'false', 'false']);
+    });
+
+    it('keeps only what the reader chose: the rest is still the host’s to set', () => {
+      make({ tape: { minSize: 5 } });
+      widget.openPanel('tape');
+      pick('Group trades made together');
+      expect(JSON.parse(localStorage.getItem('tcw:tape')!)).toEqual({ group: true, minSizes: [] });
+      widget.destroy();
+      // The host starts its tape otherwise the next time: where the reader chose nothing, it does.
+      make({ tape: { minSize: 10, side: 'sell' } });
+      widget.openPanel('tape');
+      expect(least().value).toBe('10');
+      expect(checked()).toEqual(['false', 'false', 'true', 'true']);
+    });
+
+    it('keeps a least size under the symbol it was typed on, and nothing of the symbols a reader only looked at', () => {
+      make({ tape: true });
+      widget.openPanel('tape');
+      FakeChart.last.emit('symbolChange', { symbol: 'BBB', previous: 'AAA' });
+      pick('Sold');
+      FakeChart.last.emit('symbolChange', { symbol: 'CCC', previous: 'BBB' });
+      type('7');
+      expect(JSON.parse(localStorage.getItem('tcw:tape')!)).toEqual({ side: 'sell', minSizes: [['CCC', 7]] });
+    });
+
+    it('keeps nothing when told not to, and starts from its options every time', () => {
+      localStorage.setItem('tcw:tape', JSON.stringify({ side: 'sell', group: true, minSizes: [['AAA', 9]] }));
+      make({ tape: { persist: false, minSize: 2 } });
+      widget.openPanel('tape');
+      expect(least().value).toBe('2');
+      expect(checked()).toEqual(['true', 'false', 'false', 'false']);
+      pick('Bought');
+      type('4');
+      expect(JSON.parse(localStorage.getItem('tcw:tape')!)).toEqual({ side: 'sell', group: true, minSizes: [['AAA', 9]] });
+      FakeChart.last.emit('symbolChange', { symbol: 'BBB', previous: 'AAA' });
+      expect(least().value).toBe('2');
+    });
+
+    it('lists the trades as chosen: a kept least size leaves the smaller ones out from the first', () => {
+      make({ tape: true });
+      widget.openPanel('tape');
+      type('2');
+      widget.destroy();
+      make({ tape: true });
+      widget.openPanel('tape');
+      FakeChart.last.emit('trades', { trades: [{ time: 1000, price: 100, volume: 1, side: 'buy' }, { time: 2000, price: 101, volume: 5, side: 'sell' }], recent: false });
+      widget.closePanel();
+      widget.openPanel('tape');
+      expect(host.querySelectorAll('.tcw-tape-row')).toHaveLength(1);
+    });
+  });
+
   it('writes every size on the tape to the decimals the finest of them needs, so the column lines up', () => {
     make({ tape: true });
     widget.openPanel('tape');
