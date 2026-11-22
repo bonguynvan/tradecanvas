@@ -1342,12 +1342,20 @@ grid.getLayoutSession()?.saveAs('Majors')
 
 // The charts as one picture, each in its cell: a file, the print dialog, a PDF
 grid.screenshot('majors', { pixelRatio: 2 })
+await grid.copyScreenshot()                             // onto the clipboard, as a PNG
 const sheet = await grid.toPdf({ title: 'Majors' })   // light and at twice the pixels, as a chart's
 
 // Each chart as it is made (at the start, and when the grid grows)
 new ChartWidgetGrid(host, {
   onChartAdd: (widget, index) => widget.getChart().addIndicator('ema', { period: 21 }),
 })`}</code></pre>
+<p>
+  The bar's camera button does the same from a menu: it saves the charts' picture as an image,
+  copies it, prints it or saves it as a PDF, named after the symbols shown (<code>charts</code>
+  for more than three). <code>picture: false</code> leaves the button out; it is hidden as well
+  while the charts' <code>screenshot</code> switch is off, and has no copy entry while
+  <code>copyImage</code> is.
+</p>
 <p>
   Crosshair sync shows the time under the pointer on every chart; time sync
   scrolls and zooms the others with the chart being used; drawings are copied

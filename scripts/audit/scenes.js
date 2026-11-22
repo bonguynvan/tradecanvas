@@ -109,6 +109,45 @@ const SCENES = {
     return { grid, chart: charts[0], charts };
   },
 
+  /** A grid with its picture menu open: the charts together as an image, a copy, a print or a PDF. */
+  async gridPicture() {
+    const symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'];
+    const grid = new ChartWidgetGrid(host, {
+      layout: '1+2',
+      adapter: (cell) => market(symbols[cell] ?? 'BTCUSDT'),
+      widget: { theme, ui, locale, historyLimit: HISTORY },
+      cells: symbols.map((symbol) => ({ symbol, timeframe: '5m' })),
+    });
+    await new Promise((r) => setTimeout(r, 300));
+    const charts = grid.getWidgets().map((w) => w.getChart());
+    await Promise.all(charts.map(loaded));
+    for (const c of charts) c.disconnectStream();
+    const button = host.querySelector('.tcw-grid-picture');
+    // On a phone the bar scrolls: the button is at its end.
+    button.scrollIntoView({ block: 'nearest', inline: 'end' });
+    button.click();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const checks = () => {
+      const menu = host.querySelector('.tcw-context-menu:not([hidden])');
+      if (!menu) return ['the picture menu did not open'];
+      const problems = [];
+      const entries = [...menu.querySelectorAll('[role=menuitem]')];
+      if (entries.length !== 4) problems.push(`the picture menu has ${entries.length} entries, 4 are`);
+      if (entries.some((entry) => !entry.querySelector('svg'))) problems.push('an entry of the picture menu has no icon');
+      const box = menu.getBoundingClientRect();
+      if (box.left < 0 || box.top < 0 || box.right > window.innerWidth + 1 || box.bottom > window.innerHeight + 1) problems.push('the picture menu runs off the screen');
+      // The picture is the charts' cells, a pixel for a pixel.
+      const cells = host.querySelector('.tcw-grid-cells').getBoundingClientRect();
+      const picture = grid.toCanvas({ pixelRatio: 1 });
+      if (!picture) problems.push('the grid gave no picture');
+      else if (Math.abs(picture.width - cells.width) > 1 || Math.abs(picture.height - cells.height) > 1) {
+        problems.push(`the picture is ${picture.width}x${picture.height}, the charts ${Math.round(cells.width)}x${Math.round(cells.height)}`);
+      }
+      return problems;
+    };
+    return { grid, chart: charts[0], charts, checks };
+  },
+
   /** A replay paused part of the way, its bar showing. */
   async replay() {
     const s = await widget();

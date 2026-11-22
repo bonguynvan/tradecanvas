@@ -1271,12 +1271,19 @@ grid.getLayoutSession()?.saveAs('Majors')
 
 // 各チャートをそれぞれのセルに収めた 1 枚の画像：ファイル、印刷ダイアログ、PDF
 grid.screenshot('majors', { pixelRatio: 2 })
+await grid.copyScreenshot()                             // PNG としてクリップボードへ
 const sheet = await grid.toPdf({ title: 'Majors' })   // チャート単体と同じく、ライトテーマで 2 倍のピクセル数
 
 // チャートが作られるたびに（最初と、グリッドが増えたとき）
 new ChartWidgetGrid(host, {
   onChartAdd: (widget, index) => widget.getChart().addIndicator('ema', { period: 21 }),
 })`}</code></pre>
+<p>
+  バーのカメラボタンは、同じことをメニューから行います。チャートをまとめた画像を保存、コピー、印刷、
+  または PDF として保存し、ファイル名は表示中のシンボルから付けます（四つ以上なら <code>charts</code>）。
+  <code>picture: false</code> でボタンをなくせます。チャートの <code>screenshot</code> スイッチがオフの間も隠れ、
+  <code>copyImage</code> がオフの間はコピーの項目がありません。
+</p>
 <p>
   クロスヘアの同期では、ポインター位置の時刻がすべてのチャートに表示されます。時間軸の同期では、
   操作中のチャートに合わせてほかのチャートもスクロール・ズームします。描画は、同じシンボルを表示している

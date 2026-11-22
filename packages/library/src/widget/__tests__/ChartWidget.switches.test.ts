@@ -666,6 +666,19 @@ describe('ChartWidget — the chart on paper', () => {
     expect(host.querySelector('.tcw-toast')).toBeNull();
   });
 
+  it('keeps a symbol’s own letters in the PDF’s name', async () => {
+    make({ symbol: '삼성전자' });
+    const names: string[] = [];
+    const clicked = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      names.push(this.download);
+    });
+    Object.assign(URL, { createObjectURL: () => 'blob:pdf', revokeObjectURL: () => undefined });
+    Object.assign(FakeChart.last, { toPdf: async () => new Blob(['%PDF'], { type: 'application/pdf' }) });
+    await widget.saveChartPdf();
+    expect(names).toEqual(['삼성전자-5m.pdf']);
+    clicked.mockRestore();
+  });
+
   it('says so when no PDF could be made', async () => {
     make();
     Object.assign(FakeChart.last, { toPdf: async () => null });

@@ -1383,12 +1383,20 @@ grid.getLayoutSession()?.saveAs('Majors')
 
 // Los gráficos como una sola imagen, cada uno en su celda: un archivo, el diálogo de impresión, un PDF
 grid.screenshot('majors', { pixelRatio: 2 })
+await grid.copyScreenshot()                             // al portapapeles, como PNG
 const sheet = await grid.toPdf({ title: 'Majors' })   // en claro y con el doble de píxeles, como el de un gráfico
 
 // Cada gráfico según se crea (al inicio y al crecer la cuadrícula)
 new ChartWidgetGrid(host, {
   onChartAdd: (widget, index) => widget.getChart().addIndicator('ema', { period: 21 }),
 })`}</code></pre>
+<p>
+  El botón de cámara de la barra hace lo mismo desde un menú: guarda la imagen de los gráficos,
+  la copia, la imprime o la guarda como PDF, con el nombre de los símbolos mostrados
+  (<code>charts</code> si son más de tres). <code>picture: false</code> quita el botón; también se
+  oculta mientras el interruptor <code>screenshot</code> de los gráficos está apagado, y no tiene la
+  entrada de copiar mientras lo está <code>copyImage</code>.
+</p>
 <p>
   La sincronización de la cruz muestra en todos los gráficos la hora bajo el puntero;
   la del tiempo desplaza y amplía los demás junto con el gráfico que se está usando;

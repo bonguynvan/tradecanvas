@@ -7341,7 +7341,13 @@
       {
         "name": "bar",
         "type": "boolean",
-        "doc": "The bar above the charts: arrangement, sync, layouts. Default `true`.",
+        "doc": "The bar above the charts: arrangement, sync, the charts' picture, layouts. Default `true`.",
+        "kind": "boolean"
+      },
+      {
+        "name": "picture",
+        "type": "boolean",
+        "doc": "The bar's picture button: the charts together saved as an image, copied, printed or saved as a PDF. Default `true`. It is hidden as well while a chart's `screenshot` switch is off: the picture shows every chart.",
         "kind": "boolean"
       },
       {

@@ -76,7 +76,7 @@ import { type CompareWay } from './widgetCompare.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue } from './legendValues.js';
-import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, downloadBlob, imageFileName, indicatorCategory, indicatorGroup, isCrosshairCursor, isMarkerPlot, sourceParam, valuePlots } from '@tradecanvas/core';
+import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, downloadBlob, fileNamePart, imageFileName, indicatorCategory, indicatorGroup, isCrosshairCursor, isMarkerPlot, sourceParam, valuePlots } from '@tradecanvas/core';
 import type { BracketSize } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { WidgetQuoteButtons } from './WidgetQuoteButtons.js';
@@ -88,7 +88,7 @@ import type { DepthData } from '@tradecanvas/commons';
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
 import type { CrosshairMovePayload, CrosshairSyncPayload, DataSeries } from '@tradecanvas/commons';
 import { formatVolumeLoc, timeframeToMs } from '@tradecanvas/commons';
-import { resolveMessages, createTranslator, fill, type MessageKey, type Translator } from './i18n.js';
+import { resolveMessages, createTranslator, fill, writingDirection, type MessageKey, type Translator } from './i18n.js';
 import { shownConnection } from './connectionStatus.js';
 import { localizeToolGroups } from './widgetLocales.js';
 import { WidgetLoadingOverlay } from './WidgetLoadingOverlay.js';
@@ -593,7 +593,7 @@ export class ChartWidget {
     this.root = document.createElement('div');
     this.root.className = 'tcw-root';
     // Right to left for Arabic, Hebrew and the like (or as asked); the chart itself runs left to right.
-    const dir = options.dir === 'ltr' || options.dir === 'rtl' ? options.dir : isRtlLocale(options.locale) ? 'rtl' : 'ltr';
+    const dir = writingDirection(options.dir, options.locale);
     this.root.dir = dir;
     this.portal.dir = dir;
     container.appendChild(this.root);
@@ -3060,7 +3060,7 @@ export class ChartWidget {
       this.say(this.t('toast.pdfFailed'), 'error');
       return;
     }
-    downloadBlob(pdf, imageFileName(`${this.state.symbol}-${this.state.timeframe}`.replace(/[^\w.-]+/g, '_'), 'pdf'));
+    downloadBlob(pdf, imageFileName([this.state.symbol, this.state.timeframe].map(fileNamePart).filter((part) => part !== '').join('-'), 'pdf'));
   }
 
   /** Copy a shareable deep-link (current view encoded in the URL hash) to the clipboard. */
@@ -4190,8 +4190,3 @@ function writeDockWidth(width: number): void {
     browserStorage()?.setItem(DOCK_WIDTH_KEY, String(width));
   } catch { /* storage full or refused: the width lasts this session */ }
 }
-
-function isRtlLocale(locale: string | undefined): boolean {
-  return !!locale && /^(ar|he|iw|fa|ur|ps|yi|dv|ckb|sd|ug)(-|$)/i.test(locale);
-}
-

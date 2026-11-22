@@ -51,7 +51,7 @@ import type { ResolvedLayout, ChartStyleKey, ChartStyleOverrides, ChartStyleOver
 import { readChartTypeOptions, tickBarCount, barTimeUnit, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
 import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, CompareSymbolPaneIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, axisTimes, HiLoRenderer, PointAndFigureRenderer, isPriceLevelAlert, loadWebGL, gpuContextsLeft, whenGpuContextFree, idleCssCursor, isCrosshairCursor } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
-import { canvasBlob, canvasDataURL, canvasReadable, canvasesToPdf, copyImage, downloadImage, imageFileName, imageRatio, picturePixels, pictureSize, printCanvas } from '@tradecanvas/core';
+import { canCopyImage, canvasBlob, canvasDataURL, canvasReadable, canvasesToPdf, copyImage, downloadImage, imageFileName, imageRatio, picturePixels, pictureSize, printCanvas } from '@tradecanvas/core';
 import { indicatorWorkerPool, INDICATOR_WORKER_MIN_BARS, THEME_LOOK_KEYS, valuePlots, panelScale, panelScaleTexts, panelTagText, type IndicatorWorkerLease } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
@@ -5456,8 +5456,7 @@ export class Chart {
   async copyScreenshot(options: Omit<ChartImageOptions, 'type' | 'quality'> = {}): Promise<boolean> {
     if (!this.features.screenshot) return false;
     // Nothing is drawn where there is no clipboard to put it on.
-    const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
-    if (!clipboard?.write || !(globalThis as { ClipboardItem?: unknown }).ClipboardItem) return false;
+    if (!canCopyImage()) return false;
     const canvas = this.toCanvas(options);
     return copyImage(canvas ? canvasBlob(canvas) : Promise.resolve(null));
   }
