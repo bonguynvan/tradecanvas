@@ -51,6 +51,8 @@ export class TradingManager {
   private drawnTags: TagRect[] = [];
   /** A press on a tag drags its line: how far the line sits from the pointer. */
   private grabOffset = 0;
+  /** Whether the line pressed has moved in this press: a click moves none. */
+  private lineMoved = false;
   private fills: FillEvent[] = [];
   private realisedPnl = 0;
 
@@ -410,11 +412,12 @@ export class TradingManager {
 
   /**
    * Whether a line is being dragged to a price: an order's, a position's stop
-   * or target, a bracket's or a draft order's. From the press that takes it to
-   * the release; a button pressed on a line moves none.
+   * or target, a bracket's or a draft order's. From its first move to the
+   * release: a line pressed and not moved is a click, and a button pressed on
+   * a line moves none.
    */
   isDraggingLine(): boolean {
-    return this.bracket.isDragging() || this.orderDraft.isDragging() || this.dragHandler.isActive();
+    return this.lineMoved && (this.bracket.isDragging() || this.orderDraft.isDragging() || this.dragHandler.isActive());
   }
 
   onPointerMove(pointer: Point, viewport: ViewportState): boolean {
@@ -423,16 +426,20 @@ export class TradingManager {
     const pos = this.grabOffset === 0 ? pointer : { x: pointer.x, y: clampToPlot(pointer.y + this.grabOffset, viewport) };
     if (this.bracket.isDragging()) {
       const consumed = this.bracket.drag(pos, viewport);
+      if (consumed) this.lineMoved = true;
       if (consumed) this.requestRender?.();
       return consumed;
     }
     if (this.orderDraft.isDragging()) {
       const consumed = this.orderDraft.drag(pos, viewport);
+      if (consumed) this.lineMoved = true;
       if (consumed) this.requestRender?.();
       return consumed;
     }
     if (!this.dragHandler.isActive()) return false;
     const consumed = this.dragHandler.onPointerMove(pos, viewport);
+    // An order's line moves only past the threshold that tells a drag from a click.
+    if (this.dragHandler.isDragging()) this.lineMoved = true;
     if (consumed) this.requestRender?.();
     return consumed;
   }
@@ -440,6 +447,7 @@ export class TradingManager {
   /** End a press; `pos` is where it ended (none when the pointer left: a pressed button does nothing). */
   onPointerUp(pos?: Point): boolean {
     this.grabOffset = 0;
+    this.lineMoved = false;
     if (this.armed) {
       const action = this.armed;
       this.armed = null;
@@ -505,6 +513,7 @@ export class TradingManager {
    */
   cancelPointer(): boolean {
     this.grabOffset = 0;
+    this.lineMoved = false;
     let had = false;
     if (this.armed) {
       this.armed = null;

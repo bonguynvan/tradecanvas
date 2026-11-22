@@ -350,6 +350,22 @@ describe('the moment orders are placed at', () => {
     await expect(till(now + 1)).resolves.toMatchObject({ timeInForce: 'gtd', expireTime: now + 1 });
   });
 
+  it('is the clock’s for an account given a price with a time that is no number, as the account takes it', () => {
+    chart.connectExecution(paper);
+    chart.replayStart({ steps, startIndex: 3, paused: true });
+    const feed = (chart as unknown as { feedReplayMarks(marks: [number, number][]): void }).feedReplayMarks.bind(chart);
+    feed([[133, Number.NaN]]);
+    expect(chart.getTradingTime()).toBe(CLOCK);
+  });
+
+  it('is the clock’s on a replay for an adapter that takes no replayed prices', () => {
+    // A broker of one's own: it has no price to be told, so the replay tells it none.
+    (paper as { setMarkPrice?: unknown }).setMarkPrice = undefined;
+    chart.connectExecution(paper);
+    chart.replayStart({ steps, startIndex: 3, paused: true });
+    expect(chart.getTradingTime()).toBe(CLOCK);
+  });
+
   it('is the clock’s again for an account connected after another traded on the replay', async () => {
     chart.connectExecution(paper);
     chart.replayStart({ steps, startIndex: 3, paused: true });

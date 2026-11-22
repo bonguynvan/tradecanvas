@@ -253,11 +253,37 @@ describe('WidgetOrderTicket', () => {
     set('date', '');
     expect(place().disabled).toBe(true);
     set('date', '2026-12-01');
+    // The time emptied: no time is not midnight, and the field does not say one thing while the order holds another.
+    set('time', '');
+    expect(place().disabled).toBe(true);
+    expect(host.querySelector('.tcw-ticket-problems')!.textContent).toBe('The order has to end at a time to come.');
     set('time', '15:30');
     expect(place().disabled).toBe(false);
     expect(host.querySelector('.tcw-ticket-problems')!.textContent).toBe('');
     place().click();
     expect(sent).toEqual([expect.objectContaining({ timeInForce: 'gtd', expireTime: Date.UTC(2026, 11, 1, 15, 30) })]);
+  });
+
+  it('reads and writes the date on the clock it is given: a chart seven hours east of UTC', () => {
+    const east = 7 * 60;
+    const local = new WidgetOrderTicket(host, {
+      onSubmit: (i) => sent.push(i),
+      formatPrice: (p) => p.toFixed(2),
+      toWallTime: (time) => utcToWallTime(time, east),
+      fromWallTime: (date, time) => wallTimeToUtc(date, time, east),
+      now: () => NOW,
+    });
+    local.open({ price: 95, lastPrice: 100 });
+    const field = (name: string) => [...host.querySelectorAll<HTMLInputElement>(`[data-ticket-field="${name}"]`)].at(-1)!;
+    [...host.querySelectorAll<HTMLElement>('[data-ticket-field="timeInForce-gtd"]')].at(-1)!.click();
+    // Nine in the morning UTC is four in the afternoon there; a day on.
+    expect([field('expireDate').value, field('expireTime').value]).toEqual(['2026-11-24', '16:00']);
+    field('expireTime').value = '00:30';
+    field('expireTime').dispatchEvent(new Event('change', { bubbles: true }));
+    [...host.querySelectorAll<HTMLButtonElement>('.tcw-ticket-place')].at(-1)!.click();
+    // Half past midnight there on the 24th is half past five in the evening of the 23rd, UTC.
+    expect(sent).toEqual([expect.objectContaining({ timeInForce: 'gtd', expireTime: Date.UTC(2026, 10, 23, 17, 30) })]);
+    local.destroy();
   });
 
   it('takes the date away with another kind, and has the time that was picked when the kind comes back', () => {

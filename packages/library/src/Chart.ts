@@ -6085,7 +6085,7 @@ export class Chart {
     for (const [price, time] of marks) adapter.setMarkPrice(price, time);
     const last = marks[marks.length - 1];
     if (last === undefined) return;
-    this.markedAt = last[1];
+    this.markedAt = this.markTimeOf(last[1]);
     this.tradingManager.setCurrentPrice(last[0]);
   }
 
@@ -6233,12 +6233,17 @@ export class Chart {
     this.replaySeek(Math.max(0, positionAt(this.replayStepsSeries ?? this.replayCoarse, time)));
   }
 
+  /** A mark's time as the paper account takes it: one that is no number is none, and the account runs on the clock. */
+  private markTimeOf(time: number | undefined): number | undefined {
+    return time !== undefined && Number.isFinite(time) ? time : undefined;
+  }
+
   /** A replay step's price to an adapter that takes a mark (a paper account), and to the orders on the chart. */
   private feedReplayPrice(price: number, time?: number): void {
     const adapter = this.executionAdapter;
     if (!adapter?.setMarkPrice) return;
     adapter.setMarkPrice(price, time);
-    this.markedAt = time !== undefined && Number.isFinite(time) ? time : undefined;
+    this.markedAt = this.markTimeOf(time);
     this.tradingManager.setCurrentPrice(price);
   }
 

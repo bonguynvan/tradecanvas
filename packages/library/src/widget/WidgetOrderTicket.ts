@@ -292,7 +292,8 @@ export class WidgetOrderTicket {
     const time = input('time', 'expireTime', wall.time, 'drawingSettings.time');
     const fromWall = this.callbacks.fromWallTime ?? ((d: string, t: string) => wallTimeToUtc(d, t, null));
     // What the fields say is no moment while one of them is empty: the ticket then says so, and places nothing.
-    const onChange = (): void => this.set({ expireTime: fromWall(date.value, time.value) });
+    // (No time is not midnight here, as it is for a date to go to: the order would end as its day began.)
+    const onChange = (): void => this.set({ expireTime: date.value && time.value ? fromWall(date.value, time.value) : null });
     date.addEventListener('change', onChange);
     time.addEventListener('change', onChange);
     const fields = document.createElement('div');
