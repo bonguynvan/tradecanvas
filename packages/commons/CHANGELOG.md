@@ -1,5 +1,20 @@
 # @tradecanvas/commons
 
+## 2.17.0
+
+### Minor Changes
+
+- d7c1844: Williams Fractals draws its marks as triangles above a fractal high and below a fractal low, clear of the bar, instead of 3 px dots on the tips of the wicks, which were hard to see. As marks, they no longer show a value in the legend or a tag on the axis, and the widget no longer offers them as a line another indicator reads; `indicatorSource` still reads them.
+
+  A markers plot's style takes a `shape` (`triangleUp`, `triangleDown`, `arrowUp`, `arrowDown`, `dot`, `square`, `diamond`) and a `size` in pixels across, 2 to 40, or `'auto'` (as wide as the bars allow, 4 to 8 px): `chart.updateIndicatorStyle(id, { plots: { up: { shape: 'arrowUp', size: 14 } } })`. Saved layouts keep them, and the indicator settings' Style tab picks them for each mark.
+
+- a6e24ea: An indicator's `category` takes a group of your own, `{ id, label }`, besides the built-in kinds. The widget's Indicators dialog lists the indicators with that id together under the label, in a tab of their own before the kinds and first in All, and a search for the label finds them. Favourites and templates keep them as before. `indicatorGroup(descriptor)` returns the group, or null; `indicatorCategory` gives such an indicator the built-in's kind, else `'other'`.
+
+  `IndicatorDescriptor['category']` is now `IndicatorCategory | IndicatorGroup`: code that read it as a kind reads `indicatorCategory(descriptor)` instead. A `category` that is no kind and no group (from code without types) now lists the indicator under Other, where it was listed nowhere.
+
+- 9dc652e: Two style keys, `legend.upColor` and `legend.downColor`, colour a rise and a fall where a bar's values are read: the legend's close and change, the crosshair and pinned tooltips and the measure tool. Unset, they follow the main series' up and down, as before. A chart that hides its candles by making them transparent (an overlay drawing its own) sets these to keep the readouts visible.
+- c0a3049: Style keys for the price axis's tags, and a grid ruled at the starts of periods. `lastPrice.labelBackground` fills the last price's tag in one colour whatever the day's direction, and `lastPrice.labelTextColor` colours its text; unset, the tag is the up or the down colour as before, and the line keeps `upColor` and `downColor` either way. `axis.price.valueTagsOutlined` draws an indicator's value tags on the price axis outlined (the chart's background inside an edge of the line's colour, its text in that colour) instead of filled. `grid.vertical.periodsOnly` rules the vertical grid where a period begins, not at the axis's labels: each day's first bar on an intraday chart, each month's on a chart of days, each year's on a chart of weeks or months, and the next coarser period where those would be closer than 40 px. Each has a row in Chart Settings.
+
 ## 2.16.0
 
 ### Minor Changes

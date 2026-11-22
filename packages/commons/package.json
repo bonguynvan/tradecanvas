@@ -1,6 +1,6 @@
 {
   "name": "@tradecanvas/commons",
-  "version": "2.16.0",
+  "version": "2.17.0",
   "type": "module",
   "description": "Shared types, themes and icons of TradeCanvas (@tradecanvas/chart), the open-source chart library for trading apps.",
   "license": "MIT",

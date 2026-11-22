@@ -1,5 +1,16 @@
 # @tradecanvas/mcp
 
+## 2.17.0
+
+### Patch Changes
+
+- df6d54e: The packages' npm descriptions name TradeCanvas the open-source chart library for trading apps, and their keywords say what a search for a trading, candlestick, stock or crypto chart library looks for.
+- Updated dependencies [d7c1844]
+- Updated dependencies [a6e24ea]
+- Updated dependencies [9dc652e]
+- Updated dependencies [c0a3049]
+  - @tradecanvas/commons@2.17.0
+
 ## 2.16.0
 
 ### Patch Changes
