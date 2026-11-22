@@ -2,6 +2,7 @@ export { ChartLegend, DEFAULT_LEGEND_CONFIG } from './ChartLegend.js';
 export type { LegendConfig } from './ChartLegend.js';
 export { Screenshot } from './Screenshot.js';
 export { imagesToPdf } from './pdf.js';
+export { imageAddress } from './imageAddress.js';
 export type { PdfImage, PdfPicture } from './pdf.js';
 export { MAX_IMAGE_PIXELS, MAX_IMAGE_SIDE, canCopyImage, canvasBlob, canvasDataURL, canvasPdfImage, canvasReadable, canvasesToPdf, copyImage, downloadBlob, downloadImage, fileNamePart, imageFileName, imageRatio, picturePixels, pictureSize, printCanvas } from './chartImage.js';
 export { Watermark } from './Watermark.js';

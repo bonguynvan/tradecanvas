@@ -238,7 +238,7 @@ new MatrixChart(el, {
 
 new HeatmapChart(el, {
   data: [
-    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: 'Banks' },
+    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: 'Banks', logo: '/logos/vcb.png' },
     { id: 'hpg', label: 'HPG', value: 1.9, weight: 160, group: 'Steel' },
     { id: 'vhm', label: 'VHM', value: -2.4, weight: 170, group: 'Real estate' },
   ],
@@ -247,6 +247,14 @@ new HeatmapChart(el, {
 })`}</code></pre>
 <p>
   Each group takes the room of its stocks' weights, and its name and weighted change head its tile where they fit. The heatmap's colours run from -5 to 5 unless <code>colorScale</code> gives a <code>min</code> and <code>max</code>.
+</p>
+<p>
+  A cell with a <code>logo</code> draws it over its name, on a white plate, where the cell has room: as cells get
+  small the logo goes before the name and the value do. It takes the addresses a symbol's <code>logo</code> does (an
+  <code>https:</code> address, a path on your site, a <code>blob:</code> or a <code>data:image/…</code> URL), is
+  loaded once, and a cell whose logo fails is drawn as one with none. A logo from another site has to be served
+  with CORS headers, so that the chart can still be saved as a picture; one that is not is left out.
+  <code>showLogos: false</code> draws none. Drawn with no page (<code>renderFinanceChart</code>), a heatmap has no logos.
 </p>
 
 <h2>Counter-clock chart</h2>

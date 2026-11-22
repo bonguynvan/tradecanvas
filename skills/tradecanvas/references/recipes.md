@@ -884,7 +884,8 @@ new MatrixChart(document.getElementById('statement')!, {
 
 new HeatmapChart(document.getElementById('sectors')!, {
   data: [
-    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: 'Banks' },
+    // `logo`: drawn over the name where the cell has room; from another site it needs CORS headers.
+    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: 'Banks', logo: '/logos/vcb.png' },
     { id: 'hpg', label: 'HPG', value: 1.9, weight: 160, group: 'Steel' },
   ],
   grouped: true,

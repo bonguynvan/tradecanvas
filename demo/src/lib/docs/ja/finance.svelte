@@ -233,7 +233,7 @@ new MatrixChart(el, {
 
 new HeatmapChart(el, {
   data: [
-    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: '銀行' },
+    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: '銀行', logo: '/logos/vcb.png' },
     { id: 'hpg', label: 'HPG', value: 1.9, weight: 160, group: '鉄鋼' },
     { id: 'vhm', label: 'VHM', value: -2.4, weight: 170, group: '不動産' },
   ],
@@ -242,6 +242,14 @@ new HeatmapChart(el, {
 })`}</code></pre>
 <p>
   各セクターは銘柄のウェイトの合計に応じた広さを占め、収まるときはタイルの上部にセクター名と加重平均の騰落を表示します。ヒートマップの色は <code>colorScale</code> で <code>min</code> と <code>max</code> を指定しない限り -5 から 5 です。
+</p>
+<p>
+  <code>logo</code> を持つセルは、収まるときに名前の上の白いプレートにロゴを描きます。セルが小さくなると、
+  名前と値より先にロゴがなくなります。アドレスはシンボルの <code>logo</code> と同じもの（<code>https:</code> のアドレス、
+  サイト内のパス、<code>blob:</code> または <code>data:image/…</code> の URL）を受け付け、読み込みは一度だけで、
+  ロゴの読み込みに失敗したセルはロゴなしのセルとして描かれます。ほかのサイトのロゴは CORS ヘッダー付きで配信されている
+  必要があります。チャートを画像として保存できるようにするためで、付いていないものは描かれません。
+  <code>showLogos: false</code> でロゴを描かなくなります。ページなしで描く場合（<code>renderFinanceChart</code>）、ヒートマップにロゴはありません。
 </p>
 
 <h2>逆ウォッチ曲線</h2>

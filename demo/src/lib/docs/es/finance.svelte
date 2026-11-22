@@ -238,7 +238,7 @@ new MatrixChart(el, {
 
 new HeatmapChart(el, {
   data: [
-    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: 'Bancos' },
+    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: 'Bancos', logo: '/logos/vcb.png' },
     { id: 'hpg', label: 'HPG', value: 1.9, weight: 160, group: 'Acero' },
     { id: 'vhm', label: 'VHM', value: -2.4, weight: 170, group: 'Inmobiliario' },
   ],
@@ -247,6 +247,15 @@ new HeatmapChart(el, {
 })`}</code></pre>
 <p>
   Cada grupo ocupa el espacio de la suma de los pesos de sus acciones, y su nombre y su variación ponderada encabezan su mosaico cuando caben. Los colores del mapa de calor van de -5 a 5 salvo que <code>colorScale</code> indique <code>min</code> y <code>max</code>.
+</p>
+<p>
+  Una celda con <code>logo</code> lo dibuja sobre su nombre, en una placa blanca, cuando la celda tiene sitio: al
+  hacerse pequeñas las celdas, el logo desaparece antes que el nombre y el valor. Acepta las mismas direcciones
+  que el <code>logo</code> de un símbolo (una dirección <code>https:</code>, una ruta de tu sitio, una URL
+  <code>blob:</code> o <code>data:image/…</code>), se carga una sola vez, y una celda cuyo logo falla se dibuja
+  como una sin logo. Un logo de otro sitio debe servirse con cabeceras CORS, para que el gráfico pueda seguir
+  guardándose como imagen; el que no las tiene se omite. <code>showLogos: false</code> no dibuja ninguno.
+  Dibujado sin página (<code>renderFinanceChart</code>), un mapa de calor no tiene logos.
 </p>
 
 <h2>Curva antihoraria</h2>

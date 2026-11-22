@@ -8540,6 +8540,12 @@
           "kind": "boolean"
         },
         {
+          "name": "showLogos",
+          "type": "boolean",
+          "doc": "Whether the cells that have a `logo` draw it (`true`).",
+          "kind": "boolean"
+        },
+        {
           "name": "onCellClick",
           "type": "(cell: HeatmapCell) => void",
           "kind": "function"

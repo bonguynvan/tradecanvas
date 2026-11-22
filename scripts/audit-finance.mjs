@@ -106,6 +106,23 @@ async function pictureChecks(empty) {
     }
     if (!empty.includes(name) && colours(pixels(picture)) < 2) problems.push(`${name}: nothing is on its picture`);
   }
+  // A map's logos are on its picture, each in its own colours, and the picture can still be read: a cell too small
+  // for its logo draws none.
+  const logos = charts['heatmap-logos']?.toCanvas({ pixelRatio: 1 });
+  if (!logos) problems.push('heatmap-logos: no picture to look for its logos on');
+  else {
+    const data = pixels(logos);
+    const count = (r, g, b) => {
+      let found = 0;
+      for (let i = 0; i < data.length; i += 4) if (data[i] === r && data[i + 1] === g && data[i + 2] === b) found++;
+      return found;
+    };
+    const LOGO_PIXELS = 40;
+    for (const [what, [r, g, b]] of [['the disc of its largest cell', [21, 128, 61]], ['its wide logo', [29, 78, 216]]]) {
+      if (count(r, g, b) < LOGO_PIXELS) problems.push(`heatmap-logos: ${what} is not on its picture`);
+    }
+    if (count(124, 58, 237) > 0) problems.push('heatmap-logos: a cell too small for its logo drew it');
+  }
   /** How many pixels of two pictures of one size are not the same. */
   const differing = (a, b) => {
     let count = 0;

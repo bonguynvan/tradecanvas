@@ -215,7 +215,7 @@ new MatrixChart(el, {
 
 new HeatmapChart(el, {
   data: [
-    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: '银行' },
+    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: '银行', logo: '/logos/vcb.png' },
     { id: 'hpg', label: 'HPG', value: 1.9, weight: 160, group: '钢铁' },
     { id: 'vhm', label: 'VHM', value: -2.4, weight: 170, group: '房地产' },
   ],
@@ -224,6 +224,13 @@ new HeatmapChart(el, {
 })`}</code></pre>
 <p>
   每个板块所占面积等于其个股权重之和，放得下时板块名称和加权涨跌显示在其顶部。热力图的颜色范围为 -5 到 5，除非 <code>colorScale</code> 给出 <code>min</code> 和 <code>max</code>。
+</p>
+<p>
+  带有 <code>logo</code> 的单元格在放得下时，会把 logo 画在名称上方的白色底板上；单元格变小时，先消失的是 logo，
+  然后才是名称和数值。它接受与品种的 <code>logo</code> 相同的地址（<code>https:</code> 地址、你站点上的路径、
+  <code>blob:</code> 或 <code>data:image/…</code> URL），只加载一次；加载失败的单元格按没有 logo 绘制。
+  来自其他站点的 logo 必须带 CORS 响应头，这样图表仍能保存为图片；不带的会被略过。
+  <code>showLogos: false</code> 不绘制任何 logo。无页面绘制（<code>renderFinanceChart</code>）时，热力图没有 logo。
 </p>
 
 <h2>逆时钟曲线</h2>
