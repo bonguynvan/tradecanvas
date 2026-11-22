@@ -264,6 +264,26 @@ const SCENES = {
     return s;
   },
 
+  /**
+   * A look with no blocks of colour: the last price's tag in the ink with the ground's colour for its text, the
+   * indicators' value tags outlined, the grid ruled where a day begins.
+   */
+  async paperLook() {
+    const s = await widget();
+    for (const period of [9, 21, 55]) s.chart.addIndicator('ema', { period });
+    s.chart.addIndicator('macd');
+    s.chart.addIndicator('rsi');
+    s.chart.setIndicatorValueLabelsVisible(true);
+    const { background, text } = s.chart.getTheme();
+    s.chart.applyOverrides({
+      'lastPrice.labelBackground': text,
+      'lastPrice.labelTextColor': background,
+      'axis.price.valueTagsOutlined': true,
+      'grid.vertical.periodsOnly': true,
+    });
+    return s;
+  },
+
   /** Marks along the foot of the price pane: the host's own, and the widget's headlines, some sharing a badge. */
   async marks() {
     // The headlines are asked for before the bars are in: they wait for them.

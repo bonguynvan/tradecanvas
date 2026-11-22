@@ -381,7 +381,7 @@ const tr: SiteMessages = {
     },
     overrides: {
       title: 'Stil geçersiz kılmaları',
-      stat: '103 anahtar',
+      stat: '122 anahtar',
       blurb:
         'Grafiğin görünümünün herhangi bir parçası, temadan ayrı olarak anahtarla: her yöndeki ızgara, artı imleç, eksenler, paneller, açıklama, son fiyat, hacim ve her grafik türünün renkleri. Burada dikey ızgara kapalı, yatay ızgara noktalı, artı imleç düz ve MACD’nin sinyal çizgisi kendi ayırıcısı olan bir panelde kesik çizgili.',
       tryThis: [
@@ -792,7 +792,7 @@ const tr: SiteMessages = {
       ],
       customization: [
         { name: 'Widget için üç görünüm', detail: 'Studio, Terminal, Capsule; ui ve setUI; --tcw-* CSS değişkenleri' },
-        { name: 'Anahtar anahtar grafik görünümü', detail: 'Ana uygulama katmanı ve kullanıcı katmanında, 103 tipli anahtar üzerinde applyOverrides' },
+        { name: 'Anahtar anahtar grafik görünümü', detail: 'Ana uygulama katmanı ve kullanıcı katmanında, 122 tipli anahtar üzerinde applyOverrides' },
         { name: 'Her anahtara ulaşan ayarlar', detail: 'Görüntülenen grafik türü için stil sekmesi, alım satım sekmesi' },
         { name: 'Açılıp kapatılabilen 114 özellik', detail: 'features, setFeatures, isFeatureOn; çalışırken değiştirilebilir' },
         { name: 'Widget’ta kendi parçalarınız', detail: 'Araç çubuğu düğmeleri ve açılır menüler, kenar çubuğu düğmeleri, durum öğeleri, yuvalar, menü öğeleri' },

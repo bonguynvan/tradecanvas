@@ -381,7 +381,7 @@ const vi: SiteMessages = {
     },
     overrides: {
       title: 'Override style',
-      stat: '103 khoá',
+      stat: '122 khoá',
       blurb:
         'Bất kỳ phần nào của biểu đồ theo khoá, riêng khỏi theme: lưới theo từng chiều, crosshair, các trục, pane, legend, giá cuối, volume và màu của từng loại biểu đồ. Ở đây lưới dọc tắt, lưới ngang chấm chấm, crosshair nét liền, và đường signal của MACD nét đứt trong một pane có đường phân cách riêng.',
       tryThis: [
@@ -792,7 +792,7 @@ const vi: SiteMessages = {
       ],
       customization: [
         { name: 'Ba kiểu giao diện cho widget', detail: 'Studio, Terminal, Capsule; ui và setUI; biến CSS --tcw-*' },
-        { name: 'Giao diện biểu đồ theo khoá', detail: 'applyOverrides trên 103 khoá có kiểu, ở lớp ứng dụng và lớp người dùng' },
+        { name: 'Giao diện biểu đồ theo khoá', detail: 'applyOverrides trên 122 khoá có kiểu, ở lớp ứng dụng và lớp người dùng' },
         { name: 'Settings chỉnh được mọi khoá', detail: 'Tab style theo loại biểu đồ đang xem, tab giao dịch' },
         { name: '114 công tắc tính năng', detail: 'features, setFeatures, isFeatureOn; đổi được khi đang chạy' },
         { name: 'Thành phần của riêng bạn trong widget', detail: 'Nút và dropdown trên toolbar, nút sidebar, mục thanh trạng thái, slot, mục menu' },

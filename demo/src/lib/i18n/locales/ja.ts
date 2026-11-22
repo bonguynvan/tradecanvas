@@ -381,7 +381,7 @@ const ja: SiteMessages = {
     },
     overrides: {
       title: 'スタイルのオーバーライド',
-      stat: '103 キー',
+      stat: '122 キー',
       blurb:
         'チャートの見た目のどの部分も、テーマとは別にキーで設定できます：方向ごとのグリッド、クロスヘア、軸、ペイン、凡例、最新価格、出来高、チャートタイプごとの色。ここでは縦のグリッドを消し、横を点線に、クロスヘアを実線にし、MACD のシグナル線を独自の区切り線を持つペインで破線にしています。',
       tryThis: [
@@ -792,7 +792,7 @@ const ja: SiteMessages = {
       ],
       customization: [
         { name: 'ウィジェットの 3 つの外観', detail: 'Studio、Terminal、Capsule。ui と setUI。--tcw-* CSS 変数' },
-        { name: 'キー単位でのチャートの見た目', detail: '型付きの 103 キーに applyOverrides。ホスト層とユーザー層の 2 層' },
+        { name: 'キー単位でのチャートの見た目', detail: '型付きの 122 キーに applyOverrides。ホスト層とユーザー層の 2 層' },
         { name: 'すべてのキーに届く設定', detail: '表示中のチャートタイプのスタイルタブと、トレードタブ' },
         { name: '114 個の機能スイッチ', detail: 'features、setFeatures、isFeatureOn。実行中に変更可能' },
         { name: 'ウィジェットに独自のパーツ', detail: 'ツールバーのボタンとドロップダウン、サイドバーのボタン、ステータス項目、スロット、メニュー項目' },

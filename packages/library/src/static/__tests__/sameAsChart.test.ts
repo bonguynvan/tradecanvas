@@ -176,6 +176,28 @@ describe('the price chart drawn with no page is the chart’s own frame', () => 
     }
   });
 
+  it('in a look of paper and ink: the last price’s tag in its own colours, the indicators’ values outlined, the grid ruled where the bars’ periods begin', async () => {
+    const overrides = {
+      'lastPrice.labelBackground': '#fffdf5',
+      'lastPrice.labelTextColor': '#1a1a1a',
+      'axis.price.valueTagsOutlined': true,
+      'grid.vertical.periodsOnly': true,
+    } as const;
+    // The values' tags are on: one on the price pane, one on a pane of its own, outlined on that pane's ground.
+    const features = { indicatorValueLabels: true } as const;
+    const onPage = await chartFrame({ overrides, features }, (chart) => {
+      chart.addIndicator('sma', { period: 10 });
+      chart.addIndicator('rsi');
+    });
+    const indicators = [{ id: 'sma', params: { period: 10 } }, { id: 'rsi' }];
+    expect(firstDifference(staticFrame({ overrides, features, indicators }), onPage)).toBeNull();
+    // Each key is seen in the frame: without it the frame is another.
+    for (const key of Object.keys(overrides) as (keyof typeof overrides)[]) {
+      const { [key]: _left, ...rest } = overrides;
+      expect(firstDifference(staticFrame({ overrides: rest, features, indicators }), onPage), key).not.toBeNull();
+    }
+  });
+
   it('with a drawing whose label would lie under the legend: it keeps clear of it on the only frame there is', async () => {
     // The price at the legend's second row, read off a chart of the same bars.
     const probe = new Chart(sizedHost(WIDTH, HEIGHT), { features: STILL });

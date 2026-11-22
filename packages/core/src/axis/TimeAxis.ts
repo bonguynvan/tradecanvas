@@ -13,6 +13,8 @@ export const TZ_LABEL_GAP_PX = 8;
 
 /** Labels (and grid columns) at least this far apart, px. */
 export const MIN_LABEL_SPACING_PX = 80;
+/** The least room between two lines of a grid ruled at periods, px: closer, they read as a tint, and a coarser period is ruled. */
+const MIN_PERIOD_GAP_PX = 40;
 /** Space kept between two time labels, px. */
 const LABEL_GAP_PX = 8;
 /** Space between the plot's left edge and the date tag, as the timezone tag keeps at the right. */
@@ -161,6 +163,27 @@ export class TimeAxis {
   }
 
   /** The spans (px) of the labels written on the last draw: the crosshair's time pill clears those it covers. */
+  /**
+   * The slots where a period begins on view, for a grid ruled at periods
+   * (`grid.vertical.periodsOnly`): a day's start on an intraday chart, a
+   * month's on a chart of days, a year's among weeks and months, in the
+   * zone the axis shows; a coarser step's where those would be closer than
+   * the least gap. They are the bars' own, not the labels the axis has room
+   * for.
+   */
+  periodMarks(viewport: ViewportState, data: DataSeries): TimeMark[] {
+    const barUnit = viewport.barWidth + viewport.barSpacing;
+    if (!(barUnit > 0) || data.length === 0) return [];
+    return this.marker.periods(axisTimes(data), {
+      from: Math.floor(viewport.offset / barUnit),
+      to: Math.ceil((viewport.offset + viewport.chartRect.width) / barUnit),
+      gapBars: MIN_PERIOD_GAP_PX / barUnit,
+      tz: this.tz,
+      timesPastData: this.timesPastData,
+      exchangeZone: this.exchangeZone,
+    });
+  }
+
   labelColumns(): readonly { left: number; right: number }[] {
     return this.columns;
   }

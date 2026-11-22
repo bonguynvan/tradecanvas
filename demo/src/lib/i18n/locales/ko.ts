@@ -381,7 +381,7 @@ const ko: SiteMessages = {
     },
     overrides: {
       title: '스타일 오버라이드',
-      stat: '키 103개',
+      stat: '키 122개',
       blurb:
         '차트 모양의 어떤 부분이든 테마와 따로 키로 정합니다: 방향별 격자, 크로스헤어, 축, 패널, 범례, 최근 가격, 거래량, 차트 유형별 색. 여기서는 세로 격자를 끄고, 가로 격자를 점선으로, 크로스헤어를 실선으로 했으며, MACD 의 시그널 선은 자체 구분선이 있는 패널에서 점선입니다.',
       tryThis: [
@@ -792,7 +792,7 @@ const ko: SiteMessages = {
       ],
       customization: [
         { name: '위젯의 세 가지 외관', detail: 'Studio, Terminal, Capsule. ui와 setUI. --tcw-* CSS 변수' },
-        { name: '키 단위로 정하는 차트의 모양', detail: '타입이 지정된 103개 키에 applyOverrides, 호스트 계층과 사용자 계층' },
+        { name: '키 단위로 정하는 차트의 모양', detail: '타입이 지정된 122개 키에 applyOverrides, 호스트 계층과 사용자 계층' },
         { name: '모든 키에 닿는 설정', detail: '보고 있는 차트 유형의 스타일 탭과 트레이딩 탭' },
         { name: '기능 스위치 114개', detail: 'features, setFeatures, isFeatureOn. 실행 중에도 변경' },
         { name: '위젯에 넣는 나만의 요소', detail: '도구 모음 버튼과 드롭다운, 사이드바 버튼, 상태 항목, 슬롯, 메뉴 항목' },

@@ -381,7 +381,7 @@ const zhHant: SiteMessages = {
     },
     overrides: {
       title: '樣式覆寫',
-      stat: '103 個鍵',
+      stat: '122 個鍵',
       blurb:
         '依鍵單獨設定圖表外觀的任何部分，不受主題限制：每個方向的格線、十字游標、座標軸、窗格、圖例、最新價、成交量以及每種圖表類型的顏色。這裡關閉了直向格線，橫向格線為點線，十字游標為實線，MACD 的訊號線在擁有自己分隔線的窗格中顯示為虛線。',
       tryThis: [
@@ -792,7 +792,7 @@ const zhHant: SiteMessages = {
       ],
       customization: [
         { name: '元件的三種外觀', detail: 'Studio、Terminal、Capsule；ui 與 setUI；--tcw-* CSS 變數' },
-        { name: '依鍵自訂圖表外觀', detail: 'applyOverrides 涵蓋 103 個具型別的鍵，分為宿主層與使用者層' },
+        { name: '依鍵自訂圖表外觀', detail: 'applyOverrides 涵蓋 122 個具型別的鍵，分為宿主層與使用者層' },
         { name: '涵蓋每個鍵的設定', detail: '目前圖表類型的樣式分頁，以及交易分頁' },
         { name: '114 個功能開關', detail: 'features、setFeatures、isFeatureOn；執行中即可變更' },
         { name: '在元件中加入你自己的部件', detail: '工具列按鈕與下拉選單、側邊欄按鈕、狀態列項目、插槽、選單項目' },

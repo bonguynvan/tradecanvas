@@ -32,9 +32,10 @@ describe('resolveChartTheme', () => {
     expect(crosshairTagLook('black', 'hsl(40 10% 90%)')).toEqual({ background: 'hsl(40 10% 90%)', text: 'black' });
     expect(crosshairTagLook('#131416', 'ivory')).toEqual({ background: 'ivory', text: '#131416' });
     expect(s.panes).toEqual({ background: DARK_THEME.background, separator: DARK_THEME.axisLine, title: DARK_THEME.textSecondary });
-    expect(s.axis).toEqual({ price: { line: DARK_THEME.axisLine, text: DARK_THEME.axisLabel }, time: { line: DARK_THEME.axisLine, text: DARK_THEME.axisLabel } });
+    expect(s.axis).toEqual({ price: { line: DARK_THEME.axisLine, text: DARK_THEME.axisLabel, valueTagsOutlined: false }, time: { line: DARK_THEME.axisLine, text: DARK_THEME.axisLabel } });
+    expect(s.grid.verticalAtPeriods).toBe(false);
     expect(s.legend).toEqual({ text: DARK_THEME.text, label: DARK_THEME.textSecondary, up: DARK_THEME.candleUp, down: DARK_THEME.candleDown });
-    expect(s.lastPrice).toEqual({ visible: true, up: DARK_THEME.candleUp, down: DARK_THEME.candleDown, style: 'dotted', width: 1 });
+    expect(s.lastPrice).toEqual({ visible: true, up: DARK_THEME.candleUp, down: DARK_THEME.candleDown, style: 'dotted', width: 1, labelBackground: null, labelText: null });
     expect(s.watermark.color).toBeNull();
     expect(s.sessionBreaks).toEqual({ color: null, style: null, width: null });
     expect(s.highLow.color).toBeNull();
@@ -161,7 +162,24 @@ describe('resolveChartTheme', () => {
 
   it('colours the last price as the series unless it has its own', () => {
     const t = resolveChartTheme(DARK_THEME, 'candlestick', { 'series.candlestick.upColor': '#0f0', 'lastPrice.downColor': '#f00', 'lastPrice.style': 'solid' });
-    expect(t.style!.lastPrice).toEqual({ visible: true, up: '#0f0', down: '#f00', style: 'solid', width: 1 });
+    // Its tag has no colour of its own until one is set: the day's, and the text that reads on it.
+    expect(t.style!.lastPrice).toEqual({ visible: true, up: '#0f0', down: '#f00', style: 'solid', width: 1, labelBackground: null, labelText: null });
+  });
+
+  it('gives the last price’s tag, the value tags and the grid’s vertical lines their own keys', () => {
+    const paper = { 'lastPrice.labelBackground': '#111111', 'lastPrice.labelTextColor': '#fafaf0', 'axis.price.valueTagsOutlined': true, 'grid.vertical.periodsOnly': true } as const;
+    const t = resolveChartTheme(DARK_THEME, 'candlestick', paper);
+    expect(t.style!.lastPrice).toMatchObject({ labelBackground: '#111111', labelText: '#fafaf0', up: DARK_THEME.candleUp });
+    expect(t.style!.axis.price.valueTagsOutlined).toBe(true);
+    expect(t.style!.grid.verticalAtPeriods).toBe(true);
+    // The lines themselves are as they were.
+    expect(t.style!.grid.vertical).toEqual({ visible: true, color: DARK_THEME.grid, style: 'solid', width: 1 });
+    for (const [key, value] of Object.entries(paper)) expect(chartStyleValue(DARK_THEME, paper, key as ChartStyleKey), key).toBe(value);
+    expect(chartStyleValue(DARK_THEME, {}, 'grid.vertical.periodsOnly')).toBe(false);
+    expect(chartStyleValue(DARK_THEME, {}, 'axis.price.valueTagsOutlined')).toBe(false);
+    expect(chartStyleValue(DARK_THEME, {}, 'lastPrice.labelBackground')).toBeNull();
+    // A value that is no colour, or no boolean, is left out with its key named.
+    expect(readChartStyleOverrides({ 'lastPrice.labelBackground': 12, 'grid.vertical.periodsOnly': 'yes' } as never).rejected.sort()).toEqual(['grid.vertical.periodsOnly', 'lastPrice.labelBackground']);
   });
 
   it('colours the volume with its own keys', () => {
@@ -186,7 +204,7 @@ describe('chartStyleValue', () => {
     for (const key of Object.keys(CHART_STYLE_KEYS) as ChartStyleKey[]) {
       const value = chartStyleValue(DARK_THEME, {}, key);
       // Only the parts that defer to their own settings resolve to null.
-      if (value === null) expect(key).toMatch(/^(watermark\.color|sessionBreaks\.|highLow\.color|trading\.|markers\.|tradeZones\.|drawings\.)/);
+      if (value === null) expect(key).toMatch(/^(watermark\.color|sessionBreaks\.|highLow\.color|trading\.|markers\.|tradeZones\.|drawings\.|lastPrice\.label)/);
       else expect(typeof value).toBe(CHART_STYLE_KEYS[key] === 'color' || CHART_STYLE_KEYS[key] === 'lineStyle' ? 'string' : CHART_STYLE_KEYS[key] === 'width' ? 'number' : 'boolean');
     }
   });
