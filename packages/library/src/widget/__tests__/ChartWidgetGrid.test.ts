@@ -149,6 +149,24 @@ describe('ChartWidgetGrid', () => {
     expect(grid.getWidget(3)!.isFeatureOn('sidebar')).toBe(true);
   });
 
+  it('is written right to left in a language that is, its bar as its charts, unless told a direction', () => {
+    const direction = () => host.querySelector<HTMLElement>('.tcw-grid')!.dir;
+    make({ widget: { watchlist: false, locale: 'ar', messages: {} } });
+    expect(direction()).toBe('rtl');
+    grid.destroy();
+    host.replaceChildren();
+    make({ widget: { watchlist: false, locale: 'ar', messages: {}, dir: 'ltr' } });
+    expect(direction()).toBe('ltr');
+    grid.destroy();
+    host.replaceChildren();
+    make({ widget: { watchlist: false, dir: 'rtl' } });
+    expect(direction()).toBe('rtl');
+    grid.destroy();
+    host.replaceChildren();
+    make();
+    expect(direction()).toBe('ltr');
+  });
+
   it('puts away the charts it shrinks from, and brings them back as they were', async () => {
     make({ layout: '1x3', cells: [{ symbol: 'AAA' }, { symbol: 'BBB' }, { symbol: 'CCC' }] });
     charts()[2].drawings = ['kept'];

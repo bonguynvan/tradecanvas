@@ -124,6 +124,16 @@ describe('WidgetContextMenu', () => {
       expect(left() + MENU_W).toBe(360);
     });
 
+    it('gives the keyboard back to its button when shut, though the press left it elsewhere (Safari focuses no pressed button)', () => {
+      const btn = button(100, 160);
+      const elsewhere = document.createElement('input');
+      host.appendChild(elsewhere);
+      elsewhere.focus();
+      menu.openUnder(ENTRIES, btn, () => {});
+      menu.close();
+      expect(document.activeElement).toBe(btn);
+    });
+
     it('ends at the button’s end edge with `end` ("more", at the end of the toolbar)', () => {
       menu.openUnder(ENTRIES, button(340, 368), () => {}, 'end');
       expect(left() + MENU_W).toBe(368);

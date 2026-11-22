@@ -64,6 +64,17 @@ const warned = new Set<string>();
  * table for `locale` (or its language) on top, falling back key by key to
  * English, then the host's `messages` last so they always win.
  */
+/** Whether a language is written right to left: Arabic, Hebrew, Persian, Urdu and the like. */
+export function isRtlLocale(locale: string | undefined): boolean {
+  return !!locale && /^(ar|he|iw|fa|ur|ps|yi|dv|ckb|sd|ug)(-|$)/i.test(locale);
+}
+
+/** The way a widget is written: as it was told (`dir`), else as its language is. */
+export function writingDirection(dir: 'ltr' | 'rtl' | 'auto' | undefined, locale: string | undefined): 'ltr' | 'rtl' {
+  if (dir === 'ltr' || dir === 'rtl') return dir;
+  return isRtlLocale(locale) ? 'rtl' : 'ltr';
+}
+
 export function resolveMessages(
   locale: string | undefined,
   overrides: Partial<WidgetMessages> | undefined,

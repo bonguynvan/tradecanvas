@@ -168,6 +168,8 @@ export class WidgetContextMenu {
     // Ending at the button's right edge first: its end left to right, its start right to left.
     const before = (align === 'end') !== this.rtl();
     this.open(entries, at.left - box.left, at.bottom - box.top + gap, onPick, anchor, undefined, at.right - box.left, before);
+    // Safari doesn't focus a pressed button: the keyboard goes back to it all the same.
+    this.returnFocus = anchor;
   }
 
   /**
