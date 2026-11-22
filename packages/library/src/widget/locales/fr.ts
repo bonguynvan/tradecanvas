@@ -609,6 +609,7 @@ export const FR_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'Le take-profit se place au-dessus de l’entrée pour un achat, en dessous pour une vente.',
   'ticket.problem.limitSide': 'Un achat à cours limité se place sous le marché, une vente à cours limité au-dessus.',
   'ticket.problem.stopSide': 'Un achat stop se place au-dessus du marché, une vente stop en dessous.',
+  'ticket.problem.expireTime': 'L’ordre doit prendre fin à un moment à venir.',
   'ticket.problem.priceStep': 'Les prix suivent le pas de cotation du marché.',
   'ticket.problem.priceLimits': 'Aujourd’hui, les prix vont de {floor} à {ceiling}.',
   'ticket.problem.lot': 'Au-delà d’un lot, passez des lots entiers de {lot} ; les rompus vont dans un ordre à part.',
@@ -963,6 +964,8 @@ export const FR_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'Vente à cours limité @ {price}',
   'order.buyStop': 'Achat stop @ {price}',
   'order.sellStop': 'Vente stop @ {price}',
+  'order.refused': 'Le courtier a refusé l’ordre : {reason}',
+  'order.partDropped': 'Exécuté {filled} sur {quantity} : le reste a été annulé',
 
   'toast.pinned': 'Épinglé aux favoris',
   'toast.unpinned': 'Désépinglé',

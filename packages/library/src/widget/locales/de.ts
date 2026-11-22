@@ -609,6 +609,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'Der Take-Profit liegt beim Kauf über dem Einstieg, beim Verkauf darunter.',
   'ticket.problem.limitSide': 'Ein Kauf-Limit liegt unter dem Markt, ein Verkauf-Limit darüber.',
   'ticket.problem.stopSide': 'Ein Kauf-Stop liegt über dem Markt, ein Verkauf-Stop darunter.',
+  'ticket.problem.expireTime': 'Die Order muss zu einem künftigen Zeitpunkt enden.',
   'ticket.problem.priceStep': 'Preise müssen der Tick-Größe des Marktes entsprechen.',
   'ticket.problem.priceLimits': 'Heute sind Preise von {floor} bis {ceiling} zulässig.',
   'ticket.problem.lot': 'Über einem Lot ordern Sie ganze Lots zu {lot}; überzählige Stücke gehören in eine eigene Order.',
@@ -963,6 +964,8 @@ export const DE_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'Verkauf-Limit @ {price}',
   'order.buyStop': 'Kauf-Stop @ {price}',
   'order.sellStop': 'Verkauf-Stop @ {price}',
+  'order.refused': 'Der Broker hat die Order abgelehnt: {reason}',
+  'order.partDropped': '{filled} von {quantity} ausgeführt: der Rest wurde storniert',
 
   'toast.pinned': 'Zu den Favoriten angeheftet',
   'toast.unpinned': 'Losgelöst',

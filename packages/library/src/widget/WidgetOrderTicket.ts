@@ -5,6 +5,7 @@ import { EN_TRANSLATOR, fill, type MessageKey, type Translator } from './i18n.js
 import { segmentedControl, stepperField, toggleSwitch } from './settingsControls.js';
 import { keepTabInside } from './focusTrap.js';
 import { signed, toneOf } from './signedFigure.js';
+import { utcToWallTime, wallTimeToUtc } from './wallTime.js';
 import {
   orderTicketDistance,
   orderTicketIntent,
@@ -13,6 +14,8 @@ import {
   type OrderTicketDraft,
   type OrderTicketProblem,
   type OrderTicketRules,
+  ticketEntry,
+  ticketExpireTime,
   ticketTimeInForce,
   ticketTimesInForce,
   ticketTakeProfitLevels,
@@ -27,6 +30,11 @@ export interface OrderTicketCallbacks {
   formatAmount?: (value: number) => string;
   /** A plain figure to `decimals` (a percent, reward over risk), in the number locale; unset, with a point. */
   formatNumber?: (value: number, decimals: number) => string;
+  /** A moment as the date and time fields write it (the chart's zone), and what they say as a moment; unset, in the browser's zone. */
+  toWallTime?: (time: number) => { date: string; time: string };
+  fromWallTime?: (date: string, time: string) => number | null;
+  /** The moment now, ms: what an order good till a date has to end after. Unset, the clock's. */
+  now?: () => number;
 }
 
 /** Where a ticket starts: a side and a price (a click on the chart), and the market. */
@@ -58,6 +66,9 @@ const STOP_START_PCT = 1;
 const TARGET_START_PCT = 2;
 /** Just below a band's edge: the step going down from it is the band's below. */
 const BELOW_EDGE = 1 - 1e-9;
+/** An order good till a date starts as good till this long from now, to the minute. */
+const EXPIRY_START_MS = 86_400_000;
+const MINUTE_MS = 60_000;
 
 let ticketSeq = 0;
 
@@ -239,9 +250,55 @@ export class WidgetOrderTicket {
 
   private place(): void {
     const draft = this.draft;
-    if (!draft || orderTicketProblems(draft, this.lastPrice, this.rules).length > 0) return;
+    if (!draft || this.problems(draft).length > 0) return;
     this.callbacks.onSubmit(orderTicketIntent(draft, this.lastPrice, this.rules));
     this.close();
+  }
+
+  private now(): number {
+    return this.callbacks.now?.() ?? Date.now();
+  }
+
+  /** What is wrong with the draft, as the market's rules and the moment now find it. */
+  private problems(draft: OrderTicketDraft): OrderTicketProblem[] {
+    return orderTicketProblems(draft, this.lastPrice, { ...this.rules, now: this.now() });
+  }
+
+  /** Another kind of time in force: good till a date starts a day from now, unless a date was picked before. */
+  private setTimeInForce(timeInForce: TimeInForce): void {
+    const draft = this.draft;
+    if (!draft) return;
+    const starts = timeInForce === 'gtd' && Number.isNaN(ticketExpireTime(draft));
+    const expireTime = Math.floor((this.now() + EXPIRY_START_MS) / MINUTE_MS) * MINUTE_MS;
+    // The date's row comes and goes with the kind.
+    this.set({ timeInForce, ...(starts ? { expireTime } : {}) }, true);
+  }
+
+  /** When an order good till a date ends: a date and a time, on the clock of the chart's zone. */
+  private expiryRow(draft: OrderTicketDraft): HTMLElement {
+    const at = ticketExpireTime(draft);
+    const wall = Number.isNaN(at) ? { date: '', time: '' } : (this.callbacks.toWallTime ?? ((time: number) => utcToWallTime(time, null)))(at);
+    const label = this.t('alerts.expires');
+    const input = (type: 'date' | 'time', name: string, value: string, what: MessageKey): HTMLInputElement => {
+      const el = document.createElement('input');
+      el.type = type;
+      el.className = 'tcw-indi-input';
+      el.value = value;
+      el.dataset.ticketField = name;
+      el.setAttribute('aria-label', `${label}: ${this.t(what)}`);
+      return el;
+    };
+    const date = input('date', 'expireDate', wall.date, 'drawingSettings.date');
+    const time = input('time', 'expireTime', wall.time, 'drawingSettings.time');
+    const fromWall = this.callbacks.fromWallTime ?? ((d: string, t: string) => wallTimeToUtc(d, t, null));
+    // What the fields say is no moment while one of them is empty: the ticket then says so, and places nothing.
+    const onChange = (): void => this.set({ expireTime: fromWall(date.value, time.value) });
+    date.addEventListener('change', onChange);
+    time.addEventListener('change', onChange);
+    const fields = document.createElement('div');
+    fields.className = 'tcw-ticket-expiry';
+    fields.append(date, time);
+    return this.row('alerts.expires', fields);
   }
 
   private set(patch: Partial<OrderTicketDraft>, rerender = false): void {
@@ -269,8 +326,9 @@ export class WidgetOrderTicket {
     } else {
       this.body.append(
         this.row('ticket.price', this.priceField('price', draft.price, (price) => this.set({ price }))),
-        this.row('ticket.timeInForce', this.choices('timeInForce', ticketTimesInForce(draft.type), ticketTimeInForce(draft), 'ticket.timeInForce', (timeInForce: TimeInForce) => this.set({ timeInForce }))),
+        this.row('ticket.timeInForce', this.choices('timeInForce', ticketTimesInForce(draft.type), ticketTimeInForce(draft), 'ticket.timeInForce', (timeInForce: TimeInForce) => this.setTimeInForce(timeInForce))),
       );
+      if (ticketTimeInForce(draft) === 'gtd') this.body.append(this.expiryRow(draft));
     }
     this.body.append(this.optionalPrice('stopLoss', draft.stopLoss));
     // With a stop-loss, whether it is to follow the price.
@@ -451,7 +509,7 @@ export class WidgetOrderTicket {
 
   /** What comes off at each target: the levels on the way, then the take-profit with the rest. Empty with one target. */
   private levelsText(draft: OrderTicketDraft): string {
-    const entry = draft.type === 'market' ? this.lastPrice ?? draft.price : draft.price;
+    const entry = ticketEntry(draft, this.lastPrice) ?? draft.price;
     const levels = ticketTakeProfitLevels(draft, entry, this.rules);
     if (levels.length === 0 || draft.takeProfit === null) return '';
     const taken = levels.reduce((sum, level) => sum + level.quantity, 0);
@@ -479,7 +537,7 @@ export class WidgetOrderTicket {
   private startOf(which: 'stopLoss' | 'takeProfit'): number {
     const draft = this.draft;
     if (!draft) return NaN;
-    const entry = draft.type === 'market' ? this.lastPrice ?? draft.price : draft.price;
+    const entry = ticketEntry(draft, this.lastPrice) ?? draft.price;
     if (!(entry > 0)) return NaN;
     const pct = which === 'stopLoss' ? -STOP_START_PCT : TARGET_START_PCT;
     return this.round(entry * (1 + (draft.side === 'buy' ? pct : -pct) / 100));
@@ -489,7 +547,7 @@ export class WidgetOrderTicket {
   private check(): void {
     const draft = this.draft;
     if (!draft) return;
-    const problems = orderTicketProblems(draft, this.lastPrice, this.rules);
+    const problems = this.problems(draft);
     const said = problems.map((p) => this.problemText(p));
     if (said.join('\n') !== [...this.problemsEl.children].map((p) => p.textContent).join('\n')) {
       this.problemsEl.replaceChildren(...said.map((text) => {

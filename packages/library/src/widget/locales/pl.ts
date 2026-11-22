@@ -609,6 +609,7 @@ export const PL_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'Przy kupnie Take Profit ustawia się powyżej ceny wejścia, przy sprzedaży poniżej.',
   'ticket.problem.limitSide': 'Kupno z limitem ustawia się poniżej ceny rynkowej, a sprzedaż z limitem powyżej.',
   'ticket.problem.stopSide': 'Kupno stop ustawia się powyżej ceny rynkowej, a sprzedaż stop poniżej.',
+  'ticket.problem.expireTime': 'Zlecenie musi wygasać w przyszłości.',
   'ticket.problem.priceStep': 'Ceny podaje się zgodnie z krokiem notowań rynku.',
   'ticket.problem.priceLimits': 'Dzisiejsze ceny mieszczą się w przedziale od {floor} do {ceiling}.',
   'ticket.problem.lot': 'Powyżej jednego lota składaj zlecenia na pełne loty po {lot}; pozostałe akcje złóż w osobnym zleceniu.',
@@ -963,6 +964,8 @@ export const PL_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'Sprzedaż z limitem @ {price}',
   'order.buyStop': 'Kupno stop @ {price}',
   'order.sellStop': 'Sprzedaż stop @ {price}',
+  'order.refused': 'Broker odrzucił zlecenie: {reason}',
+  'order.partDropped': 'Zrealizowano {filled} z {quantity}: reszta została anulowana',
 
   'toast.pinned': 'Przypięto do ulubionych',
   'toast.unpinned': 'Odpięto',

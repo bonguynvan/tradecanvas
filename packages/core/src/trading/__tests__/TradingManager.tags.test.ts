@@ -157,6 +157,26 @@ describe('the tags on the trading lines', () => {
     expect(events).toEqual([{ event: 'orderModify', data: { orderId: 'o1', newPrice: 60, previousPrice: 30 } }]);
   });
 
+  it('tell while a line is dragged to a price, from the press that takes it to the release', () => {
+    expect(manager.isDraggingLine()).toBe(false);
+    const cancel = button(draw().buttons, 'cancelOrder');
+    const onTag = { x: cancel.x - 10, y: 62 };
+    manager.onPointerDown(onTag, unitViewport);
+    expect(manager.isDraggingLine()).toBe(true);
+    manager.onPointerMove({ x: onTag.x, y: 32 }, unitViewport);
+    expect(manager.isDraggingLine()).toBe(true);
+    manager.onPointerUp({ x: onTag.x, y: 32 });
+    expect(manager.isDraggingLine()).toBe(false);
+  });
+
+  it('tell of no drag while a button on a line is pressed: it moves no line', () => {
+    const cancel = button(draw().buttons, 'cancelOrder');
+    const onButton = { x: cancel.x + (cancel.width ?? cancel.size) / 2, y: cancel.y + cancel.size / 2 };
+    expect(manager.onPointerDown(onButton, unitViewport)).toBe(true);
+    expect(manager.isDraggingLine()).toBe(false);
+    manager.onPointerUp();
+  });
+
   it('leave a position’s entry where it is: its tag is not a handle', () => {
     const reverse = button(draw().buttons, 'reversePosition');
     expect(manager.isOverDraggableLine({ x: reverse.x - 10, y: 36 }, unitViewport)).toBe(false);

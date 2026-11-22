@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { OrderPlaceIntent } from '@tradecanvas/commons';
-import { orderTicketIntent, orderTicketProblems, orderTicketRiskReward, orderTicketSummary, ticketTakeProfitLevels, type OrderTicketDraft } from '../orderTicket.js';
+import { orderTicketIntent, orderTicketProblems, orderTicketRiskReward, orderTicketSummary, ticketEntry, ticketTakeProfitLevels, ticketTimesInForce, type OrderTicketDraft } from '../orderTicket.js';
+import { utcToWallTime, wallTimeToUtc } from '../wallTime.js';
 import { WidgetOrderTicket } from '../WidgetOrderTicket.js';
 
 const draft = (over: Partial<OrderTicketDraft> = {}): OrderTicketDraft => ({
@@ -68,6 +69,84 @@ describe('order ticket rules', () => {
   });
 });
 
+/** The moment the ticket's clock stands at in these tests: 23 November 2026, nine in the morning, UTC. */
+const NOW = Date.UTC(2026, 10, 23, 9, 0);
+
+describe('a limit order that fills at once or not at all', () => {
+  it('may go through the market, which is what it is for; one that waits may not', () => {
+    // A buy limit over the market would fill at once: a slip for an order that waits, the point of one that does not.
+    expect(orderTicketProblems(draft({ price: 105 }), 100)).toContain('limitSide');
+    expect(orderTicketProblems(draft({ price: 105, timeInForce: 'ioc' }), 100)).toEqual([]);
+    expect(orderTicketProblems(draft({ side: 'sell', price: 95, timeInForce: 'fok' }), 100)).toEqual([]);
+    expect(orderTicketProblems(draft({ price: 105, timeInForce: 'day' }), 100)).toContain('limitSide');
+    expect(orderTicketProblems(draft({ price: 105, timeInForce: 'gtd', expireTime: NOW + 1 }), 100, { now: NOW })).toContain('limitSide');
+  });
+
+  it('starts its position at the market when it is through it: its price is the worst it takes', () => {
+    const through = draft({ price: 105, timeInForce: 'ioc', quantity: 2, stopLoss: 98, takeProfit: 110 });
+    expect(ticketEntry(through, 100)).toBe(100);
+    expect(ticketEntry({ ...through, side: 'sell', price: 95 }, 100)).toBe(100);
+    // Two at the market's 100, not at the limit's 105: a stop 2 away loses 4, a target 10 away makes 20.
+    expect(orderTicketSummary(through, 100)).toMatchObject({ value: 200, risk: -4, reward: 20 });
+    expect(orderTicketRiskReward(through, 100)).toBe(5);
+    // A stop between the market and the limit is on the wrong side of where it fills.
+    expect(orderTicketProblems({ ...through, stopLoss: 102 }, 100)).toEqual(['stopLossSide']);
+    // The limit is still what is sent: the worst price the order takes.
+    expect(orderTicketIntent(through, 100)).toMatchObject({ type: 'limit', price: 105, timeInForce: 'ioc' });
+  });
+
+  it('is taken at its price where it is not through the market, and with no market to tell by', () => {
+    // On the waiting side the account will refuse it; the sums are a limit's.
+    expect(ticketEntry(draft({ price: 95, timeInForce: 'ioc' }), 100)).toBe(95);
+    expect(ticketEntry(draft({ price: 105, timeInForce: 'fok' }), null)).toBe(105);
+    // An order that waits is taken at its price wherever the market is.
+    expect(ticketEntry(draft({ price: 105 }), 100)).toBe(105);
+    expect(ticketEntry(draft({ type: 'stop', price: 105, timeInForce: 'ioc' }), 100)).toBe(105);
+    expect(ticketEntry(draft({ type: 'market', price: 0 }), 100)).toBe(100);
+    expect(ticketEntry(draft({ type: 'market', price: 0 }), null)).toBeNull();
+  });
+
+  it('parts its take-profit from the market it fills at, and trails its stop from there', () => {
+    const through = draft({ price: 105, timeInForce: 'ioc', quantity: 2, stopLoss: 98, takeProfit: 110, targets: 2, trailing: true });
+    // Half way from 100 to 110, not from 105.
+    expect(orderTicketIntent(through, 100)).toMatchObject({ takeProfits: [{ price: 105, quantity: 1 }], trailingStop: 2 });
+  });
+
+  it('leaves a stop order its side: it waits, whatever its draft still holds', () => {
+    expect(orderTicketProblems(draft({ type: 'stop', price: 95, timeInForce: 'ioc' }), 100)).toContain('stopSide');
+  });
+});
+
+describe('an order good till a date', () => {
+  it('is offered for an order that waits: a limit or a stop', () => {
+    expect(ticketTimesInForce('limit')).toEqual(['gtc', 'day', 'gtd', 'ioc', 'fok']);
+    expect(ticketTimesInForce('stop')).toEqual(['gtc', 'day', 'gtd']);
+  });
+
+  it('needs a time to come to end at', () => {
+    const till = (expireTime?: number | null) => orderTicketProblems(draft({ timeInForce: 'gtd', expireTime }), 100, { now: NOW });
+    expect(till()).toEqual(['expireTime']);
+    expect(till(null)).toEqual(['expireTime']);
+    expect(till(Number.NaN)).toEqual(['expireTime']);
+    expect(till(NOW)).toEqual(['expireTime']);
+    expect(till(NOW - 60_000)).toEqual(['expireTime']);
+    expect(till(NOW + 60_000)).toEqual([]);
+  });
+
+  it('asks nothing of the time of an order that is not good till a date', () => {
+    expect(orderTicketProblems(draft({ timeInForce: 'gtc', expireTime: NOW - 1 }), 100, { now: NOW })).toEqual([]);
+    expect(orderTicketProblems(draft({ type: 'market', timeInForce: 'gtd' }), 100, { now: NOW })).toEqual([]);
+  });
+
+  it('sends its time with the order, and no time with an order of another kind', () => {
+    const at = NOW + 3_600_000;
+    expect(orderTicketIntent(draft({ timeInForce: 'gtd', expireTime: at }), 100)).toMatchObject({ timeInForce: 'gtd', expireTime: at });
+    expect(orderTicketIntent(draft({ timeInForce: 'day', expireTime: at }), 100)).not.toHaveProperty('expireTime');
+    expect(orderTicketIntent(draft({ type: 'market', timeInForce: 'gtd', expireTime: at }), 100)).not.toHaveProperty('expireTime');
+    expect(orderTicketIntent(draft({ type: 'stop', price: 105, timeInForce: 'gtd', expireTime: at }), 100)).toMatchObject({ timeInForce: 'gtd', expireTime: at });
+  });
+});
+
 describe('WidgetOrderTicket', () => {
   let host: HTMLDivElement;
   let ticket: WidgetOrderTicket;
@@ -77,7 +156,14 @@ describe('WidgetOrderTicket', () => {
     host = document.createElement('div');
     document.body.appendChild(host);
     sent = [];
-    ticket = new WidgetOrderTicket(host, { onSubmit: (i) => sent.push(i), formatPrice: (p) => p.toFixed(2) });
+    ticket = new WidgetOrderTicket(host, {
+      onSubmit: (i) => sent.push(i),
+      formatPrice: (p) => p.toFixed(2),
+      // The date and time fields in UTC, and a clock that stands still.
+      toWallTime: (time) => utcToWallTime(time, 0),
+      fromWallTime: (date, time) => wallTimeToUtc(date, time, 0),
+      now: () => NOW,
+    });
   });
 
   afterEach(() => {
@@ -94,6 +180,11 @@ describe('WidgetOrderTicket', () => {
   };
   const radios = (group: string) => [...host.querySelectorAll<HTMLElement>(`[data-ticket-field="${group}"] [role=radio]`)];
   const checked = (group: string) => radios(group).find((r) => r.getAttribute('aria-checked') === 'true')?.dataset.value;
+  const pickTif = (value: string) => radios('timeInForce').find((r) => r.dataset.value === value)!.click();
+  const expiry = () => ({
+    date: host.querySelector<HTMLInputElement>('[data-ticket-field="expireDate"]'),
+    time: host.querySelector<HTMLInputElement>('[data-ticket-field="expireTime"]'),
+  });
   const summary = () => Object.fromEntries([...host.querySelectorAll<HTMLElement>('.tcw-ticket-summary-row')].map((row) => [row.dataset.row, row.querySelector('.tcw-ticket-figure')!.textContent]));
 
   it('starts as a limit where the market would come down to it, and places it', () => {
@@ -125,12 +216,103 @@ describe('WidgetOrderTicket', () => {
 
   it('offers a limit order the kinds that fill at once or not at all, and a stop order only those that wait', () => {
     ticket.open({ price: 95, lastPrice: 100 });
-    expect(radios('timeInForce').map((r) => r.dataset.value)).toEqual(['gtc', 'day', 'ioc', 'fok']);
-    radios('timeInForce')[2].click();
+    expect(radios('timeInForce').map((r) => r.dataset.value)).toEqual(['gtc', 'day', 'gtd', 'ioc', 'fok']);
+    pickTif('ioc');
     expect(checked('timeInForce')).toBe('ioc');
     radios('type')[2].click();
-    expect(radios('timeInForce').map((r) => r.dataset.value)).toEqual(['gtc', 'day']);
+    expect(radios('timeInForce').map((r) => r.dataset.value)).toEqual(['gtc', 'day', 'gtd']);
     expect(checked('timeInForce')).toBe('gtc');
+  });
+
+  it('asks a good-till-date order when it ends: a date and a time, a day from now to start with', () => {
+    ticket.open({ price: 95, lastPrice: 100 });
+    expect(expiry().date).toBeNull();
+    pickTif('gtd');
+    expect(checked('timeInForce')).toBe('gtd');
+    const { date, time } = expiry();
+    expect(date!.type).toBe('date');
+    expect(time!.type).toBe('time');
+    expect([date!.value, time!.value]).toEqual(['2026-11-24', '09:00']);
+    expect(date!.getAttribute('aria-label')).toBe('Expires: Date');
+    expect(time!.getAttribute('aria-label')).toBe('Expires: Time');
+    place().click();
+    expect(sent).toEqual([expect.objectContaining({ type: 'limit', timeInForce: 'gtd', expireTime: Date.UTC(2026, 10, 24, 9, 0) })]);
+  });
+
+  it('sends the time picked, and will not place an order that ends in the past or at no time', () => {
+    ticket.open({ price: 95, lastPrice: 100 });
+    pickTif('gtd');
+    const set = (field: 'date' | 'time', value: string) => {
+      const input = expiry()[field]!;
+      input.value = value;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    set('date', '2026-11-22');
+    expect(place().disabled).toBe(true);
+    expect(host.querySelector('.tcw-ticket-problems')!.textContent).toBe('The order has to end at a time to come.');
+    set('date', '');
+    expect(place().disabled).toBe(true);
+    set('date', '2026-12-01');
+    set('time', '15:30');
+    expect(place().disabled).toBe(false);
+    expect(host.querySelector('.tcw-ticket-problems')!.textContent).toBe('');
+    place().click();
+    expect(sent).toEqual([expect.objectContaining({ timeInForce: 'gtd', expireTime: Date.UTC(2026, 11, 1, 15, 30) })]);
+  });
+
+  it('takes the date away with another kind, and has the time that was picked when the kind comes back', () => {
+    ticket.open({ price: 95, lastPrice: 100 });
+    pickTif('gtd');
+    const date = expiry().date!;
+    date.value = '2026-12-05';
+    date.dispatchEvent(new Event('change', { bubbles: true }));
+    pickTif('day');
+    expect(expiry().date).toBeNull();
+    place().click();
+    expect(sent[0]).not.toHaveProperty('expireTime');
+    ticket.open({ price: 95, lastPrice: 100 });
+    pickTif('gtd');
+    // A new ticket starts a day from now again.
+    expect(expiry().date!.value).toBe('2026-11-24');
+    const again = expiry().date!;
+    again.value = '2026-12-05';
+    again.dispatchEvent(new Event('change', { bubbles: true }));
+    pickTif('gtc');
+    pickTif('gtd');
+    expect(expiry().date!.value).toBe('2026-12-05');
+  });
+
+  it('keeps a stop order good till its date, and a market order has none', () => {
+    ticket.open({ price: 95, lastPrice: 100 });
+    pickTif('gtd');
+    radios('type')[2].click();
+    expect(checked('timeInForce')).toBe('gtd');
+    expect(expiry().date).not.toBeNull();
+    radios('type')[0].click();
+    expect(expiry().date).toBeNull();
+  });
+
+  it('places a limit through the market once it is one that fills at once', () => {
+    ticket.open({ price: 105, lastPrice: 100 });
+    // Over the market a buy starts as a stop; as a limit that waits it would fill at once.
+    expect(checked('type')).toBe('stop');
+    radios('type')[1].click();
+    expect(place().disabled).toBe(true);
+    pickTif('ioc');
+    expect(place().disabled).toBe(false);
+    expect(host.querySelector('.tcw-ticket-problems')!.textContent).toBe('');
+    place().click();
+    expect(sent).toEqual([expect.objectContaining({ side: 'buy', type: 'limit', price: 105, timeInForce: 'ioc' })]);
+  });
+
+  it('starts the stop of a limit through the market from the market, where it fills', () => {
+    ticket.open({ price: 105, lastPrice: 100 });
+    radios('type')[1].click();
+    pickTif('ioc');
+    host.querySelectorAll<HTMLButtonElement>('.tcw-ticket-optional .tcw-toggle')[0].click();
+    // One percent under the market's 100, not under the limit's 105.
+    expect(host.querySelector<HTMLInputElement>('input[data-ticket-field="stopLoss"]')!.value).toBe('99');
+    expect(place().disabled).toBe(false);
   });
 
   it('asks for a stop order good till cancelled when its draft still holds a kind it cannot be', () => {
@@ -140,7 +322,7 @@ describe('WidgetOrderTicket', () => {
 
   it('sends the kind chosen for a limit order', () => {
     ticket.open({ price: 95, lastPrice: 100 });
-    radios('timeInForce')[3].click();
+    pickTif('fok');
     place().click();
     expect(sent).toEqual([expect.objectContaining({ type: 'limit', timeInForce: 'fok' })]);
   });

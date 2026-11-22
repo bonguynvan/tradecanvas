@@ -609,6 +609,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'Kâr al, alışta girişin üstünde, satışta altında olmalıdır.',
   'ticket.problem.limitSide': 'Limit alış piyasanın altında, limit satış üstünde olmalıdır.',
   'ticket.problem.stopSide': 'Stop alış piyasanın üstünde, stop satış altında olmalıdır.',
+  'ticket.problem.expireTime': 'Emir ileri bir zamanda sona ermelidir.',
   'ticket.problem.priceStep': 'Fiyatlar piyasanın fiyat adımlarına uygun olmalıdır.',
   'ticket.problem.priceLimits': 'Bugünkü fiyatlar {floor} ile {ceiling} arasındadır.',
   'ticket.problem.lot': 'Bir lotun üzerinde {lot} adetlik tam lotlarla emir verin; küsurat hisseler ayrı bir emirle girilir.',
@@ -963,6 +964,8 @@ export const TR_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'Limit satış @ {price}',
   'order.buyStop': 'Stop alış @ {price}',
   'order.sellStop': 'Stop satış @ {price}',
+  'order.refused': 'Aracı kurum emri reddetti: {reason}',
+  'order.partDropped': '{quantity} içinden {filled} gerçekleşti: kalanı iptal edildi',
 
   'toast.pinned': 'Favorilere sabitlendi',
   'toast.unpinned': 'Sabitleme kaldırıldı',

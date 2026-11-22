@@ -484,6 +484,8 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // 처음부터 모
   나아가므로, 뒤로 이동한 뒤에는 리플레이가 지금까지 본 가장 먼 지점을 지날 때까지 기다립니다. 그동안 실시간
   가격은 영향을 주지 않으며, 리플레이가 끝나면 다시 실시간 가격을 따르고 체결 시각도 실제 시계로 돌아갑니다.
   가격 알림은 그동안에도 계속 실시간 시장을 감시하며, 지표 선에 건 알림은 리플레이가 끝날 때까지 기다립니다.
+  <code>chart.getTradingTime()</code>은 지금 내는 주문이 접수되는 시각입니다. 계좌가 리플레이 위에서 거래하는 동안에는
+  리플레이의 시각이고, 그렇지 않으면 실제 시계입니다. 위젯의 주문 티켓은 기한 지정 주문의 기한을 이 시각부터 셉니다.
 </p>
 <pre><code>{`chart.connectExecution(new PaperExecutionAdapter())
 chart.replayStart({ startIndex: 300, paused: true })

@@ -146,6 +146,7 @@ grid.setFeatures({ toasts: false })  // cada gráfico de un ChartWidgetGrid`}</c
   <code>compare</code> quita el botón de añadir del árbol de objetos, y las comparaciones ya puestas siguen en la lista;
   <code>toasts</code> calla los avisos del propio widget (sus errores se siguen mostrando), y los tuyos con
   <code>widget.toast()</code> también se muestran.
+  Se muestra un aviso cada vez: uno nuevo ocupa el lugar del que se veía, y uno largo pasa a una segunda línea.
   <code>selectionToolbar</code> apagado oculta la barra sobre un dibujo seleccionado; el menú del botón derecho sigue.
   <code>statusBar.rangeTimeframe</code> apagado mantiene la temporalidad cuando un rango de la barra de rangos es más largo de lo que caben sus barras; encendido, cambia a semanal o mensual y vuelve.
   Las herramientas de trading son un solo menú Operar en la barra de herramientas: <code>toolbar.bracketOrders</code>,

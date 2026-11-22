@@ -595,6 +595,21 @@ describe('ChartWidget order ticket', () => {
     // A buy at the fake chart's 100 with its stop 1% under: one unit risks 1, written as the step's one decimal.
     expect(host.querySelector('.tcw-ticket-away')!.textContent).toBe('-1.00% · -1.0');
   });
+
+  it('counts an order good till a date from the moment the chart trades at, a replay’s on a replay', () => {
+    make({ trading: true, symbol: 'AAA' });
+    // A paper account trading on a replay of March 2024: the clock on the wall is years on.
+    (FakeChart.last as unknown as { getTradingTime: () => number }).getTradingTime = () => Date.UTC(2024, 2, 1, 14, 30);
+    (widget as unknown as { trading: { openOrderTicket(price?: number): void } }).trading.openOrderTicket(95);
+    host.querySelector<HTMLElement>('[data-ticket-field="timeInForce-gtd"]')!.click();
+    const field = (name: string) => host.querySelector<HTMLInputElement>(`[data-ticket-field="${name}"]`)!;
+    expect([field('expireDate').value, field('expireTime').value]).toEqual(['2024-03-02', '14:30']);
+    expect(host.querySelector<HTMLButtonElement>('.tcw-ticket-place')!.disabled).toBe(false);
+    // The day before the replay's is past, though it is to come by no clock on the wall.
+    field('expireDate').value = '2024-02-29';
+    field('expireDate').dispatchEvent(new Event('change', { bubbles: true }));
+    expect(host.querySelector<HTMLButtonElement>('.tcw-ticket-place')!.disabled).toBe(true);
+  });
 });
 
 describe('ChartWidget — the chart on paper', () => {

@@ -609,6 +609,7 @@ export const IT_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'Il take profit va sopra l’ingresso per un acquisto, sotto per una vendita.',
   'ticket.problem.limitSide': 'Un acquisto limite va sotto il mercato, una vendita limite sopra.',
   'ticket.problem.stopSide': 'Un acquisto stop va sopra il mercato, una vendita stop sotto.',
+  'ticket.problem.expireTime': 'L’ordine deve scadere in un momento futuro.',
   'ticket.problem.priceStep': 'I prezzi vanno inseriti secondo il tick minimo del mercato.',
   'ticket.problem.priceLimits': 'Oggi i prezzi vanno da {floor} a {ceiling}.',
   'ticket.problem.lot': 'Oltre un lotto, ordina lotti interi da {lot}; le spezzature vanno in un ordine a parte.',
@@ -963,6 +964,8 @@ export const IT_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'Vendita limite @ {price}',
   'order.buyStop': 'Acquisto stop @ {price}',
   'order.sellStop': 'Vendita stop @ {price}',
+  'order.refused': 'Il broker ha rifiutato l’ordine: {reason}',
+  'order.partDropped': 'Eseguito {filled} di {quantity}: il resto è stato annullato',
 
   'toast.pinned': 'Aggiunto ai preferiti',
   'toast.unpinned': 'Rimosso dai preferiti',

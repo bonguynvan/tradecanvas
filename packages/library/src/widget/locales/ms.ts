@@ -615,6 +615,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'Take profit diletakkan di atas harga masuk untuk belian, dan di bawahnya untuk jualan.',
   'ticket.problem.limitSide': 'Beli limit diletakkan di bawah harga pasaran, jual limit di atasnya.',
   'ticket.problem.stopSide': 'Beli stop diletakkan di atas harga pasaran, jual stop di bawahnya.',
+  'ticket.problem.expireTime': 'Pesanan mesti tamat pada masa akan datang.',
   'ticket.problem.priceStep': 'Harga mesti mengikut saiz bida pasaran.',
   'ticket.problem.priceLimits': 'Harga hari ini adalah dari {floor} hingga {ceiling}.',
   'ticket.problem.lot': 'Melebihi satu lot, buat pesanan dalam lot penuh {lot}; lot ganjil dimasukkan dalam pesanan berasingan.',
@@ -975,6 +976,8 @@ export const MS_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'Jual limit @ {price}',
   'order.buyStop': 'Beli stop @ {price}',
   'order.sellStop': 'Jual stop @ {price}',
+  'order.refused': 'Broker menolak pesanan: {reason}',
+  'order.partDropped': 'Dipenuhi {filled} daripada {quantity}: bakinya dibatalkan',
 
   // Toasts
   'toast.pinned': 'Disemat ke kegemaran',

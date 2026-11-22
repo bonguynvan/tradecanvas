@@ -609,6 +609,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': '익절가는 매수일 때 진입가보다 위, 매도일 때 아래에 둡니다.',
   'ticket.problem.limitSide': '지정가 매수는 현재가보다 아래, 지정가 매도는 위에 둡니다.',
   'ticket.problem.stopSide': '스톱 매수는 현재가보다 위, 스톱 매도는 아래에 둡니다.',
+  'ticket.problem.expireTime': '주문은 앞으로 올 시각에 끝나야 합니다.',
   'ticket.problem.priceStep': '가격은 시장의 호가 단위에 맞춰 입력하세요.',
   'ticket.problem.priceLimits': '오늘 가격은 {floor}에서 {ceiling}까지입니다.',
   'ticket.problem.lot': '매매 단위를 넘는 수량은 {lot}주 단위로 주문하고, 단주는 별도 주문으로 넣으세요.',
@@ -963,6 +964,8 @@ export const KO_MESSAGES: WidgetMessages = {
   'order.sellLimit': '지정가 매도 @ {price}',
   'order.buyStop': '스톱 매수 @ {price}',
   'order.sellStop': '스톱 매도 @ {price}',
+  'order.refused': '브로커가 주문을 거부했습니다: {reason}',
+  'order.partDropped': '{quantity} 중 {filled} 체결: 나머지는 취소되었습니다',
 
   'toast.pinned': '즐겨찾기에 고정했습니다',
   'toast.unpinned': '고정을 해제했습니다',

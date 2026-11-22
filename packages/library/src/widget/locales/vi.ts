@@ -615,6 +615,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'Chốt lời nằm trên giá vào với lệnh mua, dưới giá vào với lệnh bán.',
   'ticket.problem.limitSide': 'Lệnh mua giới hạn đặt dưới giá thị trường, lệnh bán giới hạn đặt trên.',
   'ticket.problem.stopSide': 'Lệnh mua stop đặt trên giá thị trường, lệnh bán stop đặt dưới.',
+  'ticket.problem.expireTime': 'Lệnh phải hết hạn vào một thời điểm sắp tới.',
   'ticket.problem.priceStep': 'Giá phải theo bước giá của thị trường.',
   'ticket.problem.priceLimits': 'Giá hôm nay từ {floor} đến {ceiling}.',
   'ticket.problem.lot': 'Trên một lô, đặt theo lô chẵn {lot}; cổ phiếu lẻ đặt thành lệnh riêng.',
@@ -975,6 +976,8 @@ export const VI_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'Bán giới hạn @ {price}',
   'order.buyStop': 'Mua stop @ {price}',
   'order.sellStop': 'Bán stop @ {price}',
+  'order.refused': 'Broker từ chối order: {reason}',
+  'order.partDropped': 'Đã khớp {filled} trên {quantity}: phần còn lại đã huỷ',
 
   // Toasts
   'toast.pinned': 'Đã ghim vào yêu thích',

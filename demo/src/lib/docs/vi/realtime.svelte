@@ -517,6 +517,8 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // every mark from 
   nó thay đổi; khi replay kết thúc, nó quay lại giá trực tiếp, và các fill lại theo
   đồng hồ thực. Cảnh báo giá vẫn theo dõi thị trường trực tiếp trong suốt quá trình; cảnh báo trên đường chỉ báo
   chờ replay kết thúc.
+  <code>chart.getTradingTime()</code> là thời điểm một order đặt lúc này được đặt: thời điểm của replay khi
+  tài khoản đang giao dịch theo replay, còn không thì theo đồng hồ thực. Order ticket của widget tính ngày của order good till date từ đó.
 </p>
 <pre><code>{`chart.connectExecution(new PaperExecutionAdapter())
 chart.replayStart({ startIndex: 300, paused: true })

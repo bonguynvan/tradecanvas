@@ -520,6 +520,8 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // every mark from 
   it meanwhile; when the replay ends it goes back to the live price, and fills to the
   clock. Price alerts keep watching the live market throughout; alerts on indicator
   lines wait for the replay to end.
+  <code>chart.getTradingTime()</code> is the moment an order placed now is placed at: the replay's while the
+  account trades on it, else the clock's. The widget's order ticket counts a good-till-date order's date from it.
 </p>
 <pre><code>{`chart.connectExecution(new PaperExecutionAdapter())
 chart.replayStart({ startIndex: 300, paused: true })

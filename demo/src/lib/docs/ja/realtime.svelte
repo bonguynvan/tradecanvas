@@ -487,6 +487,8 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // 最初からす�
   その間、ライブ価格の影響は受けません。リプレイが終わるとライブ価格に戻り、約定時刻も実際の時計に戻ります。
   価格アラートは、その間もずっとライブの市場を監視し続けます。インジケーターのラインに対するアラートは、
   リプレイが終わるまで待機します。
+  <code>chart.getTradingTime()</code> は、いま出す注文が発注される時刻です。口座がリプレイ上で取引している間はリプレイの時刻、
+  それ以外は実際の時計です。ウィジェットの注文チケットは、期日指定の注文の期日をこの時刻から数えます。
 </p>
 <pre><code>{`chart.connectExecution(new PaperExecutionAdapter())
 chart.replayStart({ startIndex: 300, paused: true })

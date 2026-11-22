@@ -609,6 +609,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'Тейк-профит ставится выше цены входа при покупке и ниже при продаже.',
   'ticket.problem.limitSide': 'Лимитная покупка ставится ниже рынка, лимитная продажа — выше.',
   'ticket.problem.stopSide': 'Стоп-покупка ставится выше рынка, стоп-продажа — ниже.',
+  'ticket.problem.expireTime': 'Заявка должна истекать в будущем.',
   'ticket.problem.priceStep': 'Цены указываются с шагом цены рынка.',
   'ticket.problem.priceLimits': 'Сегодня цены ограничены диапазоном от {floor} до {ceiling}.',
   'ticket.problem.lot': 'Больше одного лота — только целыми лотами по {lot}; неполный лот выставляйте отдельным ордером.',
@@ -963,6 +964,8 @@ export const RU_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'Лимитная продажа @ {price}',
   'order.buyStop': 'Стоп-покупка @ {price}',
   'order.sellStop': 'Стоп-продажа @ {price}',
+  'order.refused': 'Брокер отклонил ордер: {reason}',
+  'order.partDropped': 'Исполнено {filled} из {quantity}: остаток отменён',
 
   'toast.pinned': 'Закреплено в избранном',
   'toast.unpinned': 'Откреплено',

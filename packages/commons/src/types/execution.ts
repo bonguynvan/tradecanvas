@@ -116,11 +116,16 @@ export interface FillEvent {
   /**
    * What is left of the order, still working, for a fill that took a part
    * of it. Left out when nothing of it works on: the fill completed it, or
-   * the rest was dropped (an immediate-or-cancel order: its fill's
-   * `quantity` is then less than was asked for, and the order `placeOrder`
-   * gave back has its `filledQuantity`).
+   * the rest was dropped (`dropped`).
    */
   remaining?: number;
+  /**
+   * What of the order was dropped with this fill, and will not fill: the
+   * rest of an immediate-or-cancel order that filled in part (its fill's
+   * `quantity` is then less than was asked for, and the order `placeOrder`
+   * gave back has its `filledQuantity`). Left out when nothing was dropped.
+   */
+  dropped?: number;
 }
 
 export interface ExecutionError {

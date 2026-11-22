@@ -282,6 +282,50 @@ describe('CrosshairHandler cursor kinds', () => {
   });
 });
 
+describe('CrosshairHandler while a line is dragged to a price', () => {
+  const at = () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    handler.onPointerMove({ x: 204, y: 150 });
+    return handler;
+  };
+  const drawn = (handler: CrosshairHandler) => {
+    const lines = recorder();
+    handler.render(lines.ctx, viewport, theme);
+    const labels = recorder();
+    handler.renderAxisLabels(labels.ctx, viewport, theme, bars);
+    return { lines: lines.lines, texts: labels.texts };
+  };
+
+  it('draws no horizontal line and no price: the line dragged writes its own, a few pixels away', () => {
+    const handler = at();
+    const free = drawn(handler);
+    expect(free.lines).toHaveLength(2);
+    expect(free.texts).toHaveLength(2);
+    let held = true;
+    handler.setPriceHeld(() => held);
+    const dragging = drawn(handler);
+    // The vertical line and the time stay: the bar under the pointer is still told.
+    expect(dragging.lines).toEqual([free.lines[0]]);
+    expect(dragging.texts).toEqual([free.texts[1]]);
+    // Let go: both are back at the next frame, with nothing told to the crosshair.
+    held = false;
+    expect(drawn(handler)).toEqual(free);
+  });
+
+  it('still reports the bar under the pointer', async () => {
+    const handler = new CrosshairHandler();
+    const callback = vi.fn();
+    handler.setCallback(callback);
+    handler.setData(bars);
+    handler.setPriceHeld(() => true);
+    handler.onPointerMove({ x: 204, y: 150 });
+    handler.render(recorder().ctx, viewport, theme);
+    await Promise.resolve();
+    expect(callback).toHaveBeenCalledWith(20, expect.anything());
+  });
+});
+
 describe('CrosshairHandler — a drawing’s span on the axes', () => {
   /** Records filled boxes as [x, y, w, h, colour] and the text with its colour. */
   function spanRecorder() {

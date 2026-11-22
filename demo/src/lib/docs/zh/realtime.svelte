@@ -464,6 +464,8 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // 从一开始就�
   向前跳转会经过途中的每一步。它只会向前推进：向后跳转后，它会等到回放越过它见过的最远位置。
   这期间实时价格不会影响它；回放结束后，它会回到实时价格，成交时间也回到实际时钟。
   价格提醒在整个过程中始终监控实时行情；基于指标线的提醒则会等到回放结束。
+  <code>chart.getTradingTime()</code> 是此刻下单的时间：账户在回放中交易时为回放的时间，否则为实际时钟。
+  组件的下单窗口据此计算“指定日期前有效”订单的日期。
 </p>
 <pre><code>{`chart.connectExecution(new PaperExecutionAdapter())
 chart.replayStart({ startIndex: 300, paused: true })

@@ -408,6 +408,15 @@ export class TradingManager {
     }
   }
 
+  /**
+   * Whether a line is being dragged to a price: an order's, a position's stop
+   * or target, a bracket's or a draft order's. From the press that takes it to
+   * the release; a button pressed on a line moves none.
+   */
+  isDraggingLine(): boolean {
+    return this.bracket.isDragging() || this.orderDraft.isDragging() || this.dragHandler.isActive();
+  }
+
   onPointerMove(pointer: Point, viewport: ViewportState): boolean {
     if (this.armed) return true;
     // Dragged by its tag, the line keeps its distance from the pointer, and stays on the plot.

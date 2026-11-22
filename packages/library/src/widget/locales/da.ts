@@ -615,6 +615,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'Ved køb ligger take-profit over indgangskursen, ved salg under den.',
   'ticket.problem.limitSide': 'En limitordre til køb ligger under markedet, og en til salg ligger over det.',
   'ticket.problem.stopSide': 'En stopordre til køb ligger over markedet, og en til salg ligger under det.',
+  'ticket.problem.expireTime': 'Ordren skal udløbe på et tidspunkt i fremtiden.',
   'ticket.problem.priceStep': 'Kursen skal følge markedets kurstrin (tick-størrelse).',
   'ticket.problem.priceLimits': 'Dagens kurser går fra {floor} til {ceiling}.',
   'ticket.problem.lot': 'Over én lot handles hele lots på {lot}; overskydende aktier lægges i en ordre for sig.',
@@ -975,6 +976,8 @@ export const DA_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'Sælg limit @ {price}',
   'order.buyStop': 'Køb stop @ {price}',
   'order.sellStop': 'Sælg stop @ {price}',
+  'order.refused': 'Mægleren afviste ordren: {reason}',
+  'order.partDropped': 'Udført {filled} af {quantity}: resten blev annulleret',
 
   // Toasts
   'toast.pinned': 'Fastgjort til favoritter',

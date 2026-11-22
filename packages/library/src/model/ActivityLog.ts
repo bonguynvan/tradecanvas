@@ -93,6 +93,10 @@ export class ActivityLog {
     if (fill.reason !== undefined) entry.reason = fill.reason;
     if (fill.pnl !== undefined) entry.pnl = fill.pnl;
     this.add(entry);
+    // The rest of it went with the fill (immediate-or-cancel): it was never working, so no set of orders tells of it.
+    if (fill.dropped !== undefined && fill.dropped > 0) {
+      this.add({ time: fill.time, kind: 'cancelled', orderId: fill.orderId, side: fill.side, quantity: fill.dropped });
+    }
   }
 
   /** Something was refused, by the broker or by the chart before it got there. */

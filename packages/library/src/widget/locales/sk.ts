@@ -609,6 +609,7 @@ export const SK_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'Take-profit sa pri nákupe zadáva nad vstupnú cenu, pri predaji pod ňu.',
   'ticket.problem.limitSide': 'Limitný nákup sa zadáva pod trhovú cenu, limitný predaj nad ňu.',
   'ticket.problem.stopSide': 'Stop nákup sa zadáva nad trhovú cenu, stop predaj pod ňu.',
+  'ticket.problem.expireTime': 'Pokyn musí skončiť v čase, ktorý ešte len príde.',
   'ticket.problem.priceStep': 'Ceny sa zadávajú v cenových krokoch trhu.',
   'ticket.problem.priceLimits': 'Dnešné ceny sa pohybujú od {floor} do {ceiling}.',
   'ticket.problem.lot': 'Nad jeden lot zadávajte celé loty po {lot}; zvyšné kusy zadajte samostatným pokynom.',
@@ -963,6 +964,8 @@ export const SK_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'Limitný predaj @ {price}',
   'order.buyStop': 'Stop nákup @ {price}',
   'order.sellStop': 'Stop predaj @ {price}',
+  'order.refused': 'Broker pokyn odmietol: {reason}',
+  'order.partDropped': 'Vyplnené {filled} z {quantity}: zvyšok bol zrušený',
 
   'toast.pinned': 'Pripnuté k obľúbeným',
   'toast.unpinned': 'Odopnuté',

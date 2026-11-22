@@ -615,6 +615,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'يكون جني الأرباح أعلى سعر الدخول في الشراء، وأسفله في البيع.',
   'ticket.problem.limitSide': 'يكون أمر الشراء المحدد أسفل سعر السوق، وأمر البيع المحدد أعلاه.',
   'ticket.problem.stopSide': 'يكون أمر الشراء الوقف أعلى سعر السوق، وأمر البيع الوقف أسفله.',
+  'ticket.problem.expireTime': 'يجب أن ينتهي الأمر في وقت لاحق.',
   'ticket.problem.priceStep': 'يجب أن تكون الأسعار على وحدات تغيّر السعر المعتمدة في السوق.',
   'ticket.problem.priceLimits': 'تتراوح أسعار اليوم بين {floor} و{ceiling}.',
   'ticket.problem.lot': 'فوق وحدة تداول واحدة، اطلب وحدات كاملة من {lot}؛ وتوضع الأسهم الكسرية في أمر مستقل.',
@@ -975,6 +976,8 @@ export const AR_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'بيع محدد @ {price}',
   'order.buyStop': 'شراء وقف @ {price}',
   'order.sellStop': 'بيع وقف @ {price}',
+  'order.refused': 'رفض الوسيط الأمر: {reason}',
+  'order.partDropped': 'تم تنفيذ {filled} من {quantity}: أُلغي الباقي',
 
   // Toasts
   'toast.pinned': 'تم التثبيت في المفضلة',

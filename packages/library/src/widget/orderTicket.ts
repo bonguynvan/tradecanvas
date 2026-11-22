@@ -13,6 +13,8 @@ export interface OrderTicketDraft {
   /** The stop-loss is to trail the price, at its distance from the entry. */
   trailing?: boolean;
   timeInForce: TimeInForce;
+  /** When an order good till a date (`'gtd'`) ends, ms; null or unset until one is picked. Kept while another kind is chosen. */
+  expireTime?: number | null;
   /**
    * How many targets the take-profit is reached in (1 to 3; 1 when unset):
    * with more than one, a part of the quantity comes off at each target on
@@ -82,6 +84,8 @@ export type OrderTicketProblem =
   | 'takeProfitSide'
   | 'limitSide'
   | 'stopSide'
+  /** An order good till a date with no date, or one that is not to come. */
+  | 'expireTime'
   /** A price off the market's step (HOSE: 0.05 between 10 and 50 thousand dong). */
   | 'priceStep'
   /** A limit or stop price beyond the day's ceiling or floor. */
@@ -98,6 +102,8 @@ export interface OrderTicketRules {
   lot?: number;
   /** Money per point of a futures contract (VN30F: 100,000 dong): what the sums are in. */
   multiplier?: number;
+  /** The moment now, ms: an order good till a date has to end after it. The clock's when left out. */
+  now?: number;
 }
 
 /** Prices that differ by less than this are the same price (float dust). */
@@ -105,16 +111,24 @@ const PRICE_EPSILON = 1e-9;
 
 /**
  * Where the position would start: the limit or stop price, or the market for
- * a market order.
+ * a market order (null with no market price yet). A limit that fills at once
+ * or not at all starts at the market too when it is through it: its price is
+ * then the worst it takes, not where it fills.
  */
-function entryOf(draft: OrderTicketDraft, lastPrice: number | null): number | null {
-  return draft.type === 'market' ? lastPrice : draft.price;
+export function ticketEntry(draft: Pick<OrderTicketDraft, 'side' | 'type' | 'price' | 'timeInForce'>, lastPrice: number | null): number | null {
+  if (draft.type === 'market') return lastPrice;
+  if (draft.type !== 'limit' || lastPrice === null || !(lastPrice > 0)) return draft.price;
+  const kind = ticketTimeInForce(draft);
+  if (kind !== 'ioc' && kind !== 'fok') return draft.price;
+  const through = draft.side === 'buy' ? draft.price > lastPrice : draft.price < lastPrice;
+  return through ? lastPrice : draft.price;
 }
 
 /**
  * The problems with a draft: a quantity or price that isn't positive, a stop-loss
  * or take-profit on the wrong side of the entry, a limit or stop on the wrong side
- * of the market (it would fill at once).
+ * of the market (it would fill at once, which only an order that is not to wait may),
+ * a good-till-date order with no date to come.
  */
 export function orderTicketProblems(draft: OrderTicketDraft, lastPrice: number | null, rules: OrderTicketRules = {}): OrderTicketProblem[] {
   const problems: OrderTicketProblem[] = [];
@@ -125,13 +139,17 @@ export function orderTicketProblems(draft: OrderTicketDraft, lastPrice: number |
   if (lastPrice !== null && draft.type !== 'market' && draft.price > 0) {
     // A buy limit waits below the market, a buy stop above it; a sell the other way.
     const below = draft.price < lastPrice;
-    if (draft.type === 'limit' && below !== buy && draft.price !== lastPrice) problems.push('limitSide');
+    // A limit that fills at once or not at all is to go through the market: no side of it is a slip.
+    const kind = ticketTimeInForce(draft);
+    const waits = kind !== 'ioc' && kind !== 'fok';
+    if (draft.type === 'limit' && waits && below !== buy && draft.price !== lastPrice) problems.push('limitSide');
     if (draft.type === 'stop' && below === buy && draft.price !== lastPrice) problems.push('stopSide');
   }
   const valid = (price: number | null) => price === null || (Number.isFinite(price) && price > 0);
   if (!valid(draft.stopLoss)) problems.push('stopLoss');
   if (!valid(draft.takeProfit)) problems.push('takeProfit');
-  const entry = entryOf(draft, lastPrice);
+  if (draft.type !== 'market' && ticketTimeInForce(draft) === 'gtd' && !(ticketExpireTime(draft) > (rules.now ?? Date.now()))) problems.push('expireTime');
+  const entry = ticketEntry(draft, lastPrice);
   if (entry !== null && entry > 0) {
     if (draft.stopLoss !== null && valid(draft.stopLoss) && (buy ? draft.stopLoss >= entry : draft.stopLoss <= entry)) problems.push('stopLossSide');
     if (draft.takeProfit !== null && valid(draft.takeProfit) && (buy ? draft.takeProfit <= entry : draft.takeProfit >= entry)) problems.push('takeProfitSide');
@@ -154,7 +172,12 @@ function marketProblems(draft: OrderTicketDraft, rules: OrderTicketRules): Order
 
 /** How long a ticket's order may work, by its type: one that waits for its stop cannot fill at once or not at all. */
 export function ticketTimesInForce(type: OrderTicketDraft['type']): readonly TimeInForce[] {
-  return type === 'limit' ? ['gtc', 'day', 'ioc', 'fok'] : ['gtc', 'day'];
+  return type === 'limit' ? ['gtc', 'day', 'gtd', 'ioc', 'fok'] : ['gtc', 'day', 'gtd'];
+}
+
+/** When the draft's order ends, ms; NaN for a draft with no time, or one that is no moment. */
+export function ticketExpireTime(draft: Pick<OrderTicketDraft, 'expireTime'>): number {
+  return typeof draft.expireTime === 'number' && Number.isFinite(draft.expireTime) ? draft.expireTime : Number.NaN;
 }
 
 /** The draft's time in force as its type takes it: good till cancelled in place of one it does not. */
@@ -172,12 +195,16 @@ export function orderTicketIntent(draft: OrderTicketDraft, lastPrice: number | n
   };
   if (draft.type === 'stop') intent.stopPrice = draft.price;
   if (draft.type !== 'market') intent.timeInForce = ticketTimeInForce(draft);
+  // Only an order good till a date carries one: a date left in the draft by an earlier choice is not sent.
+  if (intent.timeInForce === 'gtd' && !Number.isNaN(ticketExpireTime(draft))) intent.expireTime = ticketExpireTime(draft);
   if (draft.stopLoss !== null) intent.stopLoss = draft.stopLoss;
   if (draft.takeProfit !== null) intent.takeProfit = draft.takeProfit;
-  const levels = ticketTakeProfitLevels(draft, intent.price, rules);
+  // The levels and the trail are counted from where the position starts, which a limit through the market's price is not.
+  const entry = ticketEntry(draft, lastPrice) ?? intent.price;
+  const levels = ticketTakeProfitLevels(draft, entry, rules);
   if (levels.length > 0) intent.takeProfits = levels;
   if (draft.trailing && draft.stopLoss !== null) {
-    const distance = priceDistance(intent.price, draft.stopLoss);
+    const distance = priceDistance(entry, draft.stopLoss);
     if (distance > 0) intent.trailingStop = distance;
   }
   return intent;
@@ -202,7 +229,7 @@ function priceDistance(a: number, b: number): number {
 
 /** Reward over risk for a draft with both a stop-loss and a take-profit, or null. */
 export function orderTicketRiskReward(draft: OrderTicketDraft, lastPrice: number | null): number | null {
-  const entry = entryOf(draft, lastPrice);
+  const entry = ticketEntry(draft, lastPrice);
   if (entry === null || draft.stopLoss === null || draft.takeProfit === null) return null;
   const risk = Math.abs(entry - draft.stopLoss);
   return risk > 0 ? Math.abs(draft.takeProfit - entry) / risk : null;
@@ -218,7 +245,7 @@ export function orderTicketDistance(
   price: number,
   multiplier = 1,
 ): { pct: number; amount: number } | null {
-  const entry = entryOf(draft, lastPrice);
+  const entry = ticketEntry(draft, lastPrice);
   if (entry === null || !(entry > 0) || !Number.isFinite(price) || !(draft.quantity > 0)) return null;
   const direction = draft.side === 'buy' ? 1 : -1;
   return { pct: ((price - entry) / entry) * 100 * direction, amount: (price - entry) * draft.quantity * direction * multiplier };
@@ -241,7 +268,7 @@ export interface OrderTicketSummary {
  */
 export function orderTicketSummary(draft: OrderTicketDraft, lastPrice: number | null, rules: OrderTicketRules = {}): OrderTicketSummary {
   const multiplier = rules.multiplier !== undefined && rules.multiplier > 0 ? rules.multiplier : 1;
-  const entry = entryOf(draft, lastPrice);
+  const entry = ticketEntry(draft, lastPrice);
   const value = entry !== null && entry > 0 && draft.quantity > 0 ? entry * draft.quantity * multiplier : null;
   const problems = orderTicketProblems(draft, lastPrice);
   const at = (price: number | null, wrong: OrderTicketProblem) =>

@@ -609,6 +609,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'Take profit ligger över ingången vid köp och under den vid sälj.',
   'ticket.problem.limitSide': 'En köplimit ligger under marknaden och en säljlimit över den.',
   'ticket.problem.stopSide': 'Ett köpstopp ligger över marknaden och ett säljstopp under den.',
+  'ticket.problem.expireTime': 'Ordern måste löpa ut vid en framtida tidpunkt.',
   'ticket.problem.priceStep': 'Priset måste följa marknadens prissteg (tickstorlek).',
   'ticket.problem.priceLimits': 'Dagens priser går från {floor} till {ceiling}.',
   'ticket.problem.lot': 'Över en handelspost lägger du hela poster om {lot}; en udda post läggs som en egen order.',
@@ -963,6 +964,8 @@ export const SV_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'Säljlimit @ {price}',
   'order.buyStop': 'Köpstopp @ {price}',
   'order.sellStop': 'Säljstopp @ {price}',
+  'order.refused': 'Mäklaren avvisade ordern: {reason}',
+  'order.partDropped': 'Utfört {filled} av {quantity}: resten annullerades',
 
   'toast.pinned': 'Fäst bland favoriter',
   'toast.unpinned': 'Lossad',

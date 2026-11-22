@@ -53,6 +53,20 @@ describe('ActivityLog: the fills', () => {
     expect(log.entries()).toEqual([{ time: 500, kind: 'filled', orderId: 'x', side: 'sell', quantity: 1, price: 110, reason: 'takeProfit', pnl: 15 }]);
   });
 
+  it('logs the rest of an order as cancelled when its fill dropped it: an immediate-or-cancel order filled in part', () => {
+    log.fill({ orderId: 'i', side: 'buy', price: 100, quantity: 2, time: 400, reason: 'order', dropped: 3 });
+    expect(log.entries()).toEqual([
+      { time: 400, kind: 'filled', orderId: 'i', side: 'buy', quantity: 2, price: 100, reason: 'order' },
+      { time: 400, kind: 'cancelled', orderId: 'i', side: 'buy', quantity: 3 },
+    ]);
+  });
+
+  it('logs no cancellation with a fill that dropped nothing, or no amount', () => {
+    log.fill({ ...fill, dropped: 0 });
+    log.fill({ ...fill, orderId: 'b', dropped: Number.NaN });
+    expect(kinds()).toEqual(['filled', 'filled']);
+  });
+
   it('does not call an order cancelled when it left because it filled, whichever was told first', () => {
     log.orders([limit('a', 95)], 100);
     log.fill(fill);
