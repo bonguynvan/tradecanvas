@@ -437,6 +437,17 @@ const id: SiteMessages = {
         'Perbesar satu dinding lalu geser bolak-balik: sel-selnya mengikuti bar',
       ],
     },
+    orderflow: {
+      title: 'Order flow',
+      stat: 'Footprint + tape',
+      blurb:
+        'Setiap transaksi dari feed, beserta siapa yang mengambilnya. Grafik footprint menuliskan, di samping tiap bar, apa yang diambil penjual di bid dan apa yang diambil pembeli di ask pada setiap harga di dalamnya, menandai baris tempat satu sisi mengungguli sisi lain, dan menjumlahkan tiap bar di bawahnya: yang dibeli dikurangi yang dijual, lalu keduanya bersama. Di sebelahnya, tape mendaftar transaksi saat terjadi, yang terbaru di atas, dengan warna pihak yang mengambilnya.',
+      tryThis: [
+        'Perhatikan bar terbaru terisi baris demi baris saat transaksi masuk, dan totalnya berubah di bawahnya',
+        'Buka menu di header tape: tampilkan hanya yang dibeli atau dijual, atau gabungkan transaksi serentak menjadi satu baris',
+        'Ketik ukuran minimum di tape untuk menyisakan transaksi besar, lalu perkecil grafik: baris menjadi batang dan total tetap ada',
+      ],
+    },
     switching: {
       title: 'Ganti di jaringan lambat',
       stat: '+1.2 s latensi',

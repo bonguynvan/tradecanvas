@@ -437,6 +437,17 @@ const fr: SiteMessages = {
         'Zoomez sur un mur puis faites défiler d’un côté à l’autre : les cellules suivent les barres',
       ],
     },
+    orderflow: {
+      title: 'Flux d’ordres',
+      stat: 'Footprint + ruban',
+      blurb:
+        'Chaque transaction du flux, avec le côté qui l’a prise. Le graphique footprint écrit, à côté de chaque barre, ce que les vendeurs ont pris au bid et ce que les acheteurs ont pris à l’ask à chaque prix à l’intérieur, marque les lignes où un côté l’a emporté sur l’autre, et additionne chaque barre en dessous : acheté moins vendu, puis les deux ensemble. À côté, le ruban liste les transactions à mesure qu’elles se font, les plus récentes en haut, dans la couleur du côté qui les a prises.',
+      tryThis: [
+        'Regardez la barre la plus récente se remplir ligne par ligne à mesure que les transactions arrivent, et ses totaux changer en dessous',
+        'Ouvrez le menu dans l’en-tête du ruban : ne listez que les achats ou les ventes, ou regroupez en une ligne les transactions simultanées',
+        'Saisissez une taille minimale dans le ruban pour ne garder que les grosses transactions, puis dézoomez : les chiffres de chaque ligne laissent place à une petite barre par côté, et les totaux restent',
+      ],
+    },
     switching: {
       title: 'Changements sur réseau lent',
       stat: '+1,2 s de latence',

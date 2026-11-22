@@ -797,6 +797,29 @@ await chart.setRenderer('webgl')  // cells on the GPU`,
     },
   },
   {
+    id: 'orderflow',
+    code: `const widget = new ChartWidget(host, {
+  adapter: new BinanceAdapter(),               // a feed with trades, each with who took it
+  chartOptions: { chartType: 'footprint' },    // what traded at each price of a bar
+  tape: true,                                  // time and sales, a page of the dock
+})
+widget.openPanel('tape')
+const chart = widget.getChart()
+chart.on('trades', (e) => e.payload.trades)    // the feed's trades, for your own use`,
+    options: (env) => ({
+      symbol: 'BTCUSDT',
+      symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
+      // A feed keeps few trades: on a minute's bars the newest of them fill at once.
+      timeframe: '1m',
+      adapter: env.binance(),
+      chartOptions: { chartType: 'footprint' },
+      tape: true,
+    }),
+    setup: (widget) => {
+      widget.openPanel('tape');
+    },
+  },
+  {
     id: 'switching',
     code: `// built in: a 200 ms grace period before the loading veil,
 // superseded requests dropped, stale sockets detached

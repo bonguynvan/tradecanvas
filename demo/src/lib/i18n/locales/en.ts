@@ -444,6 +444,17 @@ const en = {
         'Zoom in on a wall, then pan back and forth: the cells keep pace with the bars',
       ],
     },
+    orderflow: {
+      title: 'Order flow',
+      stat: 'Footprint + tape',
+      blurb:
+        'Every trade of the feed, with who took it. The footprint chart writes, by each bar, what the sellers took at the bid and what the buyers took at the ask at every price inside it, marks the rows where one side outdid the other, and adds each bar up underneath: bought less sold, and both together. Beside it the tape lists the trades as they are made, newest on top, in the colour of who took them.',
+      tryThis: [
+        'Watch the newest bar fill in row by row as trades come, and its totals change under it',
+        'Open the menu in the header of the tape: list only what was bought or sold, or make one row of trades made together',
+        'Type a least size on the tape to keep the large trades, then zoom the chart out: the numbers of each row give way to a small bar for each side, and the totals stay',
+      ],
+    },
     switching: {
       title: 'Slow-network switching',
       stat: '+1.2 s latency',

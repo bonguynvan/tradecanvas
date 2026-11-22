@@ -437,6 +437,17 @@ const vi: SiteMessages = {
         'Phóng to vào một bức tường rồi kéo qua lại: các ô chạy theo kịp các cây nến',
       ],
     },
+    orderflow: {
+      title: 'Order flow',
+      stat: 'Footprint + tape',
+      blurb:
+        'Mọi trade của feed, kèm bên chủ động khớp. Footprint chart ghi, cạnh mỗi nến, phần bên bán khớp ở bid và phần bên mua khớp ở ask tại từng mức giá bên trong nến, đánh dấu các hàng mà một bên áp đảo bên kia, và cộng tổng của mỗi nến ngay bên dưới: mua trừ bán, rồi cả hai cộng lại. Bên cạnh là tape, liệt kê các trade ngay khi chúng khớp, mới nhất ở trên cùng, theo màu của bên chủ động.',
+      tryThis: [
+        'Xem nến mới nhất được lấp dần từng hàng khi có trade, và tổng bên dưới nó thay đổi',
+        'Mở menu ở đầu tape: chỉ liệt kê bên mua hoặc bên bán, hoặc gộp các trade cùng lúc thành một hàng',
+        'Gõ một cỡ tối thiểu trên tape để chỉ giữ các trade lớn, rồi zoom out chart: các hàng chuyển thành thanh, còn tổng vẫn ở đó',
+      ],
+    },
     switching: {
       title: 'Chuyển đổi khi mạng chậm',
       stat: '+1.2 s độ trễ',

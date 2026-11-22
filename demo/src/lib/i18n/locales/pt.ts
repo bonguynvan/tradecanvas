@@ -437,6 +437,17 @@ const pt: SiteMessages = {
         'Aproxime uma parede e arraste de um lado para o outro: as células acompanham as barras',
       ],
     },
+    orderflow: {
+      title: 'Fluxo de ordens',
+      stat: 'Footprint + fita',
+      blurb:
+        'Cada negócio do feed, com quem o tomou. O gráfico footprint escreve, ao lado de cada barra, o que os vendedores tomaram no bid e o que os compradores tomaram no ask em cada preço dentro dela, marca as linhas em que um lado superou o outro e soma cada barra embaixo: comprado menos vendido, e os dois juntos. Ao lado, a fita lista os negócios à medida que são feitos, os mais novos em cima, na cor de quem os tomou.',
+      tryThis: [
+        'Veja a barra mais nova se preencher linha a linha conforme chegam negócios, e os totais mudarem embaixo dela',
+        'Abra o menu no cabeçalho da fita: liste só o comprado ou o vendido, ou agrupe em uma linha os negócios simultâneos',
+        'Digite um tamanho mínimo na fita para ficar com os negócios grandes e afaste o gráfico: os números de cada linha dão lugar a uma barrinha por lado, e os totais continuam',
+      ],
+    },
     switching: {
       title: 'Trocas em rede lenta',
       stat: '+1,2 s de latência',
