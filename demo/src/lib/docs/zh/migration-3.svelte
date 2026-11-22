@@ -59,6 +59,11 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 在止损处亏损 50 �
   （没有 default 的 <code>switch</code>、<code>Record&lt;TimeInForce, …&gt;</code>）需要补上三个新成员；
   你自己的执行适配器可以拒绝它不支持的类型。
 </p>
+<p>
+  <code>FillReason</code> 也多了 <code>'liquidation'</code>，用于模拟账户在强制平仓中平掉的持仓，
+  <code>ExecutionEventType</code> 多了 <code>'marginCall'</code>。只有给模拟账户设置了
+  <code>stopOutLevel</code> 或 <code>marginCallLevel</code>，这两者才会出现，但处理全部成员的代码需要补上它们。
+</p>
 
 <h2 id="unchanged">没有变化的部分</h2>
 <ul>

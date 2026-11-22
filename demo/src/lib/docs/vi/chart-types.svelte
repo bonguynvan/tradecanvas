@@ -1,10 +1,10 @@
 <svelte:head>
   <title>Loại biểu đồ — Tài liệu TradeCanvas</title>
-  <meta name="description" content="18 loại biểu đồ có sẵn: candlestick, OHLC, High-Low, Heikin-Ashi, Renko, Kagi, Point & Figure, Equivolume và các loại khác." />
+  <meta name="description" content="24 loại biểu đồ có sẵn: candlestick, thanh OHLC và HLC, cột, spline, step area, High-Low, Heikin-Ashi và dạng làm mượt của nó, Renko, Kagi, Point & Figure, Equivolume và các loại khác." />
 </svelte:head>
 
 <h1>Loại biểu đồ</h1>
-<p>18 loại biểu đồ có sẵn. Đổi loại lúc chạy bằng <code>chart.setChartType(type)</code>.</p>
+<p>24 loại biểu đồ có sẵn. Đổi loại lúc chạy bằng <code>chart.setChartType(type)</code>.</p>
 
 <h2>Cơ bản</h2>
 <table>
@@ -20,6 +20,11 @@
     <tr><td><code>hollowCandle</code></td><td>Thân rỗng khi giá đóng cửa &gt; giá đóng cửa trước đó.</td></tr>
     <tr><td><code>hlcArea</code></td><td>Dải high-low kèm đường giá đóng cửa.</td></tr>
     <tr><td><code>hiLo</code></td><td>Một thanh từ low đến high của mỗi nến, tô màu theo hướng; thanh đủ rộng ghi giá high và low.</td></tr>
+    <tr><td><code>hlcBars</code></td><td>Một thanh dọc từ low đến high của mỗi nến và một vạch tại giá đóng cửa, không có giá mở cửa; tô màu theo giá đóng cửa so với giá đóng cửa trước đó.</td></tr>
+    <tr><td><code>columns</code></td><td>Một cột lên tới mỗi giá đóng cửa, tô màu theo giá đóng cửa so với giá đóng cửa trước đó. Các cột đứng ngay dưới giá đóng cửa thấp nhất đang hiển thị, tách khỏi khối lượng.</td></tr>
+    <tr><td><code>stepArea</code></td><td>Đường bậc thang với vùng bên dưới được tô.</td></tr>
+    <tr><td><code>spline</code></td><td>Một đường cong mượt qua các giá đóng cửa, không bao giờ vượt lên trên một giá đóng cửa cao hoặc xuống dưới một giá đóng cửa thấp.</td></tr>
+    <tr><td><code>dots</code></td><td>Một chấm tại mỗi giá đóng cửa.</td></tr>
   </tbody>
 </table>
 
@@ -28,6 +33,7 @@
   <thead><tr><th>Loại</th><th>Mô tả</th></tr></thead>
   <tbody>
     <tr><td><code>heikinAshi</code></td><td>Chuỗi nến được làm mượt bằng phép biến đổi Heikin-Ashi.</td></tr>
+    <tr><td><code>smoothedHeikinAshi</code></td><td>Heikin-Ashi của giá đã được lấy trung bình trước trên <code>period</code> nến (10, số nguyên từ 1 đến 500; Độ dài làm mượt trong phần cài đặt của widget): nến của nó đổi chiều muộn hơn và ít hơn, nên một xu hướng hiện thành một dãy liền cùng màu. <code>{`chart.setChartTypeOptions({ smoothedHeikinAshi: { period: 20 } })`}</code>.</td></tr>
     <tr><td><code>renko</code></td><td>Biểu đồ brick với bước giá cố định; không phụ thuộc thời gian.</td></tr>
     <tr><td><code>kagi</code></td><td>Đường đảo chiều yang/yin; mức đảo chiều là phần trăm (4) hoặc một khoảng giá.</td></tr>
     <tr><td><code>lineBreak</code></td><td>Vẽ một đường mới khi giá đóng cửa phá các đường gần nhất (mặc định 3).</td></tr>

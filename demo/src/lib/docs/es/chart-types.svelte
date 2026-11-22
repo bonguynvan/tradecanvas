@@ -1,10 +1,10 @@
 <svelte:head>
   <title>Tipos de gráfico — Documentación de TradeCanvas</title>
-  <meta name="description" content="18 tipos de gráfico integrados: velas, OHLC, máximo-mínimo, Heikin-Ashi, Renko, Kagi, Punto y figura, Equivolumen y más." />
+  <meta name="description" content="24 tipos de gráfico integrados: velas, barras OHLC y HLC, columnas, curva suavizada, área escalonada, máximo-mínimo, Heikin-Ashi y su variante suavizada, Renko, Kagi, Punto y figura, Equivolumen y más." />
 </svelte:head>
 
 <h1>Tipos de gráfico</h1>
-<p>18 tipos de gráfico integrados. Cámbialos en tiempo de ejecución con <code>chart.setChartType(type)</code>.</p>
+<p>24 tipos de gráfico integrados. Cámbialos en tiempo de ejecución con <code>chart.setChartType(type)</code>.</p>
 
 <h2>Estándar</h2>
 <table>
@@ -20,6 +20,11 @@
     <tr><td><code>hollowCandle</code></td><td>Cuerpo hueco cuando el cierre &gt; cierre anterior.</td></tr>
     <tr><td><code>hlcArea</code></td><td>Banda entre máximo y mínimo con una línea de cierre.</td></tr>
     <tr><td><code>hiLo</code></td><td>Una barra del mínimo al máximo de cada periodo, coloreada según la dirección; las barras anchas muestran su máximo y su mínimo.</td></tr>
+    <tr><td><code>hlcBars</code></td><td>Una línea vertical del mínimo al máximo de cada periodo y una marca en el cierre, sin apertura; coloreada según el cierre frente al anterior.</td></tr>
+    <tr><td><code>columns</code></td><td>Una columna hasta cada cierre, coloreada según el cierre frente al anterior. Las columnas arrancan justo por debajo del cierre más bajo a la vista, sin tocar el volumen.</td></tr>
+    <tr><td><code>stepArea</code></td><td>La línea escalonada con el área bajo ella rellena.</td></tr>
+    <tr><td><code>spline</code></td><td>Una curva suave que pasa por los cierres y nunca sube por encima de un cierre alto ni baja por debajo de uno bajo.</td></tr>
+    <tr><td><code>dots</code></td><td>Un punto en cada cierre.</td></tr>
   </tbody>
 </table>
 
@@ -28,6 +33,7 @@
   <thead><tr><th>Tipo</th><th>Descripción</th></tr></thead>
   <tbody>
     <tr><td><code>heikinAshi</code></td><td>Serie de velas suavizada mediante la transformación Heikin-Ashi.</td></tr>
+    <tr><td><code>smoothedHeikinAshi</code></td><td>Heikin-Ashi de precios promediados antes sobre <code>period</code> barras (10, un número entero de 1 a 500; Longitud de suavizado en la configuración del widget): sus velas giran más tarde y con menos frecuencia, así que una tendencia se lee como una sola racha de un color. <code>{`chart.setChartTypeOptions({ smoothedHeikinAshi: { period: 20 } })`}</code>.</td></tr>
     <tr><td><code>renko</code></td><td>Gráfico de ladrillos de precio fijo; independiente del tiempo.</td></tr>
     <tr><td><code>kagi</code></td><td>Líneas de giro yang/yin; el giro es un porcentaje (4 por defecto) o una cantidad de precio.</td></tr>
     <tr><td><code>lineBreak</code></td><td>Una línea nueva cuando el cierre rompe las últimas líneas (3 por defecto).</td></tr>

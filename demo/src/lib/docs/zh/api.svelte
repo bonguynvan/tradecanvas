@@ -48,7 +48,7 @@
 <table>
   <thead><tr><th>方法</th><th>用途</th></tr></thead>
   <tbody>
-    <tr><td><code>setChartType(type)</code></td><td>18 种类型之一——参见 <a href={href('/docs/chart-types')}>图表类型</a>。</td></tr>
+    <tr><td><code>setChartType(type)</code></td><td>24 种类型之一——参见 <a href={href('/docs/chart-types')}>图表类型</a>。</td></tr>
     <tr><td><code>getChartType()</code></td><td>图表当前绘制的类型（默认 <code>'candlestick'</code>）。</td></tr>
     <tr><td><code>setTheme(name | theme)</code></td><td>在内置主题之间切换，或设置自己的主题。<code>getTheme()</code> 按设置时的样子返回。</td></tr>
     <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>按键设置图表任意部分的样式（<code>'grid.vertical.visible'</code>、<code>'series.candlestick.upColor'</code>…）；<code>null</code> 移除一个键。见<a href={href('/docs/styling#overrides')}>样式</a>。</td></tr>
@@ -79,7 +79,7 @@
     <tr><td><code>removeIndicators(instanceIds)</code></td><td>删除多个指标，作为一步撤销。</td></tr>
     <tr><td><code>removeAll(what?)</code></td><td>删除所有绘图（<code>'drawings'</code>）、所有指标（<code>'indicators'</code>）或两者（<code>'all'</code>），作为一步撤销；锁定的绘图保留。返回各删除了多少。</td></tr>
     <tr><td><code>takeBackDrawing(id)</code></td><td>撤回刚画好的绘图，相当于画完后立即按“取消”：若创建它的那一步是最后一步，则连同这一步一起撤回，不留下可撤销或重做的步骤。对于刚用指针画出的绘图，<code>drawingCreate</code> 事件带有 <code>drawn: true</code>。</td></tr>
-    <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>颜色、线宽、不透明度，以及每条线的线型和显示与否（<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>）。</td></tr>
+    <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>颜色、线宽、不透明度，以及每条线的线型和显示与否（<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>），还有标记线条的 <code>shape</code> 和 <code>size</code>。</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>从现在起同类指标的初始样式。</td></tr>
     <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>它显示在哪些周期上（<code>{`{ minutes: false, hours: [1, 4] }`}</code>）；<code>null</code> 表示全部周期。随布局一起保存。</td></tr>
     <tr><td><code>setDataTimeframe(timeframe | null)</code></td><td>用 <code>setData</code> 设置的K线的周期：图例标题行显示它，只在部分周期显示的指标随之变化。</td></tr>
@@ -305,6 +305,121 @@ chart.exportVisibleData('json', undefined, { indicators: false })
 const text = chart.getExportText('csv', { range: 'visible' })
 const { bars, columns } = chart.getExportData()          // columns: { name, values }[]`}</code></pre>
 
+<h3 id="pictures">图片、打印与 PDF</h3>
+<p>
+  把图表作为图片：保存为文件、复制，或读取为 data URL、字节或画布。不另作要求时，图片直接取自图表在屏幕上的画布。
+  要求更多像素（<code>pixelRatio</code>）或另一个主题（<code>theme</code>）时，会为图片重新绘制这一帧，
+  无论图表本身用什么绘制，都用 Canvas 2D：页面上的图表既不改变尺寸，也不会收到通知。
+  给出 <code>width</code> 或 <code>height</code> 时，图表按该尺寸重新布局，它当前显示的K线在那里同样显示，
+  然后恢复页面的布局：侧栏里的图表也能得到一张用于幻灯片或纸张的图片。K线的宽度由尺寸决定，
+  但不超出一根K线可取的宽度范围：超出时，显示的K线会多一些或少一些，中点大致不变。
+  使用自己的尺寸时，图片上没有跟随指针的东西（十字光标、测量），也没有宿主叠在图表上方的画布；
+  尺寸容不下绘图区时，不产生图片。<code>type</code> 为 <code>'png'</code>（默认）、<code>'jpeg'</code> 或
+  <code>'webp'</code>，后两者可带 <code>quality</code>。
+</p>
+<pre><code>{`chart.screenshot('btc-1h')                                   // btc-1h.png, as on the screen
+chart.screenshot('btc-1h', { pixelRatio: 3, type: 'webp' })  // drawn again at three times the pixels
+await chart.copyScreenshot()                                 // a PNG on the clipboard; false where the browser refuses
+const url = chart.screenshotDataURL({ theme: 'light' })      // in the light theme; the chart stays as it is
+const blob = await chart.screenshotBlob({ type: 'jpeg', quality: 0.9 })
+const canvas = chart.toCanvas({ pixelRatio: 2 })             // to draw on, or to read yourself
+const slide = await chart.screenshotBlob({ width: 1920, height: 1080 })   // laid out again at that size`}</code></pre>
+<p>
+  <code>print()</code> 只为图表打开浏览器的打印对话框：打印的页面只有图表的图片，不含它所在页面的任何内容；
+  没有可打印的图片时返回 <code>false</code>。<code>toPdf()</code> 给出一页的 PDF，图片无损保存，
+  并在页边距内尽量放大。两者都会为纸张重新绘制图表，除非另行指定，否则使用浅色主题和两倍像素。
+  <code>chartsToPdf</code> 把多个图表做成一个 PDF，每个一页：价格图表、<a href={href('/docs/finance')}>金融图表</a>，或你自己的画布。
+</p>
+<pre><code>{`import { chartsToPdf } from '@tradecanvas/chart'
+
+chart.print({ title: 'BTCUSDT, 1h' })
+const pdf = await chart.toPdf({ pageSize: 'letter', margin: 12, title: 'BTCUSDT' })   // a Blob
+const full = await chart.toPdf({ width: 1123, height: 794 })   // laid out in the page's own shape: as large as its margins allow
+const report = await chartsToPdf([chart, equityChart, allocationChart], { title: 'March', theme: 'dark' })`}</code></pre>
+<p>
+  <code>pageSize</code> 为 <code>'a4'</code>（默认）、<code>'a3'</code>、<code>'letter'</code>、
+  <code>'legal'</code>，或以毫米给出的纸张两边长度；<code>orientation</code> 为
+  <code>'landscape'</code>（默认）或 <code>'portrait'</code>；<code>margin</code> 以毫米为单位。
+  PDF 本身不含文字，因此不需要字体：图表上的文字都在图片里，任何语言都一样。
+  图片限制在浏览器能绘制的范围内（任何一边不超过 16,384 像素，总共约 1600 万像素），所以很大的图表得到的像素比要求的少。
+  像素由浏览器的 <code>CompressionStream</code> 无损压缩，目前的浏览器都有它；
+  没有它的浏览器得到一张几乎保留全部画面的 JPEG。打印时图片以 <code>data:</code> URL 的形式放进一个框架，
+  所以设有内容安全策略的页面必须允许图片使用这类 URL。
+</p>
+<p>
+  图片上有的，就是图表画在自己画布上的内容：绘图区、坐标轴、图例、正在显示的十字光标，
+  以及宿主叠在图表上方的画布（除非它被隐藏，或含有来自其他站点的图片，这种图片任何页面都无法读回）。由页面元素构成的部分不在图片上：提示框，以及组件的各个栏和它的指标名称行。
+  <code>features.screenshot</code> 关闭时，没有图片、打印和 PDF。ChartWidget 的命令面板中有
+  <strong>打印图表</strong>和<strong>将图表保存为 PDF</strong>，还有
+  <code>widget.printChart()</code> 和 <code>widget.saveChartPdf()</code>，两者都以图表的品种和周期命名，
+  没有可打印或可保存的内容时显示一条提示；它们随 <code>screenshot</code> 开关一起开关。
+</p>
+
+<h3 id="no-page">不依赖页面绘制图表</h3>
+<p>
+  <code>renderPriceChart</code> 在没有页面的地方，把价格图表画到你自己的 2D 上下文上：
+  在 Node 中创建的画布，用于邮件、报告或机器人消息里的图片，或 worker 中的
+  <code>OffscreenCanvas</code>。它是一帧，组成方式与 <code>Chart</code> 组成自己的帧相同：
+  尺寸相同时，它就是页面上的图表在 <code>chart.fitContent()</code> 让所有K线都显示之后（或配合
+  <code>visibleRange</code> 时，在 <code>chart.setVisibleRange()</code> 之后），对同样的K线给出的图片。
+</p>
+<pre><code>{`import { createCanvas, Path2D } from '@napi-rs/canvas'   // or another canvas for Node that has Path2D
+import { renderPriceChart } from '@tradecanvas/chart'
+
+const canvas = createCanvas(1920, 1080)
+const ctx = canvas.getContext('2d')
+ctx.scale(2, 2)                                            // a 960 × 540 chart at twice the pixels
+renderPriceChart(ctx, {
+  data: bars,                                              // every bar is on view when they fit
+  symbol: 'BTCUSDT',
+  timeframe: '1d',
+  theme: 'light',
+  timeZone: 'Asia/Ho_Chi_Minh',
+  indicators: [
+    { id: 'ema', params: { period: 21 } },
+    { id: 'rsi', instanceId: 'momentum' },                 // a pane of its own under the prices
+    { id: 'stochastic', pane: 'momentum' },                // in that pane, on its scale
+  ],
+  drawings: [
+    { type: 'horizontalLine', anchors: [{ time: bars[0].time, price: 64000 }], style: { color: '#2266ff' } },
+    { type: 'horizontalLine', anchors: [{ time: bars[0].time, price: 70 }], paneId: 'momentum' },  // on that pane
+  ],
+  markers: [{ time: bars[40].time, price: bars[40].low, direction: 'long', confidence: 0.8, source: 'strategy', label: 'Buy' }],
+  path2D: Path2D,                                          // Node has no Path2D of its own
+}, { width: 960, height: 540 })
+const png = canvas.toBuffer('image/png')`}</code></pre>
+<p>
+  决定图表外观的选项与 <code>Chart</code> 的相同：<code>chartType</code> 和
+  <code>chartTypeOptions</code>、<code>theme</code>、<code>font</code>、<code>overrides</code>、
+  <code>density</code>、<code>logScale</code>、<code>numberLocale</code>、<code>priceFormat</code>、
+  <code>watermark</code>，以及用来去掉成交量、网格、某条坐标轴或图例的 <code>features</code>。
+  页面上的图表通过调用得到的东西，这里作为选项传入：<code>data</code>、
+  用于图例的 <code>symbol</code> 和 <code>timeframe</code>、<code>indicators</code>、
+  <code>drawings</code>（形式与 <code>addDrawing</code> 接收的相同）、<code>markers</code>（形式与
+  <code>addSignalMarker</code> 接收的相同）、<code>visibleRange</code>（显示的第一根和最后一根K线的时间）、
+  <code>pricePrecision</code>、<code>timeZone</code>（不设时为机器自己的时区：请指定读者所在的时区）和
+  <code>symbolSeries</code>（其他品种的K线，供
+  <code>'compareSymbol'</code>、<code>'spread'</code> 和各相关性指标使用）。
+  指标的写法与保存的布局中的相同，所以 <code>chart.getIndicatorSetup()</code> 和
+  <code>chart.getDrawings()</code> 可以原样传入，指标窗格上的画线也随之传入：有人在浏览器里设置好的图表，可以在服务器上重新画出来。
+  <code>plugins</code> 接收你自己的指标、图表类型、画线工具或叠加层。
+</p>
+<p>
+  它按上下文自己的单位绘制你给出的尺寸，画在主题的底色上：需要更多像素时，先缩放上下文。
+  K线用 <code>Path2D</code> 绘制，而 Node 没有它：
+  <code>@napi-rs/canvas</code> 和 <code>skia-canvas</code> 各自导出了自己的，作为
+  <code>path2D</code> 传入；worker 有自己的。文字使用主题的字体，所以请用 <code>font</code>
+  指定一种你的画布有的字体。没有东西跟随指针：没有十字光标、倒计时和提示框。订单和持仓、提醒、对比线、
+  成交量分布和市场轮廓、交易时段着色以及市场的涨跌停价，目前还不能这样绘制。金融图表由
+  <code>renderFinanceChart</code> 以同样的方式绘制，<code>imagesToPdf</code> 把这样生成的图片放进 PDF。
+</p>
+<p>
+  选项有问题时，会在绘制任何内容之前按选项名指出：不认识的指标、主题或时区，两个指标使用同一个
+  <code>instanceId</code>，以及超出允许范围的数字，抛出 <code>RangeError</code>；类型不对的选项抛出
+  <code>TypeError</code>。不成其为K线的K线会被略去，与图表的做法相同。
+  上下文保持原来的状态；如果你的插件在绘制时抛出错误，请在另一个上下文上绘制下一个图表。
+</p>
+
 <h3>成交量分布（Volume Profile）</h3>
 <p>
   在可见范围内按价格分组统计成交量的水平直方图。默认关闭——
@@ -436,6 +551,7 @@ chart.on('dataUpdate', e => /* setData 和新K线时为 { kind: 'bars', length }
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
+chart.on('marginCall', e => /* { marginLevel, level, equity, marginUsed }：账户收到了追加保证金通知 */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* 画线、指标、提醒、图表类型或主题可能已变化 */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
@@ -1083,6 +1199,10 @@ grid.applyOverrides({ 'grid.vertical.visible': false })   // 所有图表的外�
 grid.setFeatures({ 'toolbar.replay': false })               // 所有图表的开关，以及之后添加的图表
 grid.getActiveWidget().getChart()
 grid.getLayoutSession()?.saveAs('Majors')
+
+// 所有图表合成一张图片，各在自己的格子里：文件、打印对话框、PDF
+grid.screenshot('majors', { pixelRatio: 2 })
+const sheet = await grid.toPdf({ title: 'Majors' })   // 浅色主题、两倍像素，与单个图表的一样
 
 // 每个图表创建时（初始时，以及网格变大时）
 new ChartWidgetGrid(host, {

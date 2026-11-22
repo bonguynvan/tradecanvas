@@ -196,11 +196,28 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 
 <h2>나만의 지표</h2>
 <p>
+  짧은 방법은 <code>defineIndicator</code>입니다: 입력값, 그리고 봉에서 지표의 선을 돌려주는 함수 하나이며,
+  계산에는 <code>ta</code>를 씁니다(<code>ta.ema</code>, <code>ta.rsi</code>, <code>ta.crossover</code>…).
+</p>
+<pre><code>{`import { defineIndicator } from '@tradecanvas/chart'
+
+chart.registerIndicator(defineIndicator({
+  id: 'smoothRsi',
+  name: 'Smoothed RSI',
+  inputs: { period: { default: 14, kind: 'int', min: 2 }, smooth: { default: 5, kind: 'int', min: 1 } },
+  scale: { min: 0, max: 100 },
+  levels: [30, 70],
+  calculate: ({ bars, inputs, ta }) => ({ value: ta.ema(ta.rsi(bars.close, inputs.period), inputs.smooth) }),
+}))
+chart.addIndicator('smoothRsi')`}</code></pre>
+<p>
+  긴 과거 데이터에서 틱을 따라가야 하는 지표나 자체적으로 무언가를 그리는 지표는
   <code>IndicatorBase</code>를 상속하고 그릴 대상(<code>plots</code>), 패널 눈금,
   레벨, 입력값을 선언하세요. 렌더링 코드를 직접 작성하지 않아도 차트가 지표를 그리고,
   패널 눈금을 맞추고, 값을 태그로 표시하며, 위젯의 범례와 설정에 나열합니다.
   <code>category</code>(<code>'oscillators'</code>, <code>'volume'</code>…)를 지정하면 지표 대화상자의 그 그룹에
-  들어가고, 지정하지 않으면 기타에 들어갑니다.
+  들어가고, 지정하지 않으면 기타에 들어갑니다. 직접 만든 그룹 <code>{`{ id: 'my-app', label: 'My App' }`}</code>는
+  앱의 지표들을 그 이름 아래에 모아, 기본 제공 종류보다 앞에 나열합니다.
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">사용자 지정 지표 레시피</a>를 참고하세요.
   봉을 일, 주, 월 단위로 묶는 지표는 거래소 시간대를 <code>config.exchangeTimeZone</code>에서 읽습니다
   (차트가 설정하며, 없으면 UTC). 시간대가 바뀌면 그것을 읽는 지표와 그 지표의 선을 읽는 지표만
@@ -241,11 +258,18 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 fills: [{ between: ['upper', 'lower'], color: 0, opacity: 0.1 }],`}</code></pre>
 <p>
   <code>kind: 'markers'</code> 플롯은 해당 필드에 값이 있는 봉(전환점, 신호)에 <code>shape</code>
-  (<code>'dot'</code>, <code>'triangleUp'</code> 또는 <code>'triangleDown'</code>)으로 표시를 그립니다. 위치는 그 값이며,
+  (<code>'triangleUp'</code>, <code>'triangleDown'</code>, <code>'arrowUp'</code>, <code>'arrowDown'</code>,
+  <code>'dot'</code>, <code>'square'</code> 또는 <code>'diamond'</code>)으로 표시를 그립니다. 위치는 그 값이며,
   가격 패널에서는 봉의 고가 위나 저가 아래에 둘 수도 있습니다(<code>position: 'aboveBar'</code>, <code>'belowBar'</code>).
   읽을 값이 아니므로 범례에 값이 없고, 축에 태그가 없고, 내보내기에 열이 없으며, 다른 지표가 읽을 수 있는 선으로도
   제공되지 않습니다. 별도 패널에서는 표시가 그 값의 위치에 그려집니다. 표시가 없는 봉에서는 필드를 비워 두세요.
 </p>
+<p>
+  표시의 너비는 봉이 허용하는 만큼이며, 4~8 px입니다. 보는 사람은 지표의 스타일 탭에서 다른 모양과 크기를 고르고,
+  코드에서는 플롯의 스타일에 지정합니다: <code>shape</code>, 그리고 가로 픽셀 수(2~40) 또는
+  <code>'auto'</code>인 <code>size</code>. Williams Fractals가 이렇게 그려집니다: 고점 위에 삼각형 하나, 저점 아래에 삼각형 하나.
+</p>
+<pre><code>{`chart.updateIndicatorStyle(fractals, { plots: { up: { shape: 'arrowUp', size: 14 }, down: { size: 'auto' } } });`}</code></pre>
 <pre><code>{`plots: [
   { key: 'value', title: 'MACD', color: 0 },
   { key: 'turn', title: 'Turn', color: 1, kind: 'markers', shape: 'triangleUp', position: 'belowBar' },
