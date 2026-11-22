@@ -363,6 +363,49 @@ const SCENES = {
     return s;
   },
 
+  /**
+   * A long with three take-profit levels on an account held against its
+   * margin: the second level pressed on its line and dragged up, not yet let
+   * go (the line where it is dragged to, faint where it was), and the margin
+   * level in the account panel's totals.
+   */
+  async levelDrag() {
+    const s = await widget({ trading: true });
+    const last = lastClose(s.chart);
+    const broker = new PaperExecutionAdapter({ markPrice: last, balance: 10_000, leverage: 20, marginCallLevel: 1, stopOutLevel: 0.5 });
+    s.chart.connectExecution(broker);
+    const levels = [1.002, 1.004, 1.006].map((by) => ({ price: last * by, quantity: 1 }));
+    await broker.placeOrder({ side: 'buy', type: 'market', price: last, quantity: 3, stopLoss: last * 0.996, takeProfits: levels });
+    s.widget.toggleAccountPanel(true);
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    // Where the second level's line is on the page: the plot's own scale, read as the chart drew it.
+    const view = s.chart.viewport.getState();
+    // The chart's own box takes the press: on a phone the Sell and Buy buttons lie over these lines' left end.
+    const plot = host.querySelector('canvas').parentElement;
+    const box = plot.getBoundingClientRect();
+    const yOf = (price) => box.top + view.chartRect.y + ((view.priceRange.max - price) / (view.priceRange.max - view.priceRange.min)) * view.chartRect.height;
+    const x = box.left + view.chartRect.x + view.chartRect.width * 0.3;
+    const from = yOf(levels[1].price);
+    const to = yOf(last * 1.005);
+    const send = (type, y) => plot.dispatchEvent(new MouseEvent(type, { clientX: x, clientY: y, button: 0, buttons: 1, bubbles: true, cancelable: true }));
+    send('mousedown', from);
+    send('mousemove', (from + to) / 2);
+    send('mousemove', to);
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const checks = () => {
+      const problems = [];
+      const drag = s.chart.tradingManager.dragHandler.getDragState();
+      if (!drag || drag.sourceType !== 'level' || drag.level !== 1) problems.push('the press on the second take-profit level did not take its line');
+      // Nothing is sent before the line is let go.
+      const held = broker.getPositions()[0]?.takeProfits?.map((level) => level.price);
+      if (JSON.stringify(held) !== JSON.stringify(levels.map((level) => level.price))) problems.push('a level moved in the account before it was let go');
+      if (!/Margin level/.test(host.textContent) && !locale) problems.push('the account panel does not write the margin level');
+      return problems;
+    };
+    // The account too, for whoever looks further by hand: a price that calls its margin, a stop-out.
+    return { ...s, broker, checks };
+  },
+
   /** A long bracket being placed with a paper account connected: its quantity in the bar's field and on the entry's tag. */
   async bracketQuantity() {
     const s = await widget({ trading: true });

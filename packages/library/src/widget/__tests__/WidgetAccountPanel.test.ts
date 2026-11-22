@@ -297,3 +297,31 @@ describe('WidgetAccountPanel: the Log tab', () => {
     expect(cells().map((row) => row[1])).toEqual(['Rejected', 'Filled', 'Order cancelled', 'Order moved', 'Order placed']);
   });
 });
+
+describe('WidgetAccountPanel: an account against its margin', () => {
+  const totals = () => [...host.querySelectorAll('.tcw-account-total')].map((el) => el.textContent);
+  const account = { balance: 1000, equity: 750, unrealisedPnl: -250, realisedPnl: 0, marginUsed: 500, freeMargin: 250, commission: 0, marginLevel: 1.5 };
+
+  it('writes the margin level after the free margin while a position holds margin, and not without one', () => {
+    panel.update({ ...current, account });
+    expect(totals().slice(0, 4)).toEqual(['Balance: 1000.00', 'Equity: 750.00', 'Free margin: 250.00', 'Margin level: 150.0%']);
+    const { marginLevel: _level, ...flat } = account;
+    panel.update({ ...current, account: flat });
+    expect(totals().some((text) => text?.startsWith('Margin level'))).toBe(false);
+  });
+
+  it('follows the level when it alone changed, in the host’s figures', () => {
+    panel.destroy();
+    panel = new WidgetAccountPanel(host, { ...(callbacks as unknown as AccountPanelCallbacks), formatNumber: (value, decimals) => value.toFixed(decimals).replace('.', ',') });
+    panel.update({ ...current, account });
+    panel.update({ ...current, account: { ...account, marginLevel: 0.874 } });
+    expect(totals()[3]).toBe('Margin level: 87,4%');
+  });
+
+  it('names a fill that closed a position out', () => {
+    panel.openPanel();
+    panel.update({ ...current, fills: [...current.fills, { orderId: 'c', side: 'sell', price: 84, quantity: 50, time: 3, reason: 'liquidation', pnl: -800 }] });
+    tab(/History/).click();
+    expect(cells()[0][4]).toBe('Liquidation');
+  });
+});

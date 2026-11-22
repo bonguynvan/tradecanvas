@@ -48,6 +48,8 @@ export type ExecutionEventType =
   | 'fill'
   /** `data`: `AccountSummary`, the account's money, when the adapter keeps one. */
   | 'account'
+  /** `data`: `MarginCall`, the account's equity fell under the part of its margin it is to keep. */
+  | 'marginCall'
   /** `data`: `ConnectionState`. */
   | 'connectionChange'
   /** `data`: `ExecutionError`. */
@@ -69,12 +71,33 @@ export interface AccountSummary {
   freeMargin: number;
   /** What trading has cost: the commissions paid. */
   commission: number;
+  /**
+   * The equity as a part of the margin used (the margin level): 1.5 is
+   * 150%. Left out while no position holds margin, and by an adapter that
+   * does not count it. The paper account holds a position's margin at its
+   * entry's price, so the level moves with the equity alone.
+   */
+  marginLevel?: number;
   /** The currency the figures are in ("USD"), when the adapter says. */
   currency?: string;
 }
 
-/** Why a fill happened: an order, a position closed by hand or reversed, or its stop-loss or take-profit. */
-export type FillReason = 'order' | 'close' | 'reverse' | 'stopLoss' | 'takeProfit';
+/**
+ * Why a fill happened: an order, a position closed by hand or reversed, its
+ * stop-loss or take-profit, or `'liquidation'`: the account closed the
+ * position itself, its equity having fallen under its stop-out level.
+ */
+export type FillReason = 'order' | 'close' | 'reverse' | 'stopLoss' | 'takeProfit' | 'liquidation';
+
+/** An account warned: its equity has fallen under the part of the margin held it is to keep. */
+export interface MarginCall {
+  /** The equity as a part of the margin used, now: 0.9 is 90%. */
+  marginLevel: number;
+  /** The level it fell under. */
+  level: number;
+  equity: number;
+  marginUsed: number;
+}
 
 export interface FillEvent {
   orderId: string;

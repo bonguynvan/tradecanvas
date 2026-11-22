@@ -99,6 +99,7 @@ export type {
   PositionReverseIntent,
   TimeInForce,
   FillReason,
+  MarginCall,
   ExecutionAdapter,
   ExecutionConfig,
   ExecutionEvent,

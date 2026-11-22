@@ -63,6 +63,12 @@ chart.startBracket('buy', undefined, { risk: 50 })   // the quantity that loses 
   member (a <code>switch</code> with no default, a <code>Record&lt;TimeInForce, …&gt;</code>) needs the three new
   ones; an execution adapter of your own may refuse those it does not take.
 </p>
+<p>
+  <code>FillReason</code> has <code>'liquidation'</code> too, for a position the paper account closed in a
+  stop-out, and <code>ExecutionEventType</code> has <code>'marginCall'</code>. Neither happens unless the paper
+  account is given <code>stopOutLevel</code> or <code>marginCallLevel</code>, but code that handles every member
+  needs them.
+</p>
 
 <h2 id="unchanged">Not changed</h2>
 <ul>

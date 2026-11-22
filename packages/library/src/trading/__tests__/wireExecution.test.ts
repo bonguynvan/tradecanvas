@@ -241,3 +241,31 @@ describe('wireExecution and a confirmed bracket', () => {
     expect(h.errors).toEqual([expect.objectContaining({ message: 'Execution command failed: bracketPlace' })]);
   });
 });
+
+describe('wireExecution: an account that warns of its margin', () => {
+  it('hands the adapter’s margin call to the host, and no more once unwired', async () => {
+    const adapter = new PaperExecutionAdapter({ markPrice: 100, balance: 1000, leverage: 10, marginCallLevel: 1 });
+    const calls: unknown[] = [];
+    const h = makeHost();
+    const teardown = wireExecution(adapter, { ...h.host, onMarginCall: (call) => calls.push(call) });
+    adapter.connect({});
+    await adapter.placeOrder({ side: 'buy', type: 'market', price: 100, quantity: 50 });
+    adapter.setMarkPrice(89);
+    expect(calls).toEqual([{ marginLevel: 0.9, level: 1, equity: 450, marginUsed: 500 }]);
+    teardown();
+    adapter.setMarkPrice(95);
+    adapter.setMarkPrice(89);
+    expect(calls).toHaveLength(1);
+  });
+
+  it('takes a dragged take-profit level to the adapter as the position’s levels', async () => {
+    const adapter = new PaperExecutionAdapter({ markPrice: 100 });
+    const h = makeHost();
+    wireExecution(adapter, h.host);
+    adapter.connect({});
+    await adapter.placeOrder({ side: 'buy', type: 'market', price: 100, quantity: 3, takeProfits: [{ price: 110, quantity: 1 }, { price: 120, quantity: 2 }] });
+    h.emit('positionModify', { positionId: h.positions[0].id, takeProfits: [{ price: 115, quantity: 1 }, { price: 120, quantity: 2 }] });
+    await flush();
+    expect(h.positions[0].takeProfits).toEqual([{ price: 115, quantity: 1 }, { price: 120, quantity: 2 }]);
+  });
+});

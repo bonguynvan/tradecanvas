@@ -5,7 +5,7 @@ import type { IndicatorValue } from './indicator.js';
 import type { DrawingToolType } from './drawing.js';
 import type { SymbolInfo } from './symbol.js';
 import type { MarketConfig } from '../market/types.js';
-import type { AccountSummary, FillEvent } from './execution.js';
+import type { AccountSummary, FillEvent, MarginCall } from './execution.js';
 import type { TradingOrder, TradingPosition } from './trading.js';
 
 export type ChartEventType =
@@ -52,6 +52,7 @@ export type ChartEventType =
   | 'ordersChange'
   | 'positionsChange'
   | 'accountChange'
+  | 'marginCall'
   | 'executionChange'
   | 'bidAskChange'
   | 'executionError'
@@ -466,6 +467,8 @@ export interface ChartEventMap {
   executionChange: { connected: boolean };
   /** The account's money changed (the execution adapter's `account`); null once no adapter keeps one. */
   accountChange: { account: AccountSummary | null };
+  /** The account was warned: its equity fell under the part of its margin it is to keep (the execution adapter's `marginCall`). */
+  marginCall: MarginCall;
   /** The reverse button on a position's tag was pressed. */
   positionReverse: { positionId: string };
   /** A right-click off any drawing, where it landed: only while something listens. */

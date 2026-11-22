@@ -34,6 +34,7 @@ export type TagCell =
 export type TagGrab =
   | { kind: 'order'; orderId: string }
   | { kind: 'stop'; positionId: string; which: 'stopLoss' | 'takeProfit' }
+  | { kind: 'level'; positionId: string; index: number }
   | { kind: 'bracket'; handle: BracketHandle }
   | { kind: 'draft' };
 

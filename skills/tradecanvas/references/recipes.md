@@ -345,8 +345,11 @@ chart.placeOrderIntent({ side: 'sell', type: 'stop', price: 63_000, stopPrice: 6
 // new PaperExecutionAdapter({ balance: 10_000, leverage: 10, commission: { rate: 0.0004 } }) keeps its money:
 // chart.getAccount() gives { balance, equity, marginUsed, freeMargin, … }, 'accountChange' follows it,
 // and an order the free margin cannot carry is refused (executionError)
+// With marginCallLevel: 1 and stopOutLevel: 0.5 it warns as the equity falls under the margin held ('marginCall', once)
+// and closes positions under half of it, the one losing most first (fills with reason: 'liquidation'); marginLevel is in the account
 // Profit in parts: takeProfits: [{ price, quantity }, …] on an order's intent or chart.modifyPositionIntent({ positionId, takeProfits });
-// a part closes at each level, and takeProfit (or the stop-loss) closes what they leave
+// a part closes at each level, and takeProfit (or the stop-loss) closes what they leave;
+// a position's level is dragged on the chart like its stop: 'positionModify' then carries all its takeProfits
 // chart.getActivityLog(): each order placed, moved, cancelled or filled and what was refused, oldest first
 // (the widget's account panel shows it in its Log tab, and Sell and Buy buttons under the legend while an adapter is connected)
 ```

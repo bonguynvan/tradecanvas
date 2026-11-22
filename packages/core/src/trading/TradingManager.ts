@@ -7,6 +7,7 @@ import type {
   Theme,
   Point,
   FillEvent,
+  TakeProfitLevel,
 } from '@tradecanvas/commons';
 import { DARK_THEME, DEFAULT_TRADING_CONFIG, priceTagText } from '@tradecanvas/commons';
 import { inPlot } from './plot.js';
@@ -149,7 +150,10 @@ export class TradingManager {
     const drag = this.dragHandler.getDragState();
     if (!drag || drag.sourceType === 'order') return;
     const position = this.positions.find((p) => p.id === drag.orderId);
-    if (position && !(drag.created && position[drag.sourceType] !== undefined)) return;
+    if (drag.sourceType === 'level') {
+      // A level the account took off or moved meanwhile: what is at its place now is not what was pressed.
+      if (position && drag.level !== undefined && position.takeProfits?.[drag.level]?.price === drag.startPrice) return;
+    } else if (position && !(drag.created && position[drag.sourceType] !== undefined)) return;
     this.dragHandler.cancel();
     this.grabOffset = 0;
   }
@@ -307,7 +311,7 @@ export class TradingManager {
     return this.orderDraft.isActive();
   }
 
-  /** Whether `pos` is over an order line or a position's SL/TP that can be dragged. */
+  /** Whether `pos` is over an order line, or a position's SL, TP or take-profit level, that can be dragged. */
   isOverDraggableLine(pos: Point, viewport: ViewportState, tolerance = 8): boolean {
     if (!this.config.enabled) return false;
     const tag = tagAt(this.tagBoxes, pos.x, pos.y);
@@ -323,7 +327,7 @@ export class TradingManager {
       if (o.draggable !== false && near(o.price)) return true;
     }
     for (const p of this.shownPositions()) {
-      if (near(p.stopLoss) || near(p.takeProfit)) return true;
+      if (near(p.stopLoss) || near(p.takeProfit) || p.takeProfits?.some((level) => near(level.price))) return true;
     }
     return false;
   }
@@ -396,6 +400,11 @@ export class TradingManager {
         const position = this.positions.find((p) => p.id === grab.positionId);
         return position !== undefined && this.dragHandler.beginStop(position, grab.which, tag.lineY);
       }
+      case 'level': {
+        if (this.locked) return false;
+        const position = this.positions.find((p) => p.id === grab.positionId);
+        return position !== undefined && this.dragHandler.beginLevel(position, grab.index, tag.lineY);
+      }
     }
   }
 
@@ -447,6 +456,9 @@ export class TradingManager {
           newPrice: result.newPrice,
           previousPrice: result.previousPrice,
         });
+      } else if (result.sourceType === 'level') {
+        const takeProfits = this.levelsWith(result.id, result.level, result.newPrice);
+        if (takeProfits) this.eventCallback?.('positionModify', { positionId: result.id, takeProfits });
       } else {
         this.eventCallback?.('positionModify', {
           positionId: result.id,
@@ -457,6 +469,24 @@ export class TradingManager {
       return true;
     }
     return false;
+  }
+
+  /**
+   * A position's take-profit levels with the one at `index` moved to
+   * `price`, the nearest to the entry first, as an account keeps them. Null
+   * when it cannot go there: a level is a profit, so one let go at the entry
+   * or past it the losing way goes back where it was; and so does one let go
+   * at a price of nothing or under it, where an account keeps no level.
+   */
+  private levelsWith(positionId: string, index: number | undefined, price: number): TakeProfitLevel[] | null {
+    const position = this.positions.find((p) => p.id === positionId);
+    const levels = position?.takeProfits;
+    if (!position || !levels || index === undefined || !levels[index] || !Number.isFinite(price) || !(price > 0)) return null;
+    const long = position.side === 'buy';
+    if (long ? price <= position.entryPrice : price >= position.entryPrice) return null;
+    return levels
+      .map((level, i) => (i === index ? { ...level, price } : { ...level }))
+      .sort((a, b) => (long ? a.price - b.price : b.price - a.price));
   }
 
   /**

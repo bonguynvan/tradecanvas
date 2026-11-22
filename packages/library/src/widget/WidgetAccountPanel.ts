@@ -39,7 +39,9 @@ export interface AccountSnapshot {
 type Tab = 'positions' | 'orders' | 'history' | 'log';
 const TABS: readonly Tab[] = ['positions', 'orders', 'history', 'log'];
 const EVENTS = ['placed', 'moved', 'cancelled', 'filled', 'rejected'] as const;
-const REASONS = ['order', 'close', 'reverse', 'stopLoss', 'takeProfit'] as const;
+const REASONS = ['order', 'close', 'reverse', 'stopLoss', 'takeProfit', 'liquidation'] as const;
+/** A margin level is written to a tenth of a percent: near a margin call the tenths are what is read. */
+export const MARGIN_LEVEL_DECIMALS = 1;
 const ORDER_TYPES = ['market', 'limit', 'stop'] as const;
 const TIME_IN_FORCE = ['gtc', 'day', 'gtd', 'ioc', 'fok'] as const;
 /** What a cell holds where there is nothing (no stop, no price yet). */
@@ -69,10 +71,10 @@ function sameLog(a: readonly ActivityEntry[] | undefined, b: readonly ActivityEn
   return last?.time === other?.time && last?.kind === other?.kind && last?.orderId === other?.orderId && last?.message === other?.message && last?.price === other?.price;
 }
 
-/** The same money: the three figures the totals show. */
+/** The same money: the figures the totals show. */
 function sameAccount(a: AccountSummary | null | undefined, b: AccountSummary | null | undefined): boolean {
   if (!a || !b) return !a && !b;
-  return a.balance === b.balance && a.equity === b.equity && a.freeMargin === b.freeMargin && a.unrealisedPnl === b.unrealisedPnl;
+  return a.balance === b.balance && a.equity === b.equity && a.freeMargin === b.freeMargin && a.unrealisedPnl === b.unrealisedPnl && a.marginLevel === b.marginLevel;
 }
 
 /** A time the panel can write: a good-till-date order's date. */
@@ -278,14 +280,16 @@ export class WidgetAccountPanel {
 
   /**
    * The account's balance, equity and free margin (from a broker that keeps
-   * them), the open P&L (with positions and a price) and the realised (once
-   * there are fills or a figure), on every tab.
+   * them) and its margin level while positions hold margin, the open P&L
+   * (with positions and a price) and the realised (once there are fills or
+   * a figure), on every tab.
    */
   private renderTotals(): void {
     const { positions, price, fills, realisedPnl, account } = this.snapshot;
     const totals: HTMLElement[] = [];
     if (account) {
       totals.push(this.sum('account.balance', account.balance), this.sum('account.equity', account.equity), this.sum('account.freeMargin', account.freeMargin));
+      if (account.marginLevel !== undefined && Number.isFinite(account.marginLevel)) totals.push(this.sum('account.marginLevel', account.marginLevel, this.level(account.marginLevel)));
     }
     // The broker's own figure when it keeps the account; else the rows' sum.
     const open = account && positions.length > 0 ? account.unrealisedPnl : positions.reduce<number | null>((sum, p) => {
@@ -305,12 +309,12 @@ export class WidgetAccountPanel {
   }
 
   /** A sum of money that is no profit or loss: its words and the figure, in no tone; a debt reads with its minus. */
-  private sum(key: MessageKey, value: number): HTMLElement {
+  private sum(key: MessageKey, value: number, written?: string): HTMLElement {
     const el = document.createElement('span');
     el.className = 'tcw-account-total tcw-account-sum';
     const words = this.t(key);
     const at = words.indexOf(AMOUNT_SLOT);
-    const figure = ltr(value < 0 ? `-${this.money(-value)}` : this.money(value));
+    const figure = ltr(written ?? (value < 0 ? `-${this.money(-value)}` : this.money(value)));
     if (at < 0) el.append(`${words} `, figure);
     else el.append(words.slice(0, at), figure, words.slice(at + AMOUNT_SLOT.length));
     return el;
@@ -356,6 +360,13 @@ export class WidgetAccountPanel {
 
   private money(value: number): string {
     return this.callbacks.formatAmount ? this.callbacks.formatAmount(value) : value.toFixed(2);
+  }
+
+  /** A margin level as a percent: the equity's part of the margin held. */
+  private level(value: number): string {
+    const percent = value * 100;
+    const figure = this.callbacks.formatNumber ? this.callbacks.formatNumber(Math.abs(percent), MARGIN_LEVEL_DECIMALS) : Math.abs(percent).toFixed(MARGIN_LEVEL_DECIMALS);
+    return `${percent < 0 ? '-' : ''}${figure}%`;
   }
 
   private percent(value: number): string {
