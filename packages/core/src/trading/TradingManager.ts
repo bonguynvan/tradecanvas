@@ -475,12 +475,13 @@ export class TradingManager {
    * A position's take-profit levels with the one at `index` moved to
    * `price`, the nearest to the entry first, as an account keeps them. Null
    * when it cannot go there: a level is a profit, so one let go at the entry
-   * or past it the losing way goes back where it was.
+   * or past it the losing way goes back where it was; and so does one let go
+   * at a price of nothing or under it, where an account keeps no level.
    */
   private levelsWith(positionId: string, index: number | undefined, price: number): TakeProfitLevel[] | null {
     const position = this.positions.find((p) => p.id === positionId);
     const levels = position?.takeProfits;
-    if (!position || !levels || index === undefined || !levels[index] || !Number.isFinite(price)) return null;
+    if (!position || !levels || index === undefined || !levels[index] || !Number.isFinite(price) || !(price > 0)) return null;
     const long = position.side === 'buy';
     if (long ? price <= position.entryPrice : price >= position.entryPrice) return null;
     return levels

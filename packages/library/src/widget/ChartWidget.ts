@@ -1402,7 +1402,9 @@ export class ChartWidget {
       });
       // A warning the account gives once: it shows with the toasts off, as an error does.
       this.chart.on('marginCall', (e) => {
-        this.say(fill(this.t('toast.marginCall'), { level: `${this.formatNumber(e.payload.marginLevel * 100, MARGIN_LEVEL_DECIMALS)}%` }), 'error');
+        // The figure with its sign and its percent is one thing, left to right, in a sentence written either way.
+        const level = `\u2066${this.formatNumber(e.payload.marginLevel * 100, MARGIN_LEVEL_DECIMALS)}%\u2069`;
+        this.say(fill(this.t('toast.marginCall'), { level }), 'error');
       });
 
       // Depth-of-market ladder (opt-in; fed via widget.setDepth)

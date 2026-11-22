@@ -189,8 +189,10 @@ chart.modifyPositionIntent({ positionId: 'pos-1', takeProfits: null })          
   the line follows the pointer, with where it was left faint behind it, and letting go raises
   <code>positionModify</code> with all the position's <code>takeProfits</code>, that one moved, the nearest
   first. A level is a profit, so one let go at the entry or past it the losing way goes back where it was, and
-  nothing is raised. The levels of an order that still waits are a plan the order brings and are not handles;
-  nor is any while the lines are locked.
+  nothing is raised. Of two levels within reach of a press the nearer is taken; an order's line, the stop-loss
+  or the take-profit at the same place is taken before a level, which its tag still moves. The levels of an
+  order that still waits are a plan the order brings and are not handles; nor is any while the lines are
+  locked.
 </p>
 
 <h3 id="account">An account with money</h3>
@@ -214,8 +216,10 @@ chart.modifyPositionIntent({ positionId: 'pos-1', takeProfits: null })          
   <code>stopOutLevel</code> it closes positions at the price there is, the one losing most first, until it is
   back over the level or holds none: closing one frees its margin, which may be enough. Each is a fill with
   <code>reason: 'liquidation'</code>. Both are counted as each price comes, after the orders and the stops it
-  reached, so a stop-loss closes its position first. With neither, nothing is closed and a balance can go
-  below zero.
+  reached, so a stop-loss closes its position first, and a fill that brings the equity under a level is acted
+  on at the next price. A position's margin is held at its entry's price, so the level moves with the equity
+  alone. A stop-out leaves the orders that wait working: one whose money has gone is cancelled when its price
+  comes. With neither level, nothing is closed and a balance can go below zero.
 </p>
 <pre><code>{`const broker = new PaperExecutionAdapter({
   balance: 10_000,

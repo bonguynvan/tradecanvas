@@ -49,8 +49,11 @@ export interface PaperExecutionOptions {
    * Where the account is warned, as the equity's part of the margin its
    * positions hold (the margin level): `1` warns when the equity falls under
    * the margin. It says so once (the `marginCall` event), and again only
-   * after the equity has been back over it. Nothing is closed. Needs
-   * `balance`; without a level there is no warning.
+   * after the equity has been back over it. Nothing is closed. It is counted
+   * as each price comes (`setMarkPrice`), after the orders and the stops the
+   * price reached: a fill that brings the equity under the level is warned
+   * of at the next price. Needs `balance`; without a level there is no
+   * warning.
    */
   marginCallLevel?: number;
   /**
@@ -58,8 +61,10 @@ export interface PaperExecutionOptions {
    * held: `0.5` closes positions when the equity falls under half the
    * margin. They are closed at the price there is, the one losing most
    * first, until the account is back over the level or holds none (fills
-   * with `reason: 'liquidation'`). Needs `balance`; without a level nothing
-   * is closed, and the equity may go under zero.
+   * with `reason: 'liquidation'`). Counted as each price comes, as the
+   * warning is. The orders that wait are left working: one whose money has
+   * gone is cancelled when its price comes, as ever. Needs `balance`;
+   * without a level nothing is closed, and the equity may go under zero.
    */
   stopOutLevel?: number;
 }

@@ -176,3 +176,67 @@ describe('PaperExecutionAdapter: an account with no levels, or no money', () => 
     expect(adapter.getPositions()).toHaveLength(1);
   });
 });
+
+describe('PaperExecutionAdapter: the margin, as it is counted', () => {
+  it('counts a contract’s multiplier in the margin and in the equity alike', async () => {
+    const { adapter, market } = connect({ multiplier: 10 });
+    // Five at 100, ten a point: 5000 of value, 500 of margin.
+    await market('buy', 5);
+    expect(adapter.getAccount()).toEqual(expect.objectContaining({ marginUsed: 500, marginLevel: 2 }));
+    adapter.setMarkPrice(95);
+    expect(adapter.getAccount()).toEqual(expect.objectContaining({ equity: 750, marginLevel: 1.5 }));
+  });
+
+  it('holds the margin at the entry’s price: a price that moves changes the equity, not the margin', async () => {
+    const { adapter, market } = connect();
+    await market('buy', 50);
+    adapter.setMarkPrice(120);
+    expect(adapter.getAccount()).toEqual(expect.objectContaining({ marginUsed: 500, equity: 2000, marginLevel: 4 }));
+  });
+
+  it('warns at the next price of a level a fill brought under, not at the fill', async () => {
+    const { adapter, calls, market } = connect({ marginCallLevel: 1.2 });
+    // Ninety at 100 hold 900: the equity of 1000 is under 1.2 of it from the start.
+    await market('buy', 90);
+    expect(calls).toEqual([]);
+    adapter.setMarkPrice(100);
+    expect(calls).toEqual([expect.objectContaining({ level: 1.2, equity: 1000, marginUsed: 900 })]);
+  });
+
+  it('warns once though what hears it closes the position there and then', async () => {
+    const { adapter, calls, told, market } = connect({ marginCallLevel: 1, stopOutLevel: 0.5 });
+    await market('buy', 50);
+    told.length = 0;
+    adapter.on('marginCall', () => void adapter.closePosition({ positionId: adapter.getPositions()[0].id }));
+    adapter.setMarkPrice(89);
+    expect(told).toEqual(['marginCall', 'fill:close']);
+    expect(calls).toHaveLength(1);
+    expect(adapter.getPositions()).toEqual([]);
+  });
+
+  it('leaves the orders that wait working after a stop-out, and takes none the money left cannot carry', async () => {
+    const { adapter, market } = connect({ stopOutLevel: 0.5 });
+    const errors: { message: string }[] = [];
+    adapter.on<{ message: string }>('error', (e) => errors.push(e.data));
+    await market('buy', 50);
+    // Forty at 80 would hold 320: the account can carry it now.
+    await adapter.placeOrder({ side: 'buy', type: 'limit', price: 80, quantity: 40 });
+    adapter.setMarkPrice(84);
+    expect(adapter.getPositions()).toEqual([]);
+    expect(adapter.getOrders()).toHaveLength(1);
+    // 200 is left: when its price comes the order is cancelled, and says why.
+    adapter.setMarkPrice(80);
+    expect(adapter.getOrders()).toEqual([]);
+    expect(adapter.getPositions()).toEqual([]);
+    expect(errors).toEqual([expect.objectContaining({ message: expect.stringContaining('Not enough free margin') })]);
+  });
+
+  it('is neither warned nor stopped out by a price that is none', async () => {
+    const { adapter, calls, market } = connect({ marginCallLevel: 1, stopOutLevel: 0.5 });
+    await market('buy', 50);
+    adapter.setMarkPrice(Number.NaN);
+    adapter.setMarkPrice(0);
+    expect(calls).toEqual([]);
+    expect(adapter.getPositions()).toHaveLength(1);
+  });
+});

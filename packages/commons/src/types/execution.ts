@@ -74,17 +74,18 @@ export interface AccountSummary {
   /**
    * The equity as a part of the margin used (the margin level): 1.5 is
    * 150%. Left out while no position holds margin, and by an adapter that
-   * does not count it.
+   * does not count it. The paper account holds a position's margin at its
+   * entry's price, so the level moves with the equity alone.
    */
   marginLevel?: number;
   /** The currency the figures are in ("USD"), when the adapter says. */
   currency?: string;
 }
 
-/** Why a fill happened: an order, a position closed by hand or reversed, or its stop-loss or take-profit. */
 /**
- * Why a fill happened. `'liquidation'`: the account closed the position
- * itself, its equity having fallen under its stop-out level.
+ * Why a fill happened: an order, a position closed by hand or reversed, its
+ * stop-loss or take-profit, or `'liquidation'`: the account closed the
+ * position itself, its equity having fallen under its stop-out level.
  */
 export type FillReason = 'order' | 'close' | 'reverse' | 'stopLoss' | 'takeProfit' | 'liquidation';
 

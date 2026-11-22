@@ -145,3 +145,57 @@ describe('a take-profit level dragged on the chart', () => {
     expect(events).toEqual([]);
   });
 });
+
+describe('a take-profit level dragged where no level can be, or beside another', () => {
+  it('goes back when let go at a price of nothing or under it: an account keeps no level there', () => {
+    manager.setPositions([{ id: 's1', side: 'sell', entryPrice: 60, quantity: 2, takeProfits: [{ price: 50, quantity: 1 }, { price: 40, quantity: 1 }] }]);
+    // By its line, the pointer taken past the foot of the plot: 3 under nothing.
+    drag(60, 103);
+    expect(events).toEqual([]);
+    drag(60, 100);
+    expect(events).toEqual([]);
+    // Just over nothing is still a price.
+    drag(60, 99);
+    expect(sent()).toEqual([{ event: 'positionModify', data: { positionId: 's1', takeProfits: [{ price: 50, quantity: 1 }, { price: 1, quantity: 1 }] } }]);
+  });
+
+  it('is the nearest to the press, of two that lie within its reach', () => {
+    // At y 30 and y 25: a press on the second's line is nearer the second, though the first is in reach too.
+    manager.setPositions([{ ...LONG, takeProfits: [{ price: 70, quantity: 1 }, { price: 75, quantity: 2 }] }]);
+    drag(25, 15);
+    expect(sent()).toEqual([{ event: 'positionModify', data: { positionId: 'p1', takeProfits: [{ price: 70, quantity: 1 }, { price: 85, quantity: 2 }] } }]);
+    events.length = 0;
+    // And a press on the first's line takes the first.
+    drag(30, 36);
+    expect(sent()).toEqual([{ event: 'positionModify', data: { positionId: 'p1', takeProfits: [{ price: 64, quantity: 1 }, { price: 75, quantity: 2 }] } }]);
+  });
+
+  it('may be let go on another level’s price: both are kept, the one that was moved there first', () => {
+    drag(30, 20);
+    expect(sent()).toEqual([{ event: 'positionModify', data: { positionId: 'p1', takeProfits: [{ price: 80, quantity: 1 }, { price: 80, quantity: 2 }] } }]);
+  });
+
+  it('is called off with the press, and when the lines are hidden', () => {
+    manager.onPointerDown({ x: X, y: 30 }, unitViewport);
+    manager.onPointerMove({ x: X, y: 25 }, unitViewport);
+    expect(manager.cancelPointer()).toBe(true);
+    manager.onPointerUp({ x: X, y: 25 });
+    expect(events).toEqual([]);
+
+    manager.onPointerDown({ x: X, y: 30 }, unitViewport);
+    manager.onPointerMove({ x: X, y: 25 }, unitViewport);
+    manager.setHidden(true);
+    manager.onPointerUp({ x: X, y: 25 });
+    expect(events).toEqual([]);
+    // Hidden, there is no line to be over.
+    expect(manager.isOverDraggableLine({ x: X, y: 30 }, unitViewport)).toBe(false);
+  });
+
+  it('is within a finger’s wider reach of its line', () => {
+    expect(manager.onPointerDown({ x: X, y: 44 }, unitViewport)).toBe(false);
+    expect(manager.onPointerDown({ x: X, y: 44 }, unitViewport, { order: 16 })).toBe(true);
+    manager.onPointerMove({ x: X, y: 39 }, unitViewport);
+    manager.onPointerUp({ x: X, y: 39 });
+    expect(sent()).toEqual([{ event: 'positionModify', data: { positionId: 'p1', takeProfits: [{ price: 61, quantity: 1 }, { price: 80, quantity: 2 }] } }]);
+  });
+});

@@ -158,6 +158,13 @@ describe('ChartWidget: what it says of a margin call', () => {
   it('says how the equity stands to the margin held, as a warning that shows with the toasts off', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', trading: true, features: { toasts: false } });
     FakeChart.last.emit('marginCall', { marginLevel: 0.9, level: 1, equity: 450, marginUsed: 500 });
-    expect(toasts()).toEqual(['Margin call: the equity is 90.0% of the margin held']);
+    // The figure is kept left to right, as a mark of its own: read without them here.
+    expect(toasts().map((text) => text?.replace(/[\u2066\u2069]/g, ''))).toEqual(['Margin call: the equity is 90.0% of the margin held']);
+  });
+
+  it('keeps the figure, its sign and its percent as one thing left to right, for a sentence written the other way', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    FakeChart.last.emit('marginCall', { marginLevel: -0.25, level: 1, equity: -125, marginUsed: 500 });
+    expect(toasts()[0]).toMatch(/\u2066-[^\u2069]*%\u2069/);
   });
 });

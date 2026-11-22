@@ -22,7 +22,7 @@ export class TradingDragHandler {
 
   constructor(private dragThreshold = 3) {}
 
-  /** A press at `pos`: the first order line within `tolerance`, else the first stop or target, else the first take-profit level. */
+  /** A press at `pos`: the first order line within `tolerance`, else the first stop or target, else the take-profit level nearest it. */
   onPointerDown(
     pos: Point,
     orders: TradingOrder[],
@@ -42,11 +42,19 @@ export class TradingDragHandler {
         if (price !== undefined && near(price)) return this.beginStop(position, which, pos.y);
       }
     }
+    // Levels lie close together, a part of the way to a target each: the nearest to the press, not the first in reach.
+    let taken: { position: TradingPosition; index: number } | null = null;
+    let reach = Infinity;
     for (const position of positions) {
-      const index = (position.takeProfits ?? []).findIndex((level) => near(level.price));
-      if (index >= 0) return this.beginLevel(position, index, pos.y);
+      const levels = position.takeProfits ?? [];
+      for (let index = 0; index < levels.length; index++) {
+        const distance = Math.abs(pos.y - priceToY(levels[index].price, viewport));
+        if (!near(levels[index].price) || distance >= reach) continue;
+        taken = { position, index };
+        reach = distance;
+      }
     }
-    return false;
+    return taken !== null && this.beginLevel(taken.position, taken.index, pos.y);
   }
 
   /** Drag `order`'s line, pressed at `y`. */
