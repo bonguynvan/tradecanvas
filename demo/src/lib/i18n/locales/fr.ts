@@ -381,7 +381,7 @@ const fr: SiteMessages = {
     },
     overrides: {
       title: 'Overrides de style',
-      stat: '103 clés',
+      stat: '107 clés',
       blurb:
         'N’importe quelle partie de l’aspect du graphique par clé, à part du thème : la grille dans chaque sens, le réticule, les axes, les panneaux, la légende, le dernier cours, le volume et les couleurs de chaque type de graphique. Ici la grille verticale est masquée, l’horizontale en pointillés, le réticule plein, et la ligne de signal du MACD en tirets dans un panneau avec son propre séparateur.',
       tryThis: [
@@ -792,7 +792,7 @@ const fr: SiteMessages = {
       ],
       customization: [
         { name: 'Trois apparences pour le widget', detail: 'Studio, Terminal, Capsule ; ui et setUI ; variables CSS --tcw-*' },
-        { name: 'L’apparence du graphique, clé par clé', detail: 'applyOverrides sur 103 clés typées, sur une couche hôte et une couche utilisateur' },
+        { name: 'L’apparence du graphique, clé par clé', detail: 'applyOverrides sur 107 clés typées, sur une couche hôte et une couche utilisateur' },
         { name: 'Des paramètres qui atteignent chaque clé', detail: 'Un onglet de style pour le type de graphique affiché, un onglet trading' },
         { name: '114 interrupteurs de fonctionnalités', detail: 'features, setFeatures, isFeatureOn ; modifiables en marche' },
         { name: 'Vos propres pièces dans le widget', detail: 'Boutons et menus déroulants de la barre d’outils, boutons de la barre latérale, éléments d’état, emplacements, entrées de menu' },
