@@ -212,12 +212,29 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 
 <h2>Tu propio indicador</h2>
 <p>
-  Extiende <code>IndicatorBase</code> y declara lo que dibuja (<code>plots</code>),
+  El camino corto es <code>defineIndicator</code>: sus entradas, y una sola función que devuelve sus líneas a partir de
+  las barras, con <code>ta</code> para los cálculos (<code>ta.ema</code>, <code>ta.rsi</code>, <code>ta.crossover</code>…).
+</p>
+<pre><code>{`import { defineIndicator } from '@tradecanvas/chart'
+
+chart.registerIndicator(defineIndicator({
+  id: 'smoothRsi',
+  name: 'Smoothed RSI',
+  inputs: { period: { default: 14, kind: 'int', min: 2 }, smooth: { default: 5, kind: 'int', min: 1 } },
+  scale: { min: 0, max: 100 },
+  levels: [30, 70],
+  calculate: ({ bars, inputs, ta }) => ({ value: ta.ema(ta.rsi(bars.close, inputs.period), inputs.smooth) }),
+}))
+chart.addIndicator('smoothRsi')`}</code></pre>
+<p>
+  Para un indicador que sigue el ritmo de los ticks sobre un historial largo, o que dibuja algo propio, extiende
+  <code>IndicatorBase</code> y declara lo que dibuja (<code>plots</code>),
   la escala de su panel, sus niveles y sus parámetros; el gráfico lo dibuja,
   escala su panel, etiqueta sus valores y lo muestra en la leyenda y la
   configuración del widget sin que tengas que escribir código de renderizado.
   Su <code>category</code> (<code>'oscillators'</code>, <code>'volume'</code>…) lo coloca en ese
-  grupo del diálogo Indicadores; sin ella, aparece en Otros. Consulta la
+  grupo del diálogo Indicadores; sin ella, aparece en Otros. Un grupo propio, <code>{`{ id: 'my-app', label: 'My App' }`}</code>,
+  lista juntos los indicadores de tu app bajo su nombre, antes de los tipos integrados. Consulta la
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">receta de indicador personalizado</a>.
   Un indicador que agrupa las barras por día, semana o mes lee la zona de la bolsa en
   <code>config.exchangeTimeZone</code> (la fija el gráfico; sin ella, UTC). Una zona nueva vuelve a
@@ -258,12 +275,19 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 fills: [{ between: ['upper', 'lower'], color: 0, opacity: 0.1 }],`}</code></pre>
 <p>
   Un plot de <code>kind: 'markers'</code> marca las barras donde su campo tiene valor (un giro, una señal) con una
-  <code>shape</code>, <code>'dot'</code>, <code>'triangleUp'</code> o <code>'triangleDown'</code>, en el valor o, en el
+  <code>shape</code> (<code>'triangleUp'</code>, <code>'triangleDown'</code>, <code>'arrowUp'</code>, <code>'arrowDown'</code>,
+  <code>'dot'</code>, <code>'square'</code> o <code>'diamond'</code>), en el valor o, en el
   panel de precio, sobre el máximo de la barra o bajo su mínimo (<code>position: 'aboveBar'</code>, <code>'belowBar'</code>).
   No es un valor que leer: no tiene valor en la leyenda, ni etiqueta en el eje, ni columna en una exportación, y no se
   ofrece como línea que otro indicador pueda leer. En un panel, sus marcas están en sus valores. Deja el campo sin
   fijar en las barras sin marca.
 </p>
+<p>
+  Sus marcas son tan anchas como permiten las barras, de 4 a 8 px. Quien mira el gráfico elige otra forma y un tamaño en la
+  pestaña Estilo del indicador, y el código los fija en el estilo del plot: <code>shape</code>, y <code>size</code> en píxeles de ancho (de 2 a
+  40) o <code>'auto'</code>. Williams Fractals se dibuja así: un triángulo sobre un máximo y otro bajo un mínimo.
+</p>
+<pre><code>{`chart.updateIndicatorStyle(fractals, { plots: { up: { shape: 'arrowUp', size: 14 }, down: { size: 'auto' } } });`}</code></pre>
 <pre><code>{`plots: [
   { key: 'value', title: 'MACD', color: 0 },
   { key: 'turn', title: 'Turn', color: 1, kind: 'markers', shape: 'triangleUp', position: 'belowBar' },

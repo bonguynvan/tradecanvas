@@ -53,6 +53,84 @@ chart.plugins.list()`}</code></pre>
   </tbody>
 </table>
 
+<h2 id="define">カスタムインジケーター、手短な方法</h2>
+<p>
+  <code>defineIndicator</code> は、入力と、バーを受け取る 1 つの関数からインジケーターを作ります：クラスも描画のコードも要りません。
+  <code>calculate</code> は、列としてのバー（<code>bars.close[i]</code>）、入力の値、
+  そしてインジケーターを組み立てる計算である <code>ta</code> を受け取り、線をキーごとに返します。チャートがそれらを描き、
+  ペインのスケールを調整し、凡例に表示し、設定ダイアログに各入力の欄を用意します。
+</p>
+<pre><code>{`import { defineIndicator } from '@tradecanvas/chart'
+
+const emaCross = defineIndicator({
+  id: 'emaCross',
+  name: 'EMA Crossover',
+  placement: 'overlay',                       // on the prices; 'panel' (the default) is a pane of its own
+  inputs: {
+    fast: { default: 9, kind: 'int', min: 1 },
+    slow: { default: 21, kind: 'int', min: 2 },
+  },
+  plots: [
+    { key: 'fast', title: 'Fast', color: 0 },
+    { key: 'slow', title: 'Slow', color: 1 },
+    { key: 'buy', title: 'Buy', color: 2, kind: 'markers', shape: 'arrowUp', position: 'belowBar' },
+    { key: 'sell', title: 'Sell', color: 3, kind: 'markers', shape: 'arrowDown', position: 'aboveBar' },
+  ],
+  calculate({ bars, inputs, ta }) {
+    const fast = ta.ema(bars.close, inputs.fast)
+    const slow = ta.ema(bars.close, inputs.slow)
+    return { fast, slow, buy: ta.crossover(fast, slow), sell: ta.crossunder(fast, slow) }
+  },
+})
+
+chart.registerIndicator(emaCross)
+chart.addIndicator('emaCross', { fast: 12 })`}</code></pre>
+<ul>
+  <li>
+    <strong>入力。</strong>それぞれに <code>default</code> があり、その型が入力の型になります。加えて、設定ダイアログが
+    表示に必要とするものを持ちます：<code>kind</code>、<code>min</code>、<code>max</code>、<code>step</code>、
+    選択肢の <code>options</code>、価格ソースの <code>source: true</code>（このときインジケーターはそれを
+    <code>bars.close</code> として読みます）。<code>calculate</code> が受け取る数値は <code>min</code> と
+    <code>max</code> の範囲内で、<code>kind: 'int'</code> なら整数であり、選択肢はその options のいずれかです。
+  </li>
+  <li>
+    <strong>線。</strong>バーごとに 1 つの値です。値がない所は <code>undefined</code>、<code>null</code>、または <code>NaN</code>
+    にします。価格上の <code>kind: 'markers'</code> のプロットでは、<code>true</code> がバーに印を付けます：
+    <code>position</code> に応じてバーの上か下、それ以外はバーの終値の位置です。独自のペインの印は数値で、
+    印が描かれる値です。<code>plots</code> がなければ、返された線はすべて、テーマの系列色の線として描かれます。
+    バーが少なすぎるときに線を返さないインジケーターは、線を宣言します。
+  </li>
+  <li>
+    <strong>見た目。</strong><code>plots</code>（線、<code>'histogram'</code>、<code>'step'</code>、
+    <code>'dots'</code>、<code>'markers'</code>。それぞれに色、太さ、線種）、2 本の線の間の帯のための <code>fills</code>、
+    ペインのための <code>scale</code> と <code>levels</code>。下の
+    <a href="#descriptor">ディスクリプター</a>と同じです。
+  </li>
+  <li>
+    <strong><code>ta</code></strong> には <code>sma</code>、<code>ema</code>、<code>wma</code>、<code>rma</code>、
+    <code>stdev</code>、<code>highest</code>、<code>lowest</code>、<code>change</code>、<code>rsi</code>、
+    <code>macd</code>、<code>atr</code>、<code>bollinger</code>、<code>crossover</code>、
+    <code>crossunder</code> があります。どれもバーごとに 1 つの値を受け取り、バーごとに 1 つの値を返すので、1 つの結果を次に渡せます
+    （<code>ta.ema(ta.rsi(bars.close, 14), 9)</code>）。<code>rsi</code>、<code>macd</code>、<code>atr</code>、
+    <code>bollinger</code> は組み込みのインジケーターそのものを実行するので、値はチャートのものと同じです。
+  </li>
+  <li>
+    <strong><code>ta.indicator(id, input, params)</code></strong> は、任意の組み込みインジケーターを実行し、
+    その線をキーごとに返します：<code>{`ta.indicator('stochastic', bars, { kPeriod: 14 }).k`}</code>、
+    <code>{`ta.indicator('supertrend', bars).value`}</code>。id、入力、線は
+    <a href={href('/docs/indicators')}>インジケーター</a>のページにあるもので、型が付いています。<code>input</code> はバー、
+    またはバーごとに 1 つの値で、後者の場合インジケーターはそれを価格として読みます（<code>{`ta.indicator('ema', rsi, { period: 5 })`}</code>）。
+    バーごとに 1 つの値には出来高も時刻もないので、出来高や 1 日のセッションのインジケーター（OBV、MFI、VWAP…）にはバーが必要です。
+    別のシンボルのバーを読む 5 つは、これに含まれません。
+    <code>ta</code> は単独でもエクスポートされています：<code>{`import { ta } from '@tradecanvas/chart'`}</code>。
+  </li>
+</ul>
+<p>
+  ティックごとにすべてのバーを計算しますが、このような計算なら速く済みます。それが目に見えるほど遅いインジケーターや、
+  バーごとに 1 つの値以外のものを描くインジケーターは、<code>update</code> を持つクラスにします：
+  下の、長い方法です。
+</p>
+
 <h2>カスタムインジケーター</h2>
 <p>
   インジケーターは <code>IndicatorPlugin</code> です。それが何で、どう見えるかを示す <code>descriptor</code> と、
@@ -118,7 +196,7 @@ class TurningMacd extends IndicatorBase {
   プロットの <code>tone</code> のためにあります。
 </p>
 
-<h3>ディスクリプター</h3>
+<h3 id="descriptor">ディスクリプター</h3>
 <ul>
   <li><strong>プロット</strong>はそれぞれ 1 つのフィールドを描きます：<code>'line'</code>（既定）、<code>'step'</code>、
     <code>'histogram'</code>、<code>'dots'</code>（点で描く線）、または <code>'markers'</code>。markers はフィールドに
@@ -214,7 +292,10 @@ chart.addIndicator('turning-macd', { fast: 8 })`}</code></pre>
     <code>title</code> で名前が付きます。</li>
   <li><strong>設定ダイアログ</strong>は入力を編集し、各プロットをその色、表示するかどうか、線やステップなら線種と
     ともに一覧にし、レベルを編集します。</li>
-  <li><strong>インジケーターダイアログ</strong>は <code>category</code> の下に <code>name</code> で表示します。</li>
+  <li><strong>インジケーターダイアログ</strong>は <code>category</code> の下に <code>name</code> で表示します：種類
+    （<code>'oscillators'</code>、<code>'volume'</code>…）か、独自のグループ <code>{`{ id: 'my-app', label: 'My App' }`}</code> で、
+    独自のグループはアプリのインジケーターをその名前の下に、組み込みの種類より前にまとめます（グループが複数あるときは、
+    それぞれの最初のインジケーターが登録された順）。検索でもその名前で見つかります。</li>
   <li><strong>別のインジケーター</strong>は、その線（同じプロット）をソースとして読めます。</li>
 </ul>
 <p>

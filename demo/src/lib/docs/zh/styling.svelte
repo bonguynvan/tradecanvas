@@ -310,11 +310,15 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>background.color</code></td><td>图表背景（面板没有自己的背景时也用它）。</td></tr>
     <tr><td><code>panes.background</code>, <code>.separatorColor</code>, <code>.titleColor</code></td><td>指标面板：背景、顶部的分隔条、名称。</td></tr>
     <tr><td><code>grid.horizontal.*</code>, <code>grid.vertical.*</code></td><td><code>visible</code>、<code>color</code>、<code>style</code>（<code>solid</code> · <code>dashed</code> · <code>dotted</code>）、<code>width</code>，每个方向分别设置。</td></tr>
+    <tr><td><code>grid.vertical.periodsOnly</code></td><td><code>true</code> 让竖向网格线画在周期开始的地方，而不是时间轴的标签处：日内图上画在每天的第一根 K 线，日线图上画在每月的第一根，周线或月线图上画在每年的第一根，按坐标轴显示的时区计算。这些线的间距不足 40 px 时（日线图缩小到以年计），改画更粗一级的周期；视野内没有这类周期开始的地方不画线。它需要时间轴：时间轴关闭时，网格线与没有这个键时相同。</td></tr>
     <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>十字光标线的同样四项（默认为细实线）。</td></tr>
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>坐标轴以及面板刻度上的价格、时间标签。</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>每个坐标轴的轴线和标签（面板刻度沿用价格轴的）。</td></tr>
+    <tr><td><code>axis.price.valueTagsOutlined</code></td><td><code>true</code> 让价格轴上指标的数值标签画成描边样式（内部为图表的背景色，或面板自己的背景色，边框为线条的颜色，文字也用该颜色），而不是用线条的颜色填充：在价格面板、指标面板和左侧刻度上都是如此。线条颜色与背景太接近、在背景上看不清时，其数值用刻度的文字颜色书写。</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>图例中的数值，以及它的标签（O、H、L、Vol）。</td></tr>
+    <tr><td><code>legend.upColor</code>, <code>.downColor</code></td><td>读取 K 线数值之处的上涨和下跌颜色：图例中的收盘价和涨跌、十字光标和固定的提示框、测量工具。未设置时跟随主序列的颜色，所以隐藏了自身 K 线的图表（由叠加层绘制自己的 K 线）设置这两项，就能保留它们。</td></tr>
     <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>最新价线和标签；未设置时颜色跟随主序列。当前 K 线的剩余时间（<code>features.barCountdown</code>）挂在标签下方。</td></tr>
+    <tr><td><code>lastPrice.labelBackground</code>, <code>.labelTextColor</code></td><td>最新价标签的颜色，不论当日涨跌都用这一种，以及标签的文字颜色。未设置时，标签为上涨或下跌的颜色，文字用在其上能看清的颜色；无论哪种情况，线都保持 <code>upColor</code> 和 <code>downColor</code>。标签下方的剩余时间沿用这两项。</td></tr>
     <tr><td><code>volume.upColor</code>, <code>.downColor</code></td><td>成交量柱。</td></tr>
     <tr><td><code>sessionBreaks.color</code>, <code>.style</code>, <code>.width</code></td><td>日、周、月分隔线。</td></tr>
     <tr><td><code>highLow.color</code>, <code>watermark.color</code></td><td>最高价与最低价线、水印。</td></tr>

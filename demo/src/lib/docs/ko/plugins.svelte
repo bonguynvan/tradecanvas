@@ -53,6 +53,84 @@ chart.plugins.list()`}</code></pre>
   </tbody>
 </table>
 
+<h2 id="define">사용자 지정 지표, 짧은 방법</h2>
+<p>
+  <code>defineIndicator</code>는 입력값과 봉을 받는 함수 하나로 지표를 만듭니다: 클래스도, 그리기 코드도
+  없습니다. <code>calculate</code>는 열 형태의 봉(<code>bars.close[i]</code>), 입력값,
+  그리고 지표를 이루는 계산인 <code>ta</code>를 받아, 지표의 선을 키별로 반환합니다. 차트는 그 선들을 그리고,
+  패널 눈금을 맞추고, 범례에 나열하며, 설정 대화상자에 입력마다 입력란을 둡니다.
+</p>
+<pre><code>{`import { defineIndicator } from '@tradecanvas/chart'
+
+const emaCross = defineIndicator({
+  id: 'emaCross',
+  name: 'EMA Crossover',
+  placement: 'overlay',                       // on the prices; 'panel' (the default) is a pane of its own
+  inputs: {
+    fast: { default: 9, kind: 'int', min: 1 },
+    slow: { default: 21, kind: 'int', min: 2 },
+  },
+  plots: [
+    { key: 'fast', title: 'Fast', color: 0 },
+    { key: 'slow', title: 'Slow', color: 1 },
+    { key: 'buy', title: 'Buy', color: 2, kind: 'markers', shape: 'arrowUp', position: 'belowBar' },
+    { key: 'sell', title: 'Sell', color: 3, kind: 'markers', shape: 'arrowDown', position: 'aboveBar' },
+  ],
+  calculate({ bars, inputs, ta }) {
+    const fast = ta.ema(bars.close, inputs.fast)
+    const slow = ta.ema(bars.close, inputs.slow)
+    return { fast, slow, buy: ta.crossover(fast, slow), sell: ta.crossunder(fast, slow) }
+  },
+})
+
+chart.registerIndicator(emaCross)
+chart.addIndicator('emaCross', { fast: 12 })`}</code></pre>
+<ul>
+  <li>
+    <strong>입력.</strong> 각 입력에는 <code>default</code>가 있고 그 타입이 입력의 타입이며, 설정 대화상자가
+    입력을 보여 주는 데 필요한 것이 있습니다: <code>kind</code>, <code>min</code>, <code>max</code>, <code>step</code>,
+    선택 입력의 <code>options</code>, 가격 소스를 위한 <code>source: true</code>(그러면 지표는 그것을
+    <code>bars.close</code>로 읽습니다). <code>calculate</code>는 각 숫자를 <code>min</code>과
+    <code>max</code> 안의 값으로, <code>kind: 'int'</code>이면 정수로 받고, 선택 입력은 옵션 중 하나로 받습니다.
+  </li>
+  <li>
+    <strong>선.</strong> 봉마다 값 하나이며, 값이 없는 곳은 <code>undefined</code>, <code>null</code> 또는 <code>NaN</code>입니다.
+    <code>true</code>는 가격 위에 그리는 <code>kind: 'markers'</code> 플롯에서 봉을 표시합니다:
+    <code>position</code>에 따라 봉의 위나 아래에, 없으면 봉의 종가에. 별도 패널의 표시는
+    숫자이며, 그 값의 위치에 그려집니다. <code>plots</code>가 없으면 반환된 모든 선이
+    테마의 시리즈 색으로 선으로 그려집니다. 봉이 너무 적으면 선을 반환하지 않는 지표는 선을 선언합니다.
+  </li>
+  <li>
+    <strong>모양.</strong> <code>plots</code>(선, <code>'histogram'</code>, <code>'step'</code>,
+    <code>'dots'</code>, <code>'markers'</code>, 각각 색, 굵기, 선 종류와 함께), 두 선 사이의 띠를 위한
+    <code>fills</code>, 패널을 위한 <code>scale</code>과 <code>levels</code>. 아래의
+    <a href="#descriptor">디스크립터</a>에서와 같습니다.
+  </li>
+  <li>
+    <strong><code>ta</code></strong>에는 <code>sma</code>, <code>ema</code>, <code>wma</code>, <code>rma</code>,
+    <code>stdev</code>, <code>highest</code>, <code>lowest</code>, <code>change</code>, <code>rsi</code>,
+    <code>macd</code>, <code>atr</code>, <code>bollinger</code>, <code>crossover</code>,
+    <code>crossunder</code>가 있습니다. 각각 봉마다 값 하나를 받아 봉마다 값 하나를 반환하므로, 하나가 다음의 입력이 됩니다
+    (<code>ta.ema(ta.rsi(bars.close, 14), 9)</code>). <code>rsi</code>, <code>macd</code>, <code>atr</code>,
+    <code>bollinger</code>는 기본 제공 지표 자체를 실행하므로 그 값은 차트의 값입니다.
+  </li>
+  <li>
+    <strong><code>ta.indicator(id, input, params)</code></strong>는 어떤 기본 제공 지표든 실행해 그 선을 키별로
+    반환합니다: <code>{`ta.indicator('stochastic', bars, { kPeriod: 14 }).k`}</code>,
+    <code>{`ta.indicator('supertrend', bars).value`}</code>. id, 입력, 선은
+    <a href={href('/docs/indicators')}>지표</a> 페이지에 있는 그대로이며, 타입이 지정되어 있습니다. <code>input</code>은 봉이거나,
+    지표가 가격으로 읽을 봉마다의 값입니다(<code>{`ta.indicator('ema', rsi, { period: 5 })`}</code>).
+    봉마다의 값에는 거래량도 시각도 없으므로, 거래량이나 하루의 세션을 다루는 지표(OBV, MFI, VWAP…)에는
+    봉이 필요합니다. 다른 종목의 봉을 읽는 다섯 지표는 여기에 들어 있지 않습니다. 이것은
+    따로도 export되어 있습니다: <code>{`import { ta } from '@tradecanvas/chart'`}</code>.
+  </li>
+</ul>
+<p>
+  틱마다 모든 봉에 대해 계산하며, 이런 계산에는 그래도 빠릅니다. 그것이 드러날 만큼 느린 지표나,
+  봉마다의 값이 아닌 다른 것을 그리는 지표는 <code>update</code>가 있는 클래스입니다:
+  아래의 긴 방법입니다.
+</p>
+
 <h2>사용자 지정 지표</h2>
 <p>
   지표는 <code>IndicatorPlugin</code>입니다. 지표가 무엇이고 어떻게 보이는지 밝히는 <code>descriptor</code>와,
@@ -116,7 +194,7 @@ class TurningMacd extends IndicatorBase {
   (위의 <code>up</code>)는 그려지지도, 눈금에 반영되지도, 표시되지도 않습니다. 플롯의 <code>tone</code>을 위해 있는 것입니다.
 </p>
 
-<h3>디스크립터</h3>
+<h3 id="descriptor">디스크립터</h3>
 <ul>
   <li><strong>플롯</strong>은 각각 필드 하나를 그립니다. <code>'line'</code>(기본값), <code>'step'</code>,
     <code>'histogram'</code>, <code>'dots'</code>(점으로 그린 선), 또는 <code>'markers'</code>로, 필드에 값이 있는 봉에
@@ -212,7 +290,10 @@ chart.addIndicator('turning-macd', { fast: 8 })`}</code></pre>
     플롯의 <code>title</code>이 붙습니다.</li>
   <li><strong>설정 대화상자</strong>는 입력값을 편집하고, 각 플롯을 색, 표시 여부, 선이나 계단 플롯이면 선 종류와 함께
     나열하며, 레벨을 편집합니다.</li>
-  <li><strong>지표 대화상자</strong>는 <code>category</code> 아래에 <code>name</code>으로 지표를 나열합니다.</li>
+  <li><strong>지표 대화상자</strong>는 <code>category</code> 아래에 <code>name</code>으로 지표를 나열합니다: 종류
+    (<code>'oscillators'</code>, <code>'volume'</code>…)이거나 직접 만든 그룹 <code>{`{ id: 'my-app', label: 'My App' }`}</code>이며,
+    이 그룹은 앱의 지표들을 그 이름 아래에 모아 기본 제공 종류보다 앞에 둡니다(그룹이 여럿이면 각 그룹의 첫 지표가
+    등록된 순서대로). 검색도 그 이름으로 지표를 찾습니다.</li>
   <li><strong>다른 지표</strong>는 이 지표의 선(같은 플롯들)을 소스로 읽을 수 있습니다.</li>
 </ul>
 <p>

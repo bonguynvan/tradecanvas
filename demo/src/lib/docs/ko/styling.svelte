@@ -322,11 +322,15 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>background.color</code></td><td>차트 배경(패널에 자체 배경이 없으면 패널도).</td></tr>
     <tr><td><code>panes.background</code>, <code>.separatorColor</code>, <code>.titleColor</code></td><td>지표 패널: 배경, 위쪽 막대, 이름.</td></tr>
     <tr><td><code>grid.horizontal.*</code>, <code>grid.vertical.*</code></td><td><code>visible</code>, <code>color</code>, <code>style</code>(<code>solid</code> · <code>dashed</code> · <code>dotted</code>), <code>width</code> — 방향별로 따로.</td></tr>
+    <tr><td><code>grid.vertical.periodsOnly</code></td><td><code>true</code>면 세로 격자를 시간 축의 라벨이 아니라 기간이 시작되는 곳에 그음: 일중 차트에서는 각 날의 첫 봉, 일봉 차트에서는 각 달의 첫 봉, 주봉이나 월봉 차트에서는 각 해의 첫 봉에, 축이 보여 주는 시간대 기준으로. 그 간격이 40 px보다 좁아지는 곳(연 단위까지 축소한 일봉 차트)에서는 한 단계 더 큰 기간에 긋고, 화면에 그런 기간이 시작되는 곳이 없으면 선을 그리지 않음. 시간 축이 필요함: 시간 축을 끄면 선은 이 키가 없을 때와 같음.</td></tr>
     <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>크로스헤어 선에도 같은 네 가지(기본은 가는 실선).</td></tr>
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>축과 패널 눈금의 가격·시간 라벨.</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>각 축의 선과 라벨(패널 눈금은 가격 축을 따름).</td></tr>
+    <tr><td><code>axis.price.valueTagsOutlined</code></td><td><code>true</code>면 가격 축에 있는 지표의 값 태그를 선의 색으로 채우는 대신 윤곽선으로 그림(선 색의 테두리 안에 차트 배경 또는 패널 자체의 배경, 글자는 선의 색): 가격 패널, 지표 패널, 왼쪽 눈금에서. 배경과 너무 비슷해 그 위에서 읽을 수 없는 선은 값을 눈금의 글자 색으로 적음.</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>범례의 값과 라벨(O, H, L, Vol).</td></tr>
+    <tr><td><code>legend.upColor</code>, <code>.downColor</code></td><td>봉의 값을 읽는 곳의 상승과 하락: 범례의 종가와 변동, 크로스헤어 툴팁과 고정한 툴팁, 측정 도구. 정하지 않으면 시리즈의 색을 따르므로, 캔들을 숨기는 차트(자체 캔들을 그리는 오버레이)는 이 키를 정해 그 색을 유지함.</td></tr>
     <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>최근 가격 선과 태그. 정하지 않으면 색은 메인 시리즈를 따름. 봉의 남은 시간(<code>features.barCountdown</code>)은 태그 아래에 붙음.</td></tr>
+    <tr><td><code>lastPrice.labelBackground</code>, <code>.labelTextColor</code></td><td>그날의 방향과 상관없이 한 가지 색으로 두는 최근 가격의 태그, 그리고 그 글자. 정하지 않으면 태그는 상승 또는 하락 색이고 글자는 그 위에서 읽히는 색. 선은 어느 쪽이든 <code>upColor</code>와 <code>downColor</code>를 유지함. 태그 아래의 카운트다운은 둘 다 따름.</td></tr>
     <tr><td><code>volume.upColor</code>, <code>.downColor</code></td><td>거래량 막대.</td></tr>
     <tr><td><code>sessionBreaks.color</code>, <code>.style</code>, <code>.width</code></td><td>일·주·월 구분선.</td></tr>
     <tr><td><code>highLow.color</code>, <code>watermark.color</code></td><td>고가·저가 선, 워터마크.</td></tr>

@@ -54,6 +54,84 @@ chart.plugins.list()`}</code></pre>
   </tbody>
 </table>
 
+<h2 id="define">Indicador personalizado, el camino corto</h2>
+<p>
+  <code>defineIndicator</code> hace un indicador a partir de sus entradas y una sola función de las barras: sin clase y sin
+  código de dibujo. <code>calculate</code> recibe las barras como columnas (<code>bars.close[i]</code>), los valores de las
+  entradas y <code>ta</code>, los cálculos de los que están hechos los indicadores, y devuelve sus líneas por clave. El gráfico las dibuja,
+  escala su panel, las lista en la leyenda y da a cada entrada un campo en el diálogo de configuración.
+</p>
+<pre><code>{`import { defineIndicator } from '@tradecanvas/chart'
+
+const emaCross = defineIndicator({
+  id: 'emaCross',
+  name: 'EMA Crossover',
+  placement: 'overlay',                       // on the prices; 'panel' (the default) is a pane of its own
+  inputs: {
+    fast: { default: 9, kind: 'int', min: 1 },
+    slow: { default: 21, kind: 'int', min: 2 },
+  },
+  plots: [
+    { key: 'fast', title: 'Fast', color: 0 },
+    { key: 'slow', title: 'Slow', color: 1 },
+    { key: 'buy', title: 'Buy', color: 2, kind: 'markers', shape: 'arrowUp', position: 'belowBar' },
+    { key: 'sell', title: 'Sell', color: 3, kind: 'markers', shape: 'arrowDown', position: 'aboveBar' },
+  ],
+  calculate({ bars, inputs, ta }) {
+    const fast = ta.ema(bars.close, inputs.fast)
+    const slow = ta.ema(bars.close, inputs.slow)
+    return { fast, slow, buy: ta.crossover(fast, slow), sell: ta.crossunder(fast, slow) }
+  },
+})
+
+chart.registerIndicator(emaCross)
+chart.addIndicator('emaCross', { fast: 12 })`}</code></pre>
+<ul>
+  <li>
+    <strong>Entradas.</strong> Cada una tiene un <code>default</code>, cuyo tipo es el tipo de la entrada, y lo que el
+    diálogo de configuración necesita para mostrarla: <code>kind</code>, <code>min</code>, <code>max</code>, <code>step</code>,
+    <code>options</code> para una opción a elegir, <code>source: true</code> para una fuente de precio (el indicador la lee entonces
+    como <code>bars.close</code>). <code>calculate</code> recibe cada número dentro de su <code>min</code> y su
+    <code>max</code>, entero para un <code>kind: 'int'</code>, y una opción a elegir que es una de sus opciones.
+  </li>
+  <li>
+    <strong>Líneas.</strong> Un valor por barra; <code>undefined</code>, <code>null</code> o <code>NaN</code> donde
+    no lo hay. <code>true</code> marca una barra, para un plot de <code>kind: 'markers'</code> sobre los precios:
+    encima o debajo de la barra según su <code>position</code>, si no en el cierre de la barra. Una marca en un panel propio es
+    un número, el valor en el que se dibuja. Sin <code>plots</code>, cada línea devuelta se dibuja como una línea en los
+    colores de serie del tema; un indicador que no devuelve líneas cuando hay muy pocas barras las declara.
+  </li>
+  <li>
+    <strong>Cómo se ve.</strong> <code>plots</code> (una línea, <code>'histogram'</code>, <code>'step'</code>,
+    <code>'dots'</code>, <code>'markers'</code>, cada uno con su color, grosor y trazo), <code>fills</code> para una
+    banda entre dos líneas, <code>scale</code> y <code>levels</code> para un panel, como en
+    <a href="#descriptor">el descriptor</a> más abajo.
+  </li>
+  <li>
+    <strong><code>ta</code></strong> tiene <code>sma</code>, <code>ema</code>, <code>wma</code>, <code>rma</code>,
+    <code>stdev</code>, <code>highest</code>, <code>lowest</code>, <code>change</code>, <code>rsi</code>,
+    <code>macd</code>, <code>atr</code>, <code>bollinger</code>, <code>crossover</code> y
+    <code>crossunder</code>. Cada uno recibe un valor por barra y devuelve uno, así que uno alimenta al siguiente
+    (<code>ta.ema(ta.rsi(bars.close, 14), 9)</code>). <code>rsi</code>, <code>macd</code>, <code>atr</code> y
+    <code>bollinger</code> ejecutan los propios indicadores integrados, así que sus valores son los del gráfico.
+  </li>
+  <li>
+    <strong><code>ta.indicator(id, input, params)</code></strong> ejecuta cualquier indicador integrado y devuelve sus
+    líneas por clave: <code>{`ta.indicator('stochastic', bars, { kPeriod: 14 }).k`}</code>,
+    <code>{`ta.indicator('supertrend', bars).value`}</code>. Los ids, las entradas y las líneas son los de la página
+    <a href={href('/docs/indicators')}>Indicadores</a>, y están tipados. <code>input</code> son las barras, o
+    un valor por barra que el indicador lee entonces como sus precios (<code>{`ta.indicator('ema', rsi, { period: 5 })`}</code>).
+    Un valor por barra no tiene volumen ni reloj, así que un indicador de volumen o de las sesiones del día (OBV, MFI, VWAP…)
+    necesita las barras. Los cinco que leen las barras de otro símbolo no están entre ellos. También se
+    exporta por separado: <code>{`import { ta } from '@tradecanvas/chart'`}</code>.
+  </li>
+</ul>
+<p>
+  Calcula sobre todas las barras en cada tick, lo que es rápido para cálculos como estos. Un indicador lo bastante lento como
+  para que eso se note, o uno que dibuja algo distinto de un valor por barra, es una clase con un <code>update</code>:
+  el camino largo, más abajo.
+</p>
+
 <h2>Indicador personalizado</h2>
 <p>
   Un indicador es un <code>IndicatorPlugin</code>: un <code>descriptor</code> que dice qué es y cómo se ve, y un
@@ -119,7 +197,7 @@ class TurningMacd extends IndicatorBase {
   ahí para el <code>tone</code> de un plot.
 </p>
 
-<h3>El descriptor</h3>
+<h3 id="descriptor">El descriptor</h3>
 <ul>
   <li><strong>Los plots</strong> dibujan un campo cada uno: <code>'line'</code> (por defecto), <code>'step'</code>,
     <code>'histogram'</code>, <code>'dots'</code> (una línea dibujada con puntos) o <code>'markers'</code>, una forma
@@ -215,7 +293,10 @@ chart.addIndicator('turning-macd', { fast: 8 })`}</code></pre>
     más de uno, el <code>title</code> del plot.</li>
   <li><strong>El diálogo de configuración</strong> edita las entradas, lista cada plot con su color, si se muestra y un
     trazo para una línea o un escalón, y edita los niveles.</li>
-  <li><strong>El diálogo Indicadores</strong> lo lista por <code>name</code> bajo su <code>category</code>.</li>
+  <li><strong>El diálogo Indicadores</strong> lo lista por <code>name</code> bajo su <code>category</code>: un tipo
+    (<code>'oscillators'</code>, <code>'volume'</code>…) o un grupo propio, <code>{`{ id: 'my-app', label: 'My App' }`}</code>,
+    que pone juntos los indicadores de tu app bajo su nombre, antes de los tipos integrados (varios grupos, en el
+    orden en que se registran sus primeros indicadores). La búsqueda también los encuentra por ese nombre.</li>
   <li><strong>Otro indicador</strong> puede leer sus líneas (los mismos plots) como su fuente.</li>
 </ul>
 <p>
