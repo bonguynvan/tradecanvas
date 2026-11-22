@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.17.0 (2026-11-22)
 
 ### Chart
 

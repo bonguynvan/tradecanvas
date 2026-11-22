@@ -1,5 +1,19 @@
 # @tradecanvas/react
 
+## 2.0.31
+
+### Patch Changes
+
+- df6d54e: The packages' npm descriptions name TradeCanvas the open-source chart library for trading apps, and their keywords say what a search for a trading, candlestick, stock or crypto chart library looks for.
+- Updated dependencies [3d7ed94]
+- Updated dependencies [d7c1844]
+- Updated dependencies [a6e24ea]
+- Updated dependencies [9dc652e]
+- Updated dependencies [df6d54e]
+- Updated dependencies [c0a3049]
+- Updated dependencies [e2b9725]
+  - @tradecanvas/chart@2.17.0
+
 ## 2.0.30
 
 ### Patch Changes
