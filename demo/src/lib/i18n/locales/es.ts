@@ -439,6 +439,17 @@ const es: SiteMessages = {
         'Acerca el zoom a un muro y desplázate de un lado a otro: las celdas siguen a las barras',
       ],
     },
+    orderflow: {
+      title: 'Flujo de órdenes',
+      stat: 'Footprint + cinta',
+      blurb:
+        'Cada operación del feed, con quién la tomó. El gráfico footprint escribe, junto a cada barra, lo que los vendedores tomaron en el bid y lo que los compradores tomaron en el ask en cada precio de su interior, marca las filas en las que un lado superó al otro y suma cada barra debajo: lo comprado menos lo vendido, y ambos juntos. A su lado, la cinta lista las operaciones según se hacen, las más nuevas arriba, en el color de quien las tomó.',
+      tryThis: [
+        'Mira cómo la barra más nueva se llena fila a fila al llegar operaciones, y cómo cambian sus totales debajo',
+        'Abre el menú de la cabecera de la cinta: lista solo lo comprado o lo vendido, o agrupa en una fila las operaciones simultáneas',
+        'Escribe un tamaño mínimo en la cinta para quedarte con las operaciones grandes y aleja el gráfico: las filas pasan a ser barras y los totales siguen',
+      ],
+    },
     switching: {
       title: 'Cambios con red lenta',
       stat: '+1.2 s de latencia',

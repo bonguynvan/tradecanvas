@@ -437,6 +437,17 @@ const tr: SiteMessages = {
         'Bir duvara yakınlaştırıp ileri geri kaydırın: hücreler barlarla birlikte hareket eder',
       ],
     },
+    orderflow: {
+      title: 'Emir akışı',
+      stat: 'Footprint + bant',
+      blurb:
+        'Akıştaki her işlem, onu hangi tarafın aldığıyla birlikte. Footprint grafiği, her çubuğun yanına, içindeki her fiyatta satıcıların bid’den ve alıcıların ask’ten ne aldığını yazar, bir tarafın diğerine üstün geldiği satırları işaretler ve her çubuğun toplamını altına yazar: alınan eksi satılan ve ikisi birlikte. Yanındaki bant, işlemleri gerçekleştikçe, en yeniler üstte olacak şekilde, alan tarafın renginde listeler.',
+      tryThis: [
+        'İşlemler geldikçe en yeni çubuğun satır satır dolmasını ve altındaki toplamların değişmesini izleyin',
+        'Bandın başlığındaki menüyü açın: yalnızca alınanları ya da satılanları listeleyin veya eşzamanlı işlemleri tek satırda toplayın',
+        'Büyük işlemleri bırakmak için banda bir en küçük boyut yazın, sonra grafiği uzaklaştırın: satırlar çubuğa döner, toplamlar kalır',
+      ],
+    },
     switching: {
       title: 'Yavaş ağda geçiş',
       stat: '+1.2 s gecikme',

@@ -437,6 +437,17 @@ const de: SiteMessages = {
         'Zoomen Sie auf eine Wand und verschieben Sie hin und her: Die Zellen halten mit den Kerzen Schritt',
       ],
     },
+    orderflow: {
+      title: 'Orderflow',
+      stat: 'Footprint + Tape',
+      blurb:
+        'Jeder Trade des Feeds, mit der Seite, die ihn genommen hat. Der Footprint-Chart schreibt zu jeder Kerze, was die Verkäufer am Bid und was die Käufer am Ask auf jedem Preis darin genommen haben, markiert die Zeilen, in denen eine Seite die andere überwog, und summiert jede Kerze darunter: Gekauft minus Verkauft, und beides zusammen. Daneben listet das Tape die Trades, sobald sie entstehen, die neuesten oben, in der Farbe der Seite, die sie genommen hat.',
+      tryThis: [
+        'Sehen Sie zu, wie sich die neueste Kerze Zeile für Zeile füllt und sich ihre Summen darunter ändern',
+        'Öffnen Sie das Menü im Kopf des Tapes: nur Gekauftes oder Verkauftes auflisten, oder gleichzeitige Trades zu einer Zeile zusammenfassen',
+        'Geben Sie im Tape eine Mindestgröße ein, um nur große Trades zu behalten, und zoomen Sie dann heraus: Aus den Zeilen werden Balken, die Summen bleiben',
+      ],
+    },
     switching: {
       title: 'Wechsel bei langsamem Netz',
       stat: '+1,2 s Latenz',

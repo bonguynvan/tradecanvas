@@ -67,3 +67,30 @@ describe('the drawings scene', () => {
     }
   });
 });
+
+describe('the order flow scene', () => {
+  const scene = FEATURE_SCENES.find((s) => s.id === 'orderflow')!;
+  const env = { binance: () => ({ name: 'binance' }) } as never;
+
+  it('is a footprint chart with a tape, on a feed that has trades', () => {
+    const options = scene.options(env);
+    expect(options.chartOptions?.chartType).toBe('footprint');
+    expect(options.tape).toBeTruthy();
+    expect(options.adapter).toEqual({ name: 'binance' });
+    // A minute's bars: a feed keeps few trades, and a footprint has only the newest bars'.
+    expect(options.timeframe).toBe('1m');
+  });
+
+  it('opens the tape, so the trades are listed beside the bars they fill', () => {
+    const opened: string[] = [];
+    const widget = { openPanel: (id: string) => { opened.push(id); return true; } } as unknown as ChartWidget;
+    scene.setup?.(widget, {} as Chart, env);
+    expect(opened).toEqual(['tape']);
+  });
+
+  it('shows the same calls in its code', () => {
+    for (const call of ["chartType: 'footprint'", 'tape: true', "openPanel('tape')", "chart.on('trades'"]) {
+      expect(scene.code).toContain(call);
+    }
+  });
+});
