@@ -95,6 +95,13 @@ export interface FootprintOptions {
    * that gives the rows itself, with `setFootprint` or `addTrades`.
    */
   collect?: boolean;
+  /**
+   * Whether what a bar's rows add up to is written under it (true): bought
+   * less sold, in the colour of its sign, and both together under that.
+   * They are written where a bar is wide enough for a number, and the price
+   * scale leaves them room under the lowest bar.
+   */
+  totals?: boolean;
 }
 
 export type LineStyle = 'solid' | 'dashed' | 'dotted';

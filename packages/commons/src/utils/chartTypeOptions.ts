@@ -48,12 +48,13 @@ export function readChartTypeOptions(raw: unknown): ChartTypeOptions {
     out.rangeBars = positive(range) || range === 'auto' ? { range } : {};
   }
   if (isObject(raw.footprint)) {
-    const { rowSize, cells, imbalance, collect } = raw.footprint;
+    const { rowSize, cells, imbalance, collect, totals } = raw.footprint;
     out.footprint = {
       ...(positive(rowSize) || rowSize === 'auto' ? { rowSize } : {}),
       ...(cells === 'bidAsk' || cells === 'delta' || cells === 'volume' ? { cells } : {}),
       ...(typeof imbalance === 'number' && Number.isFinite(imbalance) && imbalance >= 0 ? { imbalance } : {}),
       ...(typeof collect === 'boolean' ? { collect } : {}),
+      ...(typeof totals === 'boolean' ? { totals } : {}),
     };
   }
   return out;

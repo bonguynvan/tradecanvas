@@ -272,6 +272,7 @@ export class PriceFrame {
     renderer.setStore(store);
     renderer.setCells(settings.cells ?? 'bidAsk');
     renderer.setImbalance(settings.imbalance ?? FOOTPRINT_IMBALANCE);
+    renderer.setTotals(settings.totals !== false);
   }
 
   /** The series the chart type draws, made from the bars: Heikin-Ashi candles, Renko bricks, a plugin's own. */
@@ -560,6 +561,8 @@ export class PriceFrame {
         overlayRange: (from, to) => this.indicators.getOverlayPriceRange(from, to),
         compareRange: () => null,
         volumeRatio: (bars, from, to) => (this.volumeShown() && hasVolume(bars, from, to) ? this.volume.getHeightRatio() : null),
+        // As `Chart`: a footprint's totals stand under its bars.
+        footRoom: (bars, vs) => (this.chartRenderer instanceof FootprintRenderer ? this.chartRenderer.totalsRoom(vs, this.themes.getTheme(), bars) : 0),
       });
     }
     return data;

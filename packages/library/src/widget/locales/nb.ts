@@ -345,6 +345,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'Delta',
   'settings.footprintImbalance': 'Ubalanseforhold',
+  'settings.footprintTotals': 'Totaler under hver bar',
   'settings.auto': 'Auto',
   'settings.numberAtLeast': '{min} eller mer',
   'settings.numberWhole': 'Et heltall fra {min} til {max}',

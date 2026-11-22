@@ -338,6 +338,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'Delta',
   'settings.footprintImbalance': 'Raport de dezechilibru',
+  'settings.footprintTotals': 'Totaluri sub fiecare bară',
   'settings.auto': 'Automat',
   'settings.numberAtLeast': '{min} sau mai mult',
   'settings.numberWhole': 'Un număr întreg de la {min} la {max}',

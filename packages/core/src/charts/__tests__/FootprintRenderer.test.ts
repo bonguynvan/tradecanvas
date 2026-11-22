@@ -11,7 +11,7 @@ const bar = (i: number, low: number, high: number, open = low, close = high): OH
   ({ time: T0 + i * MIN, open, high, low, close, volume: 1 });
 const level = (price: number, buy: number, sell: number): FootprintLevel => ({ price, buy, sell });
 
-interface Text { text: string; x: number; y: number; font: string; align: string }
+interface Text { text: string; x: number; y: number; font: string; align: string; fill: string }
 interface Box { x: number; y: number; w: number; h: number; fill: string; alpha: number }
 
 /** Records the rects filled and outlined and the texts written, each with the state it was drawn in. */
@@ -25,7 +25,7 @@ function recorder() {
     get: (t, key) => {
       if (key === 'fillRect') return (x: number, y: number, w: number, h: number) => rects.push(box(x, y, w, h));
       if (key === 'strokeRect') return (x: number, y: number, w: number, h: number) => outlines.push(box(x, y, w, h));
-      if (key === 'fillText') return (text: string, x: number, y: number) => texts.push({ text, x, y, font: String(state.font), align: String(state.textAlign) });
+      if (key === 'fillText') return (text: string, x: number, y: number) => texts.push({ text, x, y, font: String(state.font), align: String(state.textAlign), fill: String(state.fillStyle) });
       if (key === 'measureText') return (text: string) => ({ width: text.length * 6 });
       if (key in t) return t[key as string];
       return vi.fn();
@@ -224,5 +224,212 @@ describe('FootprintRenderer', () => {
     renderer.render(ctx, data, { ...viewport(100), visibleRange: { from: 0, to: 0 } }, DARK_THEME);
     // The row at 40 is far above the scale; the second bar is out of the range drawn.
     expect(texts.map((t) => t.text).sort()).toEqual(['1', '6']);
+  });
+});
+
+describe('the totals under a footprint', () => {
+  // Bought 14 and sold 12 in the first bar, whose lowest row (at 2) ends at y 800.
+  const rows = [level(2, 1, 6), level(2.5, 8, 2), level(3, 5, 4)];
+  const totalsOf = (texts: Text[]) => texts.filter((t) => t.y > 800);
+
+  it('writes what a bar’s rows add up to under its lowest row: bought less sold, then both together', () => {
+    const { store, renderer } = setup();
+    renderer.setTotals(true);
+    store.set({ time: T0, levels: rows });
+    const { ctx, texts } = recorder();
+    renderer.render(ctx, data, viewport(100), DARK_THEME);
+    const [delta, volume] = totalsOf(texts);
+    expect(totalsOf(texts)).toHaveLength(2);
+    expect(delta.text).toBe('+2');
+    expect(volume.text).toBe('26');
+    expect(volume.y).toBeGreaterThan(delta.y);
+    // In the middle of the bar's cells, which start past its slim candle.
+    expect(delta.align).toBe('center');
+    expect(delta.x).toBe(volume.x);
+    expect(delta.x).toBeGreaterThan(10);
+    expect(delta.x).toBeLessThan(100);
+  });
+
+  it('writes a rise in the colour of a rise, a fall in a fall’s, and both together in the quiet ink', () => {
+    const { store, renderer } = setup();
+    renderer.setTotals(true);
+    store.set({ time: T0, levels: rows });
+    store.set({ time: T0 + MIN, levels: [level(3, 2, 9), level(3.5, 1, 1)] });
+    const { ctx, texts } = recorder();
+    renderer.render(ctx, data, viewport(100), DARK_THEME);
+    const up = texts.find((t) => t.text === '+2')!;
+    const down = texts.find((t) => t.text === '-7')!;
+    expect(up.fill).toBe(DARK_THEME.candleUp);
+    expect(down.fill).toBe(DARK_THEME.candleDown);
+    expect(texts.find((t) => t.text === '26')!.fill).toBe(DARK_THEME.textSecondary);
+    // The second bar's lowest row is at 3 (y 700): its totals are under that, not under the first bar's.
+    expect(down.y).toBeGreaterThan(700);
+    expect(down.y).toBeLessThan(750);
+    expect(down.x).toBeGreaterThan(up.x);
+  });
+
+  it('writes a bar that was bought as much as sold with no sign, in the quiet ink', () => {
+    const { store, renderer } = setup();
+    renderer.setTotals(true);
+    store.set({ time: T0, levels: [level(2, 3, 3)] });
+    const { ctx, texts } = recorder();
+    renderer.render(ctx, data, viewport(100), DARK_THEME);
+    const [delta, volume] = totalsOf(texts);
+    expect([delta.text, volume.text]).toEqual(['0', '6']);
+    expect(delta.fill).toBe(DARK_THEME.textSecondary);
+  });
+
+  it('writes none unless told to', () => {
+    const { store, renderer } = setup();
+    store.set({ time: T0, levels: rows });
+    const { ctx, texts } = recorder();
+    renderer.render(ctx, data, viewport(100), DARK_THEME);
+    expect(totalsOf(texts)).toEqual([]);
+    expect(renderer.totalsRoom(viewport(100), DARK_THEME, data)).toBe(0);
+  });
+
+  it('writes them under bars too narrow for their rows’ numbers, as long as one number fits', () => {
+    const { store, renderer } = setup();
+    renderer.setTotals(true);
+    store.set({ time: T0, levels: rows });
+    const { ctx, texts } = recorder();
+    renderer.render(ctx, data, viewport(60), DARK_THEME);
+    expect(texts.map((t) => t.text)).toEqual(['+2', '26']);
+  });
+
+  it('writes none under bars too narrow for a number, nor where the bars are candles', () => {
+    const { store, renderer } = setup();
+    renderer.setTotals(true);
+    store.set({ time: T0, levels: rows });
+    // Bars as narrow as 8 px are left to the candles' own renderer.
+    vi.spyOn(CandlestickRenderer.prototype, 'render').mockImplementation(() => {});
+    for (const width of [40, 8]) {
+      const { ctx, texts } = recorder();
+      renderer.render(ctx, data, viewport(width), DARK_THEME);
+      expect(texts).toEqual([]);
+      expect(renderer.totalsRoom(viewport(width), DARK_THEME, data)).toBe(0);
+    }
+  });
+
+  it('writes none for a bar a replay has not shown, nor for a bar with no footprint', () => {
+    const { store, renderer } = setup();
+    renderer.setTotals(true);
+    store.set({ time: T0 + MIN, levels: [level(3, 2, 9)] });
+    renderer.setShownUntil(T0 + MIN);
+    const { ctx, texts } = recorder();
+    renderer.render(ctx, data, viewport(100), DARK_THEME);
+    expect(texts).toEqual([]);
+  });
+
+  it('stands on a plate of the chart’s ground, so it reads over what is behind it', () => {
+    const { store, renderer } = setup();
+    renderer.setTotals(true);
+    store.set({ time: T0, levels: rows });
+    const { ctx, texts, rects } = recorder();
+    renderer.render(ctx, data, viewport(100), DARK_THEME);
+    const [delta, volume] = totalsOf(texts);
+    const plate = rects.find((r) => r.fill === DARK_THEME.background && r.y >= 800)!;
+    expect(plate).toBeDefined();
+    expect(plate.y).toBeLessThan(delta.y);
+    expect(plate.y + plate.h).toBeGreaterThan(volume.y);
+    expect(plate.alpha).toBeLessThan(1);
+  });
+
+  it('says how much room they take under a bar, for the scale to leave it', () => {
+    const { store, renderer } = setup();
+    renderer.setTotals(true);
+    store.set({ time: T0, levels: rows });
+    const room = renderer.totalsRoom(viewport(100), DARK_THEME, data);
+    // Two lines of the small size and what parts them.
+    expect(room).toBeGreaterThanOrEqual(DARK_THEME.font.sizeSmall * 2);
+    expect(room).toBeLessThan(40);
+  });
+});
+
+describe('the totals under a footprint, in their corners', () => {
+  const rows = [level(2, 1, 6), level(2.5, 8, 2), level(3, 5, 4)];
+
+  it('ask the scale for no room where no bar on view has a footprint to add up', () => {
+    const { store, renderer } = setup();
+    renderer.setTotals(true);
+    expect(renderer.totalsRoom(viewport(100), DARK_THEME, data)).toBe(0);
+    store.set({ time: T0 + MIN, levels: [level(3, 2, 9)] });
+    expect(renderer.totalsRoom(viewport(100), DARK_THEME, data)).toBeGreaterThan(0);
+    // A bar a replay has not shown yet has nothing written under it.
+    renderer.setShownUntil(T0 + MIN);
+    expect(renderer.totalsRoom(viewport(100), DARK_THEME, data)).toBe(0);
+    renderer.setShownUntil(null);
+    // Nor has one that is not on view.
+    expect(renderer.totalsRoom({ ...viewport(100), visibleRange: { from: 0, to: 0 } }, DARK_THEME, data)).toBe(0);
+    // A bar whose footprint has no rows has nothing to add up.
+    store.set({ time: T0, levels: [] });
+    expect(renderer.totalsRoom({ ...viewport(100), visibleRange: { from: 0, to: 0 } }, DARK_THEME, data)).toBe(0);
+  });
+
+  it('ask for the room they are drawn in, however small the theme’s small size is', () => {
+    const { store, renderer } = setup();
+    renderer.setTotals(true);
+    store.set({ time: T0, levels: rows });
+    const tiny = { ...DARK_THEME, font: { ...DARK_THEME.font, sizeSmall: 5 } };
+    const { ctx, texts, rects } = recorder();
+    renderer.render(ctx, data, viewport(100), tiny);
+    const plate = rects.find((r) => r.fill === tiny.background && r.y >= 800)!;
+    expect(renderer.totalsRoom(viewport(100), tiny, data)).toBe(plate.h);
+    // Never written smaller than the smallest a number is written.
+    expect(texts.filter((t) => t.y > 800).every((t) => t.font.startsWith('8px'))).toBe(true);
+  });
+
+  it('add up every row of a bar, though its rows are drawn several to one', () => {
+    const { store, renderer } = setup(0.01);
+    renderer.setTotals(true);
+    // A row is a pixel tall here: they are drawn many to one, and the bar still adds up to what was traded in it.
+    store.set({ time: T0, levels: [level(2, 1, 2), level(2.01, 3, 4), level(2.02, 5, 6), level(2.31, 7, 1)] });
+    const { ctx, texts } = recorder();
+    renderer.render(ctx, data, viewport(100), DARK_THEME);
+    const written = texts.map((t) => t.text);
+    expect(written).toContain('+3');
+    expect(written).toContain('29');
+  });
+
+  it('stand under the bar on the screen when the scale is upside down: under its highest price', () => {
+    const { store, renderer } = setup();
+    renderer.setTotals(true);
+    store.set({ time: T0, levels: rows });
+    const { ctx, texts } = recorder();
+    renderer.render(ctx, data, { ...viewport(100), invertScale: true }, DARK_THEME);
+    // Upside down, price 3.5 is at y 350: the rows end there, and the totals come after.
+    const delta = texts.find((t) => t.text === '+2')!;
+    const cells = texts.filter((t) => t.text !== '+2' && t.text !== '26');
+    expect(cells).toHaveLength(6);
+    expect(Math.max(...cells.map((t) => t.y))).toBeLessThan(350);
+    expect(delta.y).toBeGreaterThan(350);
+    expect(delta.y).toBeLessThan(380);
+  });
+
+  it('are not written for a bar whose lowest rows are below the plot: there is no room under it on view', () => {
+    const { store, renderer } = setup();
+    renderer.setTotals(true);
+    store.set({ time: T0, levels: rows });
+    const { ctx, texts } = recorder();
+    // The plot ends at price 2.6: the rows at 2 and 2.5 are below it.
+    renderer.render(ctx, data, { ...viewport(100), priceRange: { min: 2.6, max: 12.6 } }, DARK_THEME);
+    const written = texts.map((t) => t.text);
+    expect(written).not.toContain('+2');
+    expect(written).not.toContain('26');
+    expect(written).toContain('5');
+  });
+
+  it('leave the next bar’s cells as they are drawn without them', () => {
+    const cellsWith = (totals: boolean) => {
+      const { store, renderer } = setup();
+      renderer.setTotals(totals);
+      store.set({ time: T0, levels: rows });
+      store.set({ time: T0 + MIN, levels: [level(3, 2, 9), level(3.5, 1, 1)] });
+      const { ctx, texts, rects } = recorder();
+      renderer.render(ctx, data, viewport(100), DARK_THEME);
+      const own = new Set(['+2', '26', '-7', '13']);
+      return { texts: texts.filter((t) => !own.has(t.text)), tints: rects.filter((r) => r.fill !== DARK_THEME.background) };
+    };
+    expect(cellsWith(true)).toEqual(cellsWith(false));
   });
 });

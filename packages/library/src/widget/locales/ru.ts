@@ -338,6 +338,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'Дельта',
   'settings.footprintImbalance': 'Коэффициент дисбаланса',
+  'settings.footprintTotals': 'Итоги под каждым баром',
   'settings.auto': 'Авто',
   'settings.numberAtLeast': '{min} или больше',
   'settings.numberWhole': 'Целое число от {min} до {max}',

@@ -338,6 +338,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'デルタ',
   'settings.footprintImbalance': 'インバランス比率',
+  'settings.footprintTotals': '各バーの下に合計',
   'settings.auto': '自動',
   'settings.numberAtLeast': '{min} 以上',
   'settings.numberWhole': '{min} から {max} までの整数',

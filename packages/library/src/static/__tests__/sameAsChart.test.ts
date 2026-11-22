@@ -128,6 +128,11 @@ describe('the price chart drawn with no page is the chart’s own frame', () => 
     // The cells are drawn: their numbers are in the frame.
     expect(onPage.some((paint) => paint.includes('2.5K'))).toBe(true);
     expect(firstDifference(staticFrame({ ...options, footprint, visibleRange: range }), onPage)).toBeNull();
+    // What each bar adds up to is in both, and the scale left it the same room: without it the frame is another.
+    expect(firstDifference(staticFrame({ ...options, chartTypeOptions: { footprint: { rowSize: 1, totals: false } }, footprint, visibleRange: range }), onPage)).not.toBeNull();
+    const withoutTotals = { ...options, chartTypeOptions: { footprint: { rowSize: 1, totals: false } } } as const;
+    const plain = await chartFrame(withoutTotals, (chart) => chart.setFootprint(footprint), bars, (chart) => chart.setVisibleRange(range.from, range.to));
+    expect(firstDifference(staticFrame({ ...withoutTotals, footprint, visibleRange: range }), plain)).toBeNull();
     // The comparison would tell: without the rows, or with other cells, the frame is another.
     expect(firstDifference(staticFrame({ ...options, visibleRange: range }), onPage)).not.toBeNull();
     expect(firstDifference(staticFrame({ ...options, chartTypeOptions: { footprint: { rowSize: 1, cells: 'delta' } }, footprint, visibleRange: range }), onPage)).not.toBeNull();

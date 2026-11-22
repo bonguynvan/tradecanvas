@@ -595,6 +595,8 @@ export class WidgetSettings {
         ], (v) => set('footprint', { ...(own().footprint ?? {}), cells: v === 'delta' || v === 'volume' ? v : 'bidAsk' })));
         number('settings.footprintImbalance', o.imbalance ?? null, { step: 'any', max: MAX_IMBALANCE, min: 0 },
           (v) => set('footprint', withValue(own().footprint, 'imbalance', v)));
+        section.appendChild(toggleRow(this.t('settings.footprintTotals'), o.totals !== false,
+          (v) => set('footprint', { ...(own().footprint ?? {}), totals: v })));
         break;
       }
       default:

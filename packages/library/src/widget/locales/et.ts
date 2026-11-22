@@ -345,6 +345,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'Delta',
   'settings.footprintImbalance': 'Tasakaalutuse suhe',
+  'settings.footprintTotals': 'Kogusummad iga küünla all',
   'settings.auto': 'Automaatne',
   'settings.numberAtLeast': '{min} või rohkem',
   'settings.numberWhole': 'Täisarv vahemikus {min} kuni {max}',

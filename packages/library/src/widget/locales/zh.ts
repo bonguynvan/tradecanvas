@@ -338,6 +338,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'Delta',
   'settings.footprintImbalance': '失衡比率',
+  'settings.footprintTotals': '每根K线下方的合计',
   'settings.auto': '自动',
   'settings.numberAtLeast': '{min} 或以上',
   'settings.numberWhole': '{min} 到 {max} 之间的整数',

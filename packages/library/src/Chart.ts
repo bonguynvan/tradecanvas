@@ -4712,6 +4712,7 @@ export class Chart {
     if (this.chartRenderer instanceof FootprintRenderer) {
       this.chartRenderer.setCells(options.cells ?? 'bidAsk');
       this.chartRenderer.setImbalance(options.imbalance ?? FOOTPRINT_IMBALANCE);
+      this.chartRenderer.setTotals(options.totals !== false);
     }
     const rowSize = typeof options.rowSize === 'number' ? options.rowSize : 'auto';
     if (rowSize === this.footprintRowSet) return;
@@ -6964,6 +6965,7 @@ export class Chart {
       renderer.setStore(this.footprint);
       renderer.setCells(options.cells ?? 'bidAsk');
       renderer.setImbalance(options.imbalance ?? FOOTPRINT_IMBALANCE);
+      renderer.setTotals(options.totals !== false);
       renderer.setShownUntil(this.footprintShownUntil);
     }
     return renderer;
@@ -7129,6 +7131,8 @@ export class Chart {
       compareRange: (data, state) => (this.features.compareSymbols && this.comparesDrawn() ? this.compareRenderer.getPriceRange(data, state) : null),
       volumeRatio: (data, from, to) =>
         (this.features.volume && this.volumeRenderer.isVisible() && hasVolume(data, from, to) ? this.volumeRenderer.getHeightRatio() : null),
+      // A footprint's totals stand under its bars.
+      footRoom: (data, state) => (this.chartRenderer instanceof FootprintRenderer ? this.chartRenderer.totalsRoom(state, this.themeManager.getTheme(), data) : 0),
     });
   }
 

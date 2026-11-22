@@ -345,6 +345,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'دلتا',
   'settings.footprintImbalance': 'نسبة عدم التوازن',
+  'settings.footprintTotals': 'الإجماليات تحت كل شمعة',
   'settings.auto': 'تلقائي',
   'settings.numberAtLeast': '{min} أو أكثر',
   'settings.numberWhole': 'عدد صحيح من {min} إلى {max}',

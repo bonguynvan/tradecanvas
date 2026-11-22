@@ -284,6 +284,7 @@ chart.clearFootprint()                                // 다른 시리즈의 행
     <tr><td><code>cells</code></td><td><code>'bidAsk'</code></td><td><code>'bidAsk'</code>: 양쪽을 따로. <code>'delta'</code>: 매수에서 매도를 뺀 값. <code>'volume'</code>: 둘의 합.</td></tr>
     <tr><td><code>imbalance</code></td><td><code>3</code></td><td>한 행 떨어진 자리에서 한쪽이 다른 쪽의 몇 배가 되어야 표시되는지: 어떤 가격의 매수를 한 행 아래의 매도와, 매도를 한 행 위의 매수와 비교합니다. 0이면 아무것도 표시하지 않습니다.</td></tr>
     <tr><td><code>collect</code></td><td><code>true</code></td><td>false: 차트가 피드에 체결을 요청하지 않습니다.</td></tr>
+    <tr><td><code>totals</code></td><td><code>true</code></td><td>각 봉 아래에 그 행들의 합계를 표시합니다. 매수에서 매도를 뺀 값을 부호의 색으로, 그 아래에 둘을 더한 값을 씁니다. 숫자 하나가 들어갈 만큼 넓은 봉에만 쓰이며, 가격 축은 가장 낮은 봉 아래에 그만큼 자리를 남깁니다. false: 표시하지 않습니다.</td></tr>
   </tbody>
 </table>
 <p>

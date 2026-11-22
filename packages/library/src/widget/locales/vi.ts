@@ -345,6 +345,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'Delta',
   'settings.footprintImbalance': 'Tỷ lệ imbalance',
+  'settings.footprintTotals': 'Tổng dưới mỗi nến',
   'settings.auto': 'Tự động',
   'settings.numberAtLeast': 'Từ {min} trở lên',
   'settings.numberWhole': 'Số nguyên từ {min} đến {max}',

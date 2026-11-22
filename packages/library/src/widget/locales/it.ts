@@ -338,6 +338,7 @@ export const IT_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'Delta',
   'settings.footprintImbalance': 'Rapporto di squilibrio',
+  'settings.footprintTotals': 'Totali sotto ogni barra',
   'settings.auto': 'Auto',
   'settings.numberAtLeast': '{min} o più',
   'settings.numberWhole': 'Un numero intero da {min} a {max}',

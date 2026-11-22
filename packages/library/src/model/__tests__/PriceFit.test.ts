@@ -51,6 +51,39 @@ describe('PriceFit: what the scale is fitted to', () => {
     expect(down.calls.margins!.top).toBeCloseTo(0.3 + PHI ** -6);
   });
 
+  it('leaves room under the lowest price for what is written under the bars, over the volume’s band where there is one', () => {
+    const data: DataSeries = [bar(1, 10, 20, 100)];
+    // 30 px of a plot 300 high: a tenth of it.
+    const plain = target();
+    new PriceFit(true).fit(plain.t, data, state(0, 0), { ...none, footRoom: () => 30 });
+    expect(plain.calls.margins!.bottom).toBeCloseTo(PHI ** -4.5 + 0.1);
+    expect(plain.calls.margins!.top).toBeCloseTo(PHI ** -4.5);
+    const withVolume = target();
+    new PriceFit(true).fit(withVolume.t, data, state(0, 0), { ...none, volumeRatio: () => 0.3, footRoom: () => 30 });
+    expect(withVolume.calls.margins!.bottom).toBeCloseTo(0.3 + PHI ** -6 + 0.1);
+    // What is under the bars on the screen is over the highest price on an upside-down scale.
+    const down = target(true);
+    new PriceFit(true).fit(down.t, data, state(0, 0), { ...none, footRoom: () => 30 });
+    expect(down.calls.margins!.top).toBeCloseTo(PHI ** -4.5 + 0.1);
+    expect(down.calls.margins!.bottom).toBeCloseTo(PHI ** -4.5);
+  });
+
+  it('gives what is under the bars a third of the plot at the most, and none on a plot with no height or for room that is no number', () => {
+    const data: DataSeries = [bar(1, 10, 20, 100)];
+    const tall = target();
+    new PriceFit(true).fit(tall.t, data, state(0, 0), { ...none, footRoom: () => 5000 });
+    expect(tall.calls.margins!.bottom).toBeCloseTo(PHI ** -4.5 + 1 / 3);
+    const flat = target();
+    const noHeight = { ...state(0, 0), chartRect: { x: 0, y: 0, width: 600, height: 0 } } as ViewportState;
+    new PriceFit(true).fit(flat.t, data, noHeight, { ...none, footRoom: () => 30 });
+    expect(flat.calls.margins!.bottom).toBeCloseTo(PHI ** -4.5);
+    for (const room of [Number.NaN, -20]) {
+      const odd = target();
+      new PriceFit(true).fit(odd.t, data, state(0, 0), { ...none, footRoom: () => room });
+      expect(odd.calls.margins!.bottom).toBeCloseTo(PHI ** -4.5);
+    }
+  });
+
   it('fits in the margins it is given: a compact chart’s φ⁻⁵, and φ⁻⁷ over the volume', () => {
     const data: DataSeries = [bar(1, 10, 20, 100)];
     const fit = new PriceFit(true);
