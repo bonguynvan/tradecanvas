@@ -341,6 +341,9 @@ chart.startBracket('buy', undefined, { risk: 50, quantityStep: 0.001 }); // the 
 chart.placeOrderIntent({ side: 'sell', type: 'limit', price: 66_000, quantity: 1, ocoGroup: 'exit' });
 chart.placeOrderIntent({ side: 'sell', type: 'stop', price: 63_000, stopPrice: 63_000, quantity: 1, ocoGroup: 'exit' });
 // timeInForce: 'gtc' | 'day' | 'gtd' (with expireTime, ms) | 'ioc' | 'fok' (filled at once, or refused: executionError)
+// Order flow: a bar may carry buyVolume (the part of its volume the buyers took) and a trade its side ('buy' | 'sell');
+// barDelta(bar) is bought less sold (null where the bar does not say), and chart.addIndicator('voldelta', { mode: 1, anchor: 'session' })
+// draws the true cumulative delta from such bars (an estimate from the close where they do not say). BinanceAdapter fills both in.
 // new PaperExecutionAdapter({ fillSize: 2 }) fills a limit order in parts, two at each price that reaches it:
 // the order stays in chart.getOrders() with its filledQuantity, each part is an 'executionFill' with what it left in `remaining`;
 // 'ioc' then fills what there is and drops the rest, 'fok' larger than the size is refused; market and stop orders fill whole

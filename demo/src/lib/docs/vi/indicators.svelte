@@ -165,10 +165,13 @@ chart.addIndicator('vwap', { anchor: 'all' })   // every bar loaded, as it was b
 </table>
 
 <p>
-  <code>voldelta</code> (Volume Delta) ước lượng lực mua/bán từ OHLCV: nến đóng cửa tăng
-  cộng khối lượng dương, nến giảm cộng khối lượng âm. <code>mode: 0</code> là histogram theo từng nến,
-  <code>mode: 1</code> là delta tích luỹ. (Delta theo tick thực sự cần dữ liệu bid/ask của từng lệnh khớp, mà
-  chuỗi OHLCV không có.)
+  <code>voldelta</code> (Volume Delta) là phần khối lượng bên mua chủ động lấy trong mỗi nến trừ đi phần bên bán
+  chủ động lấy. Nến có ghi bên nào chủ động khớp (<code>buyVolume</code> của nến) cho delta thật. Nến không ghi
+  thì được đọc theo cách nó đóng cửa: toàn bộ khối lượng tính là tăng khi nến đóng cửa bằng hoặc trên giá mở,
+  ngược lại tính là giảm; đây là mức gần nhất mà một nến OHLCV cho được. <code>mode: 0</code> là histogram
+  theo từng nến, <code>mode: 1</code> là delta tích luỹ, bắt đầu lại ở mỗi kỳ <code>anchor</code>
+  (<code>'session'</code>, <code>'week'</code> hoặc <code>'month'</code>; với <code>'all'</code>, giá trị mặc
+  định, thì không bao giờ bắt đầu lại).
 </p>
 
 <h2>Chỉ báo từ bảng giá châu Á</h2>

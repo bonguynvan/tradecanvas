@@ -457,6 +457,30 @@ const SCENES = {
     return { ...s, broker, checks };
   },
 
+  /**
+   * The volume delta of bars that say who took their trades: each bar's
+   * delta as a histogram, and its running sum from each session's start.
+   */
+  async orderFlowDelta() {
+    const s = await widget();
+    const each = s.chart.addIndicator('voldelta', { mode: 0 });
+    const sum = s.chart.addIndicator('voldelta', { mode: 1, anchor: 'session' });
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const checks = () => {
+      const problems = [];
+      const bars = s.chart.getData();
+      const delta = s.chart.getIndicatorOutput(each)?.series ?? [];
+      if (!bars.every((bar) => typeof bar.buyVolume === 'number')) problems.push('the bars of the mock feed do not all say what the buyers took');
+      // The true delta, bought less sold: not the whole volume signed by the close.
+      const off = bars.findIndex((bar, i) => Math.abs((delta[i]?.value ?? NaN) - (2 * bar.buyVolume - bar.volume)) > 1e-6);
+      if (off >= 0) problems.push(`bar ${off}: the delta drawn is not what was bought less what was sold`);
+      if (!bars.some((bar, i) => (bar.close >= bar.open) !== ((delta[i]?.value ?? 0) >= 0))) problems.push('no delta goes against the close of its bar: the estimate, not the count, may be drawn');
+      if (!(s.chart.getIndicatorOutput(sum)?.series?.length > 0)) problems.push('the cumulative delta has no values');
+      return problems;
+    };
+    return { ...s, checks };
+  },
+
   /** A long bracket being placed with a paper account connected: its quantity in the bar's field and on the entry's tag. */
   async bracketQuantity() {
     const s = await widget({ trading: true });

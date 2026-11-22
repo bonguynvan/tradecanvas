@@ -101,3 +101,25 @@ ${t + 86_400_000},1,2,0.5,1.5,10`);
     expect(data.map((b) => b.time)).toEqual([t, t + 86_400_000]);
   });
 });
+
+describe('parseOHLCV: what the buyers took', () => {
+  it('reads the column the chart’s own export writes, and the names exchanges give it', () => {
+    for (const name of ['Buy Volume', 'buyVolume', 'taker_buy_volume', 'bv']) {
+      const r = parseOHLCV([`Time,Open,High,Low,Close,Volume,${name}`, '1700000000,100,110,95,105,1000,640'].join('\n'));
+      expect(r.data[0], name).toEqual({ time: 1700000000 * 1000, open: 100, high: 110, low: 95, close: 105, volume: 1000, buyVolume: 640 });
+    }
+  });
+
+  it('leaves a bar without it where the cell is empty or cannot be', () => {
+    const r = parseOHLCV(['time,open,high,low,close,volume,buy volume', '1700000000,100,110,95,105,1000,', '1700000060,100,110,95,105,1000,4000', '1700000120,100,110,95,105,1000,0'].join('\n'));
+    expect(r.data[0]).not.toHaveProperty('buyVolume');
+    expect(r.data[1]).not.toHaveProperty('buyVolume');
+    expect(r.data[2].buyVolume).toBe(0);
+  });
+
+  it('reads it from rows of JSON too', () => {
+    const r = parseOHLCV(JSON.stringify([{ time: 1700000000, open: 100, high: 110, low: 95, close: 105, volume: 1000, buyVolume: 250 }, { time: 1700000060, open: 100, high: 110, low: 95, close: 105, volume: 1000 }]));
+    expect(r.data[0].buyVolume).toBe(250);
+    expect(r.data[1]).not.toHaveProperty('buyVolume');
+  });
+});

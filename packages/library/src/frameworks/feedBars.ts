@@ -45,7 +45,11 @@ export interface FedBars {
  * A plain copy for the chart: a framework's state can be frozen, and its
  * proxies are not for reading in frames.
  */
-const copy = (b: OHLCBar): OHLCBar => ({ time: b.time, open: b.open, high: b.high, low: b.low, close: b.close, volume: b.volume });
+const copy = (b: OHLCBar): OHLCBar => ({
+  time: b.time, open: b.open, high: b.high, low: b.low, close: b.close, volume: b.volume,
+  // What the buyers took goes with the bar, where the bar says.
+  ...(b.buyVolume === undefined ? {} : { buyVolume: b.buyVolume }),
+});
 const lastOf = (bars: readonly OHLCBar[]): OHLCBar | null => (bars.length > 0 ? bars[bars.length - 1] : null);
 
 /** Whether the first `count` bars of `next` are those of `prev`. */

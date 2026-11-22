@@ -9,6 +9,12 @@ export interface Trade {
   time: number;
   price: number;
   volume: number;
+  /**
+   * Who took the trade: `'buy'` when the buyer crossed the spread and
+   * lifted the ask, `'sell'` when the seller hit the bid. Left out where
+   * the feed does not say.
+   */
+  side?: 'buy' | 'sell';
 }
 
 // --- Connection ---

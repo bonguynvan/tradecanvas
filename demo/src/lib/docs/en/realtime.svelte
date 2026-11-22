@@ -221,6 +221,29 @@ await chart.setTimeframe('500T')
 const builder = new TickBarBuilder(100)
 builder.push([{ time, price, volume }])   // → [{ bar, closed }]`}</code></pre>
 
+<h2 id="order-flow">Who took the trades</h2>
+<p>
+  A feed can say which side took each trade, the one that crossed the spread: <code>side</code> on a
+  trade (<code>'buy'</code> when the buyer lifted the ask, <code>'sell'</code> when the seller hit the
+  bid) and <code>buyVolume</code> on a bar, the part of its <code>volume</code> the buyers took. Both
+  are optional. With <code>buyVolume</code> a bar has a delta, bought less sold:
+  <code>barDelta(bar)</code> gives it, or <code>null</code> for a bar that does not say, and the Volume
+  Delta indicator (<code>voldelta</code>) draws it, and its running sum, in place of its estimate.
+  <code>BinanceAdapter</code> fills both in, from the exchange's taker buy volume and its aggregate
+  trades; <code>MockAdapter</code> makes them up.
+</p>
+<pre><code>{`chart.setData([{ time, open, high, low, close, volume: 1200, buyVolume: 700 }])
+chart.addIndicator('voldelta', { mode: 1, anchor: 'session' })   // the cumulative delta, from each session's start
+
+barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</code></pre>
+<p>
+  The chart carries <code>buyVolume</code> wherever it carries the volume. Bars built of other bars
+  (<code>resampleBars</code>, a timeframe the feed lacks) add it up; tick bars, and bars aggregated
+  from ticks, count it from trades that say their <code>side</code>; a replayed bar has it in step with
+  its volume; the CSV and JSON exports write it in a column of its own (<code>Buy Volume</code>), which
+  the import reads back. A bar with a part that does not say has none: half a split is no split.
+</p>
+
 <h2>Market status and news</h2>
 <p>
   <code>marketStatus(info, now)</code> tells whether a symbol's market is open at a moment, from its

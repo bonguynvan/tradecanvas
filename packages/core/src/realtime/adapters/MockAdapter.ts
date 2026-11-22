@@ -28,6 +28,28 @@ export interface MockAdapterOptions {
   symbols?: SymbolInfo[];
 }
 
+/** The least and the most of a made-up bar's volume that the buyers took. */
+const LEAST_BOUGHT = 0.05;
+const MOST_BOUGHT = 0.95;
+/** How far the way a bar closed leans its split, and how far its wobble does. */
+const CLOSE_LEAN = 0.35;
+const WOBBLE = 0.2;
+const WOBBLE_STEPS = 97;
+
+/**
+ * A made-up bar with a made-up split of its volume: more of it bought the
+ * further up in its range the bar closed, with a wobble read off the volume
+ * itself. No random number is drawn for it, so the bars a seed gives are
+ * the bars it gave before.
+ */
+function split(bar: OHLCBar): OHLCBar {
+  const range = bar.high - bar.low;
+  const lean = range > 0 ? (bar.close - bar.open) / range : 0;
+  const wobble = ((Math.floor(bar.volume) % WOBBLE_STEPS) / WOBBLE_STEPS - 0.5) * WOBBLE;
+  const share = Math.min(MOST_BOUGHT, Math.max(LEAST_BOUGHT, 0.5 + lean * CLOSE_LEAN + wobble));
+  return { ...bar, buyVolume: Math.round(bar.volume * share) };
+}
+
 /**
  * Mock data adapter for testing, demos, and markets without free APIs.
  *
@@ -124,8 +146,10 @@ export class MockAdapter implements DataAdapter {
     let price = this.options.basePrice! * (0.5 + (symbolHash(symbol) % 1000) / 1000);
     const trades: Trade[] = [];
     for (let i = count - 1; i >= 0; i--) {
+      const from = price;
       price = Math.max(price * 0.5, price * (1 + (Math.random() - 0.5) * step));
-      trades.push({ time: now - i * 1000, price, volume: Math.random() * 5 });
+      // Taken by the buyer when the price went up to it, by the seller when it went down: the tick rule.
+      trades.push({ time: now - i * 1000, price, volume: Math.random() * 5, side: price >= from ? 'buy' : 'sell' });
     }
     return trades;
   }
@@ -137,8 +161,9 @@ export class MockAdapter implements DataAdapter {
     const timer = setInterval(() => {
       const trades: Trade[] = [];
       for (let i = 0; i < 3; i++) {
+        const from = price;
         price = Math.max(price * 0.5, price * (1 + (Math.random() - 0.5) * step));
-        trades.push({ time: Date.now(), price, volume: Math.random() * 5 });
+        trades.push({ time: Date.now(), price, volume: Math.random() * 5, side: price >= from ? 'buy' : 'sell' });
       }
       onTrades(trades);
     }, this.options.tickInterval);
@@ -167,7 +192,7 @@ export class MockAdapter implements DataAdapter {
       const high = Math.max(open, close) + Math.random() * close * vol * 0.3;
       const low = Math.max(0, Math.min(open, close) - Math.random() * close * vol * 0.3);
       const volume = Math.floor(10000 + Math.random() * 100000);
-      bars[limit - 1 - k] = { time: before - (k + 1) * intervalMs, open, high, low, close, volume };
+      bars[limit - 1 - k] = split({ time: before - (k + 1) * intervalMs, open, high, low, close, volume });
       close = open;
     }
     this.oldestOpen.set(symbol, close);
@@ -215,7 +240,7 @@ export class MockAdapter implements DataAdapter {
       const high = Math.max(open, price) + Math.random() * price * vol * 0.3;
       const low = Math.min(open, price) - Math.random() * price * vol * 0.3;
       const volume = Math.floor(10000 + Math.random() * 100000);
-      bars.push({ time, open, high, low, close: price, volume });
+      bars.push(split({ time, open, high, low, close: price, volume }));
     }
 
     this.currentPrice = price;
@@ -260,6 +285,7 @@ export class MockAdapter implements DataAdapter {
       const open = last?.close ?? price - change;
       bar = { time, open, high: Math.max(open, price) + wick, low: Math.min(open, price) - wick, close: price, volume };
     }
+    bar = split(bar);
     this.forming = bar;
     this.formingTimeframe = timeframe;
     return { ...bar };

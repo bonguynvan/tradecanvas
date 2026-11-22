@@ -85,7 +85,7 @@ Drawn in a pane under the chart (`addIndicator(id, params, 'bottom' | 'top')`), 
 | `vroc` | Volume Rate of Change | period: 14 | value: VROC | 0 | |
 | `ao` | Awesome Oscillator | fast: 5, slow: 34 | value: AO | — | |
 | `chaikinOsc` | Chaikin Oscillator | fast: 3, slow: 10 | value: Chaikin | — | |
-| `voldelta` | Volume Delta | mode: 0 | value: Delta | — | |
+| `voldelta` | Volume Delta | mode: 0, anchor: "all" | value: Delta | — | |
 | `vortex` | Vortex Indicator | period: 14 | viPlus: VI+, viMinus: VI− | 1 | |
 | `chop` | Choppiness Index | period: 14 | value: CHOP | 38.2, 61.8 | |
 | `uo` | Ultimate Oscillator | fast: 7, mid: 14, slow: 28 | value: UO | 30, 70 | |

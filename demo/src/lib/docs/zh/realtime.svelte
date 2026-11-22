@@ -203,6 +203,28 @@ await chart.setTimeframe('500T')
 const builder = new TickBarBuilder(100)
 builder.push([{ time, price, volume }])   // → [{ bar, closed }]`}</code></pre>
 
+<h2 id="order-flow">谁是主动方</h2>
+<p>
+  数据源可以说明每笔成交由哪一方主动成交，即越过价差的一方：成交上的 <code>side</code>
+  （买方吃掉卖价时为 <code>'buy'</code>，卖方砸向买价时为 <code>'sell'</code>），以及K线上的
+  <code>buyVolume</code>，即其 <code>volume</code> 中由买方主动成交的部分。两者都是可选的。有了
+  <code>buyVolume</code>，K线就有 delta，即买入减卖出：<code>barDelta(bar)</code> 返回它，
+  K线没有说明时返回 <code>null</code>；Volume Delta 指标（<code>voldelta</code>）会画出它及其累计值，
+  而不再用估算值。<code>BinanceAdapter</code> 会填入这两项，取自交易所的主动买入成交量和归集成交；
+  <code>MockAdapter</code> 则自行生成。
+</p>
+<pre><code>{`chart.setData([{ time, open, high, low, close, volume: 1200, buyVolume: 700 }])
+chart.addIndicator('voldelta', { mode: 1, anchor: 'session' })   // the cumulative delta, from each session's start
+
+barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</code></pre>
+<p>
+  图表在携带成交量的地方都会携带 <code>buyVolume</code>。由其他K线合成的K线
+  （<code>resampleBars</code>、数据源没有的周期）会把它累加；Tick K线以及由 tick 聚合的K线，
+  根据带有 <code>side</code> 的成交来统计它；回放中的K线按与成交量相同的比例带有它；CSV 和 JSON
+  导出会把它写入单独的一列（<code>Buy Volume</code>），导入时可以读回。只要有一部分没有说明，
+  这根K线就没有该值：只知道一半不算知道。
+</p>
+
 <h2>市场状态与新闻</h2>
 <p>
   <code>marketStatus(info, now)</code> 根据品种在其交易所时区内的交易时段（包括夏令时切换），判断某一时刻市场是否开放，

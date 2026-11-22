@@ -174,11 +174,13 @@ chart.addIndicator('vwap', { anchor: 'all' })   // todas las barras cargadas, co
 </table>
 
 <p>
-  <code>voldelta</code> (Volume Delta) aproxima la presión compradora/vendedora a
-  partir de OHLCV: las barras que cierran al alza suman volumen positivo y las
-  bajistas, negativo. <code>mode: 0</code> es el histograma por barra y
-  <code>mode: 1</code> el delta acumulado. (Un delta real por tick necesita datos
-  de compra/venta de cada operación, que una serie OHLCV no incluye).
+  <code>voldelta</code> (Volume Delta) es lo que tomaron los compradores de cada barra menos lo que
+  tomaron los vendedores. Una barra que dice quién tomó sus operaciones (su <code>buyVolume</code>) da
+  su delta real. Una que no lo dice se lee por cómo cerró: todo su volumen al alza si cerró en su
+  apertura o por encima, a la baja en otro caso, que es lo más cerca que llega una barra OHLCV.
+  <code>mode: 0</code> es el histograma por barra y <code>mode: 1</code> el delta acumulado, que empieza
+  de nuevo con cada periodo de <code>anchor</code> (<code>'session'</code>, <code>'week'</code> o
+  <code>'month'</code>; nunca con <code>'all'</code>, el valor por defecto).
 </p>
 
 <h2>Indicadores de las pantallas de cotización asiáticas</h2>

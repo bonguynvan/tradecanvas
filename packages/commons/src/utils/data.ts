@@ -36,7 +36,7 @@ export function normalizeBarTime(time: number, unit?: BarTimeUnit): number {
  */
 export function normalizeBar(raw: Record<string, number>): OHLCBar {
   const time = normalizeBarTime(raw.time ?? raw.t ?? 0);
-  return {
+  const bar: OHLCBar = {
     time,
     open: raw.open ?? raw.o ?? 0,
     high: raw.high ?? raw.h ?? 0,
@@ -44,6 +44,47 @@ export function normalizeBar(raw: Record<string, number>): OHLCBar {
     close: raw.close ?? raw.c ?? 0,
     volume: raw.volume ?? raw.v ?? 0,
   };
+  const bought = buyVolumeOf({ volume: bar.volume, buyVolume: raw.buyVolume ?? raw.bv });
+  if (bought !== null) bar.buyVolume = bought;
+  return bar;
+}
+
+/**
+ * What the buyers took of a bar's volume, when the bar says and what it
+ * says can be: a number from nothing to the whole volume. Else null.
+ */
+export function buyVolumeOf(bar: Pick<OHLCBar, 'volume' | 'buyVolume'>): number | null {
+  const bought = bar.buyVolume;
+  if (typeof bought !== 'number' || !Number.isFinite(bought) || bought < 0) return null;
+  // A hair over the volume is a sum's rounding, not more bought than traded.
+  return bought <= bar.volume * (1 + BUY_VOLUME_SLACK) ? Math.min(bought, bar.volume) : null;
+}
+
+/** How far over the volume a buy volume may be and still be read as all of it: a sum's rounding. */
+const BUY_VOLUME_SLACK = 1e-9;
+
+/**
+ * A bar's delta: what was bought at the ask less what was sold at the bid
+ * (`2 × buyVolume − volume`). Null for a bar that does not say who took its
+ * trades.
+ */
+export function barDelta(bar: Pick<OHLCBar, 'volume' | 'buyVolume'>): number | null {
+  const bought = buyVolumeOf(bar);
+  return bought === null ? null : 2 * bought - bar.volume;
+}
+
+/**
+ * What the buyers have taken of a bar after one more trade: more by its
+ * volume when the buyer took it, the same when the seller did. Undefined
+ * once a trade with a volume does not say who took it: the bar's split can
+ * no longer be known. `first`: the trade opens the bar.
+ */
+export function buyVolumeAfter(bought: number | undefined, trade: { volume?: number; side?: 'buy' | 'sell' }, first = false): number | undefined {
+  const volume = trade.volume ?? 0;
+  // A price with no volume is no trade: nothing to split.
+  if (!(volume > 0)) return first ? 0 : bought;
+  if (trade.side === undefined || (!first && bought === undefined)) return undefined;
+  return (first ? 0 : bought!) + (trade.side === 'buy' ? volume : 0);
 }
 
 export function sliceVisibleData(
@@ -132,12 +173,17 @@ export function computePriceRange(
  * keeps its own time, where its interval opens; a trade later in it moving
  * the time made the next update for that bar look older than the bar.
  */
-export function mergeBar(existing: OHLCBar, tick: { price: number; volume?: number; time: number }): OHLCBar {
-  return {
-    ...existing,
+export function mergeBar(existing: OHLCBar, tick: { price: number; volume?: number; time: number; side?: 'buy' | 'sell' }): OHLCBar {
+  const { buyVolume: had, ...rest } = existing;
+  const merged: OHLCBar = {
+    ...rest,
     high: Math.max(existing.high, tick.price),
     low: Math.min(existing.low, tick.price),
     close: tick.price,
     volume: existing.volume + (tick.volume ?? 0),
   };
+  // What was bought goes on being counted only while every trade says who took it.
+  const bought = buyVolumeAfter(had, tick);
+  if (bought !== undefined) merged.buyVolume = bought;
+  return merged;
 }

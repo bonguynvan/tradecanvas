@@ -7320,7 +7320,7 @@ function legendSpacing(spacing: ChartSpacing): { inset: number; top: number; lin
 
 /** `bar` with one more step in it. */
 function mergeBar(bar: OHLCBar, step: OHLCBar): OHLCBar {
-  return {
+  const merged: OHLCBar = {
     time: bar.time,
     open: bar.open,
     high: Math.max(bar.high, step.high),
@@ -7328,4 +7328,7 @@ function mergeBar(bar: OHLCBar, step: OHLCBar): OHLCBar {
     close: step.close,
     volume: (bar.volume ?? 0) + (step.volume ?? 0),
   };
+  // What the buyers took adds up too, while both say.
+  if (bar.buyVolume !== undefined && step.buyVolume !== undefined) merged.buyVolume = bar.buyVolume + step.buyVolume;
+  return merged;
 }

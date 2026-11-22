@@ -212,6 +212,29 @@ await chart.setTimeframe('500T')
 const builder = new TickBarBuilder(100)
 builder.push([{ time, price, volume }])   // → [{ bar, closed }]`}</code></pre>
 
+<h2 id="order-flow">누가 체결을 가져갔는가</h2>
+<p>
+  피드는 각 체결을 어느 쪽이 가져갔는지, 즉 스프레드를 넘은 쪽을 알려 줄 수 있습니다: 체결의
+  <code>side</code>(매수 측이 매도 호가를 가져가면 <code>'buy'</code>, 매도 측이 매수 호가를 치면
+  <code>'sell'</code>)와 봉의 <code>buyVolume</code>, 즉 <code>volume</code> 가운데 매수 측이 가져간 부분입니다.
+  둘 다 선택 사항입니다. <code>buyVolume</code>이 있으면 봉에 델타(매수에서 매도를 뺀 값)가 있습니다:
+  <code>barDelta(bar)</code>가 그 값을 돌려주고, 알려 주지 않는 봉에는 <code>null</code>을 돌려줍니다. Volume
+  Delta 지표(<code>voldelta</code>)는 추정값 대신 그 델타와 누적 합을 그립니다.
+  <code>BinanceAdapter</code>는 거래소의 테이커 매수 거래량과 집계 체결에서 둘 다 채우고,
+  <code>MockAdapter</code>는 만들어 냅니다.
+</p>
+<pre><code>{`chart.setData([{ time, open, high, low, close, volume: 1200, buyVolume: 700 }])
+chart.addIndicator('voldelta', { mode: 1, anchor: 'session' })   // the cumulative delta, from each session's start
+
+barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</code></pre>
+<p>
+  차트는 거래량을 가져가는 곳이면 어디든 <code>buyVolume</code>도 가져갑니다. 다른 봉으로 만든 봉
+  (<code>resampleBars</code>, 피드에 없는 시간 단위)은 그것을 더하고, 틱 봉과 틱으로 집계한 봉은
+  <code>side</code>를 알려 주는 체결에서 그것을 세며, 리플레이 중인 봉은 거래량과 같은 비율로 그것을 갖고,
+  CSV와 JSON 내보내기는 그것을 별도의 열(<code>Buy Volume</code>)에 쓰며 가져오기가 그 열을 다시 읽습니다.
+  알려 주지 않는 부분이 하나라도 있는 봉에는 없습니다: 절반만 아는 것은 아는 것이 아닙니다.
+</p>
+
 <h2>시장 상태와 뉴스</h2>
 <p>
   <code>marketStatus(info, now)</code>는 거래소 시간대 기준의 거래 시간(서머타임 전환 포함)으로 특정 시점에 종목의 시장이

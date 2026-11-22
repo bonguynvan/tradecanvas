@@ -33,9 +33,9 @@ export function sanitizeBar(bar: OHLCBar): OHLCBar {
   };
 }
 
-/** Whether two bars have the same time, prices and volume. */
+/** Whether two bars have the same time, prices and volume, and the same part of it bought. */
 export function sameBar(a: OHLCBar, b: OHLCBar): boolean {
-  return a === b || (a.time === b.time && a.open === b.open && a.high === b.high && a.low === b.low && a.close === b.close && a.volume === b.volume);
+  return a === b || (a.time === b.time && a.open === b.open && a.high === b.high && a.low === b.low && a.close === b.close && a.volume === b.volume && a.buyVolume === b.buyVolume);
 }
 
 /**

@@ -160,10 +160,12 @@ chart.addIndicator('vwap', { anchor: 'all' })   // 불러온 모든 봉, 예전�
 </table>
 
 <p>
-  <code>voldelta</code>(Volume Delta)는 OHLCV로 매수/매도 압력을 근사합니다. 상승 마감한 봉은
-  양의 거래량을, 하락 봉은 음의 거래량을 더합니다. <code>mode: 0</code>은 봉별 히스토그램,
-  <code>mode: 1</code>은 누적 델타입니다. (진짜 틱 델타를 구하려면 체결별 매수/매도 데이터가 필요한데,
-  OHLCV 시리즈에는 그 정보가 없습니다.)
+  <code>voldelta</code>(Volume Delta)는 각 봉에서 매수 측이 가져간 거래량에서 매도 측이 가져간 거래량을 뺀 값입니다.
+  누가 체결을 가져갔는지 알려 주는 봉(봉의 <code>buyVolume</code>)은 실제 델타를 줍니다. 알려 주지 않는 봉은
+  마감 방식으로 읽습니다: 시가 이상으로 마감하면 거래량 전체를 양으로, 아니면 음으로 보며, OHLCV 봉으로 할 수 있는
+  가장 가까운 값입니다. <code>mode: 0</code>은 봉별 히스토그램, <code>mode: 1</code>은 누적 델타이며,
+  <code>anchor</code> 기간마다 다시 시작합니다(<code>'session'</code>, <code>'week'</code> 또는 <code>'month'</code>.
+  기본값 <code>'all'</code>에서는 다시 시작하지 않습니다).
 </p>
 
 <h2>아시아 HTS에서 익숙한 지표</h2>

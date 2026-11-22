@@ -32,6 +32,8 @@ chart.on('marginCall', (e) => {
   // @ts-expect-error A margin call closes nothing: it names no position.
   return e.payload.positionId;
 });
+// A bar may say what the buyers took of its volume.
+chart.setData([{ time: 0, open: 1, high: 2, low: 1, close: 2, volume: 10, buyVolume: 6 }]);
 // An order that fills in parts says how far it has got, and each part what it left working.
 chart.on('ordersChange', (e) => e.payload.orders.map((o) => o.quantity - (o.filledQuantity ?? 0)));
 chart.on('executionFill', (e) => e.payload.quantity + (e.payload.remaining ?? 0));

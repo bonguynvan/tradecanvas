@@ -1426,7 +1426,8 @@
       "placement": "panel",
       "category": "volume",
       "params": {
-        "mode": 0
+        "mode": 0,
+        "anchor": "all"
       },
       "inputs": {
         "mode": {
@@ -1434,6 +1435,15 @@
           "min": 0,
           "max": 1,
           "step": 1
+        },
+        "anchor": {
+          "kind": "choice",
+          "options": [
+            "all",
+            "session",
+            "week",
+            "month"
+          ]
         }
       },
       "plots": [

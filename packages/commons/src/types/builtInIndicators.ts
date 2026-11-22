@@ -421,6 +421,8 @@ export interface BuiltInIndicators {
     params: {
       /** A whole number, at least 0, at most 1. Default 0. */
       mode?: NumberParam;
+      /** Default `'all'`. */
+      anchor?: 'all' | 'session' | 'week' | 'month' | (string & {});
     };
     lines: 'value';
   };

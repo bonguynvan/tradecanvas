@@ -213,6 +213,29 @@ await chart.setTimeframe('500T')
 const builder = new TickBarBuilder(100)
 builder.push([{ time, price, volume }])   // → [{ bar, closed }]`}</code></pre>
 
+<h2 id="order-flow">どちらが約定を取ったか</h2>
+<p>
+  フィードは、各約定をどちら側が取ったか、つまりスプレッドを越えた側を伝えられます：約定の
+  <code>side</code>（買い手がアスクを取ったとき <code>'buy'</code>、売り手がビッドを叩いたとき
+  <code>'sell'</code>）と、バーの <code>buyVolume</code>、つまりその <code>volume</code> のうち買い手が取った分です。
+  どちらも省略できます。<code>buyVolume</code> があればバーにはデルタ（買いから売りを引いたもの）があります：
+  <code>barDelta(bar)</code> がそれを返し、示さないバーには <code>null</code> を返します。Volume Delta
+  インジケーター（<code>voldelta</code>）は、推定値の代わりにそのデルタと累計を描きます。
+  <code>BinanceAdapter</code> は取引所のテイカー買い出来高と集約約定から両方を埋め、
+  <code>MockAdapter</code> は作り出します。
+</p>
+<pre><code>{`chart.setData([{ time, open, high, low, close, volume: 1200, buyVolume: 700 }])
+chart.addIndicator('voldelta', { mode: 1, anchor: 'session' })   // the cumulative delta, from each session's start
+
+barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</code></pre>
+<p>
+  チャートは、出来高を運ぶところならどこへでも <code>buyVolume</code> を運びます。ほかのバーから作るバー
+  （<code>resampleBars</code>、フィードにない時間足）はそれを合計し、ティックバーとティックから集計するバーは
+  <code>side</code> を示す約定からそれを数え、リプレイ中のバーは出来高と同じ割合でそれを持ち、CSV と JSON の
+  エクスポートはそれを専用の列（<code>Buy Volume</code>）に書き、インポートはその列を読み戻します。
+  示さない部分が 1 つでもあるバーにはありません：半分だけ分かっても分かったことにはなりません。
+</p>
+
 <h2>市場の状態とニュース</h2>
 <p>
   <code>marketStatus(info, now)</code> は、取引所のタイムゾーンでの取引時間（夏時間の切り替えを含む）から、ある時点で
