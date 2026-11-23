@@ -4,7 +4,7 @@
 
 ## How it was checked
 
-<!-- Tests added or changed. Screenshots are optional: the audit workflow keeps the chart's states as its run's artifact. Say what you left to the maintainers (the other languages, docs translations). -->
+<!-- Tests added or changed. A change to the widget or the engine: say that `pnpm audit:scenes` passed on your machine (nothing else runs it), or that you have no Playwright, and a maintainer will label the pull request `audit` to shoot the scenes here. Say what you left to the maintainers (the other languages, docs translations). -->
 
 ## Checklist
 
