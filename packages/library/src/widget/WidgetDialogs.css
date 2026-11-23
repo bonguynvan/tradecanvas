@@ -1920,4 +1920,48 @@ img.tcw-ss-badge {
 .tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-stepper { height: 36px; }
 .tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-segment { height: 28px; }
 .tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-modal-footer button { height: 40px; }
-.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-modal-footer .tcw-done-btn { flex: 1; }
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-modal-footer .tcw-ticket-place { flex: 1; }
+
+/*
+ * Graphite's buttons that buy and sell. A side's colour on the chart (a candle, a figure) is too
+ * light a ground for white type, so what is pressed to trade has fills of its own, a shade deeper,
+ * with white on them at 4.5:1 or more; over the pointer they go deeper still, never lighter. A
+ * filled button has no border: its ground is its edge. What is not picked, and what leaves, is a
+ * neutral ground with no border either. A field keeps its line, to show where it is typed in.
+ */
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket[data-side='buy'],
+.tcw-root[data-tcw-ui='graphite'] .tcw-quote-buy { --tcw-side-fill: var(--tcw-buy-fill); --tcw-side-fill-hover: var(--tcw-buy-fill-hover); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket[data-side='sell'],
+.tcw-root[data-tcw-ui='graphite'] .tcw-quote-sell { --tcw-side-fill: var(--tcw-sell-fill); --tcw-side-fill-hover: var(--tcw-sell-fill-hover); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-side-btn {
+  border: none;
+  background: var(--tcw-active-bg);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-buy[aria-pressed='true'] { background: var(--tcw-buy-fill); color: var(--tcw-fill-ink); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-sell[aria-pressed='true'] { background: var(--tcw-sell-fill); color: var(--tcw-fill-ink); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-place {
+  background: var(--tcw-side-fill, var(--tcw-accent-fill));
+  color: var(--tcw-fill-ink);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-place:hover:not(:disabled) { background: var(--tcw-side-fill-hover, var(--tcw-accent-fill)); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-footer-cancel {
+  border: none;
+  background: var(--tcw-active-bg);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-stepper-btn { background: var(--tcw-active-bg); }
+/* One edge and one ring to a field: the stepper's, not its input's inside it. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-stepper .tcw-indi-input,
+.tcw-root[data-tcw-ui='graphite'] .tcw-stepper .tcw-indi-input:focus {
+  border: none;
+  outline: none;
+  box-shadow: none;
+}
+/* The quotes on the chart: a tint of their side with no border, the side's fill under the pointer. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-quote-btn {
+  border: none;
+  background: color-mix(in srgb, var(--tcw-side) 20%, var(--tcw-bg));
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-quote-btn:hover:not(:disabled) {
+  background: var(--tcw-side-fill);
+  color: var(--tcw-fill-ink);
+}

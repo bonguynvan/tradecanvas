@@ -258,7 +258,8 @@ export class WidgetOrderTicket {
     this.problemsEl.replaceChildren();
     this.render();
     this.backdrop.hidden = false;
-    this.body.querySelector<HTMLElement>('button[aria-pressed="true"]')?.focus();
+    // The quantity is what is typed first; a side is picked already. The side's button as the fallback, where there is no quantity to set.
+    (this.body.querySelector<HTMLElement>('[data-ticket-field="quantity"]') ?? this.body.querySelector<HTMLElement>('button[aria-pressed="true"]'))?.focus();
   }
 
   close(): void {

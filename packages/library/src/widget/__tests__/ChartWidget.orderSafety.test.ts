@@ -681,3 +681,11 @@ describe('ChartWidget: the quantity on the ticket’s button', () => {
     expect(place().textContent).toBe('Buy 0.3 BTC');
   });
 });
+
+describe('ChartWidget: where the ticket opens', () => {
+  it('is in its quantity, not on the side picked', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    trading().openOrderTicket();
+    expect((document.activeElement as HTMLElement | null)?.dataset.ticketField).toBe('quantity');
+  });
+});

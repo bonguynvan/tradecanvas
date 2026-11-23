@@ -4548,6 +4548,20 @@
   text-align: start;
 }
 .tcw-root:where([data-tcw-ui='graphite']) .tcw-account-actions { justify-content: flex-start; }
+/* Graphite's fills for what buys and sells, deeper than a side's colour so white reads on them (see the ticket's rules). */
+.tcw-root[data-tcw-ui='graphite'] {
+  --tcw-buy-fill: #0a8068;
+  --tcw-buy-fill-hover: #00735c;
+  --tcw-sell-fill: #d4322c;
+  --tcw-sell-fill-hover: #c62f2f;
+  --tcw-fill-ink: #ffffff;
+}
+.tcw-root[data-tcw-ui='graphite'][data-tcw-theme='light'] {
+  --tcw-buy-fill: #00735c;
+  --tcw-buy-fill-hover: #005f4c;
+  --tcw-sell-fill: #c0262d;
+  --tcw-sell-fill-hover: #a81f26;
+}
 /* Its rows and its head are 28 px, its buttons 24 with 8 between, and the panel is as tall as its rows up to its old height. */
 .tcw-root[data-tcw-ui='graphite'] .tcw-account {
   height: auto;
