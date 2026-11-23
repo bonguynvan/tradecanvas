@@ -511,7 +511,7 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // every mark from 
 
 <h3>Paper trading in a replay</h3>
 <p>
-  An execution adapter with <code>setMarkPrice(price, time)</code> (as
+  An execution adapter with <code>setMarkPrice(price, time, symbol)</code> (as
   <code>PaperExecutionAdapter</code> has) trades on the replay: during a replay the chart
   hands it each replayed price and time, so orders and stops fill as the replay passes
   them and fills land on the replayed bars. Each step's low and high count, and a jump

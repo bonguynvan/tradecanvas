@@ -47,6 +47,12 @@ class FakeChart {
   isAutoScale(): boolean { return true; }
   isInvertScale(): boolean { return false; }
   getOrders(): unknown[] { return []; }
+  /** The symbols said for bars set by hand, and how often the fills were forgotten. */
+  said: string[] = [];
+  cleared = 0;
+  setSymbol(symbol: string): void { this.said.push(symbol); }
+  getSymbol(): string { return this.said.at(-1) ?? ''; }
+  clearFills(): void { this.cleared += 1; }
   getPositions(): unknown[] { return []; }
   getFills(): unknown[] { return []; }
   getRequiredSymbols(): string[] { return []; }
@@ -198,3 +204,56 @@ describe('ChartWidget: an order with nothing to wait for', () => {
     expect(toasts()).toEqual([]);
   });
 });
+
+// A sell of BTC at 110 was marked on the row at 110 of ETH's book.
+describe('ChartWidget: the depth ladder marks the orders of the symbol whose book it shows', () => {
+  const BTC_SELL = { id: 'o1', side: 'sell', type: 'limit', price: 110, quantity: 1, symbol: 'BTCUSDT' };
+  const ETH_BUY = { id: 'o2', side: 'buy', type: 'limit', price: 95, quantity: 2, symbol: 'ETHUSDT' };
+  const UNNAMED = { id: 'o3', side: 'buy', type: 'limit', price: 94, quantity: 1 };
+
+  it('gives it only those, and again when the chart shows another symbol', () => {
+    widget = new ChartWidget(host, { symbol: 'ETHUSDT', trading: true, depthLadder: true });
+    const chart = FakeChart.last as FakeChart & { getSymbol(): string };
+    let shown = 'ETHUSDT';
+    chart.getSymbol = () => shown;
+    chart.getOrders = () => [BTC_SELL, ETH_BUY, UNNAMED];
+    const ladder = (widget as unknown as { trading: { depthLadder: { setOrders(orders: unknown[]): void } } }).trading.depthLadder;
+    const given = vi.spyOn(ladder, 'setOrders');
+    chart.emit('ordersChange', {});
+    expect(given).toHaveBeenLastCalledWith([ETH_BUY, UNNAMED]);
+    shown = 'BTCUSDT';
+    chart.emit('symbolChange', { symbol: 'BTCUSDT', previous: 'ETHUSDT' });
+    expect(given).toHaveBeenLastCalledWith([BTC_SELL, UNNAMED]);
+  });
+});
+
+// With the host's own bars no stream told the chart its symbol: it drew every symbol's positions on each.
+describe('ChartWidget: the bars are the host’s', () => {
+  it('tells the chart which symbol they are of, as it starts and as another is picked', async () => {
+    widget = new ChartWidget(host, { symbol: 'BTCUSDT', trading: true });
+    expect(FakeChart.last.said).toEqual(['BTCUSDT']);
+    await widget.setSymbol('ETHUSDT');
+    expect(FakeChart.last.said).toEqual(['BTCUSDT', 'ETHUSDT']);
+  });
+
+  it('says none for the symbol it falls back on: the bars may not be its', () => {
+    widget = new ChartWidget(host, { trading: true });
+    expect(FakeChart.last.said).toEqual([]);
+  });
+
+  it('forgets the fills that came while the chart knew no symbol, as the first is picked: they name none, and would be marked on every one', async () => {
+    widget = new ChartWidget(host, { trading: true });
+    await widget.setSymbol('ETHUSDT');
+    expect(FakeChart.last.cleared).toBe(1);
+    expect(FakeChart.last.said).toEqual(['ETHUSDT']);
+    await widget.setSymbol('BTCUSDT');
+    expect(FakeChart.last.cleared).toBe(1);
+  });
+
+  it('keeps the account’s fills when another symbol is picked: the chart marks those of the one it shows', async () => {
+    widget = new ChartWidget(host, { symbol: 'BTCUSDT', trading: true });
+    await widget.setSymbol('ETHUSDT');
+    expect(FakeChart.last.cleared).toBe(0);
+  });
+});
+

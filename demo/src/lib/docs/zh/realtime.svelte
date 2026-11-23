@@ -458,7 +458,7 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // 从一开始就�
 
 <h3>在回放中模拟交易</h3>
 <p>
-  带有 <code>setMarkPrice(price, time)</code> 的执行适配器（如
+  带有 <code>setMarkPrice(price, time, symbol)</code> 的执行适配器（如
   <code>PaperExecutionAdapter</code>）可以在回放中交易：回放期间，图表会把每个回放出的价格和时间交给它，
   因此订单和止损会在回放经过时成交，成交也会落在回放的K线上。每一步的最低价和最高价都会计入，
   向前跳转会经过途中的每一步。它只会向前推进：向后跳转后，它会等到回放越过它见过的最远位置。

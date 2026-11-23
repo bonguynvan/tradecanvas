@@ -836,6 +836,10 @@ chart.on('orderPlaced', (e) => { if (e.payload.intent.clientOrderId === sent?.cl
 chart.on('executionError', (e) => { if (e.payload.clientOrderId === sent?.clientOrderId) console.warn('refused', e.payload.cause); });
 // Your own ExecutionAdapter: placeOrder must resolve with the order or reject with why (the widget's ticket waits on it),
 // and answer a repeat of a clientOrderId with the order already made.
+// An account of several symbols: orders, positions and fills each name their `symbol`; the chart draws those of the one it shows
+// (chart.getSymbol(); chart.setSymbol('ETHUSDT') says it for bars set by hand) and keeps the rest in getOrders()/getPositions()/getFills().
+// The chart names it on what it asks for; name it in an adapter of your own, and on the prices a paper account is fed:
+// broker.setMarkPrice(price, time, 'ETHUSDT') works and values that symbol alone (no symbol: the price of everything, as before)
 // an expireTime is to come by chart.getTradingTime(): the clock's, or a replay's while a paper account trades on it
 // type: 'stopLimit' has price (its limit) and stopPrice (where it begins to work): the chart draws both lines; dragging the order
 // moves both, dragging its stop moves the stop alone, and 'orderModify' then carries newStopPrice beside newPrice

@@ -93,6 +93,25 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 손절가에서 50을 �
   그리고 오른쪽 클릭 메뉴나 호가창에서 한 번 눌러 내는 주문은 시장에 매매 단위가 있으면 그 단위만큼입니다(이전에는 1이었고, 호가창의 주문에는 수량이 없었습니다).
 </p>
 
+<h3 id="orders-by-symbol">주문, 포지션, 체결은 자기 종목에 그려집니다</h3>
+<p>
+  <code>symbol</code>을 밝힌 주문, 포지션, 체결은 차트가 그 종목을 보여 줄 때만 그려집니다. 다른 종목에서는
+  보관됩니다. <code>getOrders()</code>, <code>getPositions()</code>, <code>getFills()</code>는 계좌 전체를
+  돌려주고, 그중 어느 것이 그려지는지는 <code>chart.getSymbol()</code>이 알려 줍니다. 차트는 이제 모든
+  <code>orderPlace</code> 페이로드에 표시 중인 종목을 밝히고 모의 계좌는 그것을 유지합니다. 그래서 한 종목에서
+  연 포지션이 예전처럼 다음 종목에 그려져 잘못된 가격으로 손익이 계산되는 일이 없습니다. 종목을 밝히지 않은 것은
+  이전처럼 모든 종목에 그려집니다. 여러 종목 계좌를 위한 직접 만든 어댑터는 주문, 포지션, 체결에 종목을 밝혀 주세요.
+</p>
+<p>
+  이와 함께 세 가지가 바뀌었습니다. 차트가 종목을 보여 주고 있으면 <code>executionFill</code>과
+  <code>getFills()</code>가 알리는 모든 체결에 <code>symbol</code>이 있습니다. <code>ChartWidget</code>은 종목이
+  바뀌어도 더 이상 체결을 지우지 않습니다. 내역과 실현 손익은 계좌의 것이고, 표시는 자기 종목과 함께 돌아옵니다.
+  <code>setMarkPrice</code>는 세 번째 인수로 종목을 받으며, 차트는 리플레이에서 그것을 넘겨줍니다. 종목을 밝힌
+  가격을 받으면 모의 계좌는 종목마다 그 종목의 가격으로 처리하고 평가하며, 종목을 밝히지 않은 가격을 받으면
+  이전처럼 하나의 시장입니다. 그리고 봉을 직접 설정한 경우 차트는 알려 주기 전까지 종목을 모릅니다.
+  <code>chart.setSymbol(symbol)</code>로 알리며, <code>ChartWidget</code>은 스스로 호출합니다.
+</p>
+
 <h2 id="types">넓어진 타입</h2>
 <p>
   <code>TimeInForce</code>는 이제 <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>입니다. 모든 멤버를 처리하는 코드(default가

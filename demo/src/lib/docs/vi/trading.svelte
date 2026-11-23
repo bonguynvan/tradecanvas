@@ -298,6 +298,49 @@ chart.on('marginCall', (e) => warn(e.payload))   // { marginLevel: 0.9, level: 1
   kèm một <code>AccountSummary</code> khi tiền của nó thay đổi, và <code>marginCall</code> khi broker của nó cảnh báo.
 </p>
 
+<h3 id="symbols">Tài khoản giao dịch nhiều symbol</h3>
+<p>
+  Một chart hiển thị một symbol, còn một tài khoản có thể giữ nhiều symbol. Mỗi order, position và fill có thể ghi
+  symbol của nó (<code>symbol</code>). Chart vẽ những cái thuộc symbol đang hiển thị và những cái không ghi symbol;
+  cái nào ghi symbol khác thì chart giữ lại, và vẽ lại khi symbol đó được hiển thị. <code>getOrders()</code>,
+  <code>getPositions()</code> và <code>getFills()</code> trả về toàn bộ tài khoản, <code>ordersChange</code> và
+  <code>positionsChange</code> cũng vậy; <code>chart.getSymbol()</code> cho biết phần nào đang ở trên chart. Order
+  do chart yêu cầu sẽ ghi symbol đang hiển thị (<code>symbol</code> trong <code>orderPlace</code>), và tài khoản
+  paper giữ nó trên order, trên position mà order mở ra và trên các fill của chúng. Adapter của riêng bạn cho một
+  tài khoản nhiều symbol thì ghi symbol trên từng cái. Chart không bao giờ đoán: cái nào không ghi symbol thì được
+  vẽ trên mọi symbol, như trước. Hai tên là cùng một symbol bất kể chữ hoa hay thường, và theo ticker khi chỉ một bên
+  ghi sàn (<code>BTCUSDT</code> và <code>BINANCE:BTCUSDT</code>); hai tên đều ghi sàn thì phải cùng sàn.
+</p>
+<p>
+  Một fill là một dấu trên các bar của một symbol, nên chart gán cho mỗi fill một symbol: của chính nó, nếu không
+  thì của position hoặc order của nó, nếu không nữa thì symbol đang hiển thị lúc fill tới. Panel tài khoản của
+  widget liệt kê các dòng của mọi symbol và ghi tên symbol khi có một dòng thuộc symbol khác; position của symbol
+  khác hiện giá mà adapter đưa cho nó (<code>markPrice</code> trên position) và lãi lỗ tính theo giá đó, hoặc
+  không hiện cả hai: giá của chart không phải giá của nó. Depth ladder đánh dấu các order của symbol mà nó đang
+  hiển thị sổ lệnh.
+</p>
+<p>
+  Khi có stream (<code>connect</code>, <code>switchStream</code>) chart biết symbol của mình. Với các bar do bạn tự
+  đặt, hãy báo symbol khi bạn đổi chúng; <code>ChartWidget</code> tự làm việc đó khi symbol của nó được chọn.
+</p>
+<pre><code>{`chart.setData(barsOf('ETHUSDT'))
+chart.setSymbol('ETHUSDT')        // vẽ order và position của ETHUSDT; '' thì vẽ lại tất cả
+chart.getSymbol()                 // 'ETHUSDT'
+
+chart.setPositions([
+  { id: 'p1', symbol: 'BTCUSDT', side: 'buy', entryPrice: 64_000, quantity: 1, markPrice: 64_250 },   // được giữ, không vẽ
+  { id: 'p2', symbol: 'ETHUSDT', side: 'sell', entryPrice: 3_150, quantity: 2 },                      // được vẽ
+])`}</code></pre>
+<p>
+  Một mức giá cũng thuộc về một symbol. Hãy ghi symbol khi bạn đưa giá cho tài khoản paper: mỗi mức giá chỉ khớp
+  order và stop của symbol đó, và chỉ định giá các position của nó; một position được đóng, đảo chiều và stop-out
+  theo giá mới nhất của chính symbol của nó, và tài khoản net giữ một position cho mỗi symbol. Mức giá không ghi
+  symbol là giá của mọi thứ tài khoản đang giữ, như trước. Hãy ghi symbol trên mọi mức giá bạn đưa vào, hoặc không ghi trên
+  mức nào: một mức giá không ghi symbol khiến tài khoản lại là một thị trường. Trong replay, chart ghi symbol trên các mức giá nó đưa
+  vào.
+</p>
+<pre><code>{`feed.onTrade((trade) => broker.setMarkPrice(trade.price, trade.time, trade.symbol))`}</code></pre>
+
 <h2>Thao tác với order và position trên biểu đồ</h2>
 <p>
   Đường order và position có các nút nhỏ ở đầu bên phải: <strong>×</strong>

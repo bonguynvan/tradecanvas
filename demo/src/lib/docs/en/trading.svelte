@@ -298,6 +298,47 @@ chart.on('marginCall', (e) => warn(e.payload))   // { marginLevel: 0.9, level: 1
   with an <code>AccountSummary</code> as its money changes, and <code>marginCall</code> when its broker warns.
 </p>
 
+<h3 id="symbols">An account of more than one symbol</h3>
+<p>
+  A chart shows one symbol, and an account may hold many. An order, a position and a fill can each name the symbol
+  it is of (<code>symbol</code>). The chart draws those of the symbol it shows, and those that name none; what
+  names another symbol it keeps, and draws again when that symbol is shown. <code>getOrders()</code>,
+  <code>getPositions()</code> and <code>getFills()</code> give the whole account, as <code>ordersChange</code> and
+  <code>positionsChange</code> do; <code>chart.getSymbol()</code> says which of it is on the chart. An order the
+  chart asks for names the symbol shown (<code>symbol</code> in <code>orderPlace</code>), and the paper account
+  keeps it on the order, on the position it opens and on their fills. An adapter of your own for an account of
+  several symbols names it on each. The chart never guesses: what names no symbol is drawn on every symbol, as
+  before. Two names are one symbol in any case of letters, and by their ticker where one alone names its venue
+  (<code>BTCUSDT</code> and <code>BINANCE:BTCUSDT</code>); two that each name a venue must name the same.
+</p>
+<p>
+  A fill is a mark on one symbol's bars, so the chart gives each a symbol: its own, else its position's or its
+  order's, else the one shown as it came. The widget's account panel lists every symbol's rows and names the
+  symbol once one is of another; a position of another symbol shows the adapter's own price for it
+  (<code>markPrice</code> on the position) and the profit at that price, or neither: the chart's price is not its
+  own. The depth ladder marks the orders of the symbol whose book it shows.
+</p>
+<p>
+  With a stream (<code>connect</code>, <code>switchStream</code>) the chart knows its symbol. With bars you set
+  yourself, say it as you change them; <code>ChartWidget</code> does when its symbol is picked.
+</p>
+<pre><code>{`chart.setData(barsOf('ETHUSDT'))
+chart.setSymbol('ETHUSDT')        // draws ETHUSDT's orders and positions; '' draws all again
+chart.getSymbol()                 // 'ETHUSDT'
+
+chart.setPositions([
+  { id: 'p1', symbol: 'BTCUSDT', side: 'buy', entryPrice: 64_000, quantity: 1, markPrice: 64_250 },   // kept, not drawn
+  { id: 'p2', symbol: 'ETHUSDT', side: 'sell', entryPrice: 3_150, quantity: 2 },                      // drawn
+])`}</code></pre>
+<p>
+  A price is of one symbol too. Name it as you feed the paper account, and each price works only that symbol's
+  orders and stops and values its positions alone; a position is closed, reversed and stopped out at its own
+  symbol's latest price, and a net account keeps one position a symbol. A price that names no symbol is the price
+  of everything the account holds, as before. Name it on every price you feed, or on none: one that names none makes
+  the account one market again. In a replay the chart names the symbol on the prices it feeds.
+</p>
+<pre><code>{`feed.onTrade((trade) => broker.setMarkPrice(trade.price, trade.time, trade.symbol))`}</code></pre>
+
 <h2>Act on orders and positions from the chart</h2>
 <p>
   Order and position lines carry small buttons at their right end: <strong>×</strong>

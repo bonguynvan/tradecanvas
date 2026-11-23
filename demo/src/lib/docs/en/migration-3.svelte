@@ -99,6 +99,26 @@ chart.startBracket('buy', undefined, { risk: 50 })   // the quantity that loses 
   has one (it was for 1, and the ladder's had no quantity).
 </p>
 
+<h3 id="orders-by-symbol">Orders, positions and fills are drawn on their own symbol</h3>
+<p>
+  An order, a position or a fill that names its <code>symbol</code> is drawn only while the chart shows that
+  symbol. On another it is kept: <code>getOrders()</code>, <code>getPositions()</code> and <code>getFills()</code>
+  give the whole account, and <code>chart.getSymbol()</code> says which of it is drawn. The chart now names the
+  symbol it shows on every <code>orderPlace</code> payload and the paper account keeps it, so a position opened on
+  one symbol is not drawn on the next, where it was, with a profit counted from the wrong price. What names no
+  symbol is drawn on every symbol, as before: an adapter of your own for an account of several symbols names it on
+  its orders, positions and fills.
+</p>
+<p>
+  Three things changed with it. Every fill told by <code>executionFill</code> and <code>getFills()</code> has a
+  <code>symbol</code> once the chart shows one, and <code>ChartWidget</code> no longer forgets the fills when its
+  symbol changes: the history and the realised profit are the account's, and the marks come back with their
+  symbol. <code>setMarkPrice</code> takes the symbol as a third argument, which the chart gives in a replay: fed
+  prices that name their symbol, the paper account works and values each symbol by its own; fed prices that name
+  none, it is one market, as it was. And with bars set by hand the chart knows no symbol until it is told:
+  <code>chart.setSymbol(symbol)</code>, which <code>ChartWidget</code> calls itself.
+</p>
+
 <h2 id="types">Types that grew</h2>
 <p>
   <code>TimeInForce</code> is now <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. Code that handles every

@@ -508,7 +508,7 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // every mark from 
 
 <h3>Paper trading trong replay</h3>
 <p>
-  Execution adapter có <code>setMarkPrice(price, time)</code> (như
+  Execution adapter có <code>setMarkPrice(price, time, symbol)</code> (như
   <code>PaperExecutionAdapter</code>) giao dịch theo replay: trong khi replay, biểu đồ
   chuyển cho adapter từng giá và thời gian được replay, nên order và stop được khớp khi replay đi qua
   chúng và các fill nằm trên nến được replay. Giá thấp và giá cao của mỗi bước đều được tính, và một lần nhảy

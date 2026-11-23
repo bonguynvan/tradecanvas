@@ -101,6 +101,8 @@ export interface MarginCall {
 
 export interface FillEvent {
   orderId: string;
+  /** The symbol the fill is of. Left out, its position's or its order's, else the one the chart showed as it came. */
+  symbol?: string;
   side: OrderSide;
   price: number;
   quantity: number;
@@ -156,8 +158,11 @@ export type ExecutionListener<T = unknown> = (event: ExecutionEvent<T>) => void;
  * a chart that already emits `orderPlace` / `positionModify` events plugs in
  * with no new vocabulary.
  *
- * Orders and positions are assumed to belong to the chart's active symbol —
- * consistent with `chart.setOrders` / `chart.setPositions` today.
+ * Orders, positions and fills can each name their symbol (`symbol`): the chart
+ * draws those of the symbol it shows, and keeps the others. An order or a
+ * position that names none is drawn on whatever the chart shows; a fill that
+ * names none is of its position's symbol or its order's, else of the one shown
+ * as it came.
  *
  * Built-in: `PaperExecutionAdapter` (virtual fills, the safe sandbox).
  * Implement this for: broker REST/WS APIs, exchange order routing, a custom OMS.
@@ -192,11 +197,14 @@ export interface ExecutionAdapter {
   /** The account's money now, when the adapter keeps one; it then also emits `account` as it changes. */
   getAccount?(): AccountSummary | null;
   /**
-   * The market price, live or replayed, and its time (ms). Optional: a paper
-   * adapter fills pending orders and stops against it and stamps fills with
-   * the time. The chart calls it with the replayed price during a replay.
+   * The market price, live or replayed, its time (ms) and the symbol it is
+   * of. Optional: a paper adapter fills pending orders and stops against it
+   * and stamps fills with the time. The chart calls it with the replayed
+   * price during a replay, and names its symbol; an app that feeds live
+   * prices names the symbol too, so that one symbol's price never works
+   * another's orders.
    */
-  setMarkPrice?(price: number, time?: number): void;
+  setMarkPrice?(price: number, time?: number, symbol?: string): void;
 
   on<T = unknown>(event: ExecutionEventType, listener: ExecutionListener<T>): void;
   off<T = unknown>(event: ExecutionEventType, listener: ExecutionListener<T>): void;
