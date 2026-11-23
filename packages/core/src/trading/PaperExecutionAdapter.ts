@@ -42,7 +42,11 @@ export interface PaperExecutionOptions {
   balance?: number;
   /** How many times the margin a position's value may be: 10 holds a tenth of it. Default 1, the whole value. */
   leverage?: number;
-  /** What a move of one in price is worth for one unit: a contract's multiplier. Default 1. */
+  /**
+   * What a move of one in price is worth for one unit: a contract's multiplier. Without one the
+   * account takes the market's of the chart it is connected to (`contractMultiplier`), and 1 with
+   * no chart or no market.
+   */
   multiplier?: number;
   /** What each fill costs, opening or closing. */
   commission?: PaperCommission;
@@ -152,7 +156,9 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   private realised = 0;
   private commissionPaid = 0;
   private readonly leverage: number;
-  private readonly multiplier: number;
+  private multiplier: number;
+  /** Whether the host gave a multiplier of its own, which the chart's market's then leaves alone. */
+  private readonly ownMultiplier: boolean;
   private readonly commission: PaperCommission;
   /** The account as last told, to tell it again only when it changed. */
   private accountTold = '';
@@ -165,11 +171,22 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   /** The position each part-filled order is building, where every order has one of its own: its next part adds to it. */
   private readonly building = new Map<string, string>();
 
+  /**
+   * The market's multiplier of the chart the account is connected to, taken when the account was
+   * given none of its own: its margin, its profit and its commission are then in the money the
+   * chart and the panel count in. None, or one that is no multiplier, is 1.
+   */
+  setMultiplier(multiplier: number | undefined): void {
+    if (this.ownMultiplier) return;
+    this.multiplier = positive(multiplier) ? multiplier : 1;
+  }
+
   constructor(options: PaperExecutionOptions = {}) {
     this.markPrice = options.markPrice ?? 0;
     this.net = options.positions === 'net';
     this.balance = options.balance !== undefined && Number.isFinite(options.balance) ? options.balance : null;
     this.leverage = positive(options.leverage) ? options.leverage : 1;
+    this.ownMultiplier = positive(options.multiplier);
     this.multiplier = positive(options.multiplier) ? options.multiplier : 1;
     this.commission = options.commission ?? {};
     this.marginCallLevel = positive(options.marginCallLevel) ? options.marginCallLevel : null;

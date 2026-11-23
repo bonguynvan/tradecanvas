@@ -205,6 +205,12 @@ export interface ExecutionAdapter {
    * another's orders.
    */
   setMarkPrice?(price: number, time?: number, symbol?: string): void;
+  /**
+   * What a move of one in price is worth for one unit on the chart's market (its
+   * `contractMultiplier`; undefined for none): the chart says it when the adapter is connected and
+   * when its market changes, for an adapter that counts money itself, as the paper account does.
+   */
+  setMultiplier?(multiplier: number | undefined): void;
 
   on<T = unknown>(event: ExecutionEventType, listener: ExecutionListener<T>): void;
   off<T = unknown>(event: ExecutionEventType, listener: ExecutionListener<T>): void;

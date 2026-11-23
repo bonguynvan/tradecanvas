@@ -212,6 +212,21 @@ describe('positionLevels', () => {
     expect(levels).toMatchObject({ takeProfit: 80, quantity: 5.5, quantityDecimals: 1, riskAmount: 55, rewardAmount: 165, riskReward: 3 });
   });
 
+  it('buys fewer where a price is worth more: the quantity is of the market’s multiplier, the money is not', () => {
+    // 5,000,000 dong at risk with the stop 10 (thousand dong) away: 500 shares on HOSE, not 500,000.
+    const drawn = drawing('riskReward', LONG, { options: { rewardRatio: 3, riskMode: 'amount', risk: 5_000_000 } });
+    expect(positionLevels(drawn, 1000)).toMatchObject({ quantity: 500, riskAmount: 5_000_000, rewardAmount: 15_000_000 });
+    expect(positionLevels(drawn)).toMatchObject({ quantity: 500_000, riskAmount: 5_000_000, rewardAmount: 15_000_000 });
+    // One that is no multiplier counts as none.
+    for (const bad of [0, -1, NaN, Infinity]) expect(positionLevels(drawn, bad)?.quantity).toBe(500_000);
+    // The drawing on a chart is told its market's, and writes the same quantity.
+    const tool = new RiskRewardTool();
+    tool.setAmountMultiplier(1000);
+    expect(tool.levels(drawn)?.quantity).toBe(500);
+    tool.setAmountMultiplier(undefined);
+    expect(tool.levels(drawn)?.quantity).toBe(500_000);
+  });
+
   it('gives the quantity unrounded: the drawing only writes it at its decimals', () => {
     // 1% of 1,000 = 10 at risk, 3 per unit.
     const levels = positionLevels(drawing('riskReward', [{ time: 0, price: 50 }, { time: 10, price: 47 }]));

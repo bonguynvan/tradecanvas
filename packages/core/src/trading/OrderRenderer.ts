@@ -173,7 +173,7 @@ export class OrderRenderer {
         const stop = order[which];
         const stopY = stop === undefined ? NaN : priceToY(stop, viewport);
         if (stop === undefined || !inPlot(stopY, viewport)) continue;
-        const amount = amountAt(order.side, price, left, stop);
+        const amount = amountAt(order.side, price, left, stop, config.amountMultiplier);
         tags.push({
           y: stopY,
           color: which === 'stopLoss' ? colors.loss : colors.profit,

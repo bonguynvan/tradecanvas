@@ -93,6 +93,31 @@ describe('PaperExecutionAdapter: what trading costs', () => {
   });
 });
 
+describe('PaperExecutionAdapter: the market’s multiplier', () => {
+  it('takes the chart’s market’s when it was given none of its own', async () => {
+    const { adapter, fills, market } = connect({ balance: 10_000_000 });
+    adapter.setMultiplier(1000);
+    await market('buy', 100);
+    expect(adapter.getAccount()!.marginUsed).toBe(10_000_000);
+    adapter.setMarkPrice(101);
+    expect(adapter.getAccount()!.unrealisedPnl).toBe(100_000);
+    await adapter.closePosition({ positionId: adapter.getPositions()[0].id });
+    expect(fills[1].pnl).toBe(100_000);
+    // A market with none: the price is the money again.
+    adapter.setMultiplier(undefined);
+    adapter.setMarkPrice(100);
+    await market('buy', 1);
+    expect(adapter.getAccount()!.marginUsed).toBe(100);
+  });
+
+  it('keeps its own where one was given it', async () => {
+    const { adapter, market } = connect({ balance: 100_000, multiplier: 10 });
+    adapter.setMultiplier(1000);
+    await market('buy', 2);
+    expect(adapter.getAccount()!.marginUsed).toBe(2_000);
+  });
+});
+
 describe('PaperExecutionAdapter: leverage and a contract’s multiplier', () => {
   it('holds a part of a position’s value as margin: the value over the leverage', async () => {
     const { adapter, market } = connect({ balance: 1_000, leverage: 10 });

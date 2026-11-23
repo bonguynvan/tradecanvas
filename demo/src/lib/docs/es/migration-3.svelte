@@ -165,6 +165,30 @@ chart.startBracket('buy', undefined, { risk: 50 })   // la cantidad que pierde 5
   una columna por su lugar necesita el nuevo.
 </p>
 
+<h3 id="money">Las acciones vietnamitas valen su precio en dong</h3>
+<p>
+  <code>MARKET_HOSE</code>, <code>MARKET_HOSE_ETF</code>, <code>MARKET_HNX</code> y <code>MARKET_UPCOM</code>
+  escriben el precio en miles de dong (26.40 son 26.400 dong) y ahora lo declaran: su
+  <code>contractMultiplier</code> es 1.000. El valor de una orden en el ticket, el resultado de una posición en el
+  panel de la cuenta y los importes de las etiquetas del gráfico se cuentan con él, así que 100 acciones a 26.40
+  muestran 2.640.000 donde mostraban 2.640. En todos los mercados, los importes de las etiquetas del gráfico (el
+  resultado de una posición, lo que daría un stop o un objetivo) se cuentan ahora con el multiplicador del
+  mercado, como ya hacía el panel: la etiqueta de una posición de VN30F se lee en dong, no en puntos.
+  <code>scaleMarketPrices</code> divide el multiplicador por su factor, así que
+  <code>scaleMarketPrices(MARKET_HOSE, 1000)</code>, con precios en dong, tiene multiplicador 1. Si multiplicabas
+  por 1.000 por tu cuenta (en <code>formatAmount</code>, o en lo que muestras junto al gráfico), deja de hacerlo.
+  Un <code>PaperExecutionAdapter</code> sin <code>multiplier</code> propio toma ahora el del mercado del gráfico
+  al que está conectado (el gráfico llama al método opcional <code>setMultiplier</code> del adaptador, al conectar
+  y cuando cambia el mercado), así que su margen, su saldo y el resultado de sus ejecuciones están en el mismo
+  dinero; uno con <code>multiplier</code> lo conserva. Un dibujo de posición larga o corta y un bracket dimensionado
+  por <code>risk</code> cuentan también con el multiplicador la cantidad que ese riesgo compra: 5.000.000 dong de
+  riesgo con el stop a 1.00 son 5.000 acciones, donde eran 5.000.000.
+  <code>positionLevels(drawing, multiplier)</code> recibe el del mercado como segundo argumento. En el panel de la
+  cuenta, una posición de otro símbolo que el del gráfico sigue contándose con 1.
+  Lo que se envía a un bróker es lo de antes, salvo una cantidad calculada a partir de un riesgo, como
+  arriba.
+</p>
+
 <h2 id="types">Tipos que han crecido</h2>
 <p>
   <code>TimeInForce</code> es ahora <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. El código que trata todos

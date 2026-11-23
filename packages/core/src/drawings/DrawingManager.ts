@@ -157,6 +157,7 @@ export class DrawingManager {
   private dataGetter: (() => OHLCBar[]) | null = null;
   /** Moves when a bar of the same array was replaced: see `setDataGetter`. */
   private dataRevision: () => number = () => 0;
+  private amountMultiplier: number | undefined;
   private displayDataGetter: (() => OHLCBar[]) | null = null;
   /** Keep the tool after a drawing is finished, to draw several in a row. */
   private stayInDrawingMode = false;
@@ -174,6 +175,13 @@ export class DrawingManager {
   register(plugin: DrawingPlugin): void {
     this.registry.set(plugin.descriptor.type, plugin);
     if (this.dataGetter) plugin.setDataGetter?.(this.dataGetter, this.dataRevision);
+    plugin.setAmountMultiplier?.(this.amountMultiplier);
+  }
+
+  /** The chart's market's multiplier, for the tools that count money (a position's quantity by its risk). */
+  setAmountMultiplier(multiplier: number | undefined): void {
+    this.amountMultiplier = multiplier;
+    for (const plugin of this.registry.values()) plugin.setAmountMultiplier?.(multiplier);
   }
 
   setEventCallback(cb: DrawingEventCallback): void {

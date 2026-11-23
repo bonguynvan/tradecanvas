@@ -162,6 +162,27 @@ chart.startBracket('buy', undefined, { risk: 50 })   // the quantity that loses 
   needs the new one.
 </p>
 
+<h3 id="money">Vietnamese shares are worth their price in dong</h3>
+<p>
+  <code>MARKET_HOSE</code>, <code>MARKET_HOSE_ETF</code>, <code>MARKET_HNX</code> and <code>MARKET_UPCOM</code>
+  write a price in thousands of dong (26.40 is 26,400 dong) and now say so: their
+  <code>contractMultiplier</code> is 1,000. An order's value in the ticket, a position's profit in the account panel
+  and the amounts on the chart's tags are counted by it, so 100 shares at 26.40 read 2,640,000 where they read
+  2,640. On every market the amounts on the chart's tags (a position's profit, what a stop or a target would make)
+  are now counted by the market's multiplier, as the panel's were: a VN30F position's tag reads in dong, not in
+  points. <code>scaleMarketPrices</code> divides the multiplier by its factor, so
+  <code>scaleMarketPrices(MARKET_HOSE, 1000)</code>, with prices in dong, has a multiplier of 1. If you multiplied
+  by 1,000 yourself (in <code>formatAmount</code>, or in what you show beside the chart), stop. A
+  <code>PaperExecutionAdapter</code> given no <code>multiplier</code> of its own now takes the market's from the
+  chart it is connected to (the chart calls the adapter's optional <code>setMultiplier</code>, when connected and
+  when the market changes), so its margin, its balance and its fills' profit are in the same money; one given a
+  <code>multiplier</code> keeps it. A Long or Short Position drawing and a bracket sized by <code>risk</code> count
+  the quantity that risk buys by the multiplier too: 5,000,000 dong at risk with the stop 1.00 away is 5,000
+  shares, where it was 5,000,000. <code>positionLevels(drawing, multiplier)</code> takes the market's as its second
+  argument. In the account panel a position of another symbol than the chart's is still counted at 1.
+  What is sent to a broker is as it was, but for a quantity worked out from a risk, as above.
+</p>
+
 <h2 id="types">Types that grew</h2>
 <p>
   <code>TimeInForce</code> is now <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. Code that handles every

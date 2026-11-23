@@ -139,6 +139,24 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 在止损处亏损 50 �
   读取按钮文字或按位置读取列的测试需要相应修改。
 </p>
 
+<h3 id="money">越南股票的价值以越南盾计算</h3>
+<p>
+  <code>MARKET_HOSE</code>、<code>MARKET_HOSE_ETF</code>、<code>MARKET_HNX</code> 和 <code>MARKET_UPCOM</code>
+  的价格以千越南盾为单位（26.40 即 26,400 越南盾），现在明确声明了这一点：它们的 <code>contractMultiplier</code>
+  为 1,000。下单面板中的订单金额、账户面板中的持仓盈亏以及图表标签上的金额都按它计算，因此 26.40 的 100 股
+  显示为 2,640,000，而不是 2,640。在所有市场上，图表标签上的金额（持仓盈亏、止损或止盈的金额）现在都按市场的
+  乘数计算，与账户面板一致：VN30F 持仓的标签以越南盾显示，而不是点数。<code>scaleMarketPrices</code>
+  会把乘数除以它的系数，因此价格以越南盾计的 <code>scaleMarketPrices(MARKET_HOSE, 1000)</code> 乘数为 1。
+  如果你自己乘过 1,000（在 <code>formatAmount</code> 中，或在图表旁显示的内容中），请去掉。
+  没有传入自己的 <code>multiplier</code> 的 <code>PaperExecutionAdapter</code> 现在会从所连接的图表取得市场的乘数
+  （图表在连接时和市场改变时调用适配器可选的 <code>setMultiplier</code>），因此它的保证金、余额和成交盈亏使用
+  同一种金额；传入了 <code>multiplier</code> 的则保持不变。多头/空头持仓画线和按 <code>risk</code> 定量的括号单
+  也按乘数计算数量：风险 5,000,000 越南盾、止损相距 1.00 时为 5,000 股，以前是 5,000,000 股。
+  <code>positionLevels(drawing, multiplier)</code> 的第二个参数接收市场的乘数。在账户面板中，
+  与图表品种不同的持仓仍按 1 计算。
+  发送给券商的内容与之前相同，只有如上所述由风险算出的数量不同。
+</p>
+
 <h2 id="types">扩充的类型</h2>
 <p>
   <code>TimeInForce</code> 现在是 <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>。处理全部成员的代码
