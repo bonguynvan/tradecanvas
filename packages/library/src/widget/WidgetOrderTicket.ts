@@ -20,6 +20,8 @@ import {
   ticketStopPrice,
   ticketTimeInForce,
   ticketTimesInForce,
+  ticketTimesTaken,
+  ticketKind,
   ticketTakeProfitLevels,
   ticketTargets,
   TICKET_MAX_TARGETS,
@@ -133,6 +135,8 @@ export class WidgetOrderTicket {
   private unanswered = false;
   /** The price it values the order at is live. Not so (a feed down or quiet), it says so, and sends no order at the market. */
   private priceLive = true;
+  /** Rules given while an order was on its way: taken once it is answered. */
+  private rulesToCome: OrderTicketRules | null = null;
   private answerTimer: ReturnType<typeof setTimeout> | null = null;
   /** What was switched off while an order is on its way, to be switched on again. */
   private held: (HTMLInputElement | HTMLButtonElement | HTMLSelectElement | HTMLTextAreaElement)[] = [];
@@ -234,6 +238,11 @@ export class WidgetOrderTicket {
     if (start.price !== undefined && market !== null && price !== market) {
       type = (price < market) === (side === 'buy') ? 'limit' : 'stop';
     }
+    // Of the broker's kinds, the first that is the order that waits there; with none such, its first.
+    const kinds = this.rules.kinds;
+    // A price asked for is kept: with no kind that waits where it is, one that has a price.
+    const kind = kinds?.find((k) => k.type === type) ?? (start.price !== undefined ? kinds?.find((k) => k.type === 'limit') : undefined) ?? kinds?.[0];
+    if (kind) type = kind.type;
     // A level the chart cannot take as a price starts off; a quantity not above zero is the market's lot.
     const level = (p: number | null | undefined) => (p !== null && p !== undefined && Number.isFinite(p) ? this.round(p) : null);
     const quantity = start.quantity !== undefined && Number.isFinite(start.quantity) && start.quantity > 0 ? start.quantity : this.lot();
@@ -241,7 +250,8 @@ export class WidgetOrderTicket {
       side, type, quantity, price,
       stopLoss: level(start.stopLoss),
       takeProfit: level(start.takeProfit),
-      timeInForce: 'gtc',
+      timeInForce: ticketTimeInForce({ type, kind: kind?.code, timeInForce: 'gtc' }, this.rules),
+      ...(kind ? { kind: kind.code } : {}),
     };
     this.problemsEl.replaceChildren();
     this.render();
@@ -337,6 +347,11 @@ export class WidgetOrderTicket {
     for (const field of this.held) field.disabled = false;
     this.held = [];
     this.cancel.textContent = this.t('common.cancel');
+    // Rules that came while the order was on its way.
+    const rules = this.rulesToCome;
+    this.rulesToCome = null;
+    if (rules && this.draft) this.setRules(rules);
+    else if (rules) this.rules = rules;
   }
 
   destroy(): void {
@@ -376,7 +391,8 @@ export class WidgetOrderTicket {
 
   /** A market order trades at a price the ticket does not have: it is not sent on the last one known. */
   private blind(draft: OrderTicketDraft): boolean {
-    return !this.priceLive && draft.type === 'market';
+    // One of the broker's own kinds (an auction's ATO) is the exchange's to price: it waits for no live price.
+    return !this.priceLive && draft.type === 'market' && ticketKind(draft, this.rules) === undefined;
   }
 
   private place(): void {
@@ -392,11 +408,29 @@ export class WidgetOrderTicket {
     return this.callbacks.now?.() ?? Date.now();
   }
 
-  /** Another kind of order. A stop-limit starts with its stop where the order's price was, its limit with it: to be set apart. */
-  private setType(type: OrderTicketDraft['type']): void {
+  /**
+   * Other rules while the ticket is open (another session's kinds, another lot): the order stays on
+   * its kind where the broker still takes it, else goes to one of the same type, else to the first
+   * it takes. While an order is on its way they wait: that order was made under the old ones.
+   */
+  setRules(rules: OrderTicketRules): void {
+    if (this.waiting !== null) {
+      this.rulesToCome = rules;
+      return;
+    }
+    this.rules = rules;
     const draft = this.draft;
     if (!draft) return;
-    const patch: Partial<OrderTicketDraft> = { type };
+    const kind = ticketKind(draft, rules) ?? rules.kinds?.find((k) => k.type === draft.type) ?? rules.kinds?.[0];
+    this.setType(kind ? kind.type : draft.type, kind?.code);
+  }
+
+  /** Another kind of order. A stop-limit starts with its stop where the order's price was, its limit with it: to be set apart. */
+  private setType(type: OrderTicketDraft['type'], kind?: string): void {
+    const draft = this.draft;
+    if (!draft) return;
+    // A time in force the kind or the broker does not take is not kept: what is checked is what is sent.
+    const patch: Partial<OrderTicketDraft> = { type, kind, timeInForce: ticketTimeInForce({ type, kind, timeInForce: draft.timeInForce }, this.rules) };
     const stop = ticketStopPrice(draft);
     if (type === 'stopLimit' && Number.isNaN(stop)) {
       patch.stopPrice = draft.price > 0 ? draft.price : this.round(this.market() ?? NaN);
@@ -469,7 +503,7 @@ export class WidgetOrderTicket {
     this.modal.dataset.side = draft.side;
     this.body.replaceChildren(
       this.sideToggle(draft.side),
-      this.row('ticket.type', this.choices('type', ORDER_TYPES, draft.type, 'ticket.type', (type) => this.setType(type))),
+      this.row('ticket.type', this.typeChoices(draft)),
       this.row('ticket.quantity', this.stepped('quantity', draft.quantity, (q) => this.quantityStep(q), () => this.lot(), String, (quantity) => this.set({ quantity }))),
     );
     if (draft.type === 'market') {
@@ -486,9 +520,9 @@ export class WidgetOrderTicket {
       if (limits) this.body.append(limits);
       this.body.append(
         this.row(priceKey, this.priceField('price', draft.price, (price) => this.set({ price }), priceKey)),
-        this.row('ticket.timeInForce', this.choices('timeInForce', ticketTimesInForce(draft.type), ticketTimeInForce(draft), 'ticket.timeInForce', (timeInForce: TimeInForce) => this.setTimeInForce(timeInForce))),
+        this.row('ticket.timeInForce', this.choices('timeInForce', ticketTimesInForce(draft.type, ticketTimesTaken(draft, this.rules)), ticketTimeInForce(draft, this.rules), 'ticket.timeInForce', (timeInForce: TimeInForce) => this.setTimeInForce(timeInForce))),
       );
-      if (ticketTimeInForce(draft) === 'gtd') this.body.append(this.expiryRow(draft));
+      if (ticketTimeInForce(draft, this.rules) === 'gtd') this.body.append(this.expiryRow(draft));
     }
     this.body.append(this.optionalPrice('stopLoss', draft.stopLoss));
     // With a stop-loss, whether it is to follow the price.
@@ -520,6 +554,23 @@ export class WidgetOrderTicket {
     label.textContent = this.t(key);
     row.append(label, control);
     return row;
+  }
+
+  /** The kinds of order to choose from: the broker's, by the exchange's names, else the chart's own four. */
+  private typeChoices(draft: OrderTicketDraft): HTMLElement {
+    const kinds = this.rules.kinds;
+    if (!kinds || kinds.length === 0) return this.choices('type', ORDER_TYPES, draft.type, 'ticket.type', (type) => this.setType(type));
+    const group = field('type', segmentedControl(
+      kinds.map((kind) => ({ value: kind.code, label: kind.label ?? kind.code })),
+      draft.kind ?? kinds[0].code,
+      (code) => {
+        const kind = kinds.find((k) => k.code === code);
+        if (kind) this.setType(kind.type, kind.code);
+      },
+      this.t('ticket.type'),
+    ));
+    for (const radio of group.querySelectorAll<HTMLElement>('[role=radio]')) radio.dataset.ticketField = `type-${radio.dataset.value}`;
+    return group;
   }
 
   /** A row of choices (the type, the time in force), each named so focus finds it after a rebuild. */

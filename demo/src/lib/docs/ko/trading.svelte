@@ -360,6 +360,38 @@ chart.getFeedTime()   // when the stream last told anything, ms; null before it 
 <pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, confirmOrders: false })   // one-click trading
 chart.setPositionGuard((action, positionId, send) => ask(action, positionId).then((yes) => yes && send()))   // your own, on a headless Chart`}</code></pre>
 
+<h3 id="broker-rules">브로커의 주문 규칙</h3>
+<p>
+  거래소 프리셋(<code>setMarket</code>)에는 그 거래소의 호가 단위와 매매 단위가 있습니다. 브로커가 어떤 세션에서 어떤
+  종목에 대해 받는 것은 브로커 자신의 규칙이며, 라이브러리를 새로 배포하지 않아도 바뀝니다. <code>orderRules</code>로
+  넘기고, 종목이나 세션이 바뀌면 <code>widget.setOrderRules</code>로 다시 넘기세요. <code>orderKinds</code>는 시장가,
+  지정가, 스톱, 스톱 리밋 대신 티켓이 보여 주는 주문 종류로, 각각 거래소의 이름(<code>code</code>)과 차트가 아는
+  종류(<code>type</code>)를 가집니다. 후자는 티켓이 가격을 묻는지와 주문을 어떻게 그리는지를 정하고, 이름은
+  <code>exchangeType</code>으로 주문과 함께 브로커에게 전달됩니다. <code>timesInForce</code>는 받는 유효 조건
+  (종류마다 따로 가질 수 있음)이고, <code>lot</code>은 시장의 매매 단위보다 우선합니다. 모의 계좌는 주문에 이름을
+  유지하고 <code>type</code>대로 체결합니다. 시가나 종가 단일가 매매는 시뮬레이션하지 않습니다. 우클릭 메뉴나 호가창에서 내는 주문은 그 type에 해당하는 브로커의
+  종류로, 받는 유효 조건과 함께 나가며, 브로커에 그런 종류가 없으면(HOSE의 스톱 주문) 나가지 않습니다. 브래킷 주문,
+  차트에서 끌어 만든 초안 주문, 포지션 청산이나 반전에는 이름이 붙지 않습니다. 그런 주문에는 어댑터가 거래소의 종류를
+  붙여야 합니다. 시장가 주문에는 유효 조건이 붙지 않습니다.
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  adapter, symbol: 'VNM', trading: true,
+  orderRules: {
+    orderKinds: [
+      { code: 'LO', type: 'limit' },
+      { code: 'ATO', type: 'market' },
+      { code: 'ATC', type: 'market' },
+      { code: 'MP', type: 'market' },
+    ],
+    timesInForce: ['day'],
+    lot: 100,
+  },
+})
+// Another session, another list: an open ticket takes it at once
+widget.setOrderRules({ orderKinds: [{ code: 'ATC', type: 'market' }, { code: 'LO', type: 'limit' }], timesInForce: ['day'], lot: 100 })
+
+chart.on('orderPlace', (e) => send(e.payload.exchangeType ?? e.payload.type, e.payload))   // 'ATO', and type: 'market'`}</code></pre>
+
 <h2>차트에서 주문과 포지션 다루기</h2>
 <p>
   주문선과 포지션선의 오른쪽 끝에는 작은 버튼이 있습니다. <strong>×</strong>는 주문을

@@ -354,6 +354,39 @@ chart.getFeedTime()   // when the stream last told anything, ms; null before it 
 <pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, confirmOrders: false })   // one-click trading
 chart.setPositionGuard((action, positionId, send) => ask(action, positionId).then((yes) => yes && send()))   // your own, on a headless Chart`}</code></pre>
 
+<h3 id="broker-rules">ブローカーの注文ルール</h3>
+<p>
+  取引所のプリセット（<code>setMarket</code>）には、その呼値と売買単位があります。ブローカーがあるセッションで
+  ある銘柄について受け付けるものはブローカー独自のもので、ライブラリのリリースなしに変わります。
+  <code>orderRules</code> で渡し、銘柄やセッションが変わったら <code>widget.setOrderRules</code> で渡し直してください。
+  <code>orderKinds</code> は、成行、指値、逆指値、逆指値指値の代わりにチケットが提示する注文の種類で、それぞれ
+  取引所での名前（<code>code</code>）と、チャートが理解する種類（<code>type</code>）を持ちます。後者はチケットが
+  価格を尋ねるかどうかと注文の描き方を決め、名前は <code>exchangeType</code> として注文とともにブローカーへ渡ります。
+  <code>timesInForce</code> は受け付ける有効期間（種類ごとに独自のものも指定できます）、<code>lot</code> は市場の
+  売買単位より優先されます。ペーパー口座は注文に名前を保持し、<code>type</code> として約定させます。寄付きや引けの
+  板寄せはシミュレートしません。右クリックメニューや板情報からの注文は、その type に当たるブローカーの種類として、
+  受け付けられる有効期間を付けて送られます。該当する種類がブローカーにない場合（HOSE の逆指値など）は送られません。
+  ブラケット注文、チャート上でドラッグしたドラフト注文、ポジションの決済やドテンには名前が付きません。それらには
+  アダプター側で取引所の種類を付けてください。成行の注文に有効期間が付くことはありません。
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  adapter, symbol: 'VNM', trading: true,
+  orderRules: {
+    orderKinds: [
+      { code: 'LO', type: 'limit' },
+      { code: 'ATO', type: 'market' },
+      { code: 'ATC', type: 'market' },
+      { code: 'MP', type: 'market' },
+    ],
+    timesInForce: ['day'],
+    lot: 100,
+  },
+})
+// Another session, another list: an open ticket takes it at once
+widget.setOrderRules({ orderKinds: [{ code: 'ATC', type: 'market' }, { code: 'LO', type: 'limit' }], timesInForce: ['day'], lot: 100 })
+
+chart.on('orderPlace', (e) => send(e.payload.exchangeType ?? e.payload.type, e.payload))   // 'ATO', and type: 'market'`}</code></pre>
+
 <h2>チャート上で注文とポジションを操作する</h2>
 <p>
   注文とポジションのラインの右端には小さなボタンがあります。<strong>×</strong> は注文をキャンセルするか

@@ -23,6 +23,8 @@ export interface OrderTicketDraft {
    * the way, evenly spaced, and the take-profit closes what is left.
    */
   targets?: number;
+  /** The exchange's name for the kind of order (`OrderKind.code`), where the broker's rules give kinds of their own. */
+  kind?: string;
 }
 
 /** The most targets a ticket parts its take-profit into. */
@@ -97,6 +99,21 @@ export type OrderTicketProblem =
   /** More than a lot, but not whole lots. */
   | 'lot';
 
+/**
+ * A kind of order as an exchange names it (HOSE: LO, ATO, ATC, MP), and the kind the chart
+ * knows it as: what the ticket asks for it (a price or none), and how it is drawn and traded
+ * on paper.
+ */
+export interface OrderKind {
+  /** The exchange's name for it, sent with the order as `exchangeType`. */
+  code: string;
+  /** What the ticket calls it. Unset: its code. */
+  label?: string;
+  type: OrderTicketDraft['type'];
+  /** The times in force this kind takes, over the rules' own. */
+  timesInForce?: readonly TimeInForce[];
+}
+
 /** One of the day's three prices, as the ticket's row names them. */
 export type PriceLimitName = 'ceiling' | 'reference' | 'floor';
 
@@ -108,6 +125,10 @@ export interface OrderTicketRules {
   limits?: { ceiling: number; floor: number; reference?: number } | null;
   /** The order the ticket shows them in. Unset: ceiling, reference, floor. */
   limitOrder?: readonly PriceLimitName[];
+  /** The kinds of order the broker takes for the symbol now, in place of the chart's own four. */
+  kinds?: readonly OrderKind[];
+  /** The times in force the broker takes: the ticket offers those of them the kind of order has. Unset: all. */
+  timesInForce?: readonly TimeInForce[];
   /** Shares in a lot. Fewer is an odd lot, an order of its own; more must be whole lots. */
   lot?: number;
   /** Money per point of a futures contract (VN30F: 100,000 dong): what the sums are in. */
@@ -187,7 +208,7 @@ export function orderTicketProblems(draft: OrderTicketDraft, lastPrice: number |
   const valid = (price: number | null) => price === null || (Number.isFinite(price) && price > 0);
   if (!valid(draft.stopLoss)) problems.push('stopLoss');
   if (!valid(draft.takeProfit)) problems.push('takeProfit');
-  if (draft.type !== 'market' && ticketTimeInForce(draft) === 'gtd' && !(ticketExpireTime(draft) > (rules.now ?? Date.now()))) problems.push('expireTime');
+  if (draft.type !== 'market' && ticketTimeInForce(draft, rules) === 'gtd' && !(ticketExpireTime(draft) > (rules.now ?? Date.now()))) problems.push('expireTime');
   // Neither is to be hit by the price the order fills at: a stop-loss beyond the best of them, a take-profit beyond the worst.
   const fills = ticketFillRange(draft, lastPrice);
   if (fills) {
@@ -212,8 +233,22 @@ function marketProblems(draft: OrderTicketDraft, rules: OrderTicketRules): Order
 }
 
 /** How long a ticket's order may work, by its type: one that waits for its stop cannot fill at once or not at all. */
-export function ticketTimesInForce(type: OrderTicketDraft['type']): readonly TimeInForce[] {
-  return type === 'limit' ? ['gtc', 'day', 'gtd', 'ioc', 'fok'] : ['gtc', 'day', 'gtd'];
+export function ticketTimesInForce(type: OrderTicketDraft['type'], taken?: readonly TimeInForce[]): readonly TimeInForce[] {
+  const all: readonly TimeInForce[] = type === 'limit' ? ['gtc', 'day', 'gtd', 'ioc', 'fok'] : ['gtc', 'day', 'gtd'];
+  if (!taken) return all;
+  // Those the broker takes, of those the kind has: with none of them, the kind's own (a list that fits no order is no rule).
+  const offered = all.filter((time) => taken.includes(time));
+  return offered.length > 0 ? offered : all;
+}
+
+/** The kind of order a draft is of, among the broker's; undefined with none given, or none of its name. */
+export function ticketKind(draft: Pick<OrderTicketDraft, 'kind'>, rules: Pick<OrderTicketRules, 'kinds'> = {}): OrderKind | undefined {
+  return rules.kinds?.find((kind) => kind.code === draft.kind);
+}
+
+/** The times in force a draft may have: its kind's own, else the rules'. */
+export function ticketTimesTaken(draft: Pick<OrderTicketDraft, 'kind'>, rules: Pick<OrderTicketRules, 'kinds' | 'timesInForce'> = {}): readonly TimeInForce[] | undefined {
+  return ticketKind(draft, rules)?.timesInForce ?? rules.timesInForce;
 }
 
 /** A stop-limit draft's stop; NaN for one with none, or one that is no price above 0. */
@@ -228,12 +263,14 @@ export function ticketExpireTime(draft: Pick<OrderTicketDraft, 'expireTime'>): n
 }
 
 /** The draft's time in force as its type takes it: good till cancelled in place of one it does not. */
-export function ticketTimeInForce(draft: Pick<OrderTicketDraft, 'type' | 'timeInForce'>): TimeInForce {
-  return ticketTimesInForce(draft.type).includes(draft.timeInForce) ? draft.timeInForce : 'gtc';
+export function ticketTimeInForce(draft: Pick<OrderTicketDraft, 'type' | 'timeInForce' | 'kind'>, rules: Pick<OrderTicketRules, 'kinds' | 'timesInForce'> = {}): TimeInForce {
+  const offered = ticketTimesInForce(draft.type, ticketTimesTaken(draft, rules));
+  // One the kind has not is the first it has: good till cancelled, unless the broker takes none of that.
+  return offered.includes(draft.timeInForce) ? draft.timeInForce : offered[0];
 }
 
 /** The order a draft asks for. */
-export function orderTicketIntent(draft: OrderTicketDraft, lastPrice: number | null, rules: Pick<OrderTicketRules, 'lot' | 'roundPrice'> = {}): OrderPlaceIntent {
+export function orderTicketIntent(draft: OrderTicketDraft, lastPrice: number | null, rules: Pick<OrderTicketRules, 'lot' | 'roundPrice' | 'kinds' | 'timesInForce'> = {}): OrderPlaceIntent {
   const intent: OrderPlaceIntent = {
     side: draft.side,
     type: draft.type,
@@ -243,7 +280,10 @@ export function orderTicketIntent(draft: OrderTicketDraft, lastPrice: number | n
   if (draft.type === 'stop') intent.stopPrice = draft.price;
   // A stop-limit's stop is a price of its own; no other kind sends the one a draft still holds.
   if (draft.type === 'stopLimit' && !Number.isNaN(ticketStopPrice(draft))) intent.stopPrice = ticketStopPrice(draft);
-  if (draft.type !== 'market') intent.timeInForce = ticketTimeInForce(draft);
+  if (draft.type !== 'market') intent.timeInForce = ticketTimeInForce(draft, rules);
+  // The exchange's own name for it goes with the order, for the broker.
+  const kind = ticketKind(draft, rules);
+  if (kind) intent.exchangeType = kind.code;
   // Only an order good till a date carries one: a date left in the draft by an earlier choice is not sent.
   if (intent.timeInForce === 'gtd' && !Number.isNaN(ticketExpireTime(draft))) intent.expireTime = ticketExpireTime(draft);
   if (draft.stopLoss !== null) intent.stopLoss = draft.stopLoss;

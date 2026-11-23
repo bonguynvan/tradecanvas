@@ -367,6 +367,39 @@ chart.getFeedTime()   // when the stream last told anything, ms; null before it 
 <pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, confirmOrders: false })   // one-click trading
 chart.setPositionGuard((action, positionId, send) => ask(action, positionId).then((yes) => yes && send()))   // your own, on a headless Chart`}</code></pre>
 
+<h3 id="broker-rules">The broker's order rules</h3>
+<p>
+  An exchange's preset (<code>setMarket</code>) has its price steps and its lot. What a broker takes for a symbol in a
+  session is the broker's own, and changes with no release of the library: give it as <code>orderRules</code>, and
+  again with <code>widget.setOrderRules</code> as the symbol or the session changes. <code>orderKinds</code> are the
+  kinds of order the ticket offers in place of Market, Limit, Stop and Stop-limit, each by the exchange's name
+  (<code>code</code>) and the kind the chart knows it as (<code>type</code>): that decides whether the ticket asks a
+  price for it and how it is drawn, and the name goes with the order as <code>exchangeType</code>, for the broker.
+  <code>timesInForce</code> are those taken (a kind may have its own), and <code>lot</code> stands over the market's.
+  The paper account keeps the name on the order and trades it as its <code>type</code>: an opening or a closing
+  auction is not simulated. An order from the right-click menu or the depth ladder goes out as the broker's kind of
+  its type, with a time in force it takes, or not at all where the broker has none (a stop on HOSE). A bracket, a
+  draft order dragged on the chart, and a position closed or reversed are not named: your adapter gives those the
+  exchange's kind. An order at the market never carries a time in force.
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  adapter, symbol: 'VNM', trading: true,
+  orderRules: {
+    orderKinds: [
+      { code: 'LO', type: 'limit' },
+      { code: 'ATO', type: 'market' },
+      { code: 'ATC', type: 'market' },
+      { code: 'MP', type: 'market' },
+    ],
+    timesInForce: ['day'],
+    lot: 100,
+  },
+})
+// Another session, another list: an open ticket takes it at once
+widget.setOrderRules({ orderKinds: [{ code: 'ATC', type: 'market' }, { code: 'LO', type: 'limit' }], timesInForce: ['day'], lot: 100 })
+
+chart.on('orderPlace', (e) => send(e.payload.exchangeType ?? e.payload.type, e.payload))   // 'ATO', and type: 'market'`}</code></pre>
+
 <h2>Act on orders and positions from the chart</h2>
 <p>
   Order and position lines carry small buttons at their right end: <strong>×</strong>

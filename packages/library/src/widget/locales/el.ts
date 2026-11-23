@@ -978,6 +978,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'order.sellStop': 'Πώληση stop @ {price}',
   'order.refused': 'Ο broker απέρριψε την εντολή: {reason}',
   'order.noLivePrice': 'Χωρίς ζωντανή τιμή: η εντολή δεν στάλθηκε',
+  'order.kindNotTaken': 'Ο χρηματιστής δεν δέχεται εδώ αυτό το είδος εντολής',
   'confirm.close': 'Κλείσιμο {side} {quantity} {symbol} στην τιμή αγοράς;',
   'confirm.reverse': 'Αντιστροφή {side} {quantity} {symbol} στην τιμή αγοράς; Η θέση κλείνει και ανοίγει η ίδια ποσότητα προς την αντίθετη κατεύθυνση.',
   'confirm.order': '{order}, ποσότητα {quantity}, {symbol}',

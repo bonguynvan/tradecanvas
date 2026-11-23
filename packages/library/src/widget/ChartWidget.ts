@@ -4,7 +4,7 @@ import { settingToTimezone, timezoneOptions, timezoneToSetting } from './widgetT
 import { installFormControls } from './formControls.js';
 import { Chart } from '../Chart.js';
 import { DARK_THEME, LIGHT_THEME, MODERN_DARK_THEME, MODERN_LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
-import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState, DockPageHandle, DockPageSpec, DockPanelId } from './types.js';
+import type { ActiveIndicatorInfo, BrokerOrderRules, ChartWidgetOptions, WidgetState, ChartSettingsState, DockPageHandle, DockPageSpec, DockPanelId } from './types.js';
 import { CHART_TYPES, DRAWING_TOOL_GROUPS, DEFAULT_SYMBOLS, DEFAULT_SETTINGS } from './widgetConfig.js';
 import { SETTINGS_LOOK_KEYS } from './widgetSettingsLook.js';
 import { injectWidgetStyles, removeWidgetStyles } from './WidgetStyles.js';
@@ -1432,6 +1432,7 @@ export class ChartWidget {
 
     // A bracket or a draft order confirmed on the chart is held back while the feed is down, as an order in one press is.
     this.chart.setOrderGate(() => this.trading.feedUp());
+    if (options.orderRules) this.trading.setOrderRules(options.orderRules);
     for (const event of ['symbolChange', 'executionChange', 'replayState'] as const) this.chart.on(event, () => this.dropConfirmation());
     this.chart.on('positionsChange', () => this.dropConfirmation('position'));
     // A button on a position's line closes or reverses it in one press: confirmed first, as its row in the panel is.
@@ -2743,6 +2744,16 @@ export class ChartWidget {
       }
       default: return null;
     }
+  }
+
+  /**
+   * The broker's rules for orders in the symbol now: the kinds of order it takes, by the
+   * exchange's names, the times in force and the lot. They stand over the market's preset, and a
+   * ticket that is open takes them at once: call it as the symbol or the session changes. `null`
+   * goes back to the chart's own.
+   */
+  setOrderRules(rules: BrokerOrderRules | null): void {
+    this.trading.setOrderRules(rules);
   }
 
   /** Open or close the account panel (no argument: the other way from now). */

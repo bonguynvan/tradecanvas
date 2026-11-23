@@ -6815,6 +6815,11 @@
         "kind": "boolean"
       },
       {
+        "name": "orderRules",
+        "type": "BrokerOrderRules",
+        "doc": "The broker's rules for orders, to start with: see `BrokerOrderRules`. `widget.setOrderRules` gives others as the symbol or the session changes."
+      },
+      {
         "name": "priceLimitOrder",
         "type": "readonly ('ceiling' | 'reference' | 'floor')[]",
         "doc": "The order the ticket shows the day's ceiling, reference and floor in, over its price: boards differ, and a trader reads them where their broker's board has them. Leave one out not to show it. Default `['ceiling', 'reference', 'floor']`. The row shows on a market with limits for the day (`chart.setPriceLimits`), and a press on a price is the order's price.",

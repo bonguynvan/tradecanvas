@@ -19,6 +19,8 @@ export interface TakeProfitLevel {
 
 export interface TradingOrder {
   id: string;
+  /** The exchange's own name for the order (`ATO`, `ATC`…), where it was asked for by one: kept as given. */
+  exchangeType?: string;
   /**
    * The symbol the order is of. An adapter for an account that trades more than one names it: the
    * chart draws the orders of the symbol it shows, and keeps the others. Left out, the order is
@@ -225,6 +227,12 @@ export interface OrderPlaceIntent {
    * names another. An adapter keeps it on the order and the position it opens.
    */
   symbol?: string;
+  /**
+   * The exchange's own name for the order (HOSE: `LO`, `ATO`, `ATC`, `MP`), where the broker's
+   * rules give kinds of their own (`ChartWidget`'s `orderRules`). `type` is the kind the chart
+   * knows it as; an adapter sends this one to the broker as it is.
+   */
+  exchangeType?: string;
   /**
    * The id the order goes out with, its own: the chart gives one to every order asked for
    * (`placeOrderIntent`) that has none. A broker that takes it turns away a repeat of the same

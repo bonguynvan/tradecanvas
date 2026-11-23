@@ -190,3 +190,13 @@ describe('PaperExecutionAdapter: a position whose symbol has had no price', () =
     expect(fills.filter((fill) => fill.reason === 'liquidation').map((fill) => [fill.symbol, fill.price])).toEqual([[BTC, 68], ['SOLUSDT', 20]]);
   });
 });
+
+describe('PaperExecutionAdapter: an order asked for by the exchange’s own name', () => {
+  it('keeps the name on the order, and trades it as the kind the chart knows', async () => {
+    const order = await paper.placeOrder({ side: 'buy', type: 'limit', price: 95, quantity: 100, exchangeType: 'LO' });
+    expect(order.exchangeType).toBe('LO');
+    expect(orders[0]).toMatchObject({ type: 'limit', exchangeType: 'LO' });
+    const plain = await paper.placeOrder({ side: 'buy', type: 'limit', price: 94, quantity: 100 });
+    expect(plain).not.toHaveProperty('exchangeType');
+  });
+});

@@ -978,6 +978,7 @@ export const CS_MESSAGES: WidgetMessages = {
   'order.sellStop': 'Stop prodej @ {price}',
   'order.refused': 'Broker pokyn odmítl: {reason}',
   'order.noLivePrice': 'Žádná živá cena: příkaz nebyl odeslán',
+  'order.kindNotTaken': 'Broker zde tento druh příkazu nepřijímá',
   'confirm.close': 'Uzavřít {side} {quantity} {symbol} za tržní cenu?',
   'confirm.reverse': 'Obrátit {side} {quantity} {symbol} za tržní cenu? Pozice se uzavře a ve stejném množství otevře opačným směrem.',
   'confirm.order': '{order}, množství {quantity}, {symbol}',

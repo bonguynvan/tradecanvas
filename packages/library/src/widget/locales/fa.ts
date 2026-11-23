@@ -990,6 +990,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'order.sellStop': 'فروش استاپ @ {price}',
   'order.refused': 'بروکر سفارش را رد کرد: {reason}',
   'order.noLivePrice': 'قیمت زنده وجود ندارد: سفارش ارسال نشد',
+  'order.kindNotTaken': 'کارگزار این نوع سفارش را اینجا نمی‌پذیرد',
   'confirm.close': '{side} {quantity} {symbol} با قیمت بازار بسته شود؟',
   'confirm.reverse': '{side} {quantity} {symbol} با قیمت بازار معکوس شود؟ موقعیت بسته و با همان مقدار در جهت مخالف باز می‌شود.',
   'confirm.order': '{order}، مقدار {quantity}، {symbol}',

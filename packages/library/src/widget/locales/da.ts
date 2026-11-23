@@ -990,6 +990,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'order.sellStop': 'Sælg stop @ {price}',
   'order.refused': 'Mægleren afviste ordren: {reason}',
   'order.noLivePrice': 'Ingen livepris: ordren blev ikke sendt',
+  'order.kindNotTaken': 'Mægleren modtager ikke denne ordretype her',
   'confirm.close': 'Luk {side} {quantity} {symbol} til markedspris?',
   'confirm.reverse': 'Vend {side} {quantity} {symbol} til markedspris? Positionen lukkes, og samme antal åbnes den modsatte vej.',
   'confirm.order': '{order}, antal {quantity}, {symbol}',
