@@ -1384,10 +1384,10 @@ describe('ChartWidget on a wide screen', () => {
     const root = host.querySelector<HTMLElement>('.tcw-root')!;
     expect(root.style.getPropertyValue('--tcw-icon')).toBe('18px');
     // The drawing tools grow with the rest: their icon and button a half step over the others'
-    // (22 against 18, 40 against 32), in a column grown to 46.
+    // (22 against 18, 40 against 32), in a column grown to 50.
     expect(root.style.getPropertyValue('--tcw-tool-h')).toBe('40px');
     expect(root.style.getPropertyValue('--tcw-tool-icon')).toBe('22px');
-    expect(root.style.getPropertyValue('--tcw-sidebar-w')).toBe('46px');
+    expect(root.style.getPropertyValue('--tcw-sidebar-w')).toBe('50px');
     // A line of the grown type is an even height too: 22 px at 15 px.
     expect(parseFloat(root.style.getPropertyValue('--tcw-line-height')) * 15).toBeCloseTo(22, 3);
     // Spacing is the stylesheet's still.

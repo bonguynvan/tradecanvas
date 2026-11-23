@@ -157,8 +157,8 @@ chart.startBracket('buy', undefined, { risk: 50 })   // the quantity that loses 
   <code>theme</code> is an object of yours. <code>ui: 'modern'</code> keeps the look before it, colours and all. The
   stylesheet's default tokens are Graphite's, so CSS that set a few <code>--tcw-*</code> tokens over Modern's now
   sets them over Graphite's. In every look the order ticket's button now names the order
-  (<code>Buy 100 HPG</code>), the order's value is the last line over it, and a position's Reverse and Close buttons
-  come right after its P&amp;L in the account panel: a test that read the button's text or a column by its place
+  (<code>Buy 100 HPG</code>), the order's value is the last line over it, and a position's row in the account panel
+  ends with its P&amp;L and its Reverse and Close buttons after it, past its stop and target: a test that read the button's text or a column by its place
   needs the new one.
 </p>
 

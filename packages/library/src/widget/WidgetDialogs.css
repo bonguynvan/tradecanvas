@@ -1907,3 +1907,95 @@ img.tcw-ss-badge {
 .tcw-ticket-limit:hover { background: var(--tcw-hover-bg); border-color: var(--tcw-border-strong); }
 .tcw-ticket-limit:focus-visible { outline: none; box-shadow: var(--tcw-ring); }
 .tcw-ticket-limit-name { color: var(--tcw-text-dim); }
+
+/*
+ * Graphite's ticket, on the look's five heights: a side and a field 36, a segment 28, the
+ * buttons that send and leave 40. Its title is the order's value's size, not a page's heading.
+ */
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-modal-header h3 {
+  font-size: var(--tcw-font-size-lg);
+  font-weight: var(--tcw-weight-strong);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-side-btn { height: 36px; font-size: var(--tcw-font-size); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-stepper { height: 36px; }
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-segment { height: 28px; }
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-modal-footer button { height: 40px; }
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-modal-footer .tcw-ticket-place { flex: 1; }
+
+/*
+ * Graphite's buttons that buy and sell. A side's colour on the chart (a candle, a figure) is too
+ * light a ground for white type, so what is pressed to trade has fills of its own, a shade deeper,
+ * with white on them at 4.5:1 or more; over the pointer they go deeper still, never lighter. A
+ * filled button has no border: its ground is its edge. What is not picked, and what leaves, is a
+ * neutral ground with no border either. A field keeps its line, to show where it is typed in.
+ */
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket[data-side='buy'],
+.tcw-root[data-tcw-ui='graphite'] .tcw-quote-buy { --tcw-side-fill: var(--tcw-buy-fill); --tcw-side-fill-hover: var(--tcw-buy-fill-hover); --tcw-side-fill-active: var(--tcw-buy-fill-active); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket[data-side='sell'],
+.tcw-root[data-tcw-ui='graphite'] .tcw-quote-sell { --tcw-side-fill: var(--tcw-sell-fill); --tcw-side-fill-hover: var(--tcw-sell-fill-hover); --tcw-side-fill-active: var(--tcw-sell-fill-active); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-side-btn {
+  border: none;
+  background: var(--tcw-active-bg);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-buy[aria-pressed='true'] { background: var(--tcw-buy-fill); color: var(--tcw-fill-ink); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-sell[aria-pressed='true'] { background: var(--tcw-sell-fill); color: var(--tcw-fill-ink); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-place {
+  background: var(--tcw-side-fill, var(--tcw-accent-fill));
+  color: var(--tcw-fill-ink);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-place:hover:not(:disabled) { background: var(--tcw-side-fill-hover, var(--tcw-accent-fill)); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-footer-cancel {
+  border: none;
+  background: var(--tcw-active-bg);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-stepper-btn { background: var(--tcw-active-bg); }
+/* One edge and one ring to a field: the stepper's, not its input's inside it. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-stepper .tcw-indi-input,
+.tcw-root[data-tcw-ui='graphite'] .tcw-stepper .tcw-indi-input:focus {
+  border: none;
+  outline: none;
+  box-shadow: none;
+}
+/* The quotes on the chart: a tint of their side with no border, the side's fill under the pointer. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-quote-btn {
+  border: none;
+  background: color-mix(in srgb, var(--tcw-side) 20%, var(--tcw-bg));
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-quote-btn:hover:not(:disabled) {
+  background: var(--tcw-side-fill);
+  color: var(--tcw-fill-ink);
+}
+/*
+ * Each has a state under the pointer and one pressed: a fill goes a step deeper each time, a
+ * neutral ground a step lighter.
+ */
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-buy[aria-pressed='true']:hover { background: var(--tcw-buy-fill-hover); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-sell[aria-pressed='true']:hover { background: var(--tcw-sell-fill-hover); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-buy[aria-pressed='true']:active { background: var(--tcw-buy-fill-active); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-sell[aria-pressed='true']:active { background: var(--tcw-sell-fill-active); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-place:active:not(:disabled),
+.tcw-root[data-tcw-ui='graphite'] .tcw-quote-btn:active:not(:disabled) { background: var(--tcw-side-fill-active, var(--tcw-accent-fill)); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-side-btn[aria-pressed='false']:hover,
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-footer-cancel:hover,
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-stepper-btn:hover { background: var(--tcw-border-strong); color: var(--tcw-text); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-side-btn[aria-pressed='false']:active,
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-footer-cancel:active,
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-stepper-btn:active { background: color-mix(in srgb, var(--tcw-border-strong) 78%, var(--tcw-text)); }
+/* On a light chart the quotes' tint is lighter, to keep their words at 4.5:1. */
+.tcw-root[data-tcw-ui='graphite'][data-tcw-theme='light'] .tcw-quote-btn { background: color-mix(in srgb, var(--tcw-side) 12%, var(--tcw-bg)); }
+/*
+ * The ticket opens in its quantity, and a field focused by the widget shows a ring as if a key
+ * had found it: here a field in focus has a quiet edge, a line in the muted text's colour.
+ */
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-stepper:focus-within {
+  border-color: var(--tcw-text-muted);
+  box-shadow: none;
+}
+/* With the system's colours a ground is no edge: the buttons without a border get one back. */
+@media (forced-colors: active) {
+  .tcw-root[data-tcw-ui='graphite'] .tcw-ticket-side-btn,
+  .tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-footer-cancel,
+  .tcw-root[data-tcw-ui='graphite'] .tcw-quote-btn {
+    border: var(--tcw-border-w) solid ButtonText;
+  }
+}

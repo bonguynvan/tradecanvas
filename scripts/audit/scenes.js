@@ -599,7 +599,7 @@ const SCENES = {
       if (s.chart.getOrders().length !== 2) problems.push('the account does not keep the orders of both symbols');
       const row = [...(host.querySelector('.tcw-account tbody tr')?.cells ?? [])].map((cell) => cell.textContent);
       if (row[0] !== 'BTCUSDT') problems.push(`the account panel does not name the symbol of the long's row (${row[0]})`);
-      if (row[4] !== '—' || row[5] !== '—') problems.push(`the account panel gives the long of BTCUSDT a price or a profit on ETHUSDT (${row[4]}, ${row[5]})`);
+      if (row[4] !== '—' || row[7] !== '—') problems.push(`the account panel gives the long of BTCUSDT a price or a profit on ETHUSDT (${row[4]}, ${row[7]})`);
       return problems;
     };
     return { ...s, broker, checks };

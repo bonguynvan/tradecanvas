@@ -24,6 +24,11 @@ The `3.0` branch. These move under the version's own heading when it is released
 
 ### Chart
 
+- **Graphite's ticket and account panel, on its sizes and with fills of their own.** The ticket's title is the
+  size of the order's value, its sides and fields are 36 px, its segments 28 and its buttons 40; it opens with
+  the quantity focused. Buy and Sell are deeper fills with white type (4.5:1 or more) and no border, as are the
+  quotes on the chart under the pointer. A position's row reads Entry, Price, SL, TP, then P&L with its buttons
+  after it; rows are 28 px and the panel is as tall as its rows, up to its height before.
 - **The Graphite look** (`ui: 'graphite'`, the default): a trading desk's chrome with no hue of its own, dark and
   light, on few tokens: controls 20, 24, 28, 36 or 40 px tall, one corner of 3 px, one shadow for what floats.
   Chart themes to match are exported (`GRAPHITE_DARK_THEME`, `GRAPHITE_LIGHT_THEME`). In it switches are boxes

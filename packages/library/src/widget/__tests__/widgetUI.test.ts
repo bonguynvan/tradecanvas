@@ -15,6 +15,9 @@ describe('resolveWidgetUI', () => {
       const { control, controlSmall, menuItem } = resolveWidgetUI({ density }).sizes;
       for (const height of [control, controlSmall, menuItem]) expect(heights, `${density} ${height}`).toContain(height);
     }
+    // Its drawing tools' button is on the heights too: 36 in the column, 40 in the roomy one.
+    const tool = (density?: 'spacious') => widgetUIVariables(resolveWidgetUI({ density }))['--tcw-tool-h'];
+    expect([tool(), tool('spacious')]).toEqual(['36px', '40px']);
     expect(graphite.font.family).toMatch(/^'IBM Plex Sans', /);
   });
 

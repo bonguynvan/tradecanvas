@@ -186,8 +186,8 @@
   --tcw-hit-finger: 32px;
   --tcw-hit-pointer: 20px;
   --tcw-icon: 16px;
-  --tcw-sidebar-w: 40px;
-  --tcw-tool-h: 34px;
+  --tcw-sidebar-w: 42px;
+  --tcw-tool-h: 36px;
   --tcw-tool-icon: 20px;
   --tcw-menu-item-h: 28px;
   --tcw-icon-stroke: 1.5px;
@@ -4548,6 +4548,58 @@
   text-align: start;
 }
 .tcw-root:where([data-tcw-ui='graphite']) .tcw-account-actions { justify-content: flex-start; }
+/* Graphite's fills for what buys and sells, deeper than a side's colour so white reads on them (see the ticket's rules). */
+.tcw-root[data-tcw-ui='graphite'] {
+  --tcw-buy-fill: #0a8068;
+  --tcw-buy-fill-hover: #00735c;
+  --tcw-buy-fill-active: #00624e;
+  --tcw-sell-fill: #d4322c;
+  --tcw-sell-fill-hover: #c62f2f;
+  --tcw-sell-fill-active: #b02828;
+  --tcw-fill-ink: #ffffff;
+}
+.tcw-root[data-tcw-ui='graphite'][data-tcw-theme='light'] {
+  --tcw-buy-fill: #00735c;
+  --tcw-buy-fill-hover: #005f4c;
+  --tcw-buy-fill-active: #004d3e;
+  --tcw-sell-fill: #c0262d;
+  --tcw-sell-fill-hover: #a81f26;
+  --tcw-sell-fill-active: #8f1a20;
+}
+/* Its rows and its head are 28 px, its buttons 24 with 8 between, and the panel is as tall as its rows up to its old height. */
+/*
+ * The panel is one height on every tab and with any number of rows: its head, the table's head
+ * and four rows, the rest scrolled to. As tall as its rows, it moved the chart, and a button under
+ * the pointer, each time an order came. On a phone it is a sheet and keeps the sheet's height.
+ */
+.tcw-root[data-tcw-ui='graphite']:not([data-tcw-narrow]) .tcw-account {
+  height: calc(32px + 5 * 28px + 6 * var(--tcw-border-w));
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-account-head { min-height: 32px; }
+.tcw-root[data-tcw-ui='graphite']:not([data-tcw-narrow]) .tcw-account-table :is(th, td) {
+  box-sizing: border-box;
+  height: 28px;
+  padding-block: 0;
+  line-height: 1;
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-account-actions { gap: var(--tcw-space-4); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-account-pnl { font-weight: var(--tcw-weight-strong); }
+/* Picked, in the status bar and on a phone's interval, is the text's colour here too. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-status-scale-btn[aria-pressed='true'],
+.tcw-root[data-tcw-ui='graphite'] .tcw-toolbar--icons .tcw-tf-current,
+.tcw-root[data-tcw-ui='graphite'][data-tcw-narrow] > .tcw-toolbar .tcw-tf-current {
+  color: var(--tcw-text);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-status-scale-btn[aria-pressed='true'] { background: var(--tcw-active-bg); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-range-btn { height: var(--tcw-control-h-sm); }
+/* A dialog's close button is a small control's size, its cross an icon's. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-modal-close {
+  --tcw-close-box: 28px;
+  --tcw-close-icon: 16px;
+}
+@media (pointer: coarse) {
+  .tcw-root[data-tcw-ui='graphite'] .tcw-modal-close { --tcw-close-box: var(--tcw-hit-finger); }
+}
 .tcw-account-empty {
   margin: 0;
   padding: var(--tcw-space-6);

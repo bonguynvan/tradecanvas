@@ -99,9 +99,8 @@ describe('WidgetAccountPanel', () => {
     panel.openPanel();
     const tabs = [...host.querySelectorAll('[role=tab]')].map((b) => [b.querySelector('.tcw-account-tab-label')!.textContent, b.querySelector('.tcw-account-count')!.textContent]);
     expect(tabs).toEqual([['Positions', '1'], ['Orders', '1'], ['History', '2'], ['Log', '0']]);
-    // Its buttons stand beside its profit, before its stop and its target.
-    expect(cells()[0].slice(0, 5)).toEqual(['Long', '2', '100.00', '103.00', '+6.00 · +3.00%']);
-    expect(cells()[0].slice(6, 8)).toEqual(['95.00', '—']);
+    // Its figures stand together, its profit last, its buttons right after it.
+    expect(cells()[0].slice(0, 7)).toEqual(['Long', '2', '100.00', '103.00', '95.00', '—', '+6.00 · +3.00%']);
     expect(callbacks.onToggle).toHaveBeenCalledWith(true);
   });
 
@@ -110,7 +109,7 @@ describe('WidgetAccountPanel', () => {
     const row = host.querySelector('tbody tr')!;
     const named = [...row.querySelectorAll('td')].map((td) => [td.dataset.label, td.classList.contains('tcw-num')]);
     expect(named).toEqual([
-      ['Side', false], ['Qty', true], ['Entry', true], ['Price', true], ['P&L', true], ['', false], ['SL', true], ['TP', true],
+      ['Side', false], ['Qty', true], ['Entry', true], ['Price', true], ['SL', true], ['TP', true], ['P&L', true], ['', false],
     ]);
   });
 
@@ -126,7 +125,7 @@ describe('WidgetAccountPanel', () => {
 
   it('writes signed figures left to right in any widget, the totals’ too', () => {
     panel.openPanel();
-    expect(host.querySelector<HTMLElement>('tbody td:nth-child(5) span')!.dir).toBe('ltr');
+    expect(host.querySelector<HTMLElement>('tbody td:nth-child(7) span')!.dir).toBe('ltr');
     expect([...host.querySelectorAll<HTMLElement>('.tcw-account-total [dir="ltr"]')].map((el) => el.textContent)).toEqual(['+6.00', '+4.00']);
   });
 
@@ -137,17 +136,17 @@ describe('WidgetAccountPanel', () => {
     panel.update({ ...snapshotOf(), price: 97 });
     panel.openPanel();
     // Two long from 100 at 97 lose 6: three percent.
-    expect(cells()[0][4]).toBe('-۶٫۰۰ · -۳٫۰۰%');
+    expect(cells()[0][6]).toBe('-۶٫۰۰ · -۳٫۰۰%');
     panel.update({ ...snapshotOf(), price: 100 });
-    expect(cells()[0][4]).toBe('۰٫۰۰ · ۰٫۰۰%');
+    expect(cells()[0][6]).toBe('۰٫۰۰ · ۰٫۰۰%');
   });
 
   it('colours a figure by the sign it shows, none on what reads as nothing', () => {
     // Two long from 100 at 100.001 make 0.002: "0.00", neither gain nor loss.
     panel.update({ ...snapshotOf(), price: 100.001 });
     panel.openPanel();
-    expect(cells()[0][4]).toBe('0.00 · 0.00%');
-    expect(host.querySelector('tbody tr')!.querySelectorAll('td')[4].firstElementChild!.className).toBe('');
+    expect(cells()[0][6]).toBe('0.00 · 0.00%');
+    expect(host.querySelector('tbody tr')!.querySelectorAll('td')[6].firstElementChild!.className).toBe('');
     expect(host.querySelector('.tcw-account-total')!.className).toBe('tcw-account-total');
   });
 
@@ -180,7 +179,7 @@ describe('WidgetAccountPanel', () => {
     panel = new WidgetAccountPanel(host, { ...(callbacks as unknown as AccountPanelCallbacks), formatAmount: (v) => v.toFixed(1), formatNumber: (v, d) => v.toFixed(d).replace('.', ',') });
     panel.update(snapshotOf());
     panel.openPanel();
-    expect(cells()[0][4]).toBe('+6.0 · +3,00%');
+    expect(cells()[0][6]).toBe('+6.0 · +3,00%');
   });
 
   it('closes, reverses and cancels from the rows', () => {
@@ -219,7 +218,7 @@ describe('WidgetAccountPanel', () => {
     panel.update({ ...snapshotOf(), price: 104 });
     expect(host.querySelector('[aria-label^="Close position"]')).toBe(close);
     expect(document.activeElement).toBe(close);
-    expect(cells()[0].slice(3, 5)).toEqual(['104.00', '+8.00 · +4.00%']);
+    expect([cells()[0][3], cells()[0][6]]).toEqual(['104.00', '+8.00 · +4.00%']);
   });
 
   it('keeps focus on the same button when the rows change', () => {
@@ -395,7 +394,7 @@ describe('WidgetAccountPanel: an account of more than the symbol shown', () => {
   it('takes a row for the chart’s when its symbol is the chart’s under another name: its ticker, or with its venue', () => {
     panel.update({ ...current, symbol: 'BINANCE:ETHUSDT', price: 48, positions: [ETH_SHORT], fills: [] });
     expect(head()[0]).toBe('Side');
-    expect(cells()[0].slice(2, 5)).toEqual(['50.00', '48.00', '+2.00 · +4.00%']);
+    expect([cells()[0][2], cells()[0][3], cells()[0][6]]).toEqual(['50.00', '48.00', '+2.00 · +4.00%']);
   });
 
   it('names each row’s symbol once a row is of another', () => {
@@ -408,21 +407,21 @@ describe('WidgetAccountPanel: an account of more than the symbol shown', () => {
   it('gives a position of another symbol no price and no profit: the price the chart has is not its own', () => {
     panel.update({ ...current, symbol: 'ETHUSDT', price: 48, positions: [BTC_LONG, ETH_SHORT], fills: [] });
     const [btc, eth] = cells();
-    expect(btc.slice(3, 6)).toEqual(['100.00', '—', '—']);
-    expect(eth.slice(3, 6)).toEqual(['50.00', '48.00', '+2.00 · +4.00%']);
+    expect([btc[3], btc[4], btc[7]]).toEqual(['100.00', '—', '—']);
+    expect([eth[3], eth[4], eth[7]]).toEqual(['50.00', '48.00', '+2.00 · +4.00%']);
     // The total is of what has a price.
     expect(totals()).toEqual(['Open P&L: +2.00']);
   });
 
   it('works its profit out from the adapter’s own price for it, where it gives one', () => {
     panel.update({ ...current, symbol: 'ETHUSDT', price: 48, positions: [{ ...BTC_LONG, markPrice: 104 }, ETH_SHORT], fills: [] });
-    expect(cells()[0].slice(3, 6)).toEqual(['100.00', '104.00', '+8.00 · +4.00%']);
+    expect([cells()[0][3], cells()[0][4], cells()[0][7]]).toEqual(['100.00', '104.00', '+8.00 · +4.00%']);
     expect(totals()).toEqual(['Open P&L: +10.00']);
   });
 
   it('gives it no part of a contract’s multiplier, which is the chart’s market’s', () => {
     panel.update({ ...current, symbol: 'VN30F1M', price: 48, multiplier: 100_000, positions: [{ ...BTC_LONG, markPrice: 104 }], fills: [] });
-    expect(cells()[0][5]).toBe('+8.00 · +4.00%');
+    expect(cells()[0][7]).toBe('+8.00 · +4.00%');
   });
 
   it('keeps each row to its own price as the chart’s price moves', () => {
@@ -430,8 +429,8 @@ describe('WidgetAccountPanel: an account of more than the symbol shown', () => {
     panel.update({ ...current, symbol: 'ETHUSDT', price: 48, positions, fills: [] });
     panel.update({ ...current, symbol: 'ETHUSDT', price: 47, positions, fills: [] });
     const [btc, eth] = cells();
-    expect(btc.slice(4, 6)).toEqual(['104.00', '+8.00 · +4.00%']);
-    expect(eth.slice(4, 6)).toEqual(['47.00', '+3.00 · +6.00%']);
+    expect([btc[4], btc[7]]).toEqual(['104.00', '+8.00 · +4.00%']);
+    expect([eth[4], eth[7]]).toEqual(['47.00', '+3.00 · +6.00%']);
   });
 
   it('names the symbol of an order and of a fill too', () => {
