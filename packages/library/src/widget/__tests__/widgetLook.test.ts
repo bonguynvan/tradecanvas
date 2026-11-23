@@ -31,8 +31,8 @@ function ruleBody(selector: string): string {
 describe('the stylesheet’s look', () => {
   const root = declared('.tcw-root {');
 
-  it('defaults to Modern: every token the `ui` option sets, at Modern’s value', () => {
-    const modern = widgetUIVariables(resolveWidgetUI('modern'));
+  it('defaults to Graphite: every token the `ui` option sets, at Graphite’s value', () => {
+    const modern = widgetUIVariables(resolveWidgetUI());
     for (const [name, value] of Object.entries(modern)) {
       expect(root[name], name).toBeDefined();
       expect(resolved(root, root[name]), name).toBe(resolved(root, value));

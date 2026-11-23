@@ -5,8 +5,21 @@ import { applyWidgetUI, resolveWidgetUI, scaledWidgetUI, typeSize, widgetScaleFo
 import { injectWidgetStyles, removeWidgetStyles } from '../WidgetStyles.js';
 
 describe('resolveWidgetUI', () => {
-  it('is the Modern look by default', () => {
-    const ui = resolveWidgetUI();
+  it('is the Graphite look by default: one corner, one shadow, controls on five heights', () => {
+    const graphite = resolveWidgetUI();
+    expect(graphite.preset).toBe('graphite');
+    expect(new Set(Object.values(graphite.radius))).toEqual(new Set([3]));
+    expect(new Set(Object.values(graphite.shadows)).size).toBe(1);
+    const heights = [20, 24, 28, 36, 40];
+    for (const density of ['compact', 'comfortable', 'spacious'] as const) {
+      const { control, controlSmall, menuItem } = resolveWidgetUI({ density }).sizes;
+      for (const height of [control, controlSmall, menuItem]) expect(heights, `${density} ${height}`).toContain(height);
+    }
+    expect(graphite.font.family).toMatch(/^'IBM Plex Sans', /);
+  });
+
+  it('is the Modern look when asked for', () => {
+    const ui = resolveWidgetUI('modern');
     expect(ui.preset).toBe('modern');
     expect(ui).toMatchObject({ toolbar: 'docked', sidebar: 'docked', intervals: 'plain', active: 'tint', borders: { separators: true }, font: { labelCase: 'none', size: 13 }, iconStroke: 1.5 });
     expect(ui).toEqual(resolveWidgetUI('modern'));
@@ -58,7 +71,7 @@ describe('resolveWidgetUI', () => {
     expect(vars({ preset: 'print', density: 'spacious' })).toMatchObject({ '--tcw-tool-h': '54px', '--tcw-tool-icon': '34px', '--tcw-sidebar-w': '60px' });
     expect(vars({ preset: 'print', density: 'compact' })).toMatchObject({ '--tcw-tool-h': '26px', '--tcw-tool-icon': '16px', '--tcw-sidebar-w': '32px' });
     // Modern: a 20 px icon on a 36 px tool in a 44 px column, over the 16 px icons elsewhere.
-    expect(vars({})).toMatchObject({ '--tcw-tool-h': '36px', '--tcw-tool-icon': '20px', '--tcw-sidebar-w': '44px' });
+    expect(vars({ preset: 'modern' })).toMatchObject({ '--tcw-tool-h': '36px', '--tcw-tool-icon': '20px', '--tcw-sidebar-w': '44px' });
     // Each look's column holds its tool with a little room either side, tool and icon even sizes:
     // the icon is centred on whole pixels in its button, and the button in its column.
     for (const preset of ['modern', 'print', 'studio', 'terminal', 'capsule', 'desk'] as const) {
@@ -243,7 +256,7 @@ describe('resolveWidgetUI', () => {
       active: 'glow' as never,
     });
     const base = resolveWidgetUI();
-    expect(ui.preset).toBe('modern');
+    expect(ui.preset).toBe('graphite');
     expect(ui.radius).toEqual(base.radius);
     expect(ui.sizes.control).toBe(base.sizes.control);
     expect(ui.sizes.toolbar).toBe(base.sizes.toolbar);
@@ -274,9 +287,9 @@ describe('resolveWidgetUI', () => {
     expect(resolveWidgetUI({ font: { family: "'Inter', var(--brand-font), sans-serif" } }).font.family).toBe("'Inter', var(--brand-font), sans-serif");
   });
 
-  it('is Modern for anything that isn’t a look', () => {
+  it('is Graphite for anything that isn’t a look', () => {
     for (const theme of [null, 5, [], 'nope']) {
-      expect(resolveWidgetUI(theme as never), String(theme)).toEqual(resolveWidgetUI('modern'));
+      expect(resolveWidgetUI(theme as never), String(theme)).toEqual(resolveWidgetUI('graphite'));
     }
   });
 

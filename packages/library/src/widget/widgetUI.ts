@@ -2,14 +2,14 @@
  * The widget's look: corners, sizes, type, lines, shadows and the shape of
  * its bars, as tokens. A preset gives all of them; a theme of yours changes
  * what it names. Colours stay with the widget's dark / light theme, but for
- * Modern's: it brings a dark and a light of its own (see `WidgetStyles.css`
- * and `MODERN_DARK_THEME`).
+ * Graphite's and Modern's: each brings a dark and a light of its own (see
+ * `WidgetStyles.css`, and `GRAPHITE_DARK_THEME` and `MODERN_DARK_THEME`).
  */
 import { FIGURES_FONT_FAMILY, PHI, SANS_FONT_FAMILY, evenPx, phiStep } from '@tradecanvas/commons';
 
-export type WidgetUIPreset = 'modern' | 'print' | 'studio' | 'terminal' | 'capsule' | 'desk';
+export type WidgetUIPreset = 'graphite' | 'modern' | 'print' | 'studio' | 'terminal' | 'capsule' | 'desk';
 
-const DEFAULT_PRESET: WidgetUIPreset = 'modern';
+const DEFAULT_PRESET: WidgetUIPreset = 'graphite';
 
 /** Type climbs by the cube root of φ: every third size is φ larger (11, 13, 15, 18, 21). */
 const TYPE_STEPS_PER_PHI = 3;
@@ -274,6 +274,15 @@ const DESK_SANS = "Tahoma, Verdana, 'Segoe UI', 'DejaVu Sans', sans-serif";
  * and each system's own where it doesn't, as Print's.
  */
 const MODERN_SANS = `'Geist', ${PRINT_SANS}`;
+/**
+ * Graphite's face: IBM Plex Sans where the page loads it (the widget loads no fonts), whose
+ * digits are one width as drawn, and each system's own where it doesn't, as Print's.
+ */
+const GRAPHITE_SANS = `'IBM Plex Sans', ${PRINT_SANS}`;
+/** Graphite's one corner, px, on everything but a dot. */
+const GRAPHITE_RADIUS = 3;
+/** Graphite's one shadow, on what floats over the chart. */
+const GRAPHITE_SHADOW = '0 0 0 1px var(--tcw-border-strong), var(--tcw-shadow-md)';
 
 type Density = 'compact' | 'spacious';
 type PresetBase = Omit<ResolvedWidgetUI, 'components' | 'preset' | 'density'> & {
@@ -286,7 +295,35 @@ type PresetBase = Omit<ResolvedWidgetUI, 'components' | 'preset' | 'density'> & 
 
 const PRESETS: Record<WidgetUIPreset, PresetBase> = {
   /*
-   * Modern, the default: a code editor's window. Chrome a shade off the chart
+   * Graphite, the default: a trading desk's chrome with no hue of its own. Grounds a shade apart
+   * with hairlines between. Its tokens are few on purpose: controls are 20, 24, 28, 36 or 40 px
+   * tall and nothing between, every corner is 3 px, floating layers cast one shadow and nothing
+   * else casts any. What is picked (a tool, an interval, a tab) shows on a lighter ground in the
+   * text's own colour, so amber is left for what you act on: the button that places, a link, the
+   * logo. Its dark and light colours are in the stylesheet, scoped to it.
+   */
+  graphite: {
+    radius: { xs: GRAPHITE_RADIUS, sm: GRAPHITE_RADIUS, md: GRAPHITE_RADIUS, lg: GRAPHITE_RADIUS, xl: GRAPHITE_RADIUS },
+    components: { tag: GRAPHITE_RADIUS, tooltip: GRAPHITE_RADIUS, toolbar: 0, sidebar: 0 },
+    sizes: { toolbar: 40, control: 28, controlSmall: 24, icon: 16, sidebar: 40, menuItem: 28 },
+    density: {
+      compact: { toolbar: 36, control: 24, controlSmall: 20, icon: 16, sidebar: 36, menuItem: 24 },
+      spacious: { toolbar: 48, control: 36, controlSmall: 28, icon: 20, sidebar: 48, menuItem: 36 },
+    },
+    font: { family: GRAPHITE_SANS, mono: PRINT_FIGURES, size: 13, weight: 400, strongWeight: 600, labelCase: 'none', labelTracking: 0 },
+    borders: { width: 1, separators: true },
+    // One shadow, for what floats: a menu, a dialog and a tooltip alike.
+    shadows: { menu: GRAPHITE_SHADOW, dialog: GRAPHITE_SHADOW, tooltip: GRAPHITE_SHADOW },
+    blur: 0,
+    active: 'tint',
+    toolbar: 'docked',
+    sidebar: 'docked',
+    intervals: 'plain',
+    tagRadius: GRAPHITE_RADIUS,
+    iconStroke: 1.5,
+  },
+  /*
+   * Modern, the default before Graphite: a code editor's window. Chrome a shade off the chart
    * around it, hairlines between, 16 px icons in 28 px buttons on a 38 px bar,
    * corners of 4 on controls, 6 on menus and floating panels and 8 on dialogs.
    * A chosen tool shows the editor's toggled ground; its own dark and light
@@ -554,7 +591,7 @@ export function resolveWidgetUI(theme?: WidgetUIPreset | WidgetUITheme): Resolve
   });
   // Airy figures read in the look's own sans face, unless its figures face is set; Print's and Modern's
   // in plain Segoe UI, as Segoe UI Variable's and Geist's digits are not one width and the chart's canvas can't ask.
-  const figures = picked.family === PRINT_SANS || picked.family === MODERN_SANS ? SANS_FONT_FAMILY : picked.family;
+  const figures = picked.family === PRINT_SANS || picked.family === MODERN_SANS || picked.family === GRAPHITE_SANS ? SANS_FONT_FAMILY : picked.family;
   const font = density === 'airy' && t.font?.mono === undefined ? { ...picked, mono: figures } : picked;
   // Corners the theme sets on the scale reach the parts that follow it.
   const components = pick(componentsFrom(radius, base.components), t.components, (_, v) => px(v, 0, 999));

@@ -42,6 +42,35 @@
   --tcw-check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.25l2.6 2.6L12 5.5' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
+/* Graphite's fields: a ground under the chrome's, ruled in its own line. */
+.tcw-root:where([data-tcw-ui='graphite']) {
+  --tcw-field-bg: #1f2125;
+  --tcw-field-bg-hover: #1f2125;
+  --tcw-field-bg-focus: #1f2125;
+  --tcw-field-line: #3d4047;
+  --tcw-field-line-hover: #5a5e67;
+  --tcw-check-line: rgba(232, 233, 235, 0.35);
+  --tcw-scroll-thumb: rgba(144, 147, 155, 0.35);
+  --tcw-scroll-thumb-hover: rgba(144, 147, 155, 0.6);
+  --tcw-field-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.75l3 3 3-3' fill='none' stroke='%2390939b' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --tcw-field-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%2390939b' stroke-width='1.3' stroke-linecap='round'%3E%3Crect x='2.5' y='3.5' width='11' height='10' rx='2'/%3E%3Cpath d='M2.5 6.5h11M5.5 2v3M10.5 2v3'/%3E%3C/g%3E%3C/svg%3E");
+  --tcw-check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.25l2.6 2.6L12 5.5' fill='none' stroke='%230e1013' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.tcw-root[data-tcw-theme='light']:where([data-tcw-ui='graphite']) {
+  --tcw-field-bg: #ffffff;
+  --tcw-field-bg-hover: #ffffff;
+  --tcw-field-bg-focus: #ffffff;
+  --tcw-field-line: #c5c8ce;
+  --tcw-field-line-hover: #9a9ea7;
+  --tcw-check-line: rgba(26, 28, 32, 0.4);
+  --tcw-scroll-thumb: rgba(95, 101, 112, 0.4);
+  --tcw-scroll-thumb-hover: rgba(26, 28, 32, 0.45);
+  --tcw-field-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.75l3 3 3-3' fill='none' stroke='%235f6570' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --tcw-field-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%235f6570' stroke-width='1.3' stroke-linecap='round'%3E%3Crect x='2.5' y='3.5' width='11' height='10' rx='2'/%3E%3Cpath d='M2.5 6.5h11M5.5 2v3M10.5 2v3'/%3E%3C/g%3E%3C/svg%3E");
+  --tcw-check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.25l2.6 2.6L12 5.5' fill='none' stroke='%230e1013' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
 /* Modern's fields: the editor's input boxes, ruled in its input line. */
 .tcw-root:where([data-tcw-ui='modern']) {
   --tcw-field-bg: #313131;
