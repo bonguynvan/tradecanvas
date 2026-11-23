@@ -1907,3 +1907,17 @@ img.tcw-ss-badge {
 .tcw-ticket-limit:hover { background: var(--tcw-hover-bg); border-color: var(--tcw-border-strong); }
 .tcw-ticket-limit:focus-visible { outline: none; box-shadow: var(--tcw-ring); }
 .tcw-ticket-limit-name { color: var(--tcw-text-dim); }
+
+/*
+ * Graphite's ticket, on the look's five heights: a side and a field 36, a segment 28, the
+ * buttons that send and leave 40. Its title is the order's value's size, not a page's heading.
+ */
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-modal-header h3 {
+  font-size: var(--tcw-font-size-lg);
+  font-weight: var(--tcw-weight-strong);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-side-btn { height: 36px; font-size: var(--tcw-font-size); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-stepper { height: 36px; }
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-segment { height: 28px; }
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-modal-footer button { height: 40px; }
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-modal-footer .tcw-done-btn { flex: 1; }

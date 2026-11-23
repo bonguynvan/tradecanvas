@@ -305,10 +305,10 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
   graphite: {
     radius: { xs: GRAPHITE_RADIUS, sm: GRAPHITE_RADIUS, md: GRAPHITE_RADIUS, lg: GRAPHITE_RADIUS, xl: GRAPHITE_RADIUS },
     components: { tag: GRAPHITE_RADIUS, tooltip: GRAPHITE_RADIUS, toolbar: 0, sidebar: 0 },
-    sizes: { toolbar: 40, control: 28, controlSmall: 24, icon: 16, sidebar: 40, menuItem: 28 },
+    sizes: { toolbar: 40, control: 28, controlSmall: 24, icon: 16, sidebar: 42, menuItem: 28 },
     density: {
       compact: { toolbar: 36, control: 24, controlSmall: 20, icon: 16, sidebar: 36, menuItem: 24 },
-      spacious: { toolbar: 48, control: 36, controlSmall: 28, icon: 20, sidebar: 48, menuItem: 36 },
+      spacious: { toolbar: 48, control: 36, controlSmall: 28, icon: 20, sidebar: 46, menuItem: 36 },
     },
     font: { family: GRAPHITE_SANS, mono: PRINT_FIGURES, size: 13, weight: 400, strongWeight: 600, labelCase: 'none', labelTracking: 0 },
     borders: { width: 1, separators: true },
