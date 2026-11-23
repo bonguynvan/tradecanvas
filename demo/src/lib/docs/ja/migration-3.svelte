@@ -49,6 +49,17 @@ chart.connectExecution(broker, { brackets: 'place' })   →   chart.connectExecu
 <pre><code>{`chart.startBracket('buy', undefined, { quantity: 2 })
 chart.startBracket('buy', undefined, { risk: 50 })   // ストップで 50 を失う数量`}</code></pre>
 
+<h3 id="trade-buttons">執行アダプターを接続すると、チャート上に売りと買いが表示されます</h3>
+<p>
+  執行アダプターが接続され、注文チケットがオンのとき、ウィジェットはチャートの凡例の下に売りと買いを表示するようになりました。
+  自分の注文とポジションを描くためだけにアダプターを接続しているホストは、これをオフにします：
+</p>
+<pre><code>{`new ChartWidget(el, { features: { tradeButtons: false } });`}</code></pre>
+<p>
+  <code>orderTicket</code> がオフのとき、またはアダプターがないときは、表示されません。注文関連のスイッチを名前で一つずつオフにしているホストには、
+  指定する名前が一つ増えます。<code>tradeButtons</code> は新しいスイッチで、設定しなければオンです。
+</p>
+
 <h3 id="stop-limit">ペーパー口座はストップリミットを指値の範囲内で約定します</h3>
 <p>
   <code>PaperExecutionAdapter</code> はこれまで <code>stopLimit</code> 注文をストップ価格で、ストップ注文と同じように約定していました。今後は、価格がストップに達すると

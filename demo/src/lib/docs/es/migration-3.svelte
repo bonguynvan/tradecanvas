@@ -49,6 +49,17 @@ chart.connectExecution(broker, { brackets: 'place' })   →   chart.connectExecu
 <pre><code>{`chart.startBracket('buy', undefined, { quantity: 2 })
 chart.startBracket('buy', undefined, { risk: 50 })   // la cantidad que pierde 50 en el stop`}</code></pre>
 
+<h3 id="trade-buttons">Vender y Comprar aparecen en el gráfico con un adaptador de ejecución</h3>
+<p>
+  Con un adaptador de ejecución conectado y el ticket de orden activo, el widget muestra ahora Vender y Comprar bajo la
+  leyenda del gráfico. Un host que conecta un adaptador solo para dibujar sus órdenes y posiciones los apaga:
+</p>
+<pre><code>{`new ChartWidget(el, { features: { tradeButtons: false } });`}</code></pre>
+<p>
+  Con <code>orderTicket</code> apagado, o sin adaptador, nunca aparecen. Un host que apaga por su nombre cada interruptor
+  de órdenes tiene uno más que nombrar: <code>tradeButtons</code> es nuevo, y está encendido si no se indica.
+</p>
+
 <h3 id="stop-limit">La cuenta de simulación ejecuta una stop-limit dentro de su límite</h3>
 <p>
   <code>PaperExecutionAdapter</code> ejecutaba una orden <code>stopLimit</code> en su stop, como una orden stop.
