@@ -1,7 +1,7 @@
 {
   "name": "@tradecanvas/mcp",
   "mcpName": "io.github.bonguynvan/tradecanvas",
-  "version": "2.17.0",
+  "version": "2.17.1",
   "type": "module",
   "description": "An MCP server for TradeCanvas, the open-source chart library for trading apps: coding agents look up its indicators, drawing tools, options, feature switches and style keys, and check an options object before they use it.",
   "license": "MIT",

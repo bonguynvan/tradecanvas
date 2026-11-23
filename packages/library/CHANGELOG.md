@@ -1,5 +1,13 @@
 # @tradecanvas/chart
 
+## 2.17.1
+
+### Patch Changes
+
+- 53ae587: A `ChartWidgetGrid`'s bar is written right to left in a language that is, as its charts are; and a menu opened under a toolbar button gives the keyboard back to that button when it shuts, in Safari too.
+  - @tradecanvas/commons@2.17.1
+  - @tradecanvas/core@2.17.1
+
 ## 2.17.0
 
 ### Minor Changes
