@@ -282,7 +282,7 @@ export { VolumeRenderer, CompareRenderer } from '@tradecanvas/core';
 // How many charts on the page draw with WebGL at once.
 export { setMaxWebGLCharts, DEFAULT_MAX_WEBGL_CHARTS } from '@tradecanvas/core';
 export { lttbDownsample, lttbVisibleIndices } from '@tradecanvas/core';
-export type { CompareSymbol, CompareValue, MarketProfileConfig, PivotMarkersConfig } from '@tradecanvas/core';
+export type { CompareSymbol, CompareValue, DepthHeatmapConfig, MarketProfileConfig, PivotMarkersConfig } from '@tradecanvas/core';
 export { toHeikinAshi, toRenko, toLineBreak, toKagi, toPointAndFigure, toRangeBars, ReshapeMemo, axisTimes } from '@tradecanvas/core';
 
 // Re-export data export

@@ -574,6 +574,7 @@ chart.setMarketProfileConfig({
   opacity: 0.32,
   valueAreaPct: 0.7,  // fraction of TPOs in the value area
   highlightPoC: true, // dashed line at the point of control
+  valueAreaColor: '#7e57c2', color: '#90a4ae', // colores propios; null: los del tema (la vela alcista, el texto secundario)
 })
 
 // split into one mini-profile per trading day, in the exchange's zone

@@ -11,10 +11,28 @@ import { DepthHeatmapBuffer, levelStep } from './DepthHeatmapBuffer.js';
  * Snapshots are fed via `push()` (typically alongside the depth overlay) and
  * stored in a fixed-capacity ring buffer.
  */
+/** How the liquidity heatmap is drawn. */
+export interface DepthHeatmapConfig {
+  opacity: number;
+  /** How many snapshots it keeps. */
+  capacity: number;
+  /** The bids' colour; null is the theme's rising candle. */
+  bidColor: string | null;
+  /** The asks' colour; null is the theme's falling candle. */
+  askColor: string | null;
+}
+
+/** A colour given for a layer: a string with something in it, else none (the theme's). */
+function ownColor(color: string | null): string | null {
+  return typeof color === 'string' && color.trim() !== '' ? color : null;
+}
+
 export class DepthHeatmapRenderer {
   private buffer = new DepthHeatmapBuffer(240);
   private visible = false;
   private opacity = 0.7;
+  private bidColor: string | null = null;
+  private askColor: string | null = null;
   /** Books from this time on are not drawn (a replay has not reached them); null draws all. */
   private shownUntil: number | null = null;
 
@@ -30,9 +48,19 @@ export class DepthHeatmapRenderer {
   setCapacity(n: number): void {
     this.buffer.setCapacity(n);
   }
-  /** Its opacity and how many snapshots it keeps, as the setters left them. */
-  getConfig(): { opacity: number; capacity: number } {
-    return { opacity: this.opacity, capacity: this.buffer.getCapacity() };
+  /**
+   * Colours of its own for the bids and the asks; null (or left out as they start) is the theme's
+   * rising and falling candles. A chart that hides its candles, or colours them for something
+   * else, keeps its heatmap with these.
+   */
+  setColors(colors: { bidColor?: string | null; askColor?: string | null }): void {
+    if (colors.bidColor !== undefined) this.bidColor = ownColor(colors.bidColor);
+    if (colors.askColor !== undefined) this.askColor = ownColor(colors.askColor);
+  }
+
+  /** Its opacity, how many snapshots it keeps and its own colours (null: the theme's), as the setters left them. */
+  getConfig(): DepthHeatmapConfig {
+    return { opacity: this.opacity, capacity: this.buffer.getCapacity(), bidColor: this.bidColor, askColor: this.askColor };
   }
 
   /**
@@ -74,8 +102,8 @@ export class DepthHeatmapRenderer {
       const cx = timeToX(snap.time, viewport);
       if (cx < left - stripWidth || cx > right + stripWidth) continue;
       const x = cx - stripWidth / 2;
-      this.drawSide(ctx, snap.bids, snap.bidStep ?? levelStep(snap.bids), theme.candleUp, x, stripWidth, viewport, invMax, top, bottom);
-      this.drawSide(ctx, snap.asks, snap.askStep ?? levelStep(snap.asks), theme.candleDown, x, stripWidth, viewport, invMax, top, bottom);
+      this.drawSide(ctx, snap.bids, snap.bidStep ?? levelStep(snap.bids), this.bidColor ?? theme.candleUp, x, stripWidth, viewport, invMax, top, bottom);
+      this.drawSide(ctx, snap.asks, snap.askStep ?? levelStep(snap.asks), this.askColor ?? theme.candleDown, x, stripWidth, viewport, invMax, top, bottom);
     }
     ctx.restore();
   }

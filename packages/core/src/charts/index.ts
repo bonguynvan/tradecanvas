@@ -42,6 +42,7 @@ export type { Pivot, ClassifiedPivot, StructureLabel } from './pivots.js';
 export { computePeriodLevels } from './periodLevels.js';
 export type { LevelPeriod, PriceLevel } from './periodLevels.js';
 export { DepthHeatmapRenderer } from './DepthHeatmapRenderer.js';
+export type { DepthHeatmapConfig } from './DepthHeatmapRenderer.js';
 export { DepthHeatmapBuffer } from './DepthHeatmapBuffer.js';
 export type { DepthSnapshot } from './DepthHeatmapBuffer.js';
 export { CompareRenderer } from './CompareRenderer.js';

@@ -683,6 +683,7 @@ chart.setDepthOverlay({ mode: 'cumulative' })       // change the look later`}</
 </p>
 <pre><code>{`chart.setDepthHeatmapVisible(true)
 chart.setDepthHeatmapConfig({ opacity: 0.7, capacity: 240 })
+chart.setDepthHeatmapConfig({ bidColor: '#1e88e5', askColor: '#fb8c00' })   // 자체 색상. null이면 테마의 봉 색
 
 // each book update both draws the overlay/ladder and records a heatmap column
 widget.setDepth(orderBook)
