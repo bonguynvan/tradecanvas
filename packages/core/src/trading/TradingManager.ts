@@ -22,7 +22,7 @@ import { buttonAt, sameLineAction, type LineButton, type LineButtonAction } from
 import { renderFillMarks } from './fillMarks.js';
 import { drawAxisBadge, drawTags, spreadAxisBadges, tagAt, type AxisBadge, type TagBox, type TagRect } from './tradingTags.js';
 import { clampToPlot } from './plot.js';
-import { isWithinBounds, onGrid, onGridBeyond, withinBounds, type PriceBounds, type PriceRounding } from '../viewport/priceGrid.js';
+import { boundsOnGrid, isWithinBounds, onGrid, onGridBeyond, withinBounds, type PriceBounds, type PriceRounding } from '../viewport/priceGrid.js';
 import { stopSide } from './positionStops.js';
 import { AXIS_LABEL_HEIGHT } from '../ui/axisValueLabels.js';
 
@@ -105,7 +105,8 @@ export class TradingManager {
    * held: they are no orders of today's. Null takes the limits away.
    */
   setOrderPriceBounds(bounds: (() => PriceBounds | null) | null): void {
-    this.orderBounds = bounds ?? (() => null);
+    // As prices of the market's grid: a limit that is a per cent of a reference is a sum no order can be at.
+    this.orderBounds = bounds ? () => boundsOnGrid(this.round, bounds()) : () => null;
     this.dragHandler.setOrderBounds(this.orderBounds);
     this.bracket.setOrderBounds(this.orderBounds);
     this.orderDraft.setOrderBounds(this.orderBounds);
@@ -321,6 +322,8 @@ export class TradingManager {
 
   /** Emit `bracketPlace` with the current draft and clear it. No-op if inactive. */
   confirmBracket(): boolean {
+    // The day's limits may have come since it was started: it goes out inside them.
+    this.bracket.settle();
     const draft = this.bracket.getDraft();
     if (!draft) return false;
     this.eventCallback?.('bracketPlace', {
@@ -356,6 +359,7 @@ export class TradingManager {
 
   /** Emit `orderPlace` with the drafted order (type inferred vs the market). */
   confirmOrderDraft(): boolean {
+    this.orderDraft.settle();
     const intent = this.orderDraft.toIntent(this.marketOnGrid());
     if (!intent) return false;
     this.eventCallback?.('orderPlace', intent);
@@ -623,6 +627,16 @@ export class TradingManager {
     if (this.dragHandler.cancel()) had = true;
     if (had) this.requestRender?.();
     return had;
+  }
+
+  /**
+   * Whether its right-click menu is on and has no order to offer at `pos`: a
+   * price past the day's limits. `onContextMenu` then opens nothing, but the
+   * click is still the chart's: the browser's own menu is not to stand in.
+   */
+  refusesContextMenu(pos: Point, viewport: ViewportState): boolean {
+    if (!this.config.enabled || !this.config.contextMenu?.enabled || !this.container || this.hidden) return false;
+    return !isWithinBounds(this.orderBounds(), onGrid(this.round, yToPrice(pos.y, viewport)));
   }
 
   onContextMenu(pos: Point, viewport: ViewportState): boolean {

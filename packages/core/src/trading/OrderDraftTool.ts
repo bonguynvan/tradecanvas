@@ -68,6 +68,11 @@ export class OrderDraftTool {
     return withinBounds(this.bounds(), onGrid(this.round, price));
   }
 
+  /** Put the draft in hand where it may be placed now: inside the day's limits, which may have come, or moved, since. */
+  settle(): void {
+    if (this.draft) this.draft = { ...this.draft, price: withinBounds(this.bounds(), this.draft.price) };
+  }
+
   start(side: OrderSide, price: number, quantity = 1): void {
     this.draft = { side, price: this.placed(price), quantity };
     this.dragging = false;

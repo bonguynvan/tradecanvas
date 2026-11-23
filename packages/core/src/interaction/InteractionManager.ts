@@ -881,6 +881,9 @@ export class InteractionManager {
         return;
       }
       if (this.onChartContextMenu?.(areaAt(pos), pos)) e.preventDefault();
+      // The trading menu is on and had no order to offer there (a price past the day's limits):
+      // the host may have a menu for it, and the browser's own does not stand in for either.
+      else if (this.tradingManager?.refusesContextMenu(pos, vp)) e.preventDefault();
     };
 
     // --- Touch events ---

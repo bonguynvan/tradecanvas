@@ -160,6 +160,36 @@ describe('ChartWidget: what it says of an order', () => {
   });
 });
 
+describe('ChartWidget: an order asked for past the day’s limits', () => {
+  type Trading = { trading: { placeOrderAt(kind: string, price: number): void; allowedToday(price: number): boolean } };
+
+  it('is not placed, and the widget says what today’s prices are', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    const chart = FakeChart.last as unknown as { getPriceLimits(): unknown; placeOrderIntent(intent: unknown): void };
+    const placed: unknown[] = [];
+    chart.placeOrderIntent = (intent) => { placed.push(intent); };
+    chart.getPriceLimits = () => ({ floor: 93, ceiling: 107, reference: 100 });
+    const trading = (widget as unknown as Trading).trading;
+    trading.placeOrderAt('sellLimit', 110);
+    expect(placed).toEqual([]);
+    expect(toasts()).toEqual(['Today’s prices run from 93.00 to 107.00.']);
+    expect(trading.allowedToday(92)).toBe(false);
+    // At a limit, and between them, it goes out as before.
+    trading.placeOrderAt('sellLimit', 107);
+    expect(placed).toEqual([expect.objectContaining({ side: 'sell', type: 'limit', price: 107 })]);
+    expect(toasts()).toEqual(['Sell limit @ 107.00']);
+  });
+
+  it('is placed anywhere on a market with no limits for the day', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    const chart = FakeChart.last as unknown as { placeOrderIntent(intent: unknown): void };
+    const placed: unknown[] = [];
+    chart.placeOrderIntent = (intent) => { placed.push(intent); };
+    (widget as unknown as Trading).trading.placeOrderAt('buyStop', 110);
+    expect(placed).toHaveLength(1);
+  });
+});
+
 describe('ChartWidget: the quantity of a bracket it starts', () => {
   const field = () => host.querySelector<HTMLInputElement>('.tcw-bracket-quantity input')!;
   const type = (text: string) => {

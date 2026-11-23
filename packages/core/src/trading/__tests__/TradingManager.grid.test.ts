@@ -279,11 +279,74 @@ describe('an order set by hand keeps inside the day’s limits', () => {
     expect(events[0].data).toEqual({ orderId: 'o1', newPrice: 75, previousPrice: 75, newStopPrice: 80, previousStopPrice: 70 });
   });
 
-  it('a stop-limit’s stop taken with its order stops at a limit too, where the room would put it past', () => {
-    // A buy whose limit waits under its stop: the stop is the one nearer the ceiling.
+  it('a stop-limit whose stop is the nearer the ceiling stops short of it: its stop at the limit, the room between them kept', () => {
+    // A buy whose limit waits under its stop, six apart.
     manager.setOrders([{ id: 'o1', side: 'buy', type: 'stopLimit', price: 70, stopPrice: 76, quantity: 1 }]);
-    drag(30, 22); // the limit to 78, its stop six over: 84, past the ceiling
-    expect(events[0].data).toEqual({ orderId: 'o1', newPrice: 78, previousPrice: 70, newStopPrice: 80, previousStopPrice: 76 });
+    manager.onPointerDown({ x: X, y: 30 }, unitViewport);
+    manager.onPointerMove({ x: X, y: 12 }, unitViewport); // the limit to 88 by the pointer
+    // Drawn as it will be told: the order at 74 (y 26), its stop at the ceiling's 80 (y 20), nothing past it.
+    const drawn = draw().lineYs as number[];
+    expect(drawn).toEqual(expect.arrayContaining([26.5, 20.5]));
+    expect(drawn.every((y) => y >= 20)).toBe(true);
+    expect(axis()).toEqual(expect.arrayContaining(['74.00', '80.00']));
+    manager.onPointerUp({ x: X, y: 12 });
+    expect(events[0].data).toEqual({ orderId: 'o1', newPrice: 74, previousPrice: 70, newStopPrice: 80, previousStopPrice: 76 });
+    // And the same at the floor, for one whose stop is under it.
+    events.length = 0;
+    manager.setOrders([{ id: 'o2', side: 'sell', type: 'stopLimit', price: 50, stopPrice: 44, quantity: 1 }]);
+    drag(50, 71);
+    expect(events[0].data).toEqual({ orderId: 'o2', newPrice: 46, previousPrice: 50, newStopPrice: 40, previousStopPrice: 44 });
+  });
+
+  it('limits that are off the market’s grid hold an order on the grid inside them', () => {
+    limits = { floor: 40.3, ceiling: 79.8 };
+    manager.setOrders([{ id: 'o1', side: 'sell', type: 'limit', price: 75, quantity: 1 }]);
+    drag(25, 8);
+    // 79.5, the highest half not over the ceiling: not the ceiling's own 79.8, which the market has not.
+    expect((events[0].data as { newPrice: number }).newPrice).toBe(79.5);
+    events.length = 0;
+    manager.setOrders([{ id: 'o1', side: 'buy', type: 'limit', price: 45, quantity: 1 }]);
+    drag(55, 77);
+    expect((events[0].data as { newPrice: number }).newPrice).toBe(40.5);
+  });
+
+  it('an order that is past the limits already is taken to the limit by a pull, and left where it is by a press', () => {
+    // Yesterday's order, or one the broker set: at 90, over today's ceiling.
+    manager.setOrders([{ id: 'o1', side: 'sell', type: 'limit', price: 90, quantity: 1 }]);
+    manager.onPointerDown({ x: X, y: 10 }, unitViewport);
+    manager.onPointerUp({ x: X, y: 10 });
+    expect(events).toEqual([]);
+    drag(10, 5); // pulled further out: to the ceiling all the same
+    expect(events).toEqual([{ event: 'orderModify', data: { orderId: 'o1', newPrice: 80, previousPrice: 90 } }]);
+  });
+
+  it('a bracket or a draft order in hand when the limits come is put inside them as it is confirmed', () => {
+    limits = null;
+    manager.startBracket('buy', 95, { quantity: 1 });
+    expect(manager.getBracket()!.entry).toBe(95);
+    limits = { floor: 40, ceiling: 80 };
+    manager.confirmBracket();
+    const placed = events[0].data as { entry: number; stopLoss: number; takeProfit: number };
+    expect(placed.entry).toBe(80);
+    // Its stop and its target keep their own sides of where it now is.
+    expect(placed.stopLoss).toBeLessThan(80);
+    expect(placed.takeProfit).toBeGreaterThan(80);
+    events.length = 0;
+    limits = null;
+    manager.startOrderDraft('sell', 12);
+    limits = { floor: 40, ceiling: 80 };
+    manager.confirmOrderDraft();
+    expect((events[0].data as { price: number }).price).toBe(40);
+  });
+
+  it('says a right-click past the limits is still the chart’s: its menu is on, and has no order to offer there', () => {
+    manager.setConfig({ enabled: true, contextMenu: { enabled: true } });
+    manager.setContainer({} as HTMLElement);
+    expect(manager.refusesContextMenu({ x: X, y: 10 }, unitViewport)).toBe(true);
+    expect(manager.refusesContextMenu({ x: X, y: 40 }, unitViewport)).toBe(false);
+    // With its menu off it has no say: the click is the host's, or the browser's.
+    manager.setConfig({ enabled: true, contextMenu: { enabled: false } });
+    expect(manager.refusesContextMenu({ x: X, y: 10 }, unitViewport)).toBe(false);
   });
 
   it('leaves a position’s stop, target and levels free: they are no orders of today’s', () => {

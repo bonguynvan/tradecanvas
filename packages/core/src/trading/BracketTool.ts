@@ -213,6 +213,17 @@ export class BracketTool {
   }
 
   /**
+   * Put the bracket in hand where it may be placed now: its entry inside the
+   * day's limits, which may have come, or moved, since it was started or last
+   * dragged; its stop and its target moved with it, their distances kept.
+   */
+  settle(): void {
+    if (!this.draft) return;
+    const entry = withinBounds(this.bounds(), this.draft.entry);
+    if (entry !== this.draft.entry) this.draft = this.beyondEntry(applyHandlePrice(this.draft, 'entry', entry));
+  }
+
+  /**
    * The draft with its stop and its target on the market's grid, each a step
    * or more its own side of the entry: on a grid coarser than they are away
    * (a handle pulled onto the entry, a bracket moved to where the step is

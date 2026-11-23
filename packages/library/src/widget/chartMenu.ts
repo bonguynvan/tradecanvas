@@ -86,6 +86,9 @@ export interface ChartMenuContext {
 
 type MenuItem = Exclude<ContextMenuEntry, 'separator'>;
 
+/** Prices that differ by less than this are the same price (float dust), as the order ticket has it. */
+const LIMIT_EPSILON = 1e-9;
+
 /** The groups that have entries, a separator between each two. */
 function groups(...parts: readonly (readonly ContextMenuEntry[])[]): ContextMenuEntry[] {
   return parts.filter((part) => part.length > 0).flatMap((part, i) => (i === 0 ? [...part] : ['separator' as const, ...part]));
@@ -110,8 +113,9 @@ export function priceEntries(ctx: ChartMenuContext, t: Translator): ContextMenuE
     // Below the market a buy waits as a limit and a sell as a stop; above, the other way round.
     const below = ctx.lastPrice === null || ctx.price <= ctx.lastPrice;
     // Past the day's ceiling or floor no order may be: the ticket still opens there, and says why.
+    // A limit is a per cent of a reference: a sum, and a hair off the price it stands for is still that price.
     const { limits } = ctx;
-    const inLimits = !limits || (ctx.price <= limits.ceiling && ctx.price >= limits.floor);
+    const inLimits = !limits || (ctx.price <= limits.ceiling + LIMIT_EPSILON && ctx.price >= limits.floor - LIMIT_EPSILON);
     if (inLimits) entries.push(
       below
         ? { id: 'buyLimit', label: fill(t('chartMenu.buyLimit'), { price }), icon: 'trendingUp' }

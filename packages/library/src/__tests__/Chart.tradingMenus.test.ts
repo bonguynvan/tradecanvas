@@ -310,6 +310,24 @@ describe('Chart: an order set by hand keeps inside the day’s limits', () => {
     expect(moved).toEqual([expect.objectContaining({ newPrice: 101 })]);
   });
 
+  it('holds an order on the grid inside limits that are no prices of it: a market with limits and no price step', () => {
+    // One per cent either side of 100.3, to two decimals: the ceiling is 101.303, which the grid has not.
+    chart.setMarket({ type: 'stock', pricePrecision: 2, priceLimits: { enabled: true, ceilingPercent: 1, floorPercent: 1 } });
+    chart.setPriceLimits(100.3);
+    const { ceiling } = chart.getPriceLimits()!;
+    expect(ceiling).toBeCloseTo(101.303, 6);
+    chart.setOrders([{ id: 'o1', side: 'sell', type: 'limit', price: 100.5, quantity: 1, draggable: true }]);
+    const moved: { newPrice: number }[] = [];
+    chart.on('orderModify', (e) => moved.push(e.payload as { newPrice: number }));
+    const x = state().chartRect.x + state().chartRect.width / 2;
+    mouse('mousemove', x, yOf(100.5));
+    mouse('mousedown', x, yOf(100.5));
+    mouse('mousemove', x, yOf(101.6));
+    mouse('mouseup', x, yOf(101.6));
+    // The highest price of the grid not over the ceiling: not the ceiling's own 101.303.
+    expect(moved).toEqual([expect.objectContaining({ newPrice: 101.3 })]);
+  });
+
   it('holds nothing with no limits for the day', () => {
     chart.setMarket({ type: 'stock', priceStep: 0.1 });
     chart.setOrders([{ id: 'o1', side: 'sell', type: 'limit', price: 100.5, quantity: 1, draggable: true }]);
@@ -321,5 +339,51 @@ describe('Chart: an order set by hand keeps inside the day’s limits', () => {
     mouse('mousemove', x, yOf(101.6));
     mouse('mouseup', x, yOf(101.6));
     expect(moved[0].newPrice).toBeCloseTo(101.6, 5);
+  });
+});
+
+describe('Chart: a right-click past the day’s limits, with the engine’s order menu on', () => {
+  let menuHost: HTMLDivElement;
+  let menuChart: Chart;
+
+  beforeEach(() => {
+    menuHost = sizedHost(800, 500);
+    menuChart = new Chart(menuHost, { chartType: 'candlestick', features: { trading: true, tradingContextMenu: true } });
+    menuChart.setData(hourly(200));
+    menuChart.setMarket({ type: 'stock', priceStep: 0.1, priceLimits: { enabled: true, ceilingPercent: 1, floorPercent: 1 } });
+    menuChart.setPriceLimits(100);
+  });
+
+  afterEach(() => {
+    menuChart.destroy();
+    menuHost.remove();
+  });
+
+  const rightClick = (y: number) => {
+    const plot = (menuChart as unknown as { viewport: { getState(): ViewportState } }).viewport.getState().chartRect;
+    return menuHost.dispatchEvent(new MouseEvent('contextmenu', { clientX: plot.x + plot.width / 2, clientY: y, button: 2, bubbles: true, cancelable: true }));
+  };
+  const yOfPrice = (price: number) => {
+    const { chartRect: plot, priceRange } = (menuChart as unknown as { viewport: { getState(): ViewportState } }).viewport.getState();
+    return plot.y + ((priceRange.max - price) / (priceRange.max - priceRange.min)) * plot.height;
+  };
+
+  it('keeps the browser’s own menu shut, though it has no order to offer there', () => {
+    const menu = (menuChart as unknown as { tradingManager: { contextMenu: { show(...args: unknown[]): void } } }).tradingManager.contextMenu;
+    const shown = vi.spyOn(menu, 'show');
+    // Inside the limits its menu opens, and the click is taken.
+    expect(rightClick(yOfPrice(100.4))).toBe(false);
+    expect(shown).toHaveBeenCalledTimes(1);
+    // Past the ceiling it opens for nothing, and the click is still the chart's: no menu of the browser's.
+    expect(rightClick(yOfPrice(101.6))).toBe(false);
+    expect(shown).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets an app’s own menu have the click there', () => {
+    const menus: ChartContextMenuPayload[] = [];
+    menuChart.on('chartContextMenu', (e) => menus.push(e.payload as ChartContextMenuPayload));
+    expect(rightClick(yOfPrice(101.6))).toBe(false);
+    expect(menus).toHaveLength(1);
+    expect(menus[0].price).toBeGreaterThan(101);
   });
 });

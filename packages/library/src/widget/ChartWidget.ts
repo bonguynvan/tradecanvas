@@ -1457,6 +1457,8 @@ export class ChartWidget {
       if (options.depthLadder) {
         this.trading.depthLadder = new WidgetDepthLadder(this.root, {
           onTrade: (side, price) => {
+            // A rung past the day's limits is no price for an order today.
+            if (!this.trading.allowedToday(price)) return;
             this.chart.placeOrderIntent({ side, type: 'limit', price });
             this.say(fill(this.t(side === 'buy' ? 'order.buyLimit' : 'order.sellLimit'), { price: this.formatAlertPrice(price) }));
           },

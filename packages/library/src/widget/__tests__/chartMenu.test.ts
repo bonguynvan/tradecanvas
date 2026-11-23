@@ -53,6 +53,11 @@ describe('chart menus', () => {
     expect(ids(priceEntries(ctx({ price: 107, limits }), EN_TRANSLATOR))).toEqual(['alert', 'buyStop', 'sellLimit', 'horizontalLine']);
     expect(ids(priceEntries(ctx({ price: 93, limits }), EN_TRANSLATOR))).toEqual(['alert', 'buyLimit', 'sellStop', 'horizontalLine']);
     expect(ids(priceEntries(ctx({ price: 110, limits: null }), EN_TRANSLATOR))).toEqual(['alert', 'buyStop', 'sellLimit', 'horizontalLine']);
+    // A limit that is a sum, a hair off the price it stands for: 1.4 and thirty per cent is 1.8199999999999998.
+    const dusty = { floor: 1.1 * 0.9, ceiling: 1.4 * 1.3 };
+    expect(ids(priceEntries(ctx({ price: 1.82, lastPrice: 1.5, limits: dusty }), EN_TRANSLATOR))).toEqual(['alert', 'buyStop', 'sellLimit', 'horizontalLine']);
+    expect(ids(priceEntries(ctx({ price: 0.99, lastPrice: 1.5, limits: dusty }), EN_TRANSLATOR))).toEqual(['alert', 'buyLimit', 'sellStop', 'horizontalLine']);
+    expect(ids(priceEntries(ctx({ price: 1.83, lastPrice: 1.5, limits: dusty }), EN_TRANSLATOR))).toEqual(['alert', 'horizontalLine']);
   });
 
   it('builds the plot’s menu: the price, the view, the drawings and indicators, the settings', () => {

@@ -10,6 +10,9 @@ import { fill, type MessageKey } from './i18n.js';
 import { positionLevels, type BracketSize } from '@tradecanvas/core';
 import type { ChartWidget } from './ChartWidget.js';
 
+/** Prices that differ by less than this are the same price (float dust), as the order ticket has it. */
+const LIMIT_EPSILON = 1e-9;
+
 /** The digits a quantity is written to when it is a sum of parts: the sum's rounding is past them. */
 const QUANTITY_DIGITS = 12;
 
@@ -171,8 +174,22 @@ export class WidgetTrading {
     return this.log;
   }
 
-  /** Ask for a limit or stop order at `price` (one unit), and say so. */
+  /**
+   * Whether an order may be at `price` today: inside the day's ceiling and
+   * floor, where the market has them. Past them it says what today's prices
+   * are, in the ticket's own words, and answers no.
+   */
+  allowedToday(price: number): boolean {
+    const limits = this.host.chart.getPriceLimits();
+    if (!limits || (price <= limits.ceiling + LIMIT_EPSILON && price >= limits.floor - LIMIT_EPSILON)) return true;
+    const { formatAlertPrice } = this.host;
+    this.host.say(fill(this.host.t('ticket.problem.priceLimits'), { floor: formatAlertPrice(limits.floor), ceiling: formatAlertPrice(limits.ceiling) }), 'error');
+    return false;
+  }
+
+  /** Ask for a limit or stop order at `price` (one unit), and say so. Past the day's limits it is not asked for. */
   placeOrderAt(kind: 'buyLimit' | 'sellLimit' | 'buyStop' | 'sellStop', price: number): void {
+    if (!this.allowedToday(price)) return;
     const side = kind.startsWith('buy') ? 'buy' : 'sell';
     const stop = kind.endsWith('Stop');
     this.host.chart.placeOrderIntent(stop ? { side, type: 'stop', price, stopPrice: price, quantity: 1 } : { side, type: 'limit', price, quantity: 1 });

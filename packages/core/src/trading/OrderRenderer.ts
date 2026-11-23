@@ -24,6 +24,8 @@ export interface DragState {
   level?: number;
   startPrice: number;
   currentPrice: number;
+  /** For an order dragged with its stop (a stop-limit): how far the stop is from it, which the drag keeps. */
+  room?: number;
   /** A stop or a target the position had not got, being added. */
   created?: boolean;
 }
