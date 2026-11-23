@@ -308,6 +308,8 @@ export type ChartContextArea = 'plot' | 'pane' | 'priceAxis' | 'timeAxis';
  * Payload for `chartContextMenu`: a right-click off any drawing, where it was
  * (`x`, `y` in the chart's pixels), and the price and bar time there when the
  * area has them (the price pane: both; the price axis: price; the time axis: time).
+ * The price is on the market's grid (`chart.roundPrice`): what is placed at it
+ * is at a price the market has.
  */
 export interface ChartContextMenuPayload {
   area: ChartContextArea;
@@ -319,7 +321,7 @@ export interface ChartContextMenuPayload {
   pane?: string;
 }
 
-/** Payload for `priceAxisAdd`: the "+" by the price axis was clicked at `price`. */
+/** Payload for `priceAxisAdd`: the "+" by the price axis was clicked at `price`, a price on the market's grid (`chart.roundPrice`). */
 export interface PriceAxisAddPayload {
   price: number;
   x: number;

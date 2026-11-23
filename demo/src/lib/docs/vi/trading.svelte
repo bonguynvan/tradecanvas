@@ -56,6 +56,7 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   <code>lineButtons: {'{'} addStops: false {'}'}</code> bỏ các nút này.
   Khi một đường đang được kéo tới một mức giá, crosshair không vẽ đường ngang và không ghi giá trên trục: tag của
   chính đường đó đã có giá.
+  Giá đặt bằng tay luôn bám lưới giá của thị trường: order, stop, target hay level được kéo, các đường của bracket và của order nháp, alert được kéo, giá mà click chuột phải hoặc nút “+” cạnh trục đưa ra. Giá nằm trên bước giá của thị trường (<code>setMarket</code>, hoặc <code>minTick</code> của mã), còn không thì theo số chữ số thập phân trục giá đang hiển thị: <code>chart.roundPrice</code>. Crosshair ghi giá dưới con trỏ trên cùng lưới đó, nên giá nó hiển thị chính là giá mà nút “+” bên cạnh sẽ đặt.
 </p>
 <p>
   Position, order và các fill của chúng có thể được ẩn, và các đường có thể được khoá. Khi ẩn, không có gì được vẽ và

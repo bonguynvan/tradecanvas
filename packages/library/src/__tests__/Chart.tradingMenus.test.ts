@@ -191,3 +191,98 @@ describe('Chart crosshair while an order is dragged', () => {
     expect(crosshairNow()).toEqual({ lines: 2, labels: 2 });
   });
 });
+
+describe('Chart: a price set by hand is a price of the market', () => {
+  /** A market whose prices go in halves. */
+  const halves = (price: number) => Math.abs(price * 2 - Math.round(price * 2)) < 1e-9;
+  /** The y of `price` on the page. */
+  const yOf = (price: number) => {
+    const { chartRect: plot, priceRange } = state();
+    return plot.y + ((priceRange.max - price) / (priceRange.max - priceRange.min)) * plot.height;
+  };
+
+  beforeEach(() => chart.setMarket({ type: 'stock', priceStep: 0.5 }));
+
+  it('an order dragged lands on the market’s step, and so does its stop', () => {
+    chart.setOrders([{ id: 'o1', side: 'buy', type: 'stopLimit', price: 100, stopPrice: 99, quantity: 1, draggable: true }]);
+    const moved: { newPrice: number; newStopPrice?: number }[] = [];
+    chart.on('orderModify', (e) => moved.push(e.payload as { newPrice: number; newStopPrice?: number }));
+    const x = state().chartRect.x + state().chartRect.width / 2;
+    mouse('mousemove', x, yOf(100));
+    mouse('mousedown', x, yOf(100));
+    mouse('mousemove', x, yOf(100) - 37);
+    mouse('mouseup', x, yOf(100) - 37);
+    expect(moved).toHaveLength(1);
+    expect(moved[0].newPrice).not.toBe(100);
+    expect(halves(moved[0].newPrice)).toBe(true);
+    expect(moved[0].newStopPrice).toBe(moved[0].newPrice - 1);
+  });
+
+  it('the price of a right-click and of the "+" by the axis are on it too', () => {
+    const menus: ChartContextMenuPayload[] = [];
+    chart.on('chartContextMenu', (e) => menus.push(e.payload as ChartContextMenuPayload));
+    const adds: { price: number }[] = [];
+    chart.on('priceAxisAdd', (e) => adds.push(e.payload as { price: number }));
+    const plot = state().chartRect;
+    mouse('contextmenu', plot.x + plot.width / 2, plot.y + 71, 2);
+    mouse('contextmenu', plot.x + plot.width + 20, plot.y + 43, 2);
+    mouse('mousemove', plot.x + plot.width / 2, plot.y + 97);
+    mouse('mousedown', plot.x + plot.width - 8, plot.y + 97);
+    mouse('mouseup', plot.x + plot.width - 8, plot.y + 97);
+    expect(menus).toHaveLength(2);
+    expect(menus.every((menu) => halves(menu.price!))).toBe(true);
+    expect(adds).toHaveLength(1);
+    expect(halves(adds[0].price)).toBe(true);
+  });
+
+  it('the crosshair writes the price under the pointer on the market’s step, as the "+" beside it gives it', () => {
+    const plot = state().chartRect;
+    const adds: { price: number }[] = [];
+    chart.on('priceAxisAdd', (e) => adds.push(e.payload as { price: number }));
+    mouse('mousemove', plot.x + plot.width / 2, plot.y + 97);
+    const texts: string[] = [];
+    const ctx = new Proxy({}, {
+      get: (_, key) => (key === 'fillText' ? (text: string) => { texts.push(text); } : key === 'measureText' ? (text: string) => ({ width: text.length * 6 }) : () => undefined),
+      set: () => true,
+    }) as unknown as CanvasRenderingContext2D;
+    const handler = (chart as unknown as { crosshairHandler: { renderAxisLabels(...a: unknown[]): void } }).crosshairHandler;
+    const theme = (chart as unknown as { themeManager: { getTheme(): unknown } }).themeManager.getTheme();
+    handler.renderAxisLabels(ctx, state(), theme, chart.getData());
+    const written = Number(texts[0].replace(/,/g, ''));
+    expect(halves(written)).toBe(true);
+    mouse('mousedown', plot.x + plot.width - 8, plot.y + 97);
+    mouse('mouseup', plot.x + plot.width - 8, plot.y + 97);
+    expect(adds[0].price).toBe(written);
+  });
+
+  it('an alert dragged lands on the market’s step', () => {
+    const id = chart.addAlert(100.2, 'crossing');
+    const before = chart.getAlerts().find((a) => a.id === id)!.price;
+    const x = state().chartRect.x + state().chartRect.width / 2;
+    mouse('mousemove', x, yOf(before));
+    mouse('mousedown', x, yOf(before));
+    mouse('mousemove', x, yOf(before) - 33);
+    mouse('mouseup', x, yOf(before) - 33);
+    const after = chart.getAlerts().find((a) => a.id === id)!.price;
+    expect(after).not.toBe(before);
+    expect(halves(after)).toBe(true);
+  });
+
+  it('follows the market set later, and the decimals the axis shows with none', () => {
+    chart.setOrders([{ id: 'o1', side: 'buy', type: 'limit', price: 100, quantity: 1, draggable: true }]);
+    const moved: { newPrice: number }[] = [];
+    chart.on('orderModify', (e) => moved.push(e.payload as { newPrice: number }));
+    const x = state().chartRect.x + state().chartRect.width / 2;
+    const pull = (by: number) => {
+      const from = yOf(chart.getOrders()[0].price);
+      mouse('mousemove', x, from);
+      mouse('mousedown', x, from);
+      mouse('mousemove', x, from - by);
+      mouse('mouseup', x, from - by);
+    };
+    chart.setMarket({ type: 'stock', priceStep: 0.25 });
+    pull(41);
+    expect(moved[0].newPrice * 4).toBeCloseTo(Math.round(moved[0].newPrice * 4), 9);
+    expect(moved[0].newPrice).toBe(chart.roundPrice(moved[0].newPrice));
+  });
+});

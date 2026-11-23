@@ -56,6 +56,14 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 손절가에서 50을 �
   지정가 범위 안으로 옮기거나 <code>'stop'</code> 주문을 사용하세요.
 </p>
 
+<h3 id="hand-prices">손으로 정한 가격은 시장의 가격 눈금에 맞춰집니다</h3>
+<p>
+  <code>orderModify</code>, <code>positionModify</code>, <code>bracketPlace</code>, 초안 주문이나 오른쪽 클릭 메뉴의 <code>orderPlace</code>,
+  <code>priceAxisAdd</code>, <code>chartContextMenu</code>는 지금까지 포인터 아래 가격을 픽셀이 주는 그대로
+  (<code>62549.71592675613</code>) 실어 보냈습니다. 이제는 시장의 호가 단위에, 없으면 가격 축이 보여 주는 소수 자릿수에 맞춘 가격을 싣습니다:
+  <code>chart.roundPrice</code>가 주는 값입니다. 브래킷과 초안 주문도 어떤 가격에서 시작하든 눈금 위에서 시작하고, 끌어 옮긴 알림도 눈금에 맞춰집니다. 원래 있던 눈금에서 놓은 선은 아무것도 알리지 않습니다. 직접 반올림하던 코드는 그만둬도 됩니다.
+</p>
+
 <h2 id="types">넓어진 타입</h2>
 <p>
   <code>TimeInForce</code>는 이제 <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>입니다. 모든 멤버를 처리하는 코드(default가

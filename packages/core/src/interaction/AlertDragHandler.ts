@@ -1,5 +1,6 @@
 import type { Point, ViewportState } from '@tradecanvas/commons';
 import { yToPrice } from '../viewport/ScaleMapping.js';
+import { onGrid, type PriceRounding } from '../viewport/priceGrid.js';
 import type { AlertManager } from '../features/AlertManager.js';
 
 /**
@@ -9,11 +10,18 @@ import type { AlertManager } from '../features/AlertManager.js';
  */
 export class AlertDragHandler {
   private draggingId: string | null = null;
+  /** How the price dragged to is put on the market's grid; null leaves it as the pointer has it. */
+  private round: PriceRounding | null = null;
 
   constructor(
     private alerts: AlertManager,
     private viewportGetter: () => ViewportState | null,
   ) {}
+
+  /** Put the price an alert is dragged to on the market's grid (a chart's `roundPrice`); null leaves the pointer's. */
+  setPriceRounding(round: PriceRounding | null): void {
+    this.round = round;
+  }
 
   /** True when the pointer is hovering an alert line (for cursor feedback). */
   isOverAlert(pos: Point): boolean {
@@ -36,7 +44,7 @@ export class AlertDragHandler {
     if (this.draggingId === null) return;
     const vp = this.viewportGetter();
     if (!vp) return;
-    this.alerts.updateAlertPrice(this.draggingId, yToPrice(pos.y, vp));
+    this.alerts.updateAlertPrice(this.draggingId, onGrid(this.round, yToPrice(pos.y, vp)));
   }
 
   end(): void {

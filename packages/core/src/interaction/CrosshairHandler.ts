@@ -6,6 +6,7 @@ import { panelPrecision, priceScaleText, roundStep } from '../axis/PriceAxis.js'
 import { AXIS_TAG_TEXT_INSET, fillTag } from '../ui/shapes.js';
 import { axisTimes } from '../charts/transforms/axisTimes.js';
 import { xToBarIndex, yToPrice, barIndexToX, barIndexToTime, priceToY, timeToX } from '../viewport/ScaleMapping.js';
+import { onGrid, type PriceRounding } from '../viewport/priceGrid.js';
 import { readableText } from '../finance/colorScale.js';
 import type { AxisSpan } from '../drawings/axisSpan.js';
 import { writtenDate } from '../axis/writtenDate.js';
@@ -68,6 +69,8 @@ export class CrosshairHandler {
   private cursor: CrosshairCursor = 'cross';
   /** Whether a line is being dragged to a price just now: asked at each frame. */
   private priceHeld: () => boolean = () => false;
+  /** How the price written on the axis is put on the market's grid; null writes the pointer's own. */
+  private priceRound: PriceRounding | null = null;
   /** The span tints drawn on the axes this frame: a label cleared for a pill gets its tint back. */
   private spanTints: SpanTint[] = [];
   /** Fixed decimals for the price pill; `null` follows the price axis. */
@@ -181,6 +184,16 @@ export class CrosshairHandler {
    */
   setPriceHeld(held: () => boolean): void {
     this.priceHeld = held;
+  }
+
+  /**
+   * Write the price under the pointer as the market has it: on its step
+   * (`round`, a chart's `roundPrice`), which is the price an order or an
+   * alert placed there gets. The line stays under the pointer. Null writes
+   * the pointer's own price.
+   */
+  setPriceRounding(round: PriceRounding | null): void {
+    this.priceRound = round;
   }
 
   /** The bar last reported under the pointer (the callback's `barIndex`); null with none. */
@@ -434,7 +447,7 @@ export class CrosshairHandler {
 
   private drawPricePill(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, y: number, font: string, priceRows: readonly number[]): void {
     const { chartRect } = viewport;
-    const price = yToPrice(y, viewport);
+    const price = onGrid(this.priceRound, yToPrice(y, viewport));
     const precision = this.pricePrecision ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
     const priceText = priceScaleText(price, viewport, precision, this.locale);
     const priceAxisX = chartRect.x + chartRect.width;

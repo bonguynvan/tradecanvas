@@ -1,6 +1,7 @@
 import type { OrderSide, Point, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceTagText, stepDecimals } from '@tradecanvas/commons';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
+import { onGrid, onGridBeyond, type PriceRounding } from '../viewport/priceGrid.js';
 import { inPlot, levelLine } from './plot.js';
 import { drawAxisBadge, drawTags, type AxisBadge, type TradingTag } from './tradingTags.js';
 
@@ -118,6 +119,12 @@ export class BracketTool {
   private defaults: BracketDefaultsOptions;
   /** What sizes the bracket in hand. */
   private size: BracketSize | undefined;
+  /** How its prices are put on the market's grid; null leaves them as they come. */
+  private round: PriceRounding | null = null;
+
+  setRound(round: PriceRounding | null): void {
+    this.round = round;
+  }
 
   constructor(defaults: BracketDefaultsOptions = {}) {
     this.defaults = defaults;
@@ -125,7 +132,7 @@ export class BracketTool {
 
   /** Start a bracket at `entry`, of this `size` (none: it has no quantity). */
   start(side: OrderSide, entry: number, size?: BracketSize): void {
-    this.draft = computeBracketDefaults(side, entry, this.defaults);
+    this.draft = this.beyondEntry(computeBracketDefaults(side, onGrid(this.round, entry), this.defaults));
     this.size = size ? { ...size } : undefined;
     this.dragging = null;
   }
@@ -191,9 +198,26 @@ export class BracketTool {
 
   drag(pos: Point, viewport: ViewportState): boolean {
     if (!this.draft || !this.dragging) return false;
-    const price = yToPrice(pos.y, viewport);
-    this.draft = applyHandlePrice(this.draft, this.dragging, price);
+    const price = onGrid(this.round, yToPrice(pos.y, viewport));
+    this.draft = this.beyondEntry(applyHandlePrice(this.draft, this.dragging, price));
     return true;
+  }
+
+  /**
+   * The draft with its stop and its target on the market's grid, each a step
+   * or more its own side of the entry: on a grid coarser than they are away
+   * (a handle pulled onto the entry, a bracket moved to where the step is
+   * larger) they would round onto it, and a bracket with no risk has no size.
+   * With no grid told, the draft as it is.
+   */
+  private beyondEntry(draft: BracketDraft): BracketDraft {
+    if (!this.round) return draft;
+    const up = draft.side === 'buy' ? 1 : -1;
+    return {
+      ...draft,
+      stopLoss: onGridBeyond(this.round, draft.entry, draft.stopLoss, up > 0 ? -1 : 1),
+      takeProfit: onGridBeyond(this.round, draft.entry, draft.takeProfit, up > 0 ? 1 : -1),
+    };
   }
 
   endDrag(): void {
