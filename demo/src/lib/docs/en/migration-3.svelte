@@ -67,6 +67,15 @@ chart.startBracket('buy', undefined, { risk: 50 })   // the quantity that loses 
   On a market with a ceiling and a floor for the day, an order's own price is kept inside them too: dragged past one, it is reported at it.
 </p>
 
+<h3 id="finger">Under a finger, no control is smaller than 32 px</h3>
+<p>
+  On a device whose main pointer is coarse (a phone, a tablet), the widget's controls are now 32 px each way at
+  least, in every look and <code>density</code>: a <code>compact</code> widget on a tablet no longer has 24 px
+  buttons, and each row of the indicator legend is 32 px tall where it was 20. Under a mouse the drawing is as it
+  was and only what a press takes changes: 20 px each way at least. A page that measured the widget's parts on a
+  touch screen (a legend's height, a dialog's) reads larger numbers.
+</p>
+
 <h2 id="types">Types that grew</h2>
 <p>
   <code>TimeInForce</code> is now <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. Code that handles every

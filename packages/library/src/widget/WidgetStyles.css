@@ -180,6 +180,11 @@
   --tcw-toolbar-h: 38px;
   --tcw-control-h: 28px;
   --tcw-control-h-sm: 22px;
+  /* The least a control takes of a press, each way: under a finger (a coarse pointer), and under a
+     mouse's pointer. Not a look's to set: a pane's buttons and its legend rows are laid out for
+     these (WidgetLegendView.ts), and `pnpm audit:scenes` holds every control to them. */
+  --tcw-hit-finger: 32px;
+  --tcw-hit-pointer: 20px;
   --tcw-icon: 16px;
   --tcw-sidebar-w: 44px;
   --tcw-tool-h: 36px;
@@ -1081,12 +1086,27 @@
   overflow: hidden;
 }
 
+/* Clipped across only, where a browser can: what a press takes of a name or a button reaches past
+   a row's line (a pane's row is 16 px, a pointer's press 20). */
+@supports (overflow-x: clip) {
+  .tcw-ind-legend-row {
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+}
+
 /* A pane's indicator: at the top of its pane, where the canvas title was,
    short enough to sit in the pane's header below the divider's grab zone. */
 .tcw-ind-legend-row--pane {
   position: absolute;
   z-index: 3;
   line-height: var(--tcw-legend-line-pane);
+}
+
+/* Opened by a finger it lies across its pane (WidgetIndicatorLegend.place), over the pane's
+   buttons (4) and what they take of a press, so that each of its own takes its press. */
+.tcw-ind-legend-row--pane.tcw-ind-legend-row--open {
+  z-index: 5;
 }
 
 /* A touch screen keeps :hover on what was tapped last: only where a pointer can hover (a mouse on a
@@ -1105,6 +1125,7 @@
 }
 
 .tcw-ind-legend-name {
+  position: relative;
   padding: 0;
   border: none;
   background: none;
@@ -1112,6 +1133,35 @@
   font-weight: var(--tcw-weight-strong);
   color: var(--tcw-text);
   cursor: pointer;
+}
+
+/* What a press takes of a name: a pointer's 20 px from its top at least, and from where it starts
+   (a short one's reaches over its values, which take no press). A pane's 16 px row's reaches down
+   into the pane, never up onto the divider, which drags; the next row of the pane starts under it
+   (PANE_ROW_STEP in WidgetLegendView.ts: change both together). */
+.tcw-ind-legend-name::after {
+  content: '';
+  position: absolute;
+  inset-block: 0 min(0px, calc(100% - var(--tcw-hit-pointer)));
+  inset-inline: 0 min(0px, calc(100% - var(--tcw-hit-pointer)));
+}
+
+/* A finger: each row of the plot's legend a finger's height, its name as tall as its row. A
+   pane's row keeps its line, beside the pane's buttons at its top: its name's press reaches down
+   into the pane, as theirs does. */
+@media (pointer: coarse) {
+  .tcw-ind-legend-row:not(.tcw-ind-legend-row--pane) {
+    min-height: var(--tcw-hit-finger);
+  }
+
+  .tcw-ind-legend-name {
+    align-self: stretch;
+  }
+
+  .tcw-ind-legend-name::after {
+    inset-block-end: min(0px, calc(100% - var(--tcw-hit-finger)));
+    inset-inline-end: min(0px, calc(100% - var(--tcw-hit-finger)));
+  }
 }
 
 .tcw-ind-legend-name:hover {
@@ -1207,7 +1257,7 @@
   clip-path: none;
 }
 
-@media (hover: none) {
+@media (hover: none), (pointer: coarse) {
   /* Finger-sized targets, apart enough that a thumb on one doesn't take the next. */
   .tcw-ind-legend-actions {
     gap: var(--tcw-space-4);
@@ -1215,13 +1265,14 @@
 
   .tcw-ind-legend-act,
   .tcw-ind-legend-toggle {
-    min-width: 32px;
-    min-height: 28px;
+    min-width: var(--tcw-hit-finger);
+    min-height: var(--tcw-hit-finger);
   }
 }
 
 /* Wider than tall: four side by side, each easy to hit with a pointer; no taller than a row. */
 .tcw-ind-legend-act {
+  position: relative;
   display: inline-grid;
   place-items: center;
   width: 24px;
@@ -1234,6 +1285,18 @@
   cursor: pointer;
 }
 
+/* Drawn 18 px in a 20 px row: a press takes the row's height of each, a pointer's 20 px. In a
+   pane's row downwards only: above it is the divider, which drags. */
+.tcw-ind-legend-act::after {
+  content: '';
+  position: absolute;
+  inset: min(0px, calc((100% - var(--tcw-hit-pointer)) / 2)) 0;
+}
+
+.tcw-ind-legend-row--pane .tcw-ind-legend-act::after {
+  inset: 0 0 min(0px, calc(100% - var(--tcw-hit-pointer))) 0;
+}
+
 .tcw-ind-legend-act:hover {
   color: var(--tcw-text);
   background: var(--tcw-hover-bg);
@@ -1244,6 +1307,7 @@
 }
 
 .tcw-ind-legend-toggle {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--tcw-space-2);
@@ -1261,6 +1325,13 @@
 
 .tcw-ind-legend-toggle[hidden] {
   display: none;
+}
+
+/* Under the rows, the plot below it: a press takes a pointer's 20 px of it, downwards. */
+.tcw-ind-legend-toggle::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 min(0px, calc(100% - var(--tcw-hit-pointer))) 0;
 }
 
 .tcw-ind-legend-toggle:hover {
@@ -2107,8 +2178,8 @@
   .tcw-range-btn,
   .tcw-range-goto,
   .tcw-range-more {
-    min-width: 32px;
-    min-height: 32px;
+    min-width: var(--tcw-hit-finger);
+    min-height: var(--tcw-hit-finger);
   }
 }
 
@@ -4150,6 +4221,13 @@
   border-radius: 1px;
   background: currentColor;
 }
+/* A narrow widget (a phone): the bar is no wider than the chart, its buttons on a second line
+   where one has no room for them (under a finger they are 32 px each). */
+.tcw-root[data-tcw-narrow] .tcw-sel-toolbar {
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  max-width: calc(100% - 8px);
+}
 .tcw-sel-sep { flex: none; width: 1px; height: 18px; margin: 0 var(--tcw-space-2); background: var(--tcw-divider); }
 .tcw-sel-pop {
   position: absolute;
@@ -4562,7 +4640,7 @@
   position: absolute;
   z-index: 4;
   display: flex;
-  gap: 1px;
+  gap: 2px;
   transform: translateX(-100%);
   padding: 1px;
   border-radius: var(--tcw-radius-sm);
@@ -4577,6 +4655,7 @@
 .tcw-pane-btn {
   display: inline-grid;
   place-items: center;
+  position: relative;
   width: 18px;
   height: 16px;
   padding: 0;
@@ -4588,13 +4667,15 @@
 }
 .tcw-pane-btn:hover { color: var(--tcw-text); background: var(--tcw-hover-bg); }
 .tcw-pane-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--tcw-accent-soft); }
-/* A finger: each button takes 30 by 32 px, its drawing as it is. It reaches left over the gap
-   before it and down into the pane (PANE_BUTTON_GAP_COARSE and PANE_HIT_REACH_COARSE in
-   WidgetLegendView.ts), never right onto the price axis nor up onto the divider, which drags. */
+/* What a press takes of each, its drawing as it is: a pointer's 20 px each way, a pixel into the
+   gap either side and down into the pane, never up onto the divider, which drags. */
+.tcw-pane-btn::after { content: ''; position: absolute; inset: 0 -1px -4px -1px; }
+/* A finger: 32 px each way. It reaches left over the gap before it and down into the pane
+   (PANE_BUTTON_GAP_COARSE and PANE_HIT_REACH_COARSE in WidgetLegendView.ts), never right onto
+   the price axis. */
 @media (pointer: coarse) {
-  .tcw-pane-controls { gap: 12px; }
-  .tcw-pane-btn { position: relative; }
-  .tcw-pane-btn::after { content: ''; position: absolute; inset: 0 0 -16px -12px; }
+  .tcw-pane-controls { gap: 14px; }
+  .tcw-pane-btn::after { inset: 0 0 -16px -14px; }
 }
 
 /* --- Typed interval --- */
@@ -4645,6 +4726,8 @@
 .tcw-alerts-form .tcw-alerts-check {
   display: inline-flex;
   align-items: center;
+  /* The box is 16 px: its label's line takes a pointer's press of it. */
+  min-height: var(--tcw-hit-pointer);
   gap: 6px;
   font-size: var(--tcw-font-size-sm);
   color: var(--tcw-text-dim);
@@ -5079,12 +5162,14 @@
   touch-action: manipulation;
 }
 
-/* iOS zooms the page into an input under 16 px when it takes focus. */
+/* iOS zooms the page into an input under 16 px when it takes focus. A field is a finger's
+   height at least, as the buttons beside it (see "A finger's press" below). */
 @media (pointer: coarse) {
   .tcw-root input:not([type='color']):not([type='range']):not([type='checkbox']):not([type='radio']),
   .tcw-root select,
   .tcw-root textarea {
     font-size: max(16px, 1em);
+    min-height: var(--tcw-hit-finger);
   }
 }
 
@@ -5204,7 +5289,7 @@
 }
 /* A finger: the clock, which opens the zones, as tall as the presets beside it. */
 @media (pointer: coarse) {
-  .tcw-status-clock { min-height: 32px; }
+  .tcw-status-clock { min-height: var(--tcw-hit-finger); }
 }
 .tcw-status-clock:hover,
 .tcw-status-scale-btn:hover {
@@ -5435,5 +5520,82 @@
   .tcw-dropdown-item,
   .tcw-context-item {
     min-height: 44px;
+  }
+}
+
+/* === A finger's press ===
+ * Under a finger (a coarse pointer) no control is smaller than 32 px, whatever a look or its
+ * density makes one. The three sizes controls are made at (a control, a small one, a menu's row)
+ * are raised to it for everything inside the widget: read on the root, where a look sets them, and
+ * set on its children, so all under them take the raised sizes. Not on a root that is another's
+ * child (the layer menus and dialogs open in, when the widget fills the screen): there the two
+ * rules would each read the other. It reads the look's sizes and raises them for its own children.
+ * What is sized by none of the three is raised by name below; so is what reads a size the root
+ * itself derives from one of them (`--tcw-tab-h`), which keeps the look's. The legend's rows, a
+ * pane's buttons and the status bar's have their own rules, where they are drawn.
+ * `pnpm audit:scenes` holds every control it shows to this. */
+.tcw-root {
+  --tcw-control-h-finger: max(var(--tcw-hit-finger), var(--tcw-control-h));
+  --tcw-control-h-sm-finger: max(var(--tcw-hit-finger), var(--tcw-control-h-sm));
+  --tcw-menu-item-h-finger: max(var(--tcw-hit-finger), var(--tcw-menu-item-h));
+}
+
+@media (pointer: coarse) {
+  .tcw-root > :not(.tcw-root) {
+    --tcw-control-h: var(--tcw-control-h-finger);
+    --tcw-control-h-sm: var(--tcw-control-h-sm-finger);
+    --tcw-menu-item-h: var(--tcw-menu-item-h-finger);
+  }
+
+  .tcw-account-tab,
+  .tcw-modal-tab,
+  .tcw-quote-btn,
+  .tcw-segment,
+  .tcw-stepper-btn,
+  .tcw-calendar-nav,
+  .tcw-calendar-today,
+  .tcw-root input[type='color'] {
+    min-height: var(--tcw-hit-finger);
+  }
+
+  /* A bar full of buttons squeezes an icon's: no narrower than a finger. */
+  .tcw-btn-icon,
+  .tcw-tf-more,
+  .tcw-status-scale-btn,
+  .tcw-calendar-nav,
+  .tcw-root input[type='color'] {
+    min-width: var(--tcw-hit-finger);
+  }
+
+  /* The drawing tools and the dock's rail, a size of their own that a compact look makes 24 px:
+     a finger's at least, in a column wide enough for them. */
+  .tcw-root,
+  .tcw-sidebar {
+    --tcw-tool-size: max(var(--tcw-hit-finger), min(var(--tcw-tool-h), calc(var(--tcw-sidebar-w) - 6px), var(--tcw-tool-fit, 999px)));
+  }
+
+  .tcw-sidebar,
+  .tcw-dock-rail {
+    min-width: calc(var(--tcw-hit-finger) + 6px);
+  }
+
+  .tcw-root input[type='range'].tcw-replay-scrubber {
+    min-block-size: var(--tcw-hit-finger);
+  }
+
+  .tcw-alerts-form .tcw-alerts-check {
+    min-height: var(--tcw-hit-finger);
+  }
+
+  /* A stepper's buttons and its field are inside its border: a finger's height of them, not of it. */
+  .tcw-stepper {
+    min-height: calc(var(--tcw-hit-finger) + 2 * var(--tcw-border-w));
+  }
+
+  /* A switch keeps its drawing: a press takes a finger's height of it, above and below. */
+  .tcw-toggle::before {
+    content: '';
+    position: absolute;
+    inset: calc((100% - var(--tcw-hit-finger)) / 2) 0;
   }
 }

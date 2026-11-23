@@ -291,9 +291,9 @@ describe('on-chart indicator legend', () => {
     const [rsi] = rows();
     expect(rsi.classList.contains('tcw-ind-legend-row--pane')).toBe(true);
     expect([rsi.style.left, rsi.style.top]).toEqual(['8px', '307px']); // below the divider's grab zone
-    // Inside its pane and clear of the pane's two buttons beside it (fold, maximise: 39 px and a 4 px gap),
-    // which on a phone covered its values.
-    expect(rsi.style.maxWidth).toBe('541px');
+    // Inside its pane and clear of the pane's two buttons beside it (fold, maximise: 18 px each, 2 px apart
+    // so each takes a pointer's 20 px of a press, the padding, and a 4 px gap), which on a phone covered its values.
+    expect(rsi.style.maxWidth).toBe('540px');
     expect(values(rsi).map((v) => v.textContent)).toEqual(['54.32']);
   });
 
@@ -302,11 +302,55 @@ describe('on-chart indicator legend', () => {
     try {
       FakeChart.last.addIndicator('rsi');
       await frame();
-      // Fold and maximise 18 px each, 12 px apart, the padding, the gap, and the 12 px the first reaches left for a finger.
-      expect(rows()[0].style.maxWidth).toBe('518px');
+      // Fold and maximise 18 px each, 14 px apart, the padding, the gap, and the 14 px the first reaches left:
+      // each takes a finger's 32 px of a press.
+      expect(rows()[0].style.maxWidth).toBe('514px');
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  /** Two indicators in one pane, as the chart reports them. */
+  function shareOnePane(): void {
+    const chart = FakeChart.last;
+    const ids = [chart.addIndicator('rsi'), chart.addIndicator('rsi')];
+    chart.getIndicatorPanes = () => [{ instanceId: ids[0], instanceIds: ids, rect: { x: 0, y: 300, width: 600, height: 100 } }] as never;
+  }
+
+  it('stacks the rows of one pane a pointer’s press apart', async () => {
+    shareOnePane();
+    await frame();
+    // 16 px rows, 20 px from one top to the next: a name takes 20 px of a press, down from its row's top.
+    expect(rows().map((row) => row.style.top)).toEqual(['307px', '327px']);
+  });
+
+  it('stacks the rows of one pane a finger’s press apart on a coarse pointer', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(pointer: coarse)', media: query, addEventListener() {}, removeEventListener() {} }));
+    try {
+      shareOnePane();
+      await frame();
+      expect(rows().map((row) => row.style.top)).toEqual(['307px', '340px']);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('keeps the last row of a short pane inside it, over the one before', async () => {
+    const chart = FakeChart.last;
+    const ids = [chart.addIndicator('rsi'), chart.addIndicator('rsi')];
+    chart.getIndicatorPanes = () => [{ instanceId: ids[0], instanceIds: ids, rect: { x: 0, y: 300, width: 600, height: 30 } }] as never;
+    await frame();
+    // 30 px of pane: the second row ends a pixel short of its foot, as before the rows stood further apart.
+    expect(rows().map((row) => row.style.top)).toEqual(['307px', '313px']);
+  });
+
+  it('spreads the rows of a short pane evenly, so that each name shows', async () => {
+    const chart = FakeChart.last;
+    const ids = [chart.addIndicator('rsi'), chart.addIndicator('rsi'), chart.addIndicator('rsi'), chart.addIndicator('rsi')];
+    chart.getIndicatorPanes = () => [{ instanceId: ids[0], instanceIds: ids, rect: { x: 0, y: 300, width: 600, height: 60 } }] as never;
+    await frame();
+    // 36 px from the first row's top to the last's, shared by three steps: at 20 px a step the last two lay on one line.
+    expect(rows().map((row) => row.style.top)).toEqual(['307px', '319px', '331px', '343px']);
   });
 
   it('keeps no room for a pane’s buttons switched off', async () => {

@@ -26,7 +26,14 @@ export interface IndicatorLegendRow {
    * Where the row sits inside its own pane (container px, `width` = the room
    * it may take); null = stacked under the OHLCV legend.
    */
-  pane: { x: number; y: number; width: number } | null;
+  pane: {
+    x: number;
+    y: number;
+    /** The row's room: its pane's width less the pane's buttons beside its first row. */
+    width: number;
+    /** Its pane's whole width: what a row a finger opened takes, over the pane's buttons. */
+    fullWidth: number;
+  } | null;
 }
 
 /** An indicator pane, for the buttons at its top right. */
@@ -121,6 +128,8 @@ interface RowEls {
   valuesKey: string;
   state: string;
   placeKey: string;
+  /** Where it was last placed: placed again as it opens and shuts. */
+  pane: IndicatorLegendRow['pane'];
 }
 
 /**
@@ -153,6 +162,8 @@ export class WidgetIndicatorLegend {
    * (Safari before 17); null after any other press, or one that ended with no click.
    */
   private touchedRow: RowEls | null = null;
+  /** The plot's width a row over it may take while a finger has it open (px); 0: its stack's, as shut. */
+  private plotRoom = 0;
   /** A press outside the open row closes it. Its path, not its target: from a shadow root the target is the shadow's host. */
   private readonly onPressOutside = (e: Event): void => {
     if (this.openRow && !e.composedPath().includes(this.openRow.el)) this.setOpenRow(null);
@@ -187,8 +198,13 @@ export class WidgetIndicatorLegend {
       });
   }
 
-  update(rows: readonly IndicatorLegendRow[], overlay: { left: number; top: number }, panes: readonly IndicatorLegendPane[] = []): void {
+  /**
+   * `overlay`: where the rows over the plot start, and `room`, the plot's width less its insets:
+   * what one of them takes while a finger has it open (0 or left out: the stack's width, as shut).
+   */
+  update(rows: readonly IndicatorLegendRow[], overlay: { left: number; top: number; room?: number }, panes: readonly IndicatorLegendPane[] = []): void {
     this.updatePanes(panes);
+    this.plotRoom = Math.max(0, Math.round(overlay.room ?? 0));
     const stackKey = `${Math.round(overlay.left)},${Math.round(overlay.top)}`;
     if (stackKey !== this.stackKey) {
       this.stackKey = stackKey;
@@ -361,7 +377,7 @@ export class WidgetIndicatorLegend {
     }
     el.append(name, values, actions, note);
     const els: RowEls = {
-      el, name, swatch, values, actions, eye, settings, more, remove, note, visible: true, valuesKey: '', state: '', placeKey: '',
+      el, name, swatch, values, actions, eye, settings, more, remove, note, visible: true, valuesKey: '', state: '', placeKey: '', pane: null,
     };
     el.addEventListener('pointerdown', (e) => {
       this.touchedRow = isTouch((e as PointerEvent).pointerType) ? els : null;
@@ -400,9 +416,12 @@ export class WidgetIndicatorLegend {
   }
 
   private setOpenRow(els: RowEls | null): void {
-    this.openRow?.el.classList.remove(OPEN_CLASS);
+    const was = this.openRow;
+    was?.el.classList.remove(OPEN_CLASS);
     this.openRow = els;
     els?.el.classList.add(OPEN_CLASS);
+    // A pane's row takes its pane's width while open, and its room beside the pane's buttons once shut.
+    for (const row of [was, els]) if (row) this.place(row, row.pane);
   }
 
   private fill(els: RowEls, row: IndicatorLegendRow): void {
@@ -455,15 +474,27 @@ export class WidgetIndicatorLegend {
     return null;
   }
 
-  /** Pane rows are placed in their pane; stacked rows flow in the stack. */
+  /**
+   * Pane rows are placed in their pane; stacked rows flow in the stack. A row a finger opened
+   * takes more room until it is shut, as a phone has none for its name and its four buttons where
+   * it stands (Remove was cut off): a pane's lies across its pane, over the pane's buttons, the
+   * whole width of it so that none of them is half out; one over the plot takes the plot's width,
+   * where the stylesheet keeps it to its stack's.
+   */
   private place(els: RowEls, pane: IndicatorLegendRow['pane']): void {
-    const key = pane ? `${Math.round(pane.x)},${Math.round(pane.y)},${Math.round(pane.width)}` : '';
+    els.pane = pane;
+    const open = this.openRow === els;
+    const across = pane ? Math.max(0, Math.round(open ? pane.fullWidth : pane.width)) : open ? this.plotRoom : 0;
+    const key = pane ? `${Math.round(pane.x)},${Math.round(pane.y)},${across},${open}` : across ? `${across}` : '';
     if (key === els.placeKey) return;
     els.placeKey = key;
     els.el.classList.toggle('tcw-ind-legend-row--pane', pane !== null);
     els.el.style.left = pane ? `${Math.round(pane.x)}px` : '';
     els.el.style.top = pane ? `${Math.round(pane.y)}px` : '';
-    els.el.style.maxWidth = pane ? `${Math.max(0, Math.round(pane.width))}px` : '';
+    els.el.style.maxWidth = across || pane ? `${across}px` : '';
+    els.el.style.minWidth = pane && open ? `${across}px` : '';
+    // In the stack a row is as wide as the stack lets it be: its own text's width, up to the plot's.
+    els.el.style.width = !pane && across ? 'max-content' : '';
   }
 
   private setCollapsed(collapsed: boolean): void {

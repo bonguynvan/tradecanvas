@@ -157,6 +157,37 @@ describe('a legend row under a finger', () => {
   const nameOf = (id: string) => rowOf(id).querySelector<HTMLElement>('.tcw-ind-legend-name')!;
   const isOpen = (id: string) => rowOf(id).classList.contains('tcw-ind-legend-row--open');
 
+  // A phone's pane: "MACD 12 26 9" and its four buttons took 258 px of the 210 the pane's own buttons left, and Remove was cut.
+  it('lies across its pane while a finger has it open, over the pane’s buttons, and beside them again once shut', () => {
+    legend.update([{ ...row('RSI 14', ['54']), pane: { x: 4, y: 307, width: 210, fullWidth: 312 } }], { left: 0, top: 0 });
+    const widths = () => [rowOf('RSI 14').style.minWidth, rowOf('RSI 14').style.maxWidth];
+    expect(widths()).toEqual(['', '210px']);
+    press(nameOf('RSI 14'), 'touch');
+    // The whole of it, short as its text may be: the pane's buttons are under it, none of them half out.
+    expect(widths()).toEqual(['312px', '312px']);
+    // Laid out again while open (a bar came in): still across its pane.
+    legend.update([{ ...row('RSI 14', ['55']), pane: { x: 4, y: 307, width: 210, fullWidth: 312 } }], { left: 0, top: 0 });
+    expect(widths()).toEqual(['312px', '312px']);
+    press(document.body, 'touch');
+    expect(widths()).toEqual(['', '210px']);
+  });
+
+  // "Ichimoku 9 26 52 26" and its four buttons took 300 px of the 250 the stack keeps to on a phone, and Remove was cut.
+  it('takes the plot’s width while a finger has it open over the plot, and the stack’s again once shut', () => {
+    legend.update([row('EMA 20', ['1']), row('EMA 50', ['2'])], { left: 4, top: 41, room: 312 });
+    expect(rowOf('EMA 20').style.maxWidth).toBe('');
+    press(nameOf('EMA 20'), 'touch');
+    expect([rowOf('EMA 20').style.maxWidth, rowOf('EMA 50').style.maxWidth]).toEqual(['312px', '']);
+    // As wide as its text asks, up to that: left to the stack it stays the stack's width.
+    expect([rowOf('EMA 20').style.width, rowOf('EMA 50').style.width]).toEqual(['max-content', '']);
+    // The plot got narrower while it was open (a panel docked beside the chart).
+    legend.update([row('EMA 20', ['1']), row('EMA 50', ['2'])], { left: 4, top: 41, room: 250 });
+    expect(rowOf('EMA 20').style.maxWidth).toBe('250px');
+    press(nameOf('EMA 50'), 'touch');
+    expect([rowOf('EMA 20').style.maxWidth, rowOf('EMA 50').style.maxWidth]).toEqual(['', '250px']);
+    expect([rowOf('EMA 20').style.width, rowOf('EMA 50').style.width]).toEqual(['', 'max-content']);
+  });
+
   it('opens on a tap to show its buttons, rather than opening the settings', () => {
     expect(isOpen('EMA 20')).toBe(false);
     press(nameOf('EMA 20'), 'touch');
