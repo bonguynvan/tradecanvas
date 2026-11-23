@@ -3928,11 +3928,6 @@ export class Chart {
     this.applyTimeSpacing();
   }
 
-  /** The order with what a price is worth on this chart's market, unless it says one itself. */
-  private withWorth<T extends { multiplier?: number }>(intent: T): T {
-    return intent.multiplier === undefined ? { ...intent, multiplier: this.marketConfig?.contractMultiplier ?? 1 } : intent;
-  }
-
   /**
    * Connect an execution adapter, turning the trading overlay into a live
    * trading surface. The adapter is the source of truth: the chart routes its
@@ -3954,9 +3949,7 @@ export class Chart {
     this.executionBrackets = config.brackets ?? 'place';
     this.execTeardown = wireExecution(adapter, {
       onIntent: (type, handler) => {
-        // An order carries what a price is worth on this chart's market, read as it leaves: it is
-        // sent a moment later, and by then this chart, or another on the same account, may say another.
-        const wrapped = (e: ChartEvent) => handler(type === 'orderPlace' ? this.withWorth(e.payload as import('@tradecanvas/commons').OrderPlaceIntent) : e.payload);
+        const wrapped = (e: ChartEvent) => handler(e.payload);
         this.eventBus.on(type, wrapped);
         return () => this.eventBus.off(type, wrapped);
       },
@@ -3968,6 +3961,7 @@ export class Chart {
       onFill: (fill) => this.tellFill(fill),
       getPositions: () => this.book.getPositions(),
       symbol: () => this.tradedSymbol || undefined,
+      multiplier: () => this.marketConfig?.contractMultiplier ?? 1,
       // On the market's grid, as a bracket's entry is: one started at the market is a limit there, not a stop a step over it.
       marketPrice: () => {
         const close = this.series.bars().at(-1)?.close;

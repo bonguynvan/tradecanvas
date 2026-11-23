@@ -29,8 +29,8 @@ The `3.0` branch. These move under the version's own heading when it is released
   given no `multiplier` of its own, which takes the market's from the chart (`ExecutionAdapter.setMultiplier`,
   optional). `positionLevels(drawing, multiplier)` takes the market's as its second argument. A position
   keeps the multiplier it opened with (`TradingPosition.multiplier`): a chart shown another market or another
-  symbol revalues nothing that is open. An order carries the multiplier of the chart that sends it
-  (`OrderPlaceIntent.multiplier`), which an adapter's `placeOrder` and the `orderPlaced` event see.
+  symbol revalues nothing that is open. An adapter is handed the multiplier of the chart an order comes from beside
+  the order (`placeOrder(intent, context)`, `OrderContext`); the order itself has nothing added.
 - **`TimeInForce` has three more members** (`@tradecanvas/commons`): `'gtd'`, `'ioc'` and `'fok'`. Code that handles every member needs them.
 - **`FillReason` and `ExecutionEventType` have one more member each** (`@tradecanvas/commons`): `'liquidation'` and `'marginCall'`. Code that handles every member needs them.
 

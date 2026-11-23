@@ -221,13 +221,6 @@ export interface OrderPlaceIntent {
   side: OrderSide;
   type: OrderType;
   price: number;
-  /**
-   * What a move of one in price is worth for one unit on the market of the chart that sends the
-   * order (its `contractMultiplier`, 1 with none): the chart writes it as the order leaves, for an
-   * adapter that counts money itself. The paper account counts the order, and the position it
-   * opens, by it. A broker's adapter can leave it.
-   */
-  multiplier?: number;
   stopPrice?: number;
   quantity?: number;
   /** Stop-loss and take-profit for the position the order opens. */

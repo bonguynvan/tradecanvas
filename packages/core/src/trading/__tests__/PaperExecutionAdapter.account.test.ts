@@ -184,15 +184,15 @@ describe('PaperExecutionAdapter: a position keeps what its price was worth when 
     expect(closed).not.toContain(cheap.id);
   });
 
-  it('counts an order at the multiplier its intent carries, whatever was said last', async () => {
+  it('counts an order at the multiplier given beside it, whatever was said last', async () => {
     const { adapter } = connect({ markPrice: 26.4, balance: 100_000_000 });
     adapter.setMultiplier(undefined);
-    await adapter.placeOrder({ side: 'buy', type: 'market', quantity: 100, price: 26.4, multiplier: 1000 });
+    await adapter.placeOrder({ side: 'buy', type: 'market', quantity: 100, price: 26.4 }, { multiplier: 1000 });
     expect(adapter.getPositions()[0].multiplier).toBe(1000);
     expect(adapter.getAccount()!.marginUsed).toBe(2_640_000);
     // An account given its own keeps it.
     const own = connect({ markPrice: 26.4, balance: 100_000_000, multiplier: 10 });
-    await own.adapter.placeOrder({ side: 'buy', type: 'market', quantity: 100, price: 26.4, multiplier: 1000 });
+    await own.adapter.placeOrder({ side: 'buy', type: 'market', quantity: 100, price: 26.4 }, { multiplier: 1000 });
     expect(own.adapter.getAccount()!.marginUsed).toBe(26_400);
   });
 

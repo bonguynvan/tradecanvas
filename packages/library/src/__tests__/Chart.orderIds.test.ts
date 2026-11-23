@@ -96,8 +96,7 @@ describe('Chart: what became of an order an adapter was asked for', () => {
     const sent = chart.placeOrderIntent(LIMIT);
     await flush();
     expect(taken).toHaveLength(1);
-    // As it was sent, with what a price is worth on the chart's market written on it as it left.
-    expect(taken[0].intent).toEqual({ ...sent, multiplier: 1 });
+    expect(taken[0].intent).toEqual(sent);
     expect(taken[0].order).toMatchObject({ side: 'buy', type: 'limit', price: 95 });
     expect(chart.getOrders().map((order) => order.id)).toEqual([taken[0].order.id]);
   });

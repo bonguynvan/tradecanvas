@@ -1,4 +1,5 @@
 import type {
+  OrderContext,
   AccountSummary,
   ExecutionAdapter,
   ExecutionConfig,
@@ -185,8 +186,8 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
    * chart and the panel count in. None, or one that is no multiplier, is 1. It is for the orders
    * placed from now on: an order keeps what its price was worth when it was placed, and a
    * position what it opened with (`TradingPosition.multiplier`), so a chart shown another market
-   * or another symbol revalues nothing. An order that carries its own (`OrderPlaceIntent.multiplier`,
-   * which a chart writes as the order leaves) is counted by that, so charts that share an account
+   * or another symbol revalues nothing. An order given its own beside it (`placeOrder`'s second argument,
+   * which a chart reads as the order leaves) is counted by that, so charts that share an account
    * each place at their own market's.
    */
   setMultiplier(multiplier: number | undefined, _symbol?: string): void {
@@ -441,12 +442,12 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     return [...this.positions];
   }
 
-  async placeOrder(intent: OrderPlaceIntent): Promise<TradingOrder> {
+  async placeOrder(intent: OrderPlaceIntent, context?: OrderContext): Promise<TradingOrder> {
     // Sent again with its id (a press sent twice, a retry): the order it was, and no second one.
     const id = intent.clientOrderId;
     const before = id === undefined ? undefined : this.placedById.get(id);
     if (before) return before;
-    const order = this.take(intent);
+    const order = this.take(intent, context);
     if (id !== undefined) this.remember(id, order);
     return order;
   }
@@ -458,7 +459,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   }
 
   /** Take an order asked for: refuse it with why, or make it and fill or keep it. */
-  private take(intent: OrderPlaceIntent): TradingOrder {
+  private take(intent: OrderPlaceIntent, context?: OrderContext): TradingOrder {
     const atOnce = intent.timeInForce === 'ioc' || intent.timeInForce === 'fok';
     if (atOnce && (intent.type === 'stop' || intent.type === 'stopLimit')) {
       throw new Error(`A ${intent.type === 'stop' ? 'stop' : 'stop-limit'} order waits for its stop: it cannot be ${intent.timeInForce}`);
@@ -489,7 +490,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     if (intent.exchangeType !== undefined) order.exchangeType = intent.exchangeType;
     // What its price is worth is the chart's market's now: it may show another before the order fills.
     this.forget();
-    this.orderWorth.set(order.id, !this.ownMultiplier && positive(intent.multiplier) ? intent.multiplier : this.multiplier);
+    this.orderWorth.set(order.id, !this.ownMultiplier && positive(context?.multiplier) ? context.multiplier : this.multiplier);
     // The price of its own symbol: what it fills at now, and is sized by.
     const mark = this.markOf(order);
     // A trail is a distance: anything else asked for is not taken.

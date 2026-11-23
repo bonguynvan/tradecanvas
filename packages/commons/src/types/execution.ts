@@ -154,6 +154,20 @@ export interface ExecutionEvent<T = unknown> {
 export type ExecutionListener<T = unknown> = (event: ExecutionEvent<T>) => void;
 
 /**
+ * What the chart knows of an order beside the order itself, handed to `placeOrder` as its second
+ * argument. It is not part of the order: an adapter that sends the order on as it came sends
+ * none of this.
+ */
+export interface OrderContext {
+  /**
+   * What a move of one in price is worth for one unit on the market of the chart the order comes
+   * from (its `contractMultiplier`; 1 with none), read as the order left the chart. The paper
+   * account counts the order, and the position it opens, by it.
+   */
+  multiplier?: number;
+}
+
+/**
  * Execution adapter interface. Reuses the existing `*Intent` types verbatim so
  * a chart that already emits `orderPlace` / `positionModify` events plugs in
  * with no new vocabulary.
@@ -180,7 +194,7 @@ export interface ExecutionAdapter {
    * that takes one, and answer a repeat of it with the order already made, so that a press sent
    * twice is one order.
    */
-  placeOrder(intent: OrderPlaceIntent): Promise<TradingOrder>;
+  placeOrder(intent: OrderPlaceIntent, context?: OrderContext): Promise<TradingOrder>;
   /** Re-price a pending order. */
   modifyOrder(intent: OrderModifyIntent): Promise<void>;
   /** Cancel a pending order. */

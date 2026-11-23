@@ -120,3 +120,59 @@ describe('Chart: orders sent in the same turn', () => {
     expect(adapter.getAccount()!.marginUsed).toBe(2_640_000);
   });
 });
+
+// A confirmed bracket's order is made by the wiring, not sent by the chart: it took whatever
+// multiplier was said last.
+describe('Chart: a bracket confirmed', () => {
+  const settled = () => new Promise((r) => setTimeout(r, 0));
+  const bars = (price: number) => Array.from({ length: 30 }, (_, i) => ({ time: Date.UTC(2025, 0, 1) + i * 3_600_000, open: price, high: price + 0.2, low: price - 0.2, close: price, volume: 1 }));
+
+  it('is counted at its own chart’s market, on one account with others', async () => {
+    const adapter = new PaperExecutionAdapter({ markPrice: 100, balance: 1_000_000_000_000 });
+    const others = [sizedHost(800, 500), sizedHost(800, 500)].map((el) => new Chart(el, { chartType: 'candlestick', features: { trading: true } }));
+    const charts = [chart, ...others];
+    const markets = [MARKET_HOSE, MARKET_VN30F, MARKET_CRYPTO];
+    charts.forEach((c, i) => { c.setData(bars(100)); c.setMarket(markets[i]); c.connectExecution(adapter); });
+    for (const c of charts) {
+      expect(c.startBracket('buy', 100, { quantity: 1 })).toBe(true);
+      expect(c.confirmBracket()).toBe(true);
+    }
+    await settled();
+    adapter.setMarkPrice(100);
+    await settled();
+    expect(adapter.getPositions().map((p) => p.multiplier)).toEqual([1000, 100_000, 1]);
+    for (const c of others) c.destroy();
+  });
+
+  it('is counted at the market it was confirmed on, when the market changes right after', async () => {
+    chart.setData(bars(26.4));
+    chart.setMarket(MARKET_HOSE);
+    const adapter = new PaperExecutionAdapter({ markPrice: 26.4, balance: 10_000_000 });
+    chart.connectExecution(adapter);
+    chart.startBracket('buy', 26.4, { quantity: 100 });
+    chart.confirmBracket();
+    chart.setMarket(MARKET_CRYPTO);
+    await settled();
+    adapter.setMarkPrice(26.4);
+    await settled();
+    expect(adapter.getPositions()[0].multiplier).toBe(1000);
+    expect(adapter.getAccount()!.marginUsed).toBe(2_640_000);
+  });
+});
+
+// What a price is worth is the chart's business and the paper account's: a broker's adapter that
+// passes the order on as it came must find nothing on it that the chart added for that.
+describe('Chart: the order an adapter is given', () => {
+  it('has no multiplier on it, which comes beside it', async () => {
+    chart.setMarket(MARKET_HOSE);
+    const adapter = new PaperExecutionAdapter({ markPrice: 26.4, balance: 10_000_000 });
+    const given: unknown[][] = [];
+    const place = adapter.placeOrder.bind(adapter);
+    adapter.placeOrder = (...args: Parameters<typeof place>) => { given.push(args); return place(...args); };
+    chart.connectExecution(adapter);
+    chart.placeOrderIntent({ side: 'buy', type: 'market', price: 26.4, quantity: 100 });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(given[0][0]).not.toHaveProperty('multiplier');
+    expect(given[0][1]).toEqual({ multiplier: 1000 });
+  });
+});
