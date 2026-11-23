@@ -128,6 +128,13 @@ These fail CI, often far from the line that caused them.
 - Colours, radii and spacing are `--tcw-*` tokens, set for the dark default
   and `[data-tcw-theme='light']`; the Studio, Terminal, Capsule and Desk looks are
   presets in `src/widget/widgetUI.ts`. Use a token, not a literal colour.
+- A control takes 32 px of a press each way under a finger (`pointer: coarse`)
+  and 20 px under a mouse (`--tcw-hit-finger`, `--tcw-hit-pointer`). Sized by
+  `--tcw-control-h`, `--tcw-control-h-sm` or `--tcw-menu-item-h` it is raised
+  under a finger by itself; anything else is raised by name in "A finger's
+  press" at the end of `WidgetStyles.css`, or, where its drawing must stay
+  small, takes the press through an `::after` over it (a pane's buttons, the
+  legend's names). The audit measures it: see below.
 - Dialogs and menus open in the overlay layer (`overlayHost`), so they sit
   above the chart and inside the widget in fullscreen. Place a menu with
   `placeMenu()`; it flips above the anchor when there is no room below.
@@ -172,8 +179,10 @@ These fail CI, often far from the line that caused them.
   `pnpm build`): the chart in the states dialogs never show (the price at an
   order with a quote on, a linked grid under the pointer, a replay, compares,
   Renko, the day's limits, many indicators), in both themes at three widths.
-  It checks that no two price axis tags overlap and that a linked grid's
-  legends follow the pointer, and that the chart drawn with no page is the
+  It checks that no two price axis tags overlap, that a linked grid's
+  legends follow the pointer, that every control takes a finger's press on
+  the phone and on a tablet (32 px each way) and a pointer's on the others
+  (20 px), and that the chart drawn with no page is the
   chart's own picture pixel for pixel (scene `noPage`), and writes a sheet per scene to `.tmp/audit`
   to look over. Add a scene to `scripts/audit/scenes.js` for a state a bug
   turned up.

@@ -68,6 +68,15 @@ chart.startBracket('buy', undefined, { risk: 50 })   // la cantidad que pierde 5
   En un mercado con techo y suelo para el día, el precio propio de una orden también se mantiene dentro: arrastrada más allá, se comunica en el límite.
 </p>
 
+<h3 id="finger">Bajo un dedo, ningún control mide menos de 32 px</h3>
+<p>
+  En un dispositivo cuyo puntero principal es grueso (un teléfono, una tableta), los controles del widget miden ahora
+  al menos 32 px por lado, en cualquier aspecto y <code>density</code>: un widget <code>compact</code> en una tableta ya no
+  tiene botones de 24 px, y cada fila de la leyenda de indicadores mide 32 px de alto donde medía 20. Bajo un ratón el
+  dibujo queda como estaba y solo cambia lo que toma una pulsación: al menos 20 px por lado. Una página que medía las
+  partes del widget en una pantalla táctil (la altura de una leyenda, la de un diálogo) lee números mayores.
+</p>
+
 <h2 id="types">Tipos que han crecido</h2>
 <p>
   <code>TimeInForce</code> es ahora <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. El código que trata todos

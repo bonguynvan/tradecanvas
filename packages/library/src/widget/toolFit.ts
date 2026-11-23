@@ -5,8 +5,12 @@
  * it scrolls (the icon shrinks inside them).
  */
 
+import { coarsePointer } from './formControls.js';
+
 /** The custom property the stylesheet caps the tools' size with. */
 const TOOL_FIT = '--tcw-tool-fit';
+/** The least a control takes of a finger's press, as the stylesheet has it. */
+const HIT_FINGER = '--tcw-hit-finger';
 
 export interface ToolFitInput {
   /** A tool button's height at its own size (px). */
@@ -25,11 +29,18 @@ export function toolFitSize({ button, count, overflow, min }: ToolFitInput): num
   return Math.max(min, button - Math.ceil(overflow / count));
 }
 
-/** The widget's icon with 2 px a side: the smallest a tool button still reads at. */
+/**
+ * The widget's icon with 2 px a side: the smallest a tool button still reads at. Under a finger
+ * (a coarse pointer) no smaller than its press: the column scrolls from there.
+ */
 const TOOL_MIN_PAD = 2;
 function smallestTool(column: HTMLElement): number {
-  const icon = parseFloat(getComputedStyle(column).getPropertyValue('--tcw-icon'));
-  return Number.isFinite(icon) ? icon + 2 * TOOL_MIN_PAD : 0;
+  const style = getComputedStyle(column);
+  const icon = parseFloat(style.getPropertyValue('--tcw-icon'));
+  const reads = Number.isFinite(icon) ? icon + 2 * TOOL_MIN_PAD : 0;
+  if (!coarsePointer()) return reads;
+  const finger = parseFloat(style.getPropertyValue(HIT_FINGER));
+  return Number.isFinite(finger) ? Math.max(reads, finger) : reads;
 }
 
 /** Fit the tools in `column` now: measured at their own size, then capped. */

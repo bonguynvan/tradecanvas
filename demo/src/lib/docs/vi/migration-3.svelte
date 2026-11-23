@@ -68,6 +68,14 @@ chart.startBracket('buy', undefined, { risk: 50 })   // khối lượng sẽ l�
   Trên thị trường có giá trần và giá sàn trong ngày, giá của chính order cũng được giữ trong biên độ: kéo vượt qua thì được báo ở đúng mức trần hoặc sàn.
 </p>
 
+<h3 id="finger">Dưới ngón tay, không control nào nhỏ hơn 32 px</h3>
+<p>
+  Trên thiết bị có con trỏ chính là coarse (điện thoại, tablet), các control của widget giờ có ít nhất 32 px mỗi
+  chiều, ở mọi look và <code>density</code>: widget <code>compact</code> trên tablet không còn nút 24 px, và mỗi hàng
+  của legend indicator cao 32 px thay vì 20. Dưới chuột, hình vẽ giữ nguyên, chỉ vùng bấm thay đổi: ít nhất 20 px mỗi
+  chiều. Trang nào đo các phần của widget trên màn cảm ứng (chiều cao của legend, của một dialog) sẽ đọc được số lớn hơn.
+</p>
+
 <h2 id="types">Các type được mở rộng</h2>
 <p>
   <code>TimeInForce</code> nay là <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. Code xử lý mọi giá trị
