@@ -327,6 +327,20 @@ chart.setPositions([
 </p>
 <pre><code>{`feed.onTrade((trade) => broker.setMarkPrice(trade.price, trade.time, trade.symbol))`}</code></pre>
 
+<h3 id="live-price">リアルタイムでなくなった価格</h3>
+<p>
+  ウィジェットのフィードが接続され、データを送り続けている間、チャートの価格はリアルタイムです。フィードが切断されたとき、
+  または接続中でも 1 分間（<code>feedQuietAfter</code>、秒）何も送ってこないときは、最後の価格がそのまま残ります。
+  このときステータスバーは「Live」の代わりにそのことを表示し、チケットは成行注文を送らず、それ以外の注文には警告を
+  出します（価格はトレーダー自身が入力したものだからです）。フィードが切断されている間は、ワンクリックの注文
+  （右クリックメニュー、板情報）と、チャート上で確定したブラケット注文やドラフト注文も、メッセージとともに保留されます
+  （後の 2 つは <code>chart.setOrderGate</code> が保留します）。ポジションの決済と注文のキャンセルが保留されることは
+  ありません。閉場中の市場（銘柄の <code>sessions</code>）はもともと静かなので判定されず、リプレイと自分で用意したバー
+  （<code>adapter</code> なし）も判定されません。その場合は自分の <code>orderPlace</code> ハンドラーで注文を止めてください。
+</p>
+<pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, feedQuietAfter: 30 })   // seconds; 0: never
+chart.getFeedTime()   // when the stream last told anything, ms; null before it has`}</code></pre>
+
 <h2>チャート上で注文とポジションを操作する</h2>
 <p>
   注文とポジションのラインの右端には小さなボタンがあります。<strong>×</strong> は注文をキャンセルするか

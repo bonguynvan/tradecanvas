@@ -47,6 +47,9 @@ class FakeChart {
   isAutoScale(): boolean { return true; }
   isInvertScale(): boolean { return false; }
   getOrders(): unknown[] { return []; }
+  /** What the widget asks the chart to ask before a bracket or a draft is sent. */
+  gate: (() => boolean) | null = null;
+  setOrderGate(gate: (() => boolean) | null): void { this.gate = gate; }
   /** The symbols said for bars set by hand, and how often the fills were forgotten. */
   said: string[] = [];
   cleared = 0;
@@ -82,6 +85,7 @@ type Trading = {
   trading: {
     placeOrderAt(kind: string, price: number): void;
     placeLadderOrder(side: 'buy' | 'sell', price: number): void;
+    setFeed(health: 'live' | 'quiet' | 'down'): void;
     openOrderTicket(price?: number, start?: { side?: 'buy' | 'sell' }): void;
   };
 };
@@ -257,3 +261,96 @@ describe('ChartWidget: the bars are the host’s', () => {
   });
 });
 
+// The feed had failed, or told nothing for two minutes under "Live", and orders went out at the price left standing.
+describe('ChartWidget: a price that is no longer live', () => {
+  type Feed = { adapter: object | null; state: { connectionState: string }; checkFeed(): void };
+  const status = () => host.querySelector('.tcw-status-indicator')?.textContent ?? '';
+
+  it('holds back an order asked for in one press while the feed is down, and says why', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    trading().setFeed('down');
+    trading().placeOrderAt('buyLimit', 95);
+    trading().placeLadderOrder('sell', 105);
+    expect(FakeChart.last.placed).toEqual([]);
+    expect(toasts().at(-1)).toContain('No live price');
+    trading().setFeed('live');
+    trading().placeOrderAt('buyLimit', 95);
+    expect(FakeChart.last.placed).toHaveLength(1);
+  });
+
+  it('lets one through on a feed that is only quiet: its price is the trader’s own, and a market after hours is quiet', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    trading().setFeed('quiet');
+    trading().placeOrderAt('buyLimit', 95);
+    expect(FakeChart.last.placed).toHaveLength(1);
+  });
+
+  it('asks the chart to hold back a bracket or a draft confirmed while the feed is down', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    const gate = FakeChart.last.gate!;
+    expect(gate()).toBe(true);
+    trading().setFeed('quiet');
+    expect(gate()).toBe(true);
+    trading().setFeed('down');
+    expect(gate()).toBe(false);
+  });
+
+  it.each(['quiet', 'down'] as const)('sends no market order from the ticket on a %s feed, and says so', (health) => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    trading().openOrderTicket();
+    expect(place().disabled).toBe(false);
+    trading().setFeed(health);
+    expect(place().disabled).toBe(true);
+    expect(problems()).toContain('a market order cannot be sent');
+    trading().setFeed('live');
+    expect(place().disabled).toBe(false);
+    expect(problems()).toBe('');
+  });
+
+  it('opens the ticket knowing the price is not live', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    trading().setFeed('quiet');
+    trading().openOrderTicket();
+    expect(place().disabled).toBe(true);
+  });
+
+  it('follows the feed: quiet when it tells nothing, down when it is not connected, and says so in place of Live', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(Date.UTC(2026, 10, 23, 10));
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    const feed = widget as unknown as Feed;
+    const chart = FakeChart.last as FakeChart & { getFeedTime(): number | null };
+    feed.adapter = {};
+    feed.state = { ...feed.state, connectionState: 'connected' };
+    const told = Date.now();
+    chart.getFeedTime = () => told;
+    feed.checkFeed();
+    trading().openOrderTicket();
+    expect(place().disabled).toBe(false);
+    // Two minutes on, and not a word from it.
+    vi.setSystemTime(told + 120_000);
+    feed.checkFeed();
+    expect(status()).toContain('No price updates');
+    expect(place().disabled).toBe(true);
+    // In a replay the prices are the replay's own.
+    FakeChart.last.replay = true;
+    feed.checkFeed();
+    expect(place().disabled).toBe(false);
+    FakeChart.last.replay = false;
+    // It tells again.
+    chart.getFeedTime = () => Date.now();
+    feed.checkFeed();
+    expect(place().disabled).toBe(false);
+    feed.state = { ...feed.state, connectionState: 'error' };
+    feed.checkFeed();
+    trading().placeOrderAt('buyLimit', 95);
+    expect(FakeChart.last.placed).toEqual([]);
+  });
+
+  it('judges no feed where the bars are the host’s own', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    (widget as unknown as Feed).checkFeed();
+    trading().placeOrderAt('buyLimit', 95);
+    expect(FakeChart.last.placed).toHaveLength(1);
+  });
+});

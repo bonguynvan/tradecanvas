@@ -123,6 +123,16 @@ chart.startBracket('buy', undefined, { risk: 50 })   // ストップで 50 を�
   指定しない限りツールチップはカーソルに追従し、<code>'hold'</code> も受け付けます。
 </p>
 
+<h3 id="live-price">ワンクリックの注文はリアルタイム価格を待ちます</h3>
+<p>
+  独自のフィード（<code>adapter</code>）がある場合、そのフィードが切断されている間、<code>ChartWidget</code> は
+  ワンクリックの注文（右クリックメニュー、板情報）も、確定したブラケット注文やドラフト注文も送らなくなりました。
+  代わりに理由を表示します。フィードが切断されているか、1 分間何も送ってこない間（<code>feedQuietAfter</code>）、
+  チケットは成行注文を送らず、止まったストリームに対して「Live」と表示していたステータスバーは
+  「価格の更新がありません」と表示します。<code>feedQuietAfter: 0</code> にすると、接続中のフィードが静かだと
+  判定されることはなくなりますが、切断されたフィードは変わらず注文を保留します。
+</p>
+
 <h2 id="types">広がった型</h2>
 <p>
   <code>TimeInForce</code> は <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code> になりました。すべてのメンバーを扱うコード（default

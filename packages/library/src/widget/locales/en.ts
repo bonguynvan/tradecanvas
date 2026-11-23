@@ -209,6 +209,7 @@ export const EN_MESSAGES = {
   // Status bar / connection
   'status.connecting': 'Connecting...',
   'status.live': 'Live',
+  'status.noUpdates': 'No price updates',
   'status.delayed': 'Delayed {minutes} min',
   'status.connectionFailed': 'Connection failed',
   'status.loading': 'Loading chart...',
@@ -610,6 +611,8 @@ export const EN_MESSAGES = {
   'ticket.placeBuy': 'Place buy order',
   'ticket.placeSell': 'Place sell order',
   'ticket.noAnswer': 'No answer from the broker yet. Check your orders before you send it again.',
+  'ticket.noLivePrice': 'No live price: check the price before you place the order.',
+  'ticket.noLiveMarket': 'No live price: a market order cannot be sent.',
   'ticket.sending': 'Sending…',
   'ticket.sent': 'Order sent: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Enter a quantity above 0.',
@@ -984,6 +987,7 @@ export const EN_MESSAGES = {
   'order.buyStop': 'Buy stop @ {price}',
   'order.sellStop': 'Sell stop @ {price}',
   'order.refused': 'The broker refused the order: {reason}',
+  'order.noLivePrice': 'No live price: the order was not sent',
   'order.partDropped': 'Filled {filled} of {quantity}: the rest was cancelled',
 
   // Toasts

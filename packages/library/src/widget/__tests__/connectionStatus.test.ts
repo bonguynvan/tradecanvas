@@ -53,3 +53,14 @@ describe('the status bar’s dot', () => {
     expect(dot().classList.contains('tcw-delayed')).toBe(false);
   });
 });
+
+describe('shownConnection: a connected feed that tells nothing', () => {
+  it('says so in place of Live, with the still dot', () => {
+    expect(shownConnection('connected', 'Live', null, EN_TRANSLATOR, true)).toEqual({ message: 'No price updates', delayed: true });
+  });
+
+  it('keeps the words of a feed that is not connected', () => {
+    expect(shownConnection('error', 'Connection failed', null, EN_TRANSLATOR, true)).toEqual({ message: 'Connection failed', delayed: false });
+  });
+});
+

@@ -204,6 +204,7 @@ export const KO_MESSAGES: WidgetMessages = {
 
   'status.connecting': '연결 중…',
   'status.live': '실시간',
+  'status.noUpdates': '가격 업데이트 없음',
   'status.delayed': '{minutes}분 지연',
   'status.connectionFailed': '연결 실패',
   'status.loading': '차트를 불러오는 중…',
@@ -603,6 +604,8 @@ export const KO_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': '매수 주문 전송',
   'ticket.placeSell': '매도 주문 전송',
   'ticket.noAnswer': '브로커가 아직 응답하지 않았습니다. 다시 보내기 전에 주문을 확인하세요.',
+  'ticket.noLivePrice': '실시간 가격이 없습니다: 주문하기 전에 가격을 확인하세요.',
+  'ticket.noLiveMarket': '실시간 가격이 없습니다: 시장가 주문을 보낼 수 없습니다.',
   'ticket.sending': '전송 중…',
   'ticket.sent': '주문 전송 완료: {side} {quantity} @ {price}',
   'ticket.problem.quantity': '수량을 0보다 크게 입력하세요.',
@@ -971,6 +974,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'order.buyStop': '스톱 매수 @ {price}',
   'order.sellStop': '스톱 매도 @ {price}',
   'order.refused': '브로커가 주문을 거부했습니다: {reason}',
+  'order.noLivePrice': '실시간 가격이 없습니다: 주문을 보내지 않았습니다',
   'order.partDropped': '{quantity} 중 {filled} 체결: 나머지는 취소되었습니다',
 
   'toast.pinned': '즐겨찾기에 고정했습니다',

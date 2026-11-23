@@ -130,6 +130,16 @@ chart.startBracket('buy', undefined, { risk: 50 })   // la cantidad que pierde 5
   su información sigue al cursor salvo que se indique otra cosa, y también acepta <code>'hold'</code>.
 </p>
 
+<h3 id="live-price">Las órdenes de una pulsación esperan un precio en vivo</h3>
+<p>
+  Con un feed propio (<code>adapter</code>), <code>ChartWidget</code> ya no envía una orden pedida con una sola
+  pulsación (el menú del botón derecho, la escalera de profundidad), ni una orden bracket o un borrador confirmados,
+  mientras ese feed no está conectado: dice por qué. Mientras el feed no está conectado, o no ha enviado nada en un
+  minuto (<code>feedQuietAfter</code>), el ticket no envía órdenes a mercado, y la barra de estado dice «Sin
+  actualizaciones de precio» donde decía «Live» sobre un stream detenido. Con <code>feedQuietAfter: 0</code> un feed
+  conectado nunca se considera silencioso; un feed sin conexión retiene las órdenes igualmente.
+</p>
+
 <h2 id="types">Tipos que han crecido</h2>
 <p>
   <code>TimeInForce</code> es ahora <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. El código que trata todos

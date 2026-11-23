@@ -310,6 +310,18 @@ chart.setPositions([
 </p>
 <pre><code>{`feed.onTrade((trade) => broker.setMarkPrice(trade.price, trade.time, trade.symbol))`}</code></pre>
 
+<h3 id="live-price">不再是实时的价格</h3>
+<p>
+  组件的数据源已连接并持续推送时，图表上的价格是实时的。数据源断开，或者已连接但一分钟内没有任何推送
+  （<code>feedQuietAfter</code>，单位为秒），最后的价格就会停在那里：这时状态栏会说明这一点而不再显示“Live”，
+  下单窗口不发送市价单，对其他类型则给出警告，因为价格是交易者自己填的。数据源断开期间，一键下单（右键菜单、盘口深度）
+  以及在图表上确认的括号单或草稿订单也会被拦下并给出提示（后两者由 <code>chart.setOrderGate</code> 拦截）。
+  平仓和撤单从不会被拦下。休市的市场（品种的 <code>sessions</code>）本来就没有推送，不做判断；回放以及由你自己提供的K线
+  （没有 <code>adapter</code>）也不判断：这种情况请在你自己的 <code>orderPlace</code> 处理函数里拦截订单。
+</p>
+<pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, feedQuietAfter: 30 })   // seconds; 0: never
+chart.getFeedTime()   // when the stream last told anything, ms; null before it has`}</code></pre>
+
 <h2>在图表上操作订单和持仓</h2>
 <p>
   订单线和持仓线的右端带有小按钮：<strong>×</strong> 撤销订单或平掉持仓，

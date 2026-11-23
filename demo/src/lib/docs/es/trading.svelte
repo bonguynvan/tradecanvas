@@ -346,6 +346,21 @@ chart.setPositions([
 </p>
 <pre><code>{`feed.onTrade((trade) => broker.setMarkPrice(trade.price, trade.time, trade.symbol))`}</code></pre>
 
+<h3 id="live-price">Un precio que ya no está en vivo</h3>
+<p>
+  El precio del gráfico está en vivo mientras el feed del widget está conectado y enviando. Un feed que no está
+  conectado, o que está conectado y no ha enviado nada en un minuto (<code>feedQuietAfter</code>, en segundos), deja
+  el último precio donde estaba: la barra de estado lo dice entonces en lugar de «Live», y el ticket no envía órdenes
+  a mercado y avisa en las demás, cuyo precio es el del propio trader. Mientras el feed no está conectado, una orden
+  pedida con una sola pulsación (el menú del botón derecho, la escalera de profundidad) y una orden bracket o un
+  borrador confirmados en el gráfico también se retienen, con un aviso (<code>chart.setOrderGate</code> retiene estos
+  dos). Cerrar una posición y cancelar una orden nunca se retienen. Un mercado cerrado (las <code>sessions</code> del
+  símbolo) es silencioso por naturaleza y no se juzga, ni tampoco una repetición o las barras que pones tú (sin
+  <code>adapter</code>): retén ahí las órdenes en tu propio manejador de <code>orderPlace</code>.
+</p>
+<pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, feedQuietAfter: 30 })   // seconds; 0: never
+chart.getFeedTime()   // when the stream last told anything, ms; null before it has`}</code></pre>
+
 <h2>Actuar sobre órdenes y posiciones desde el gráfico</h2>
 <p>
   Las líneas de órdenes y de posiciones llevan pequeños botones en su extremo

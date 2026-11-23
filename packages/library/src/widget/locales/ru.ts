@@ -204,6 +204,7 @@ export const RU_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Подключение…',
   'status.live': 'В реальном времени',
+  'status.noUpdates': 'Нет обновлений цены',
   'status.delayed': 'Задержка {minutes} мин',
   'status.connectionFailed': 'Не удалось подключиться',
   'status.loading': 'Загрузка графика…',
@@ -603,6 +604,8 @@ export const RU_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'Разместить ордер на покупку',
   'ticket.placeSell': 'Разместить ордер на продажу',
   'ticket.noAnswer': 'Брокер ещё не ответил. Проверьте свои ордера, прежде чем отправлять снова.',
+  'ticket.noLivePrice': 'Нет актуальной цены: проверьте цену перед отправкой заявки.',
+  'ticket.noLiveMarket': 'Нет актуальной цены: рыночную заявку отправить нельзя.',
   'ticket.sending': 'Отправка…',
   'ticket.sent': 'Ордер отправлен: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Введите количество больше 0.',
@@ -971,6 +974,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'order.buyStop': 'Стоп-покупка @ {price}',
   'order.sellStop': 'Стоп-продажа @ {price}',
   'order.refused': 'Брокер отклонил ордер: {reason}',
+  'order.noLivePrice': 'Нет актуальной цены: заявка не отправлена',
   'order.partDropped': 'Исполнено {filled} из {quantity}: остаток отменён',
 
   'toast.pinned': 'Закреплено в избранном',

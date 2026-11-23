@@ -6809,6 +6809,12 @@
         "kind": "number"
       },
       {
+        "name": "feedQuietAfter",
+        "type": "number",
+        "doc": "How long, seconds, the widget's feed may be connected and tell nothing before its price stops counting as live: the status bar then says so in place of \"Live\", and the ticket warns and sends no order at the market.",
+        "kind": "number"
+      },
+      {
         "name": "historyPageSize",
         "type": "number",
         "doc": "Bars per request when scrolling back for older bars (adapters with `fetchHistoryBefore`). Default 500.",

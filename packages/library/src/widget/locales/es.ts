@@ -204,6 +204,7 @@ export const ES_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Conectando…',
   'status.live': 'En vivo',
+  'status.noUpdates': 'Sin actualizaciones de precio',
   'status.delayed': 'Retraso de {minutes} min',
   'status.connectionFailed': 'Error de conexión',
   'status.loading': 'Cargando gráfico…',
@@ -603,6 +604,8 @@ export const ES_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'Enviar orden de compra',
   'ticket.placeSell': 'Enviar orden de venta',
   'ticket.noAnswer': 'El bróker aún no ha respondido. Revisa tus órdenes antes de enviarla de nuevo.',
+  'ticket.noLivePrice': 'Sin precio en vivo: comprueba el precio antes de enviar la orden.',
+  'ticket.noLiveMarket': 'Sin precio en vivo: no se puede enviar una orden a mercado.',
   'ticket.sending': 'Enviando…',
   'ticket.sent': 'Orden enviada: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Introduce una cantidad mayor que 0.',
@@ -971,6 +974,7 @@ export const ES_MESSAGES: WidgetMessages = {
   'order.buyStop': 'Compra stop @ {price}',
   'order.sellStop': 'Venta stop @ {price}',
   'order.refused': 'El bróker rechazó la orden: {reason}',
+  'order.noLivePrice': 'Sin precio en vivo: la orden no se envió',
   'order.partDropped': 'Ejecutado {filled} de {quantity}: el resto se canceló',
 
   'toast.pinned': 'Fijado en favoritos',

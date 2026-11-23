@@ -208,6 +208,7 @@ export const HE_MESSAGES: WidgetMessages = {
   // Status bar / connection
   'status.connecting': 'מתחבר...',
   'status.live': 'בזמן אמת',
+  'status.noUpdates': 'אין עדכוני מחיר',
   'status.delayed': 'בעיכוב של {minutes} דק׳',
   'status.connectionFailed': 'החיבור נכשל',
   'status.loading': 'הגרף נטען...',
@@ -609,6 +610,8 @@ export const HE_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'שליחת פקודת קנייה',
   'ticket.placeSell': 'שליחת פקודת מכירה',
   'ticket.noAnswer': 'הברוקר עדיין לא השיב. בדקו את הפקודות שלכם לפני שליחה חוזרת.',
+  'ticket.noLivePrice': 'אין מחיר חי: בדקו את המחיר לפני שליחת ההוראה.',
+  'ticket.noLiveMarket': 'אין מחיר חי: לא ניתן לשלוח הוראת שוק.',
   'ticket.sending': 'שולח…',
   'ticket.sent': 'הפקודה נשלחה: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'יש להזין כמות גדולה מ-0.',
@@ -983,6 +986,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'order.buyStop': 'סטופ קנייה @ {price}',
   'order.sellStop': 'סטופ מכירה @ {price}',
   'order.refused': 'הברוקר דחה את הפקודה: {reason}',
+  'order.noLivePrice': 'אין מחיר חי: ההוראה לא נשלחה',
   'order.partDropped': 'בוצעו {filled} מתוך {quantity}: היתרה בוטלה',
 
   // Toasts

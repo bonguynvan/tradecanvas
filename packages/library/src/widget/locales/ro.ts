@@ -204,6 +204,7 @@ export const RO_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Se conectează…',
   'status.live': 'În direct',
+  'status.noUpdates': 'Nicio actualizare de preț',
   'status.delayed': 'Întârziere {minutes} min',
   'status.connectionFailed': 'Conectare eșuată',
   'status.loading': 'Se încarcă graficul…',
@@ -603,6 +604,8 @@ export const RO_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'Plasare ordin de cumpărare',
   'ticket.placeSell': 'Plasare ordin de vânzare',
   'ticket.noAnswer': 'Brokerul nu a răspuns încă. Verificați ordinele înainte de a trimite din nou.',
+  'ticket.noLivePrice': 'Fără preț în timp real: verificați prețul înainte de a plasa ordinul.',
+  'ticket.noLiveMarket': 'Fără preț în timp real: nu se poate trimite un ordin la piață.',
   'ticket.sending': 'Se trimite…',
   'ticket.sent': 'Ordin trimis: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Introduceți o cantitate mai mare decât 0.',
@@ -971,6 +974,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'order.buyStop': 'Cumpărare stop @ {price}',
   'order.sellStop': 'Vânzare stop @ {price}',
   'order.refused': 'Brokerul a respins ordinul: {reason}',
+  'order.noLivePrice': 'Fără preț în timp real: ordinul nu a fost trimis',
   'order.partDropped': 'Executat {filled} din {quantity}: restul a fost anulat',
 
   'toast.pinned': 'Fixat la favorite',

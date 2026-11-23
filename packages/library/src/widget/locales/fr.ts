@@ -204,6 +204,7 @@ export const FR_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Connexion…',
   'status.live': 'En direct',
+  'status.noUpdates': 'Aucune mise à jour du prix',
   'status.delayed': 'Différé de {minutes} min',
   'status.connectionFailed': 'Échec de la connexion',
   'status.loading': 'Chargement du graphique…',
@@ -603,6 +604,8 @@ export const FR_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'Envoyer l’ordre d’achat',
   'ticket.placeSell': 'Envoyer l’ordre de vente',
   'ticket.noAnswer': 'Le courtier n’a pas encore répondu. Vérifiez vos ordres avant de l’envoyer à nouveau.',
+  'ticket.noLivePrice': 'Pas de prix en direct : vérifiez le prix avant de passer l’ordre.',
+  'ticket.noLiveMarket': 'Pas de prix en direct : un ordre au marché ne peut pas être envoyé.',
   'ticket.sending': 'Envoi…',
   'ticket.sent': 'Ordre envoyé : {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Saisissez une quantité supérieure à 0.',
@@ -971,6 +974,7 @@ export const FR_MESSAGES: WidgetMessages = {
   'order.buyStop': 'Achat stop @ {price}',
   'order.sellStop': 'Vente stop @ {price}',
   'order.refused': 'Le courtier a refusé l’ordre : {reason}',
+  'order.noLivePrice': 'Pas de prix en direct : l’ordre n’a pas été envoyé',
   'order.partDropped': 'Exécuté {filled} sur {quantity} : le reste a été annulé',
 
   'toast.pinned': 'Épinglé aux favoris',

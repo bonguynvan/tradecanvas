@@ -208,6 +208,7 @@ export const VI_MESSAGES: WidgetMessages = {
   // Status bar / connection
   'status.connecting': 'Đang kết nối...',
   'status.live': 'Live',
+  'status.noUpdates': 'Không có cập nhật giá',
   'status.delayed': 'Trễ {minutes} phút',
   'status.connectionFailed': 'Kết nối thất bại',
   'status.loading': 'Đang tải biểu đồ...',
@@ -609,6 +610,8 @@ export const VI_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'Đặt lệnh mua',
   'ticket.placeSell': 'Đặt lệnh bán',
   'ticket.noAnswer': 'Broker chưa trả lời. Hãy kiểm tra các order của bạn trước khi gửi lại.',
+  'ticket.noLivePrice': 'Không có giá trực tiếp: hãy kiểm tra giá trước khi đặt lệnh.',
+  'ticket.noLiveMarket': 'Không có giá trực tiếp: không thể gửi lệnh thị trường.',
   'ticket.sending': 'Đang gửi…',
   'ticket.sent': 'Đã gửi order: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Nhập khối lượng lớn hơn 0.',
@@ -983,6 +986,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'order.buyStop': 'Mua stop @ {price}',
   'order.sellStop': 'Bán stop @ {price}',
   'order.refused': 'Broker từ chối order: {reason}',
+  'order.noLivePrice': 'Không có giá trực tiếp: lệnh chưa được gửi',
   'order.partDropped': 'Đã khớp {filled} trên {quantity}: phần còn lại đã huỷ',
 
   // Toasts

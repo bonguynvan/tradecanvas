@@ -208,6 +208,7 @@ export const FA_MESSAGES: WidgetMessages = {
   // Status bar / connection
   'status.connecting': 'در حال اتصال…',
   'status.live': 'زنده',
+  'status.noUpdates': 'به‌روزرسانی قیمت وجود ندارد',
   'status.delayed': 'با {minutes} دقیقه تأخیر',
   'status.connectionFailed': 'اتصال ناموفق بود',
   'status.loading': 'در حال بارگذاری نمودار…',
@@ -609,6 +610,8 @@ export const FA_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'ثبت سفارش خرید',
   'ticket.placeSell': 'ثبت سفارش فروش',
   'ticket.noAnswer': 'بروکر هنوز پاسخ نداده است. پیش از ارسال دوباره، سفارش‌های خود را بررسی کنید.',
+  'ticket.noLivePrice': 'قیمت زنده وجود ندارد: پیش از ثبت سفارش قیمت را بررسی کنید.',
+  'ticket.noLiveMarket': 'قیمت زنده وجود ندارد: سفارش بازار قابل ارسال نیست.',
   'ticket.sending': 'در حال ارسال…',
   'ticket.sent': 'سفارش ارسال شد: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'مقداری بیشتر از 0 وارد کنید.',
@@ -983,6 +986,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'order.buyStop': 'خرید استاپ @ {price}',
   'order.sellStop': 'فروش استاپ @ {price}',
   'order.refused': 'بروکر سفارش را رد کرد: {reason}',
+  'order.noLivePrice': 'قیمت زنده وجود ندارد: سفارش ارسال نشد',
   'order.partDropped': '{filled} از {quantity} انجام شد: باقی‌مانده لغو شد',
 
   // Toasts

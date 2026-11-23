@@ -208,6 +208,7 @@ export const NB_MESSAGES: WidgetMessages = {
   // Status bar / connection
   'status.connecting': 'Kobler til…',
   'status.live': 'Sanntid',
+  'status.noUpdates': 'Ingen prisoppdateringer',
   'status.delayed': 'Forsinket {minutes} min',
   'status.connectionFailed': 'Tilkoblingen mislyktes',
   'status.loading': 'Laster inn grafen…',
@@ -609,6 +610,8 @@ export const NB_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'Legg inn kjøpsordre',
   'ticket.placeSell': 'Legg inn salgsordre',
   'ticket.noAnswer': 'Megleren har ikke svart ennå. Sjekk ordrene dine før du sender på nytt.',
+  'ticket.noLivePrice': 'Ingen sanntidspris: kontroller prisen før du legger inn ordren.',
+  'ticket.noLiveMarket': 'Ingen sanntidspris: en markedsordre kan ikke sendes.',
   'ticket.sending': 'Sender…',
   'ticket.sent': 'Ordre sendt: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Angi et antall over 0.',
@@ -983,6 +986,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'order.buyStop': 'Kjøp stopp @ {price}',
   'order.sellStop': 'Selg stopp @ {price}',
   'order.refused': 'Megleren avviste ordren: {reason}',
+  'order.noLivePrice': 'Ingen sanntidspris: ordren ble ikke sendt',
   'order.partDropped': 'Utført {filled} av {quantity}: resten ble kansellert',
 
   // Toasts

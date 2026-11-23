@@ -208,6 +208,7 @@ export const ET_MESSAGES: WidgetMessages = {
   // Status bar / connection
   'status.connecting': 'Ühendamine…',
   'status.live': 'Reaalajas',
+  'status.noUpdates': 'Hinnauuendusi pole',
   'status.delayed': 'Viivitus {minutes} min',
   'status.connectionFailed': 'Ühendamine ebaõnnestus',
   'status.loading': 'Graafiku laadimine…',
@@ -609,6 +610,8 @@ export const ET_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'Esita ostuorder',
   'ticket.placeSell': 'Esita müügiorder',
   'ticket.noAnswer': 'Maakler pole veel vastanud. Kontrollige oma ordereid enne uuesti saatmist.',
+  'ticket.noLivePrice': 'Reaalajas hinda pole: kontrollige hinda enne orderi esitamist.',
+  'ticket.noLiveMarket': 'Reaalajas hinda pole: tururorderit ei saa saata.',
   'ticket.sending': 'Saatmine…',
   'ticket.sent': 'Order saadetud: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Sisesta kogus, mis on suurem kui 0.',
@@ -983,6 +986,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'order.buyStop': 'Ostustopp @ {price}',
   'order.sellStop': 'Müügistopp @ {price}',
   'order.refused': 'Maakler lükkas orderi tagasi: {reason}',
+  'order.noLivePrice': 'Reaalajas hinda pole: orderit ei saadetud',
   'order.partDropped': 'Täidetud {filled} / {quantity}: ülejäänu tühistati',
 
   // Toasts

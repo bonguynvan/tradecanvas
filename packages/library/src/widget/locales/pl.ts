@@ -204,6 +204,7 @@ export const PL_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Łączenie…',
   'status.live': 'Na żywo',
+  'status.noUpdates': 'Brak aktualizacji ceny',
   'status.delayed': 'Opóźnienie {minutes} min',
   'status.connectionFailed': 'Błąd połączenia',
   'status.loading': 'Wczytywanie wykresu…',
@@ -603,6 +604,8 @@ export const PL_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'Złóż zlecenie kupna',
   'ticket.placeSell': 'Złóż zlecenie sprzedaży',
   'ticket.noAnswer': 'Broker jeszcze nie odpowiedział. Sprawdź swoje zlecenia, zanim wyślesz ponownie.',
+  'ticket.noLivePrice': 'Brak ceny na żywo: sprawdź cenę przed złożeniem zlecenia.',
+  'ticket.noLiveMarket': 'Brak ceny na żywo: nie można wysłać zlecenia rynkowego.',
   'ticket.sending': 'Wysyłanie…',
   'ticket.sent': 'Wysłano zlecenie: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Wpisz ilość większą od 0.',
@@ -971,6 +974,7 @@ export const PL_MESSAGES: WidgetMessages = {
   'order.buyStop': 'Kupno stop @ {price}',
   'order.sellStop': 'Sprzedaż stop @ {price}',
   'order.refused': 'Broker odrzucił zlecenie: {reason}',
+  'order.noLivePrice': 'Brak ceny na żywo: zlecenie nie zostało wysłane',
   'order.partDropped': 'Zrealizowano {filled} z {quantity}: reszta została anulowana',
 
   'toast.pinned': 'Przypięto do ulubionych',

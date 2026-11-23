@@ -204,6 +204,7 @@ export const TH_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'กำลังเชื่อมต่อ…',
   'status.live': 'สด',
+  'status.noUpdates': 'ไม่มีการอัปเดตราคา',
   'status.delayed': 'ล่าช้า {minutes} นาที',
   'status.connectionFailed': 'เชื่อมต่อไม่สำเร็จ',
   'status.loading': 'กำลังโหลดกราฟ…',
@@ -603,6 +604,8 @@ export const TH_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'ส่งคำสั่งซื้อ',
   'ticket.placeSell': 'ส่งคำสั่งขาย',
   'ticket.noAnswer': 'โบรกเกอร์ยังไม่ตอบกลับ โปรดตรวจสอบคำสั่งของคุณก่อนส่งอีกครั้ง',
+  'ticket.noLivePrice': 'ไม่มีราคาสด: ตรวจสอบราคาก่อนส่งคำสั่ง',
+  'ticket.noLiveMarket': 'ไม่มีราคาสด: ไม่สามารถส่งคำสั่งราคาตลาดได้',
   'ticket.sending': 'กำลังส่ง…',
   'ticket.sent': 'ส่งคำสั่งแล้ว: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'กรอกจำนวนที่มากกว่า 0',
@@ -971,6 +974,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'order.buyStop': 'ซื้อแบบสต็อป @ {price}',
   'order.sellStop': 'ขายแบบสต็อป @ {price}',
   'order.refused': 'โบรกเกอร์ปฏิเสธคำสั่ง: {reason}',
+  'order.noLivePrice': 'ไม่มีราคาสด: ยังไม่ได้ส่งคำสั่ง',
   'order.partDropped': 'จับคู่แล้ว {filled} จาก {quantity}: ส่วนที่เหลือถูกยกเลิก',
 
   'toast.pinned': 'ปักหมุดในรายการโปรดแล้ว',

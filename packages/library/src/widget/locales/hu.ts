@@ -204,6 +204,7 @@ export const HU_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Kapcsolódás…',
   'status.live': 'Élő',
+  'status.noUpdates': 'Nincs árfrissítés',
   'status.delayed': '{minutes} perc késés',
   'status.connectionFailed': 'A kapcsolódás sikertelen',
   'status.loading': 'Grafikon betöltése…',
@@ -603,6 +604,8 @@ export const HU_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'Vételi megbízás leadása',
   'ticket.placeSell': 'Eladási megbízás leadása',
   'ticket.noAnswer': 'A bróker még nem válaszolt. Ellenőrizze a megbízásait, mielőtt újra elküldi.',
+  'ticket.noLivePrice': 'Nincs élő ár: a megbízás előtt ellenőrizze az árat.',
+  'ticket.noLiveMarket': 'Nincs élő ár: piaci megbízás nem küldhető.',
   'ticket.sending': 'Küldés…',
   'ticket.sent': 'Megbízás elküldve: {side} {quantity} @ {price}',
   'ticket.problem.quantity': '0-nál nagyobb mennyiséget adjon meg.',
@@ -971,6 +974,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'order.buyStop': 'Vételi stop @ {price}',
   'order.sellStop': 'Eladási stop @ {price}',
   'order.refused': 'A bróker elutasította a megbízást: {reason}',
+  'order.noLivePrice': 'Nincs élő ár: a megbízás nem lett elküldve',
   'order.partDropped': 'Teljesült {filled} / {quantity}: a maradék visszavonva',
 
   'toast.pinned': 'Rögzítve a kedvencekhez',
