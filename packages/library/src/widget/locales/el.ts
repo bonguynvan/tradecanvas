@@ -602,6 +602,8 @@ export const EL_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Αύξηση: {field}',
   'ticket.placeBuy': 'Υποβολή εντολής αγοράς',
   'ticket.placeSell': 'Υποβολή εντολής πώλησης',
+  'ticket.noAnswer': 'Ο broker δεν έχει απαντήσει ακόμη. Ελέγξτε τις εντολές σας πριν στείλετε ξανά.',
+  'ticket.sending': 'Αποστολή…',
   'ticket.sent': 'Η εντολή στάλθηκε: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Εισαγάγετε ποσότητα μεγαλύτερη από 0.',
   'ticket.problem.price': 'Εισαγάγετε τιμή μεγαλύτερη από 0.',

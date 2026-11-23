@@ -43,6 +43,8 @@ export type ChartEventType =
   | 'styleChange'
   | 'resize'
   | 'orderPlace'
+  /** The execution adapter took an order asked for (`orderPlace`), as the order it made of it. */
+  | 'orderPlaced'
   | 'orderModify'
   | 'orderCancel'
   | 'positionClose'
@@ -222,6 +224,19 @@ export interface OrderPlacePayload {
   expireTime?: number;
   /** A name shared by orders of which one cancels the others. */
   ocoGroup?: string;
+  /**
+   * The id the order goes out with, its own: the chart gives one to every order asked for
+   * (`placeOrderIntent`) that has none. A broker that takes it turns away a repeat of the same
+   * order (a press sent twice, a retry after a slow answer), and `orderPlaced` and
+   * `executionError` name the order by it.
+   */
+  clientOrderId?: string;
+}
+
+/** An order the execution adapter took: the one asked for, with its `clientOrderId`, and the order made of it. */
+export interface OrderPlacedPayload {
+  intent: OrderPlacePayload;
+  order: TradingOrder;
 }
 
 export interface ExecutionErrorPayload {
@@ -229,6 +244,8 @@ export interface ExecutionErrorPayload {
   cause?: unknown;
   /** The chart's intent whose command failed (`'orderPlace'`, `'bracketPlace'`…), when it was one. */
   command?: string;
+  /** The `clientOrderId` of the order that failed, for an `'orderPlace'`. */
+  clientOrderId?: string;
   /**
    * Why the chart sent it no further, when that was the chart's call and not
    * the adapter's: a bracket with no quantity (`'noQuantity'`), or no price yet
@@ -456,6 +473,12 @@ export interface ChartEventMap {
   /** The chart's size changed: its element was resized (a window, a rotation, a panel beside it) or `resize()` was called. */
   resize: ResizePayload;
   orderPlace: OrderPlacePayload;
+  /**
+   * The execution adapter took an order asked for: until this, or an `executionError` naming its
+   * `clientOrderId`, the order is on its way. Not sent with no adapter connected: the order is
+   * then the app's to place, and to answer for.
+   */
+  orderPlaced: OrderPlacedPayload;
   bracketPlace: BracketPlacePayload;
   /** A confirmed bracket the execution adapter took, as the order it placed (not with `connectExecution(adapter, { brackets: 'event' })`). */
   bracketOrder: { order: TradingOrder; bracket: BracketPlacePayload };

@@ -602,6 +602,8 @@ export const ID_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Naikkan {field}',
   'ticket.placeBuy': 'Kirim order beli',
   'ticket.placeSell': 'Kirim order jual',
+  'ticket.noAnswer': 'Broker belum menjawab. Periksa order Anda sebelum mengirim lagi.',
+  'ticket.sending': 'Mengirim…',
   'ticket.sent': 'Order terkirim: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Masukkan jumlah di atas 0.',
   'ticket.problem.price': 'Masukkan harga di atas 0.',

@@ -93,10 +93,8 @@ export class WidgetTrading {
     buttons.setShown(shown);
     if (!shown) return false;
     const last = this.host.chart.getData().at(-1)?.close ?? null;
-    const live = this.host.chart.isReplayActive() ? null : this.host.chart.getBidAsk();
     // Both sides or neither: one side beside the last price is no spread, and a bid is no price to buy at.
-    const quoted = live?.bid !== undefined && live.ask !== undefined;
-    buttons.update(quoted ? { bid: live.bid!, ask: live.ask! } : { bid: last, ask: last });
+    buttons.update(this.quote() ?? { bid: last, ask: last });
     return true;
   }
 
@@ -117,6 +115,7 @@ export class WidgetTrading {
       ...start,
       price: price ?? start.price,
       lastPrice: data.length > 0 ? data[data.length - 1].close : null,
+      quote: this.quote(),
       rules: this.orderRules(),
       symbol: this.host.state.symbol,
       // − and + move a price by the market's step; a click on the chart lands between steps.
@@ -162,7 +161,31 @@ export class WidgetTrading {
       log: this.activityLog(),
       multiplier: this.host.chart.getMarket()?.contractMultiplier,
     });
-    this.orderTicket?.setLastPrice(price);
+    this.orderTicket?.setLastPrice(price, this.quote());
+  }
+
+  /**
+   * The best bid and ask now, where the feed gives both: what a Sell and a Buy trade at, on the
+   * buttons and in the ticket. Null with one side only (a bid is no price to buy at), with none,
+   * and on a replay, whose bars carry no quote: both sides are then at the last price.
+   */
+  private quote(): { bid: number; ask: number } | null {
+    const live = this.host.chart.isReplayActive() ? null : this.host.chart.getBidAsk();
+    // A bid over its ask is a feed that fell behind on one side: no pair of prices to trade by.
+    return live?.bid !== undefined && live.ask !== undefined && live.bid <= live.ask ? { bid: live.bid, ask: live.ask } : null;
+  }
+
+  /** What an order asked for in one press is for: the market's lot where it trades in lots (HOSE: 100 shares), else one. */
+  private quickQuantity(): number {
+    const lot = this.host.chart.getMarket()?.volumeUnit;
+    return lot !== undefined && lot > 1 ? lot : 1;
+  }
+
+  /** A limit order from a rung of the depth ladder, for the market's lot. Past the day's limits it is not asked for. */
+  placeLadderOrder(side: 'buy' | 'sell', price: number): void {
+    if (!this.allowedToday(price)) return;
+    this.host.chart.placeOrderIntent({ side, type: 'limit', price, quantity: this.quickQuantity() });
+    this.host.say(fill(this.host.t(side === 'buy' ? 'order.buyLimit' : 'order.sellLimit'), { price: this.host.formatAlertPrice(price) }));
   }
 
   /** The activity log, read from the chart only when something was logged since the last read. */
@@ -187,12 +210,13 @@ export class WidgetTrading {
     return false;
   }
 
-  /** Ask for a limit or stop order at `price` (one unit), and say so. Past the day's limits it is not asked for. */
+  /** Ask for a limit or stop order at `price`, for the market's lot, and say so. Past the day's limits it is not asked for. */
   placeOrderAt(kind: 'buyLimit' | 'sellLimit' | 'buyStop' | 'sellStop', price: number): void {
     if (!this.allowedToday(price)) return;
     const side = kind.startsWith('buy') ? 'buy' : 'sell';
     const stop = kind.endsWith('Stop');
-    this.host.chart.placeOrderIntent(stop ? { side, type: 'stop', price, stopPrice: price, quantity: 1 } : { side, type: 'limit', price, quantity: 1 });
+    const quantity = this.quickQuantity();
+    this.host.chart.placeOrderIntent(stop ? { side, type: 'stop', price, stopPrice: price, quantity } : { side, type: 'limit', price, quantity });
     this.host.say(fill(this.host.t(`order.${kind}` as MessageKey), { price: this.host.formatAlertPrice(price) }));
   }
 

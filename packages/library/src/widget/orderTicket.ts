@@ -119,6 +119,11 @@ const PRICE_EPSILON = 1e-9;
  * a market order (null with no market price yet). A limit that fills at once
  * or not at all starts at the market too when it is through it: its price is
  * then the worst it takes, not where it fills.
+ *
+ * `lastPrice`, here and in the functions below, is the price the market trades the
+ * draft's side at: the ask for a buy and the bid for a sell where there is a quote,
+ * the last price where there is none. A buy valued at the last price was valued
+ * under what it pays.
  */
 export function ticketEntry(draft: Pick<OrderTicketDraft, 'side' | 'type' | 'price' | 'timeInForce'>, lastPrice: number | null): number | null {
   if (draft.type === 'market') return lastPrice;

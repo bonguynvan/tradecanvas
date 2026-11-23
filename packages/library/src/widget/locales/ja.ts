@@ -602,6 +602,8 @@ export const JA_MESSAGES: WidgetMessages = {
   'ticket.stepUp': '{field}を上げる',
   'ticket.placeBuy': '買い注文を発注',
   'ticket.placeSell': '売り注文を発注',
+  'ticket.noAnswer': 'ブローカーからまだ応答がありません。再送信する前に注文を確認してください。',
+  'ticket.sending': '送信中…',
   'ticket.sent': '注文を送信しました：{side} {quantity} @ {price}',
   'ticket.problem.quantity': '数量は0より大きい値を入力してください。',
   'ticket.problem.price': '価格は0より大きい値を入力してください。',

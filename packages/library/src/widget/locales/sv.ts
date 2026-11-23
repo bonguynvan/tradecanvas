@@ -602,6 +602,8 @@ export const SV_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Höj {field}',
   'ticket.placeBuy': 'Lägg köporder',
   'ticket.placeSell': 'Lägg säljorder',
+  'ticket.noAnswer': 'Mäklaren har inte svarat än. Kontrollera dina order innan du skickar igen.',
+  'ticket.sending': 'Skickar…',
   'ticket.sent': 'Order skickad: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Ange ett antal över 0.',
   'ticket.problem.price': 'Ange ett pris över 0.',

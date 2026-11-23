@@ -602,6 +602,8 @@ export const IT_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Aumenta {field}',
   'ticket.placeBuy': 'Invia ordine di acquisto',
   'ticket.placeSell': 'Invia ordine di vendita',
+  'ticket.noAnswer': 'Il broker non ha ancora risposto. Controlla i tuoi ordini prima di inviarlo di nuovo.',
+  'ticket.sending': 'Invio…',
   'ticket.sent': 'Ordine inviato: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Inserisci una quantità maggiore di 0.',
   'ticket.problem.price': 'Inserisci un prezzo maggiore di 0.',

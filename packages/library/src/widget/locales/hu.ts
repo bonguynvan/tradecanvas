@@ -602,6 +602,8 @@ export const HU_MESSAGES: WidgetMessages = {
   'ticket.stepUp': '{field} növelése',
   'ticket.placeBuy': 'Vételi megbízás leadása',
   'ticket.placeSell': 'Eladási megbízás leadása',
+  'ticket.noAnswer': 'A bróker még nem válaszolt. Ellenőrizze a megbízásait, mielőtt újra elküldi.',
+  'ticket.sending': 'Küldés…',
   'ticket.sent': 'Megbízás elküldve: {side} {quantity} @ {price}',
   'ticket.problem.quantity': '0-nál nagyobb mennyiséget adjon meg.',
   'ticket.problem.price': '0-nál nagyobb árat adjon meg.',

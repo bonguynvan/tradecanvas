@@ -608,6 +608,8 @@ export const ET_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Suurenda: {field}',
   'ticket.placeBuy': 'Esita ostuorder',
   'ticket.placeSell': 'Esita müügiorder',
+  'ticket.noAnswer': 'Maakler pole veel vastanud. Kontrollige oma ordereid enne uuesti saatmist.',
+  'ticket.sending': 'Saatmine…',
   'ticket.sent': 'Order saadetud: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Sisesta kogus, mis on suurem kui 0.',
   'ticket.problem.price': 'Sisesta hind, mis on suurem kui 0.',

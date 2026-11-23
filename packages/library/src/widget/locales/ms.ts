@@ -608,6 +608,8 @@ export const MS_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Tambah {field}',
   'ticket.placeBuy': 'Hantar pesanan beli',
   'ticket.placeSell': 'Hantar pesanan jual',
+  'ticket.noAnswer': 'Broker belum menjawab. Semak pesanan anda sebelum menghantar semula.',
+  'ticket.sending': 'Menghantar…',
   'ticket.sent': 'Pesanan dihantar: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Masukkan kuantiti melebihi 0.',
   'ticket.problem.price': 'Masukkan harga melebihi 0.',

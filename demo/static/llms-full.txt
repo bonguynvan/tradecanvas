@@ -829,6 +829,13 @@ chart.startBracket('buy', undefined, { risk: 50, quantityStep: 0.001 }); // the 
 chart.placeOrderIntent({ side: 'sell', type: 'limit', price: 66_000, quantity: 1, ocoGroup: 'exit' });
 chart.placeOrderIntent({ side: 'sell', type: 'stop', price: 63_000, stopPrice: 63_000, quantity: 1, ocoGroup: 'exit' });
 // timeInForce: 'gtc' | 'day' | 'gtd' (with expireTime, ms) | 'ioc' | 'fok' (filled at once, or refused: executionError)
+// Every order goes out with a clientOrderId (its own, else one the chart gives it); placeOrderIntent returns the order as sent.
+// 'orderPlaced' says the adapter took it; 'executionError' with the same clientOrderId says it was refused.
+const sent = chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1 });
+chart.on('orderPlaced', (e) => { if (e.payload.intent.clientOrderId === sent?.clientOrderId) console.info('taken', e.payload.order.id); });
+chart.on('executionError', (e) => { if (e.payload.clientOrderId === sent?.clientOrderId) console.warn('refused', e.payload.cause); });
+// Your own ExecutionAdapter: placeOrder must resolve with the order or reject with why (the widget's ticket waits on it),
+// and answer a repeat of a clientOrderId with the order already made.
 // an expireTime is to come by chart.getTradingTime(): the clock's, or a replay's while a paper account trades on it
 // type: 'stopLimit' has price (its limit) and stopPrice (where it begins to work): the chart draws both lines; dragging the order
 // moves both, dragging its stop moves the stop alone, and 'orderModify' then carries newStopPrice beside newPrice

@@ -88,6 +88,18 @@ chart.startBracket('buy', undefined, { risk: 50 })   // la cantidad que pierde 5
   partes del widget en una pantalla táctil (la altura de una leyenda, la de un diálogo) lee números mayores.
 </p>
 
+<h3 id="order-answer">Una orden del ticket espera la respuesta del adaptador</h3>
+<p>
+  Con un adaptador de ejecución conectado, el ticket de orden ya no se cierra al enviar: espera a que el
+  <code>placeOrder</code> del adaptador resuelva (se cierra) o rechace (se queda y dice por qué). Un adaptador cuyo
+  <code>placeOrder</code> nunca termina deja el ticket esperando: resuelve con la orden o rechaza con el motivo. Con esto
+  cambiaron tres cosas más. Todo payload de <code>orderPlace</code> lleva ahora un <code>clientOrderId</code>, y
+  <code>placeOrderIntent</code> devuelve la orden tal como se envió (no devolvía nada). Una orden de mercado del ticket
+  lleva como <code>price</code> el ask en una compra y el bid en una venta, cuando el feed da ambos (era el último precio).
+  Y una orden pedida con una sola pulsación, desde el menú del botón derecho o la escalera de profundidad, es por el lote
+  del mercado donde lo hay (era por 1, y la de la escalera no llevaba cantidad).
+</p>
+
 <h2 id="types">Tipos que han crecido</h2>
 <p>
   <code>TimeInForce</code> es ahora <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. El código que trata todos

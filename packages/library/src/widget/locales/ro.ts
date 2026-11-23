@@ -602,6 +602,8 @@ export const RO_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Crește {field}',
   'ticket.placeBuy': 'Plasare ordin de cumpărare',
   'ticket.placeSell': 'Plasare ordin de vânzare',
+  'ticket.noAnswer': 'Brokerul nu a răspuns încă. Verificați ordinele înainte de a trimite din nou.',
+  'ticket.sending': 'Se trimite…',
   'ticket.sent': 'Ordin trimis: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Introduceți o cantitate mai mare decât 0.',
   'ticket.problem.price': 'Introduceți un preț mai mare decât 0.',

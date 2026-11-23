@@ -608,6 +608,8 @@ export const AR_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'زيادة {field}',
   'ticket.placeBuy': 'إرسال أمر الشراء',
   'ticket.placeSell': 'إرسال أمر البيع',
+  'ticket.noAnswer': 'لم يردّ الوسيط بعد. تحقّق من أوامرك قبل الإرسال مرة أخرى.',
+  'ticket.sending': 'جارٍ الإرسال…',
   'ticket.sent': 'تم إرسال الأمر: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'أدخل كمية أكبر من 0.',
   'ticket.problem.price': 'أدخل سعرًا أكبر من 0.',

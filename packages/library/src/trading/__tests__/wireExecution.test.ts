@@ -269,3 +269,109 @@ describe('wireExecution: an account that warns of its margin', () => {
     expect(h.positions[0].takeProfits).toEqual([{ price: 115, quantity: 1 }, { price: 120, quantity: 2 }]);
   });
 });
+
+/** A paper account that answers an order only when told, or refuses it. */
+class SlowBroker extends PaperExecutionAdapter {
+  private answers: (() => void)[] = [];
+  refuse: Error | null = null;
+  override placeOrder(intent: Parameters<PaperExecutionAdapter['placeOrder']>[0]): Promise<TradingOrder> {
+    if (this.refuse) return Promise.reject(this.refuse);
+    return new Promise((resolve, reject) => {
+      this.answers.push(() => super.placeOrder(intent).then(resolve, reject));
+    });
+  }
+  /** Answer every order asked for so far. */
+  answer(): void {
+    for (const run of this.answers.splice(0)) run();
+  }
+  /** It cancels nothing: another command that fails. */
+  override cancelOrder(): Promise<void> {
+    return Promise.reject(new Error('No such order'));
+  }
+}
+
+describe('wireExecution: what became of an order', () => {
+  const LIMIT = { side: 'buy', type: 'limit', price: 95, quantity: 1, clientOrderId: 'c1' } as const;
+
+  it('tells the host the order the adapter made of the one asked for, once it answers', async () => {
+    const h = makeHost();
+    const taken: [unknown, TradingOrder][] = [];
+    h.host.onOrderPlaced = (intent, order) => taken.push([intent, order]);
+    const broker = new SlowBroker({ markPrice: 100 });
+    wireExecution(broker, h.host);
+    broker.connect({});
+    h.emit('orderPlace', LIMIT);
+    await flush();
+    expect(taken).toEqual([]);
+    broker.answer();
+    await flush();
+    expect(taken).toHaveLength(1);
+    expect(taken[0][0]).toBe(LIMIT);
+    expect(taken[0][1]).toMatchObject({ side: 'buy', type: 'limit', price: 95 });
+  });
+
+  it('names the order a refusal is of', async () => {
+    const h = makeHost();
+    const taken: unknown[] = [];
+    h.host.onOrderPlaced = (intent) => taken.push(intent);
+    const broker = new SlowBroker({ markPrice: 100 });
+    broker.refuse = new Error('Not enough margin');
+    wireExecution(broker, h.host);
+    broker.connect({});
+    h.emit('orderPlace', LIMIT);
+    await flush();
+    expect(taken).toEqual([]);
+    expect(h.errors).toEqual([{ message: 'Execution command failed: orderPlace', cause: broker.refuse, command: 'orderPlace', clientOrderId: 'c1' }]);
+    // Another command's failure names no order.
+    h.emit('orderCancel', { orderId: 'none' });
+    await flush();
+    expect(h.errors).toHaveLength(2);
+    expect(h.errors[1]).toMatchObject({ command: 'orderCancel' });
+    expect(h.errors[1]).not.toHaveProperty('clientOrderId');
+  });
+
+  // What asked for the order waits on its answer: dropped, a ticket waited for good.
+  it('still says what became of an order when the adapter is taken away before it answers', async () => {
+    const h = makeHost();
+    const taken: unknown[] = [];
+    h.host.onOrderPlaced = (intent) => taken.push(intent);
+    const broker = new SlowBroker({ markPrice: 100 });
+    const teardown = wireExecution(broker, h.host);
+    broker.connect({});
+    h.emit('orderPlace', LIMIT);
+    // The broker has the order, and has not answered, when it is taken away.
+    await flush();
+    teardown();
+    broker.answer();
+    await flush();
+    expect(taken).toEqual([LIMIT]);
+  });
+
+  it('gives an id to the orders it makes itself: a confirmed bracket, and the order that reverses a position', async () => {
+    /** A paper account that keeps what it was asked for, and reverses nothing by itself. */
+    class Recorder extends PaperExecutionAdapter {
+      asked: Parameters<PaperExecutionAdapter['placeOrder']>[0][] = [];
+      override placeOrder(intent: Parameters<PaperExecutionAdapter['placeOrder']>[0]): Promise<TradingOrder> {
+        this.asked.push(intent);
+        return super.placeOrder(intent);
+      }
+    }
+    const h = makeHost();
+    let ids = 0;
+    h.host.newClientOrderId = () => `w${++ids}`;
+    h.host.marketPrice = () => 100;
+    h.host.getPositions = () => h.positions;
+    const broker = new Recorder({ markPrice: 100 });
+    (broker as unknown as { reversePosition?: unknown }).reversePosition = undefined;
+    wireExecution(broker, h.host);
+    broker.connect({});
+    h.emit('bracketPlace' as never, { side: 'buy', entry: 99, stopLoss: 98, takeProfit: 101, quantity: 2, riskReward: 2 });
+    await flush();
+    expect(broker.asked.at(-1)).toMatchObject({ side: 'buy', quantity: 2, clientOrderId: 'w1' });
+    await broker.placeOrder({ side: 'buy', type: 'market', price: 100, quantity: 1 });
+    await flush();
+    h.emit('positionReverse', { positionId: h.positions[0].id });
+    await flush();
+    expect(broker.asked.at(-1)).toMatchObject({ side: 'sell', type: 'market', clientOrderId: 'w2' });
+  });
+});

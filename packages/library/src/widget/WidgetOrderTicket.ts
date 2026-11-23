@@ -25,8 +25,19 @@ import {
   TICKET_MAX_TARGETS,
 } from './orderTicket.js';
 
+/** The best bid and ask now: what a Sell and a Buy trade at. */
+export interface OrderTicketQuote {
+  bid: number;
+  ask: number;
+}
+
 export interface OrderTicketCallbacks {
-  onSubmit: (intent: OrderPlaceIntent) => void;
+  /**
+   * The order to place. Answered with an id, the ticket waits for what became of that order
+   * (`accepted`, `refused`): open, its Place off, nothing of it to be changed. Answered with
+   * nothing, it shuts as it places: nobody will say what became of the order.
+   */
+  onSubmit: (intent: OrderPlaceIntent) => string | void;
   formatPrice: (price: number) => string;
   /** Money made, lost or spent (a stop's risk, the order's value); unset, as a price. */
   formatAmount?: (value: number) => string;
@@ -44,6 +55,11 @@ export interface OrderTicketStart {
   side?: OrderSide;
   price?: number;
   lastPrice: number | null;
+  /**
+   * The best bid and ask, where the feed gives both: a Buy is valued, checked and sent at the ask,
+   * a Sell at the bid. Left out or null: both at the last price.
+   */
+  quote?: OrderTicketQuote | null;
   /** A stop-loss and a take-profit to start with (a position's levels), rounded as the chart rounds. */
   stopLoss?: number | null;
   takeProfit?: number | null;
@@ -60,6 +76,18 @@ export interface OrderTicketStart {
 }
 
 type PriceField = 'price' | 'stopPrice' | 'stopLoss' | 'takeProfit';
+
+/**
+ * A quote the ticket can trade by: both sides, each a price above 0, the bid no higher than the
+ * ask; else none. A crossed one (a feed that fell behind on one side) would value a Buy under a Sell.
+ */
+function soundQuote(quote: OrderTicketQuote | null | undefined): OrderTicketQuote | null {
+  const price = (value: number) => Number.isFinite(value) && value > 0;
+  return quote && price(quote.bid) && price(quote.ask) && quote.bid <= quote.ask ? { bid: quote.bid, ask: quote.ask } : null;
+}
+
+/** How long an order may be on its way before the ticket says no answer has come (ms). */
+const NO_ANSWER_MS = 10_000;
 
 /** The kinds of order the ticket takes, as its choices stand. */
 const ORDER_TYPES = ['market', 'limit', 'stop', 'stopLimit'] as const;
@@ -80,7 +108,7 @@ let ticketSeq = 0;
 /**
  * An order ticket: side, type, quantity, price, stop-loss, take-profit and
  * time in force, checked as it is filled in and summed up as a receipt; Place
- * sends an `orderPlace` intent. Escape, Cancel or a click outside close it.
+ * sends an `orderPlace` intent. Escape, Cancel or the cross close it; a press outside does not.
  */
 export class WidgetOrderTicket {
   private backdrop: HTMLDivElement;
@@ -90,8 +118,19 @@ export class WidgetOrderTicket {
   private summaryEl: HTMLDivElement;
   private problemsEl: HTMLDivElement;
   private submit: HTMLButtonElement;
+  private cancel: HTMLButtonElement;
   private draft: OrderTicketDraft | null = null;
   private lastPrice: number | null = null;
+  private quote: OrderTicketQuote | null = null;
+  /** The id of the order on its way, whose outcome the ticket waits for; null when it waits for none. */
+  private waiting: string | null = null;
+  /** Why the broker refused the order last placed, said until the order is changed; null with none. */
+  private refusal: string | null = null;
+  /** No answer has come in `NO_ANSWER_MS`: the ticket says so, and waits on. */
+  private unanswered = false;
+  private answerTimer: ReturnType<typeof setTimeout> | null = null;
+  /** What was switched off while an order is on its way, to be switched on again. */
+  private held: (HTMLInputElement | HTMLButtonElement | HTMLSelectElement | HTMLTextAreaElement)[] = [];
   private rules: OrderTicketRules = {};
   private step: (price: number) => number = defaultStep;
   private round: (price: number) => number = (p) => roundLike(p, p);
@@ -104,12 +143,8 @@ export class WidgetOrderTicket {
     this.backdrop = document.createElement('div');
     this.backdrop.className = 'tcw-modal-backdrop';
     this.backdrop.hidden = true;
-    let pressedBackdrop = false;
-    this.backdrop.addEventListener('pointerdown', (e) => { pressedBackdrop = e.target === this.backdrop; });
-    this.backdrop.addEventListener('click', (e) => {
-      if (e.target === this.backdrop && pressedBackdrop) this.close();
-      pressedBackdrop = false;
-    });
+    // A press outside does not shut it, as it does a dialog: an order half typed is not to be lost
+    // to a slip of the pointer. Escape, Cancel and the cross shut it.
 
     this.modal = document.createElement('div');
     this.modal.className = 'tcw-modal tcw-order-ticket';
@@ -160,6 +195,7 @@ export class WidgetOrderTicket {
     cancel.className = 'tcw-footer-cancel';
     cancel.textContent = this.t('common.cancel');
     cancel.addEventListener('click', () => this.close());
+    this.cancel = cancel;
     this.submit = document.createElement('button');
     this.submit.type = 'button';
     this.submit.className = 'tcw-ticket-place';
@@ -176,18 +212,22 @@ export class WidgetOrderTicket {
 
   open(start: OrderTicketStart): void {
     this.returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    this.release();
+    this.refusal = null;
     this.lastPrice = start.lastPrice;
+    this.quote = soundQuote(start.quote);
     this.rules = start.rules ?? {};
     this.step = start.step ?? defaultStep;
     this.round = start.round ?? ((p) => roundLike(p, p));
     this.typed.clear();
     this.symbolEl.textContent = start.symbol ? tickerOf(start.symbol) : '';
-    const price = this.round(start.price ?? start.lastPrice ?? 0);
     const side = start.side ?? 'buy';
+    const market = this.market(side);
+    const price = this.round(start.price ?? market ?? 0);
     // A price away from the market starts as the order that waits there.
     let type: OrderTicketDraft['type'] = 'market';
-    if (start.price !== undefined && start.lastPrice !== null && price !== start.lastPrice) {
-      type = (price < start.lastPrice) === (side === 'buy') ? 'limit' : 'stop';
+    if (start.price !== undefined && market !== null && price !== market) {
+      type = (price < market) === (side === 'buy') ? 'limit' : 'stop';
     }
     // A level the chart cannot take as a price starts off; a quantity not above zero is the market's lot.
     const level = (p: number | null | undefined) => (p !== null && p !== undefined && Number.isFinite(p) ? this.round(p) : null);
@@ -207,6 +247,9 @@ export class WidgetOrderTicket {
   close(): void {
     if (this.backdrop.hidden) return;
     this.backdrop.hidden = true;
+    // An order on its way goes on: its outcome is no longer the ticket's to show.
+    this.release();
+    this.refusal = null;
     this.draft = null;
     if (this.returnFocus?.isConnected) this.returnFocus.focus();
     this.returnFocus = null;
@@ -216,13 +259,79 @@ export class WidgetOrderTicket {
     return !this.backdrop.hidden;
   }
 
-  /** The latest price, while the ticket is open (a market order's price, the checks). */
-  setLastPrice(price: number | null): void {
-    if (!this.draft || price === this.lastPrice) return;
+  /** The latest price and the best bid and ask, while the ticket is open (a market order's price, the checks). */
+  setLastPrice(price: number | null, quote: OrderTicketQuote | null = null): void {
+    const next = soundQuote(quote);
+    if (!this.draft || (price === this.lastPrice && next?.bid === this.quote?.bid && next?.ask === this.quote?.ask)) return;
     this.lastPrice = price;
+    this.quote = next;
     const market = this.body.querySelector('.tcw-ticket-market');
     if (market) market.textContent = this.marketText();
     this.check();
+  }
+
+  /**
+   * The broker took the order the ticket waits on: it shuts. False for any other order (a quick
+   * one from the chart's menu, one from a ticket shut since), which is not the ticket's.
+   */
+  accepted(id: string): boolean {
+    if (this.waiting !== id) return false;
+    this.close();
+    return true;
+  }
+
+  /**
+   * The broker refused the order the ticket waits on: it stays, with what was typed, and says why
+   * until the order is changed. False for any other order: the caller says it some other way.
+   */
+  refused(id: string, reason: string): boolean {
+    if (this.waiting !== id) return false;
+    this.release();
+    this.refusal = reason;
+    this.check();
+    // The keyboard is back where it was: on the button that sends the order once it is put right.
+    if (this.modal.contains(document.activeElement)) this.submit.focus();
+    return true;
+  }
+
+  /**
+   * The price the market trades a side at now: the ask for a Buy, the bid for a Sell, where the
+   * feed gives both; else the last price. What an order is valued, checked and sent at.
+   */
+  private market(side: OrderSide | undefined = this.draft?.side): number | null {
+    if (!this.quote || side === undefined) return this.lastPrice;
+    return side === 'buy' ? this.quote.ask : this.quote.bid;
+  }
+
+  /** An order is on its way: nothing of it is changed, and it is not sent again, until the broker answers. */
+  private hold(id: string): void {
+    this.waiting = id;
+    const fields = this.body.querySelectorAll<HTMLInputElement | HTMLButtonElement | HTMLSelectElement | HTMLTextAreaElement>('input, button, select, textarea');
+    this.held = [...fields].filter((field) => !field.disabled);
+    // A button switched off hears no key: with the focus left on Place, Escape would not reach the ticket.
+    const hadFocus = this.modal.contains(document.activeElement);
+    for (const field of this.held) field.disabled = true;
+    // Shutting it takes nothing back: the order is on its way.
+    this.cancel.textContent = this.t('common.close');
+    this.answerTimer = setTimeout(() => {
+      this.answerTimer = null;
+      this.unanswered = true;
+      this.check();
+    }, NO_ANSWER_MS);
+    this.check();
+    if (hadFocus) this.cancel.focus();
+  }
+
+  /** No order is waited on any more: the ticket is as it was. */
+  private release(): void {
+    if (this.waiting === null) return;
+    this.waiting = null;
+    if (this.answerTimer !== null) clearTimeout(this.answerTimer);
+    this.answerTimer = null;
+    this.unanswered = false;
+    for (const field of this.held) field.disabled = false;
+    this.held = [];
+    this.cancel.textContent = this.t('common.cancel');
   }
 
   destroy(): void {
@@ -255,9 +364,11 @@ export class WidgetOrderTicket {
 
   private place(): void {
     const draft = this.draft;
-    if (!draft || this.problems(draft).length > 0) return;
-    this.callbacks.onSubmit(orderTicketIntent(draft, this.lastPrice, this.rules));
-    this.close();
+    if (!draft || this.waiting !== null || this.problems(draft).length > 0) return;
+    this.refusal = null;
+    const waitOn = this.callbacks.onSubmit(orderTicketIntent(draft, this.market(), this.rules));
+    if (typeof waitOn === 'string' && waitOn !== '') this.hold(waitOn);
+    else this.close();
   }
 
   private now(): number {
@@ -271,7 +382,7 @@ export class WidgetOrderTicket {
     const patch: Partial<OrderTicketDraft> = { type };
     const stop = ticketStopPrice(draft);
     if (type === 'stopLimit' && Number.isNaN(stop)) {
-      patch.stopPrice = draft.price > 0 ? draft.price : this.round(this.lastPrice ?? NaN);
+      patch.stopPrice = draft.price > 0 ? draft.price : this.round(this.market() ?? NaN);
       this.typed.delete('stopPrice');
     }
     // A stop-limit made a stop order: a stop order's one price is its stop, not the limit that was set.
@@ -284,7 +395,7 @@ export class WidgetOrderTicket {
 
   /** What is wrong with the draft, as the market's rules and the moment now find it. */
   private problems(draft: OrderTicketDraft): OrderTicketProblem[] {
-    return orderTicketProblems(draft, this.lastPrice, { ...this.rules, now: this.now() });
+    return orderTicketProblems(draft, this.market(), { ...this.rules, now: this.now() });
   }
 
   /** Another kind of time in force: good till a date starts a day from now, unless a date was picked before. */
@@ -328,6 +439,8 @@ export class WidgetOrderTicket {
   private set(patch: Partial<OrderTicketDraft>, rerender = false): void {
     if (!this.draft) return;
     this.draft = { ...this.draft, ...patch };
+    // Changed, it is another order: what the broker said was of the last one.
+    this.refusal = null;
     if (rerender) this.render();
     else this.check();
   }
@@ -401,7 +514,8 @@ export class WidgetOrderTicket {
   /** What a market order fills at: the market, and its price now. */
   private marketText(): string {
     const market = this.t('ticket.type.market');
-    return this.lastPrice === null ? market : `${market} · ${this.callbacks.formatPrice(this.lastPrice)}`;
+    const price = this.market();
+    return price === null ? market : `${market} · ${this.callbacks.formatPrice(price)}`;
   }
 
   /**
@@ -411,9 +525,11 @@ export class WidgetOrderTicket {
    */
   private typeFor(draft: OrderTicketDraft, side: OrderSide): OrderTicketDraft['type'] {
     // A stop-limit is no limit or stop the other way round: it stays what it is, and the ticket says what is wrong with its stop.
-    if (draft.type === 'market' || draft.type === 'stopLimit' || this.lastPrice === null) return draft.type;
-    if (!(draft.price > 0) || draft.price === this.lastPrice) return draft.type;
-    return (draft.price < this.lastPrice) === (side === 'buy') ? 'limit' : 'stop';
+    // By the price the new side trades at: its ask or its bid.
+    const market = this.market(side);
+    if (draft.type === 'market' || draft.type === 'stopLimit' || market === null) return draft.type;
+    if (!(draft.price > 0) || draft.price === market) return draft.type;
+    return (draft.price < market) === (side === 'buy') ? 'limit' : 'stop';
   }
 
   /** Buy or Sell, as two pressed buttons; a press on the one chosen changes nothing. */
@@ -441,7 +557,7 @@ export class WidgetOrderTicket {
 
   /** A price field: stepped by the market's step, an empty one from the market's price. Named by `label`, else by what it is. */
   private priceField(name: PriceField, value: number, onInput: (value: number) => void, label?: MessageKey): HTMLElement {
-    const fallback = () => this.lastPrice ?? this.draft?.price ?? 0;
+    const fallback = () => this.market() ?? this.draft?.price ?? 0;
     return this.stepped(name, value, (p, dir) => this.priceStep(p, dir), fallback, (p) => this.writePrice(p), onInput, label);
   }
 
@@ -539,7 +655,7 @@ export class WidgetOrderTicket {
 
   /** What comes off at each target: the levels on the way, then the take-profit with the rest. Empty with one target. */
   private levelsText(draft: OrderTicketDraft): string {
-    const entry = ticketEntry(draft, this.lastPrice) ?? draft.price;
+    const entry = ticketEntry(draft, this.market()) ?? draft.price;
     const levels = ticketTakeProfitLevels(draft, entry, this.rules);
     if (levels.length === 0 || draft.takeProfit === null) return '';
     const taken = levels.reduce((sum, level) => sum + level.quantity, 0);
@@ -568,7 +684,7 @@ export class WidgetOrderTicket {
     const draft = this.draft;
     if (!draft) return NaN;
     // From the price it may fill at that is nearest: a stop-loss from the best of them, a target from the worst.
-    const fills = ticketFillRange(draft, this.lastPrice) ?? { low: draft.price, high: draft.price };
+    const fills = ticketFillRange(draft, this.market()) ?? { low: draft.price, high: draft.price };
     const losing = which === 'stopLoss';
     const entry = (draft.side === 'buy') === losing ? fills.low : fills.high;
     if (!(entry > 0)) return NaN;
@@ -581,7 +697,12 @@ export class WidgetOrderTicket {
     const draft = this.draft;
     if (!draft) return;
     const problems = this.problems(draft);
-    const said = problems.map((p) => this.problemText(p));
+    // What the broker refused the last order for comes first, and stays until the order is changed.
+    const said = [
+      ...(this.unanswered ? [this.t('ticket.noAnswer')] : []),
+      ...(this.refusal === null ? [] : [fill(this.t('order.refused'), { reason: this.refusal })]),
+      ...problems.map((p) => this.problemText(p)),
+    ];
     if (said.join('\n') !== [...this.problemsEl.children].map((p) => p.textContent).join('\n')) {
       this.problemsEl.replaceChildren(...said.map((text) => {
         const line = document.createElement('p');
@@ -592,19 +713,21 @@ export class WidgetOrderTicket {
     for (const which of ['stopLoss', 'takeProfit'] as const) {
       const el = this.body.querySelector<HTMLElement>(`.tcw-ticket-away[data-for="${which}"]`);
       const price = draft[which];
-      const distance = price === null ? null : orderTicketDistance(draft, this.lastPrice, price, this.rules.multiplier);
+      const distance = price === null ? null : orderTicketDistance(draft, this.market(), price, this.rules.multiplier);
       if (el) el.textContent = distance ? `${this.signedNumber(distance.pct, 2)}% · ${this.amount(distance.amount)}` : '';
     }
     const levels = this.body.querySelector<HTMLElement>('.tcw-ticket-levels');
     if (levels) levels.textContent = this.levelsText(draft);
     this.renderSummary(draft);
-    this.submit.disabled = problems.length > 0;
-    this.submit.textContent = this.t(draft.side === 'buy' ? 'ticket.placeBuy' : 'ticket.placeSell');
+    const sending = this.waiting !== null;
+    this.submit.disabled = sending || problems.length > 0;
+    this.submit.textContent = sending ? this.t('ticket.sending') : this.t(draft.side === 'buy' ? 'ticket.placeBuy' : 'ticket.placeSell');
+    this.submit.setAttribute('aria-busy', String(sending));
   }
 
   /** The receipt: the order's value, then what the stop risks, the target makes, and the one over the other. */
   private renderSummary(draft: OrderTicketDraft): void {
-    const sum = orderTicketSummary(draft, this.lastPrice, this.rules);
+    const sum = orderTicketSummary(draft, this.market(), this.rules);
     const risk = sum.risk === null ? null : this.amount(sum.risk);
     const reward = sum.reward === null ? null : this.amount(sum.reward);
     const rows: [string, MessageKey, string | null, 'up' | 'down' | null][] = [

@@ -107,6 +107,19 @@ chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.comma
   <code>PaperExecutionAdapter</code> は、デモやテスト用に仮想的に約定させるサンドボックスです。
 </p>
 
+<h3 id="order-outcome">注文がどうなったか</h3>
+<p>
+  求められた注文はすべて、固有の ID である <code>clientOrderId</code> を付けて送り出されます。付いてきた ID があればそれを、なければチャートが与えたものを使い、
+  <code>placeOrderIntent</code> は送り出したとおりの注文を返します。アダプターが答えるまで、注文は送信途中です。<code>orderPlaced</code> は
+  アダプターが受け付けたことを、それをもとに作られた注文とともに伝えます。<code>command: 'orderPlace'</code> と同じ <code>clientOrderId</code> を持つ
+  <code>executionError</code> は、拒否されたことを伝えます。アダプターの <code>placeOrder</code> は必ずどちらかで終わらなければなりません：注文で resolve するか、
+  理由を付けて reject するかです。この ID は、それを受け取れるブローカーへそのまま渡し、同じ ID が再び届いたら既に作った注文で答えてください。
+  そうすれば、二重に送られた 1 回の押下も 1 つの注文になります（ペーパー口座はそうします）。
+</p>
+<pre><code>{`const sent = chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1 })
+chart.on('orderPlaced', (e) => { if (e.payload.intent.clientOrderId === sent?.clientOrderId) done(e.payload.order) })
+chart.on('executionError', (e) => { if (e.payload.clientOrderId === sent?.clientOrderId) failed(e.payload.cause) })`}</code></pre>
+
 <h3 id="order-kinds">連動する注文と、その有効期間</h3>
 <p>
   注文の意図（<code>chart.placeOrderIntent</code>、アダプターの <code>placeOrder</code>）は、価格以外のことも伝えます：
@@ -368,6 +381,13 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   マーケットを設定している場合（<code>chart.setMarket</code>）は、各価格をマーケットの呼値の単位に合わせ、注文価格を当日の
   上限価格と下限価格の範囲内に収め、数量は 1 単位から始まり、1 単位を超えると売買単位の整数倍だけを受け付けます
   （それより少ない株数は、別の単元未満株の注文になります）。
+</p>
+<p>
+  フィードが買気配と売気配の両方を渡す場合、注文チケットは買いを売気配で、売りを買気配で評価・検証・送信します。そうでなければどちらも最新価格です。
+  執行アダプターが接続されているときは、アダプターの答えを待ちます：チケットは開いたまま、ボタンの位置に<strong>送信中…</strong>と表示され、
+  何も変更できません。注文が受け付けられると閉じ、拒否された場合は入力内容を残し、注文が変更されるまで理由を表示します。10 秒たっても応答がなければその旨を表示して待ち続けます。再送信する前に注文を確認してください。
+  チケットの外を押しても閉じません。Escape、キャンセル、×で閉じます。右クリックメニューや板情報ラダーの 1 段から 1 回の操作で出す注文の数量は、
+  その市場の売買単位（<code>volumeUnit</code>）で、単位がなければ 1 です。
 </p>
 <p>
   注文チケットはタイトルの横に銘柄を表示します。注文の種類と有効期間は横並びの選択肢で、矢印キーで切り替えられます。

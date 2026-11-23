@@ -116,6 +116,20 @@ chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.comma
   con ejecuciones virtuales para demos y tests.
 </p>
 
+<h3 id="order-outcome">Qué fue de una orden</h3>
+<p>
+  Toda orden pedida sale con un <code>clientOrderId</code>, un identificador propio: el que traía o, si no, uno que le da
+  el gráfico, y <code>placeOrderIntent</code> devuelve la orden tal como se envió. Hasta que el adaptador responde, la orden
+  está en camino. <code>orderPlaced</code> dice que el adaptador la aceptó, con la orden que hizo de ella;
+  <code>executionError</code> con <code>command: 'orderPlace'</code> y el mismo <code>clientOrderId</code> dice que fue
+  rechazada. El <code>placeOrder</code> de un adaptador debe terminar de una de las dos formas: resolver con la orden o
+  rechazar con el motivo. Pasa el identificador al bróker que lo acepte y responde a una repetición con la orden ya creada,
+  para que una pulsación enviada dos veces sea una sola orden (la cuenta de simulación lo hace).
+</p>
+<pre><code>{`const sent = chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1 })
+chart.on('orderPlaced', (e) => { if (e.payload.intent.clientOrderId === sent?.clientOrderId) done(e.payload.order) })
+chart.on('executionError', (e) => { if (e.payload.clientOrderId === sent?.clientOrderId) failed(e.payload.cause) })`}</code></pre>
+
 <h3 id="order-kinds">Órdenes que funcionan juntas, y durante cuánto tiempo</h3>
 <p>
   La intención de una orden (<code>chart.placeOrderIntent</code>, el <code>placeOrder</code> del adaptador) dice más que
@@ -401,6 +415,14 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   fluctuación mínima del mercado y el precio de la orden dentro del techo y el suelo del día, empieza en un lote y, por
   encima de uno, acepta solo lotes completos (las acciones sueltas van en una orden de lote
   incompleto aparte).
+</p>
+<p>
+  Cuando el feed da bid y ask, el ticket valora, comprueba y envía una compra al ask y una venta al bid; si no, ambas al
+  último precio. Con un adaptador de ejecución conectado espera su respuesta: sigue abierto, con <strong>Enviando…</strong>
+  en lugar de su botón y sin nada que se pueda cambiar; se cierra cuando la orden es aceptada, y si es rechazada conserva
+  lo escrito y dice por qué hasta que la orden se cambia. Tras diez segundos sin respuesta lo dice y sigue esperando: revisa tus órdenes antes de enviarla de nuevo. Una pulsación fuera del ticket no lo cierra; Escape, Cancelar y
+  el aspa sí. Una orden pedida con una sola pulsación, desde el menú del botón derecho o un peldaño de la escalera de
+  profundidad, es por el lote del mercado (<code>volumeUnit</code>) donde lo hay, y si no por uno.
 </p>
 <p>
   El ticket muestra el símbolo junto al título. El tipo y la vigencia son opciones en una fila (las flechas

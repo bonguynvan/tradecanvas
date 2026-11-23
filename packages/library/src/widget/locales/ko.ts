@@ -602,6 +602,8 @@ export const KO_MESSAGES: WidgetMessages = {
   'ticket.stepUp': '{field} 올리기',
   'ticket.placeBuy': '매수 주문 전송',
   'ticket.placeSell': '매도 주문 전송',
+  'ticket.noAnswer': '브로커가 아직 응답하지 않았습니다. 다시 보내기 전에 주문을 확인하세요.',
+  'ticket.sending': '전송 중…',
   'ticket.sent': '주문 전송 완료: {side} {quantity} @ {price}',
   'ticket.problem.quantity': '수량을 0보다 크게 입력하세요.',
   'ticket.problem.price': '가격을 0보다 크게 입력하세요.',

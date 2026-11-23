@@ -133,6 +133,8 @@ export interface ExecutionError {
   cause?: unknown;
   /** The chart's intent whose command failed (`'orderPlace'`, `'bracketPlace'`…), when it was one. */
   command?: string;
+  /** The `clientOrderId` of the order that failed, for an `'orderPlace'`. */
+  clientOrderId?: string;
   /**
    * Why the chart sent it no further, when that was the chart's call and not
    * the adapter's: a bracket with no quantity (`'noQuantity'`), or no price yet
@@ -167,7 +169,12 @@ export interface ExecutionAdapter {
   disconnect(): void;
   getConnectionState(): ConnectionState;
 
-  /** Submit a new order. Resolves with the created order (filled or pending). */
+  /**
+   * Submit a new order. Resolves with the created order (filled or pending), and rejects with why
+   * for one it refuses. An order from the chart carries a `clientOrderId`: send it on to a broker
+   * that takes one, and answer a repeat of it with the order already made, so that a press sent
+   * twice is one order.
+   */
   placeOrder(intent: OrderPlaceIntent): Promise<TradingOrder>;
   /** Re-price a pending order. */
   modifyOrder(intent: OrderModifyIntent): Promise<void>;

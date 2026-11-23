@@ -112,6 +112,20 @@ chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.comma
   <code>PaperExecutionAdapter</code> là sandbox khớp lệnh ảo cho demo và test.
 </p>
 
+<h3 id="order-outcome">Order đã ra sao</h3>
+<p>
+  Mỗi order được yêu cầu đi ra kèm một <code>clientOrderId</code>, mã riêng của nó: mã nó mang sẵn, nếu không thì mã
+  chart cấp, và <code>placeOrderIntent</code> trả về order đúng như đã gửi. Cho tới khi adapter trả lời, order đang trên
+  đường đi. <code>orderPlaced</code> báo adapter đã nhận, kèm order mà nó tạo ra; <code>executionError</code> với
+  <code>command: 'orderPlace'</code> và cùng <code>clientOrderId</code> báo order bị từ chối. <code>placeOrder</code> của
+  một adapter phải kết thúc theo một trong hai cách: resolve với order, hoặc reject kèm lý do. Hãy chuyển mã này cho
+  broker nào nhận nó, và trả lời một lần gửi lặp bằng order đã tạo, để một lần bấm bị gửi hai lần vẫn là một order
+  (tài khoản paper làm vậy).
+</p>
+<pre><code>{`const sent = chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1 })
+chart.on('orderPlaced', (e) => { if (e.payload.intent.clientOrderId === sent?.clientOrderId) done(e.payload.order) })
+chart.on('executionError', (e) => { if (e.payload.clientOrderId === sent?.clientOrderId) failed(e.payload.cause) })`}</code></pre>
+
 <h3 id="order-kinds">Order hoạt động cùng nhau, và có hiệu lực trong bao lâu</h3>
 <p>
   Intent của một order (<code>chart.placeOrderIntent</code>, <code>placeOrder</code> của adapter) cho biết nhiều hơn
@@ -387,6 +401,14 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   thị trường được đặt (<code>chart.setMarket</code>), ticket còn giữ giá theo bước giá của thị trường và
   giá của order trong khoảng giá trần và giá sàn của ngày, bắt đầu ở một lô, và nhận số lô chẵn khi lớn hơn một lô
   (số cổ phiếu ít hơn là một lệnh lô lẻ riêng).
+</p>
+<p>
+  Khi feed cho cả bid và ask, ticket tính giá trị, kiểm tra và gửi lệnh Mua theo ask và lệnh Bán theo bid; nếu không thì
+  cả hai theo giá cuối. Khi có execution adapter đang kết nối, ticket chờ adapter trả lời: nó vẫn mở, nút đặt lệnh đổi
+  thành <strong>Đang gửi…</strong> và không gì sửa được, đóng lại khi order được nhận, còn khi order bị từ chối thì giữ
+  nguyên những gì đã nhập và nói lý do cho tới khi order được sửa. Sau mười giây chưa có trả lời, ticket nói rõ điều đó và chờ tiếp: hãy kiểm tra các order của bạn trước khi gửi lại. Bấm ra ngoài ticket không đóng nó; Escape, Cancel và
+  dấu chéo mới đóng. Một order đặt bằng một lần bấm, từ menu chuột phải hay một nấc của DOM ladder, có khối lượng bằng
+  một lot của thị trường (<code>volumeUnit</code>) nếu thị trường có lot, nếu không thì bằng một.
 </p>
 <p>
   Ticket ghi tên mã cạnh tiêu đề. Loại order và time in force là các lựa chọn trên một hàng
