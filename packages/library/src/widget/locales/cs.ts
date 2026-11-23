@@ -602,6 +602,8 @@ export const CS_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Zvýšit: {field}',
   'ticket.placeBuy': 'Zadat nákupní pokyn',
   'ticket.placeSell': 'Zadat prodejní pokyn',
+  'ticket.noAnswer': 'Broker zatím neodpověděl. Než odešlete znovu, zkontrolujte své pokyny.',
+  'ticket.sending': 'Odesílání…',
   'ticket.sent': 'Pokyn odeslán: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Zadejte množství větší než 0.',
   'ticket.problem.price': 'Zadejte cenu větší než 0.',

@@ -76,6 +76,18 @@ chart.startBracket('buy', undefined, { risk: 50 })   // khối lượng sẽ l�
   chiều. Trang nào đo các phần của widget trên màn cảm ứng (chiều cao của legend, của một dialog) sẽ đọc được số lớn hơn.
 </p>
 
+<h3 id="order-answer">Order từ ticket chờ adapter trả lời</h3>
+<p>
+  Khi có execution adapter đang kết nối, order ticket không còn đóng ngay khi đặt lệnh: nó chờ tới khi
+  <code>placeOrder</code> của adapter resolve (ticket đóng) hoặc reject (ticket ở lại và nói lý do). Adapter nào có
+  <code>placeOrder</code> không bao giờ kết thúc sẽ để ticket chờ mãi: hãy resolve với order, hoặc reject kèm lý do.
+  Ba thứ nữa đổi theo. Mọi payload <code>orderPlace</code> giờ mang một <code>clientOrderId</code>, và
+  <code>placeOrderIntent</code> trả về order như đã gửi (trước đây không trả về gì). Một market order từ ticket mang ask
+  cho lệnh Mua và bid cho lệnh Bán làm <code>price</code>, khi feed cho cả hai (trước đây là giá cuối). Và một order đặt
+  bằng một lần bấm, từ menu chuột phải hay DOM ladder, có khối lượng bằng một lot của thị trường nếu có (trước đây là 1,
+  còn order của ladder không có khối lượng).
+</p>
+
 <h2 id="types">Các type được mở rộng</h2>
 <p>
   <code>TimeInForce</code> nay là <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. Code xử lý mọi giá trị

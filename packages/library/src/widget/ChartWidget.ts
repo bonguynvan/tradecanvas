@@ -123,6 +123,9 @@ import {
 
 /** How long a just-drawn text waits for its press to end before asking for its words anyway. */
 const TEXT_PROMPT_FALLBACK_MS = 600;
+/** How long a note of what was done stays, and one of what went wrong: that one is there to be read (ms). */
+const TOAST_MS = 3500;
+const TOAST_ERROR_MS = 8000;
 /** How far past a scale step (px) the widget must be before its look changes size: no flicker at the edge. */
 const SCALE_DEAD_BAND = 24;
 /** The tokens a bigger scale changes: bars, buttons, icons, menu rows, type and the lines it sits on. */
@@ -1356,13 +1359,23 @@ export class ChartWidget {
     if (options.trading !== false) {
       this.trading.orderTicket = new WidgetOrderTicket(this.root, {
         onSubmit: (intent) => {
-          // Said first: an account may fill or refuse the order as it is placed, and what became of it comes after.
-          this.say(fill(this.t('ticket.sent'), {
+          const text = fill(this.t('ticket.sent'), {
             side: this.t(intent.side === 'buy' ? 'ticket.buy' : 'ticket.sell'),
             quantity: intent.quantity ?? 1,
             price: this.formatAlertPrice(intent.price),
-          }));
-          this.chart.placeOrderIntent(intent);
+          });
+          // With no broker connected the order is an event for the app, and nobody will say what
+          // became of it: it is sent, and the ticket shuts. Said first: an app may answer at once.
+          if (!this.chart.getExecutionAdapter()) {
+            this.say(text);
+            this.chart.placeOrderIntent(intent);
+            return undefined;
+          }
+          // With one, the ticket waits for its answer by the order's id, and says itself that the
+          // order is on its way: "sent" is said once the broker took it (it may refuse it).
+          const id = this.chart.placeOrderIntent(intent)?.clientOrderId;
+          if (id !== undefined) this.ticketOrder = { id, text, note: this.shownToast };
+          return id;
         },
         formatPrice: (p) => this.formatAlertPrice(p),
         formatAmount: (v) => this.formatMoney(v),
@@ -1434,8 +1447,24 @@ export class ChartWidget {
         const b = e.payload.bracket;
         this.say(fill(this.t(b.side === 'buy' ? 'bracket.longPlaced' : 'bracket.shortPlaced'), { rr: b.riskReward.toFixed(2) }));
       });
+      // The broker took the order the ticket waits on: the ticket shuts, and the order is said to be sent,
+      // unless something was said of it since (a fill, a part dropped), which says more.
+      this.chart.on('orderPlaced', (e) => {
+        const id = e.payload.intent.clientOrderId;
+        const asked = this.ticketOrder;
+        if (id === undefined || asked?.id !== id) return;
+        this.ticketOrder = null;
+        this.trading.orderTicket?.accepted(id);
+        if (this.shownToast === null || this.shownToast === asked.note) this.say(asked.text);
+      });
       this.chart.on('executionError', (e) => {
-        if (e.payload.command === 'orderPlace') this.trading.sayOrderRefused(e.payload);
+        if (e.payload.command === 'orderPlace') {
+          // Refused: in the ticket that asked for it, which stays with what was typed; a note for an order asked for elsewhere.
+          const { clientOrderId: id } = e.payload;
+          if (id !== undefined && this.ticketOrder?.id === id) this.ticketOrder = null;
+          const inTicket = id !== undefined && this.trading.orderTicket?.refused(id, refusalReason(e.payload)) === true;
+          if (!inTicket) this.trading.sayOrderRefused(e.payload);
+        }
         if (e.payload.command !== 'bracketPlace') return;
         if (e.payload.reason === 'noQuantity') {
           this.say(this.t('bracket.noQuantity'), 'error');
@@ -1456,12 +1485,7 @@ export class ChartWidget {
       // Depth-of-market ladder (opt-in; fed via widget.setDepth)
       if (options.depthLadder) {
         this.trading.depthLadder = new WidgetDepthLadder(this.root, {
-          onTrade: (side, price) => {
-            // A rung past the day's limits is no price for an order today.
-            if (!this.trading.allowedToday(price)) return;
-            this.chart.placeOrderIntent({ side, type: 'limit', price });
-            this.say(fill(this.t(side === 'buy' ? 'order.buyLimit' : 'order.sellLimit'), { price: this.formatAlertPrice(price) }));
-          },
+          onTrade: (side, price) => this.trading.placeLadderOrder(side, price),
           formatPrice: (p) => this.formatAlertPrice(p),
           priceStep: (p) => this.chart.getPriceStep(p),
           onToggle: (open) => this.markOpen('ladder', open),
@@ -3417,9 +3441,15 @@ export class ChartWidget {
 
   /** The toast showing, if one is: the next takes its place. */
   private shownToast: HTMLElement | null = null;
+  /**
+   * The order the ticket sent to a broker and waits on: what to say once it is taken, and the
+   * note that was showing when it went (another since then is of the order, and says more).
+   */
+  private ticketOrder: { id: string; text: string; note: HTMLElement | null } | null = null;
 
   /**
-   * Show a transient toast inside the widget. Auto-dismisses after 3.5s.
+   * Show a transient toast inside the widget. It goes by itself: after 3.5 s,
+   * or 8 s for an error, which is there to be read (an order refused).
    * Used by the drag-drop importer for success / failure feedback, but
    * exposed so apps can post their own (e.g. "alert triggered at 64,200").
    * `icon`: one of the widget's icons (`'bell'`, `'check'`, `'info'`…) before the text.
@@ -3457,7 +3487,7 @@ export class ChartWidget {
       el.addEventListener('transitionend', gone, { once: true });
       // Hard timeout in case transitionend doesn't fire (display:none, etc.)
       setTimeout(gone, 400);
-    }, 3500);
+    }, kind === 'error' ? TOAST_ERROR_MS : TOAST_MS);
   }
 
   /**

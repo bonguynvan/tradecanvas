@@ -608,6 +608,8 @@ export const NB_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Hev {field}',
   'ticket.placeBuy': 'Legg inn kjøpsordre',
   'ticket.placeSell': 'Legg inn salgsordre',
+  'ticket.noAnswer': 'Megleren har ikke svart ennå. Sjekk ordrene dine før du sender på nytt.',
+  'ticket.sending': 'Sender…',
   'ticket.sent': 'Ordre sendt: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Angi et antall over 0.',
   'ticket.problem.price': 'Angi en kurs over 0.',

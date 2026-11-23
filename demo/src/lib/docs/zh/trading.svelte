@@ -104,6 +104,18 @@ chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.comma
   <code>PaperExecutionAdapter</code> 是一个虚拟成交的沙盒，适用于演示和测试。
 </p>
 
+<h3 id="order-outcome">订单的结果</h3>
+<p>
+  每一笔被请求的订单都带着一个 <code>clientOrderId</code> 发出，这是它自己的编号：它自带的那个，否则由图表给出；
+  <code>placeOrderIntent</code> 返回实际发出的订单。在适配器答复之前，订单还在途中。<code>orderPlaced</code>
+  表示适配器已接受，并带上它据此生成的订单；带有 <code>command: 'orderPlace'</code> 和同一个 <code>clientOrderId</code> 的
+  <code>executionError</code> 表示它被拒绝。适配器的 <code>placeOrder</code> 必须以其中一种方式结束：以订单 resolve，
+  或带着原因 reject。请把这个编号转给支持它的经纪商，并对重复发来的同一编号以已生成的订单作答，这样一次按下被发送两次也只是一笔订单（模拟账户就是这样做的）。
+</p>
+<pre><code>{`const sent = chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1 })
+chart.on('orderPlaced', (e) => { if (e.payload.intent.clientOrderId === sent?.clientOrderId) done(e.payload.order) })
+chart.on('executionError', (e) => { if (e.payload.clientOrderId === sent?.clientOrderId) failed(e.payload.cause) })`}</code></pre>
+
 <h3 id="order-kinds">互相配合的订单，以及订单的有效期</h3>
 <p>
   订单的意图（<code>chart.placeOrderIntent</code>、适配器的 <code>placeOrder</code>）说明的不只是它的价格：
@@ -356,6 +368,12 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   下单时会发出 <code>orderPlace</code> 意图。
   设置了市场（<code>chart.setMarket</code>）后，它还会让各个价格落在市场的最小变动价位上，并让委托价格处于当日涨停价与
   跌停价之间；数量从一手起，超过一手时只接受整手（不足一手的股数应作为单独的零股委托）。
+</p>
+<p>
+  数据源同时给出买价和卖价时，下单窗口按卖价对买入、按买价对卖出进行估值、校验和发送；否则两者都按最新价。
+  连接了执行适配器时，它会等待适配器的答复：窗口保持打开，按钮处显示<strong>发送中…</strong>，内容不可修改；订单被接受后关闭；
+  订单被拒绝时，保留已输入的内容并说明原因，直到订单被修改。十秒内没有答复时，它会说明这一点并继续等待：再次发送前请先查看您的委托。点击窗口外部不会关闭它；Escape、取消和叉号才会。
+  一次按下发出的订单（来自右键菜单或盘口深度面板的一档）数量为该市场的一手（<code>volumeUnit</code>），没有交易单位时为 1。
 </p>
 <p>
   下单窗口在标题旁写出品种代码。订单类型和有效期是一排选项（方向键可在其间移动）；− 和 + 按一手调整数量、

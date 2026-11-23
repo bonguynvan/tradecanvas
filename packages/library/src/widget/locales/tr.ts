@@ -602,6 +602,8 @@ export const TR_MESSAGES: WidgetMessages = {
   'ticket.stepUp': '{field} artır',
   'ticket.placeBuy': 'Alış emri gönder',
   'ticket.placeSell': 'Satış emri gönder',
+  'ticket.noAnswer': 'Aracı kurum henüz yanıt vermedi. Yeniden göndermeden önce emirlerinizi kontrol edin.',
+  'ticket.sending': 'Gönderiliyor…',
   'ticket.sent': 'Emir gönderildi: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Sıfırdan büyük bir miktar girin.',
   'ticket.problem.price': 'Sıfırdan büyük bir fiyat girin.',

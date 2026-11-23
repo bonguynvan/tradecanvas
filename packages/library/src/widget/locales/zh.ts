@@ -602,6 +602,8 @@ export const ZH_MESSAGES: WidgetMessages = {
   'ticket.stepUp': '{field}增加',
   'ticket.placeBuy': '提交买入委托',
   'ticket.placeSell': '提交卖出委托',
+  'ticket.noAnswer': '经纪商尚未答复。再次发送前请先查看您的委托。',
+  'ticket.sending': '发送中…',
   'ticket.sent': '委托已提交：{side} {quantity} @ {price}',
   'ticket.problem.quantity': '请输入大于 0 的数量。',
   'ticket.problem.price': '请输入大于 0 的价格。',

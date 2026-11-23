@@ -608,6 +608,8 @@ export const FA_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'افزایش {field}',
   'ticket.placeBuy': 'ثبت سفارش خرید',
   'ticket.placeSell': 'ثبت سفارش فروش',
+  'ticket.noAnswer': 'بروکر هنوز پاسخ نداده است. پیش از ارسال دوباره، سفارش‌های خود را بررسی کنید.',
+  'ticket.sending': 'در حال ارسال…',
   'ticket.sent': 'سفارش ارسال شد: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'مقداری بیشتر از 0 وارد کنید.',
   'ticket.problem.price': 'قیمتی بیشتر از 0 وارد کنید.',

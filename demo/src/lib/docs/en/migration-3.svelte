@@ -76,6 +76,18 @@ chart.startBracket('buy', undefined, { risk: 50 })   // the quantity that loses 
   touch screen (a legend's height, a dialog's) reads larger numbers.
 </p>
 
+<h3 id="order-answer">An order from the ticket waits for the adapter's answer</h3>
+<p>
+  With an execution adapter connected, the order ticket no longer shuts as it places: it waits until the adapter's
+  <code>placeOrder</code> resolves (it shuts) or rejects (it stays, and says why). An adapter whose
+  <code>placeOrder</code> never settles leaves the ticket waiting: resolve with the order, or reject with the reason.
+  Three more things changed with it. Every <code>orderPlace</code> payload now carries a <code>clientOrderId</code>, and
+  <code>placeOrderIntent</code> returns the order as sent (it returned nothing). A market order from the ticket carries
+  the ask for a Buy and the bid for a Sell as its <code>price</code>, where the feed gives both (it was the last price).
+  And an order asked for in one press, from the right-click menu or the depth ladder, is for the market's lot where it
+  has one (it was for 1, and the ladder's had no quantity).
+</p>
+
 <h2 id="types">Types that grew</h2>
 <p>
   <code>TimeInForce</code> is now <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. Code that handles every

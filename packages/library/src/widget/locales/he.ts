@@ -608,6 +608,8 @@ export const HE_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'הגדלת {field}',
   'ticket.placeBuy': 'שליחת פקודת קנייה',
   'ticket.placeSell': 'שליחת פקודת מכירה',
+  'ticket.noAnswer': 'הברוקר עדיין לא השיב. בדקו את הפקודות שלכם לפני שליחה חוזרת.',
+  'ticket.sending': 'שולח…',
   'ticket.sent': 'הפקודה נשלחה: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'יש להזין כמות גדולה מ-0.',
   'ticket.problem.price': 'יש להזין מחיר גדול מ-0.',

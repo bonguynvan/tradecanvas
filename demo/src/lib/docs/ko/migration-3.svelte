@@ -72,6 +72,16 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 손절가에서 50을 �
   마우스에서는 그려진 모양은 그대로이고 누름 영역만 달라집니다(가로세로 최소 20 px). 터치 화면에서 위젯의 각 부분(범례의 높이, 대화상자의 높이)을 재는 페이지는 더 큰 값을 읽게 됩니다.
 </p>
 
+<h3 id="order-answer">티켓에서 낸 주문은 어댑터의 답을 기다립니다</h3>
+<p>
+  실행 어댑터가 연결되어 있으면 주문 티켓은 더 이상 주문을 내는 즉시 닫히지 않습니다. 어댑터의 <code>placeOrder</code>가 resolve될 때(닫힘)
+  또는 reject될 때(남아서 이유를 알림)까지 기다립니다. <code>placeOrder</code>가 끝나지 않는 어댑터에서는 티켓이 계속 기다립니다:
+  주문으로 resolve하거나 이유와 함께 reject하세요. 이와 함께 세 가지가 더 바뀌었습니다. 모든 <code>orderPlace</code> 페이로드가 이제
+  <code>clientOrderId</code>를 가지며, <code>placeOrderIntent</code>는 보낸 그대로의 주문을 반환합니다(이전에는 아무것도 반환하지 않았습니다).
+  티켓에서 낸 시장가 주문은 피드가 둘 다 줄 때 매수면 매도호가, 매도면 매수호가를 <code>price</code>로 가집니다(이전에는 마지막 가격이었습니다).
+  그리고 오른쪽 클릭 메뉴나 호가창에서 한 번 눌러 내는 주문은 시장에 매매 단위가 있으면 그 단위만큼입니다(이전에는 1이었고, 호가창의 주문에는 수량이 없었습니다).
+</p>
+
 <h2 id="types">넓어진 타입</h2>
 <p>
   <code>TimeInForce</code>는 이제 <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>입니다. 모든 멤버를 처리하는 코드(default가

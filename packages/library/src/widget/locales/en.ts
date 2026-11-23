@@ -609,6 +609,8 @@ export const EN_MESSAGES = {
   'ticket.stepUp': '{field} up',
   'ticket.placeBuy': 'Place buy order',
   'ticket.placeSell': 'Place sell order',
+  'ticket.noAnswer': 'No answer from the broker yet. Check your orders before you send it again.',
+  'ticket.sending': 'Sending…',
   'ticket.sent': 'Order sent: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Enter a quantity above 0.',
   'ticket.problem.price': 'Enter a price above 0.',

@@ -484,7 +484,11 @@ const SCENES = {
   async levelDrag() {
     const s = await widget({ trading: true });
     const last = lastClose(s.chart);
-    const broker = new PaperExecutionAdapter({ markPrice: last, balance: 10_000, leverage: 20, marginCallLevel: 1, stopOutLevel: 0.5 });
+    // Money for the three it buys and a little to spare, at whatever the price is today: with ten
+    // thousand the order was refused once the feed's price had drifted over 66,666.
+    const leverage = 20;
+    const balance = Math.round(((3 * last) / leverage) * 1.08);
+    const broker = new PaperExecutionAdapter({ markPrice: last, balance, leverage, marginCallLevel: 1, stopOutLevel: 0.5 });
     s.chart.connectExecution(broker);
     const levels = [1.002, 1.004, 1.006].map((by) => ({ price: last * by, quantity: 1 }));
     await broker.placeOrder({ side: 'buy', type: 'market', price: last, quantity: 3, stopLoss: last * 0.996, takeProfits: levels });
@@ -515,6 +519,41 @@ const SCENES = {
       return problems;
     };
     // The account too, for whoever looks further by hand: a price that calls its margin, a stop-out.
+    return { ...s, broker, checks };
+  },
+
+  /**
+   * An order the account refuses, placed from the ticket: the ticket stays, with what was typed
+   * and why. It shut as it placed, and the refusal was a note that was gone in three seconds. A
+   * Buy is valued at the ask.
+   */
+  async ticketRefused() {
+    const s = await widget({ trading: true });
+    const last = lastClose(s.chart);
+    // Money for a fraction of one: five are refused for want of margin.
+    const broker = new PaperExecutionAdapter({ markPrice: last, balance: 1000, leverage: 1 });
+    s.chart.connectExecution(broker);
+    s.chart.setBidAsk({ bid: last * 0.9998, ask: last * 1.0003 });
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    host.querySelector('.tcw-quote-buy')?.click();
+    const quantity = host.querySelector('.tcw-order-ticket input[type=number]');
+    if (quantity) {
+      quantity.value = '5';
+      quantity.dispatchEvent(new Event('input'));
+    }
+    host.querySelector('.tcw-ticket-place')?.click();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const checks = () => {
+      const ticket = host.querySelector('.tcw-order-ticket');
+      if (!ticket || ticket.closest('.tcw-modal-backdrop')?.hidden) return ['the ticket shut on an order the account refused'];
+      const problems = [];
+      if (!ticket.querySelector('.tcw-ticket-problems')?.textContent.trim()) problems.push('the ticket does not say why the order was refused');
+      if (ticket.querySelector('input[type=number]')?.value !== '5') problems.push('the ticket lost the quantity that was typed');
+      const place = ticket.querySelector('.tcw-ticket-place');
+      if (!place || place.disabled) problems.push('the ticket cannot place the order again once it is changed');
+      if (s.chart.getPositions().length > 0) problems.push('the refused order opened a position');
+      return problems;
+    };
     return { ...s, broker, checks };
   },
 

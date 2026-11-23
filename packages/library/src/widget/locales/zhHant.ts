@@ -602,6 +602,8 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'ticket.stepUp': '{field}增加',
   'ticket.placeBuy': '送出買進委託',
   'ticket.placeSell': '送出賣出委託',
+  'ticket.noAnswer': '經紀商尚未回覆。再次送出前請先查看您的委託。',
+  'ticket.sending': '傳送中…',
   'ticket.sent': '委託已送出：{side} {quantity} @ {price}',
   'ticket.problem.quantity': '請輸入大於 0 的數量。',
   'ticket.problem.price': '請輸入大於 0 的價格。',

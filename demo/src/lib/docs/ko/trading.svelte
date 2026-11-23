@@ -109,6 +109,19 @@ chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.comma
   <code>PaperExecutionAdapter</code>는 데모와 테스트를 위한 가상 체결 샌드박스입니다.
 </p>
 
+<h3 id="order-outcome">주문이 어떻게 되었는지</h3>
+<p>
+  요청된 모든 주문은 고유한 ID인 <code>clientOrderId</code>와 함께 나갑니다. 주문에 이미 있던 것, 없으면 차트가 부여한 것이며,
+  <code>placeOrderIntent</code>는 보낸 그대로의 주문을 반환합니다. 어댑터가 답할 때까지 주문은 전송 중입니다. <code>orderPlaced</code>는
+  어댑터가 주문을 받았음을, 그로부터 만든 주문과 함께 알립니다. <code>command: 'orderPlace'</code>와 같은 <code>clientOrderId</code>를 가진
+  <code>executionError</code>는 거부되었음을 알립니다. 어댑터의 <code>placeOrder</code>는 어느 쪽으로든 끝나야 합니다: 주문으로 resolve하거나,
+  이유와 함께 reject합니다. 이 ID를 받는 브로커에게는 그대로 전달하고, 같은 ID가 다시 오면 이미 만든 주문으로 답하세요.
+  그러면 두 번 전송된 한 번의 누름도 주문 하나가 됩니다(모의 계좌가 그렇게 합니다).
+</p>
+<pre><code>{`const sent = chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1 })
+chart.on('orderPlaced', (e) => { if (e.payload.intent.clientOrderId === sent?.clientOrderId) done(e.payload.order) })
+chart.on('executionError', (e) => { if (e.payload.clientOrderId === sent?.clientOrderId) failed(e.payload.cause) })`}</code></pre>
+
 <h3 id="order-kinds">함께 동작하는 주문, 그리고 주문의 유효 기간</h3>
 <p>
   주문의 의도(<code>chart.placeOrderIntent</code>, 어댑터의 <code>placeOrder</code>)는 가격 말고도 더 많은 것을
@@ -380,6 +393,13 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   시장을 설정하면(<code>chart.setMarket</code>) 각 가격을 시장의 호가 단위에 맞추고 주문 가격을 그날의 상한가와 하한가 안에
   두며, 수량은 1매매 단위에서 시작하고 1매매 단위를 넘으면 그 배수만 받습니다(그보다 적은 주식은 별도의 단주
   주문입니다).
+</p>
+<p>
+  피드가 매수호가와 매도호가를 모두 주면, 주문 티켓은 매수를 매도호가로, 매도를 매수호가로 평가하고 검사하고 보냅니다. 그렇지 않으면 둘 다 마지막 가격입니다.
+  실행 어댑터가 연결되어 있으면 어댑터의 답을 기다립니다: 티켓은 열린 채로 버튼 자리에 <strong>전송 중…</strong>이 표시되고 아무것도 바꿀 수 없으며,
+  주문이 받아들여지면 닫히고, 거부되면 입력한 내용을 그대로 두고 주문을 바꿀 때까지 이유를 알려 줍니다. 10초 동안 답이 없으면 그 사실을 알리고 계속 기다립니다. 다시 보내기 전에 주문을 확인하세요.
+  티켓 바깥을 눌러도 닫히지 않습니다. Escape, 취소, 닫기 표시로 닫습니다. 오른쪽 클릭 메뉴나 호가창의 한 줄에서 한 번 눌러 내는 주문의 수량은
+  그 시장의 매매 단위(<code>volumeUnit</code>)이며, 단위가 없으면 1입니다.
 </p>
 <p>
   주문 티켓은 제목 옆에 종목을 표시합니다. 주문 종류와 유효 기간은 한 줄의 선택지이며 화살표 키로 옮겨 다닙니다.

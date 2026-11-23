@@ -197,6 +197,10 @@ interface TradesLive {
 }
 /** How many times a picture at a size of its own fits its bars and sizes its scales: a scale that changes width changes the plot once. */
 const PICTURE_FIT_ROUNDS = 3;
+/** The base an order's id writes its numbers in: digits and letters, short. */
+const ID_RADIX = 36;
+/** How many characters of chance mark one chart's order ids from another's. */
+const ID_MARK_LENGTH = 6;
 /** Fewest bars ahead of the view that trigger the next history page. */
 const HISTORY_AHEAD_MIN_BARS = 20;
 
@@ -252,6 +256,9 @@ export class Chart {
   /** The connected adapter's account, when it keeps one. */
   private account: import('@tradecanvas/commons').AccountSummary | null = null;
   private execTeardown: (() => void) | null = null;
+  /** This chart's own mark in the ids it gives orders, and how many it has given. */
+  private readonly clientOrderMark = Math.random().toString(ID_RADIX).slice(2, 2 + ID_MARK_LENGTH).padEnd(ID_MARK_LENGTH, '0');
+  private clientOrderSeq = 0;
   private autoScrollOnNewBar = true;
   /** The drawn series (Renko bricks…) the indicators were last worked out on; null: the data bars. */
   private indicatorsOnDrawn: DataSeries | null = null;
@@ -650,7 +657,9 @@ export class Chart {
     // And an order's own is one of today's: inside the day's ceiling and floor, where the market has them.
     this.tradingManager.setOrderPriceBounds(() => this.getPriceLimits());
     this.tradingManager.setEventCallback((event, data) => {
-      this.eventBus.emit(event as ChartEventType, data);
+      // An order asked for on the chart itself (a draft confirmed, the engine's own menu) goes out with an id, as one asked for by code.
+      const payload = event === 'orderPlace' ? this.withClientOrderId(data as import('@tradecanvas/commons').OrderPlaceIntent) : data;
+      this.eventBus.emit(event as ChartEventType, payload);
     });
     // The activity log hears what the chart is told, whoever tells it: an adapter, or the app's own calls.
     this.eventBus.on('ordersChange', (e) => this.activity.orders((e.payload as { orders: TradingOrder[] }).orders, this.activityTime()));
@@ -3277,13 +3286,32 @@ export class Chart {
   }
 
   /**
-   * Emit an `orderPlace` intent (e.g. from a depth-ladder click). The chart
-   * does not create the order itself — the host listens via
-   * `chart.on('orderPlace', …)` and submits to its OMS.
+   * Ask for an order: the `orderPlace` event, which a connected execution
+   * adapter places; with none, the app listens (`chart.on('orderPlace', …)`)
+   * and sends it to its own order management.
+   *
+   * The order goes out with a `clientOrderId`, an id of its own: the one it
+   * came with, else one the chart gives it. A broker that takes it turns a
+   * repeat of the same order away, and what became of the order is told by
+   * it: `orderPlaced` once an adapter took it, or an `executionError` that
+   * names it. Returns the order as it was sent, or null with trading off.
    */
-  placeOrderIntent(intent: import('@tradecanvas/commons').OrderPlaceIntent): void {
-    if (!this.features.trading) return;
-    this.eventBus.emit('orderPlace', intent);
+  placeOrderIntent(intent: import('@tradecanvas/commons').OrderPlaceIntent): import('@tradecanvas/commons').OrderPlaceIntent | null {
+    if (!this.features.trading) return null;
+    const sent = this.withClientOrderId(intent);
+    this.eventBus.emit('orderPlace', sent);
+    return sent;
+  }
+
+  /** An order with an id of its own (the one it has, else a new one), so that a broker can tell a press sent twice from two orders, and what became of it be told by it. */
+  private withClientOrderId(intent: import('@tradecanvas/commons').OrderPlaceIntent): import('@tradecanvas/commons').OrderPlaceIntent {
+    return intent.clientOrderId ? intent : { ...intent, clientOrderId: this.nextClientOrderId() };
+  }
+
+  /** An id for one order asked for: this chart's own mark, the moment and a count, so that no two are alike on a page or across reloads. */
+  private nextClientOrderId(): string {
+    this.clientOrderSeq += 1;
+    return `tc-${this.clientOrderMark}-${Date.now().toString(ID_RADIX)}-${this.clientOrderSeq.toString(ID_RADIX)}`;
   }
 
   setPositions(positions: TradingPosition[]): void {
@@ -3791,6 +3819,8 @@ export class Chart {
       setOrders: (orders) => this.setOrders(orders),
       setPositions: (positions) => this.setPositions(positions),
       onError: (error) => this.eventBus.emit('executionError', error),
+      onOrderPlaced: (intent, order) => this.eventBus.emit('orderPlaced', { intent, order }),
+      newClientOrderId: () => this.nextClientOrderId(),
       onFill: (fill) => {
         this.tradingManager.addFill(fill);
         this.eventBus.emit('executionFill', fill);

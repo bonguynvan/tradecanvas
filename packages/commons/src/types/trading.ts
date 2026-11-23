@@ -202,6 +202,13 @@ export interface OrderPlaceIntent {
   expireTime?: number;
   /** A name shared by orders of which one cancels the others: when one fills, the rest are cancelled. */
   ocoGroup?: string;
+  /**
+   * The id the order goes out with, its own: the chart gives one to every order asked for
+   * (`placeOrderIntent`) that has none. A broker that takes it turns away a repeat of the same
+   * order (a press sent twice, a retry after a slow answer), and `orderPlaced` and
+   * `executionError` name the order by it.
+   */
+  clientOrderId?: string;
 }
 
 export interface OrderModifyIntent {

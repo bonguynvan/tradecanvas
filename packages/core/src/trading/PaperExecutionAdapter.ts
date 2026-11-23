@@ -136,6 +136,8 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   /** The mark's time (ms), when the caller gives one (a replay). */
   private markTime: number | undefined;
   private seq = 0;
+  /** The orders placed, by the id they came with: one sent again is the order it was. */
+  private placedById = new Map<string, TradingOrder>();
   private readonly net: boolean;
   /** The cash, when the account keeps its money; null: no account. */
   private balance: number | null;
@@ -335,6 +337,23 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   }
 
   async placeOrder(intent: OrderPlaceIntent): Promise<TradingOrder> {
+    // Sent again with its id (a press sent twice, a retry): the order it was, and no second one.
+    const id = intent.clientOrderId;
+    const before = id === undefined ? undefined : this.placedById.get(id);
+    if (before) return before;
+    const order = this.take(intent);
+    if (id !== undefined) this.remember(id, order);
+    return order;
+  }
+
+  /** The order an id was placed as, kept for the latest ids only. */
+  private remember(id: string, order: TradingOrder): void {
+    this.placedById.set(id, order);
+    if (this.placedById.size > CLIENT_IDS_KEPT) this.placedById.delete(this.placedById.keys().next().value as string);
+  }
+
+  /** Take an order asked for: refuse it with why, or make it and fill or keep it. */
+  private take(intent: OrderPlaceIntent): TradingOrder {
     const atOnce = intent.timeInForce === 'ioc' || intent.timeInForce === 'fok';
     if (atOnce && (intent.type === 'stop' || intent.type === 'stopLimit')) {
       throw new Error(`A ${intent.type === 'stop' ? 'stop' : 'stop-limit'} order waits for its stop: it cannot be ${intent.timeInForce}`);
@@ -468,6 +487,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   }
 
   dispose(): void {
+    this.placedById.clear();
     this.disconnect();
     this.listeners.clear();
     this.orders = [];
@@ -805,6 +825,8 @@ function beyondEntry(levels: readonly TakeProfitLevel[] | undefined, side: Tradi
 
 /** How far short of an order's need the account may be and still carry it, as a part of the need: a sum's rounding. */
 const MONEY_SLACK = 1e-9;
+/** How many client order ids the account remembers: enough for a press sent twice or a retry, not a ledger. */
+const CLIENT_IDS_KEPT = 200;
 
 /** Why `available` does not carry `needed`, or null when it does. */
 function short(needed: number, available: number): string | null {

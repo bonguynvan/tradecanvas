@@ -69,6 +69,15 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 在止损处亏损 50 �
   在鼠标下，图形保持原样，变化的只是点按区域：每个方向至少 20 px。在触摸屏上测量组件各部分（图例的高度、对话框的高度）的页面，会读到更大的数值。
 </p>
 
+<h3 id="order-answer">下单窗口发出的订单会等待适配器的答复</h3>
+<p>
+  连接了执行适配器时，下单窗口不再在下单的同时关闭：它会一直等到适配器的 <code>placeOrder</code> resolve（窗口关闭）或 reject（窗口保留并说明原因）。
+  <code>placeOrder</code> 永不结束的适配器会让窗口一直等待：请以订单 resolve，或带着原因 reject。另有三处随之改变。
+  每个 <code>orderPlace</code> 负载现在都带有 <code>clientOrderId</code>，<code>placeOrderIntent</code> 返回实际发出的订单（以前不返回任何值）。
+  数据源同时给出买价和卖价时，下单窗口发出的市价单以卖价（买入）或买价（卖出）作为 <code>price</code>（以前是最新价）。
+  一次按下发出的订单（来自右键菜单或盘口深度面板）在市场有交易单位时数量为一手（以前是 1，而深度面板的订单没有数量）。
+</p>
+
 <h2 id="types">扩充的类型</h2>
 <p>
   <code>TimeInForce</code> 现在是 <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>。处理全部成员的代码

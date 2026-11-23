@@ -602,6 +602,8 @@ export const TH_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'เพิ่ม{field}',
   'ticket.placeBuy': 'ส่งคำสั่งซื้อ',
   'ticket.placeSell': 'ส่งคำสั่งขาย',
+  'ticket.noAnswer': 'โบรกเกอร์ยังไม่ตอบกลับ โปรดตรวจสอบคำสั่งของคุณก่อนส่งอีกครั้ง',
+  'ticket.sending': 'กำลังส่ง…',
   'ticket.sent': 'ส่งคำสั่งแล้ว: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'กรอกจำนวนที่มากกว่า 0',
   'ticket.problem.price': 'กรอกราคาที่มากกว่า 0',

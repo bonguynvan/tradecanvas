@@ -112,6 +112,20 @@ chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.comma
   <code>PaperExecutionAdapter</code> is a virtual-fill sandbox for demos and tests.
 </p>
 
+<h3 id="order-outcome">What became of an order</h3>
+<p>
+  Every order asked for goes out with a <code>clientOrderId</code>, an id of its own: the one it came with, else one
+  the chart gives it, and <code>placeOrderIntent</code> returns the order as it was sent. Until the adapter answers,
+  the order is on its way. <code>orderPlaced</code> says the adapter took it, with the order it made of it;
+  <code>executionError</code> with <code>command: 'orderPlace'</code> and the same <code>clientOrderId</code> says it
+  was refused. An adapter's <code>placeOrder</code> must settle either way: resolve with the order, or reject with
+  why. Send the id on to a broker that takes one, and answer a repeat of it with the order already made, so that a
+  press sent twice is one order (the paper account does).
+</p>
+<pre><code>{`const sent = chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1 })
+chart.on('orderPlaced', (e) => { if (e.payload.intent.clientOrderId === sent?.clientOrderId) done(e.payload.order) })
+chart.on('executionError', (e) => { if (e.payload.clientOrderId === sent?.clientOrderId) failed(e.payload.cause) })`}</code></pre>
+
 <h3 id="order-kinds">Orders that work together, and for how long</h3>
 <p>
   An order's intent (<code>chart.placeOrderIntent</code>, the adapter's <code>placeOrder</code>) says more than
@@ -387,6 +401,14 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   market set (<code>chart.setMarket</code>), it also keeps its prices on the market's step and
   the order's price inside the day's ceiling and floor, starts at one lot, and takes whole lots above one
   (fewer shares are an odd-lot order of their own).
+</p>
+<p>
+  Where the feed gives a bid and an ask, the ticket values, checks and sends a Buy at the ask and a Sell at the bid;
+  else both at the last price. With an execution adapter connected it waits for the adapter's answer: it stays open
+  with <strong>Sending…</strong> in place of its button and nothing to be changed, shuts once the order is taken, and
+  when the order is refused it keeps what was typed and says why until the order is changed. After ten seconds with no answer it says so, and waits on: check your orders before sending again. A press outside the
+  ticket does not shut it; Escape, Cancel and the cross do. An order asked for in one press, from the right-click menu
+  or a rung of the depth ladder, is for the market's lot (<code>volumeUnit</code>) where it has one, else for one.
 </p>
 <p>
   The ticket names the symbol beside its title. The type and the time in force are choices in a row

@@ -49,6 +49,10 @@ export interface ExecutionHost {
   setPositions(positions: TradingPosition[]): void;
   /** Surface an execution failure (adapter-reported or a failed command). */
   onError(error: ExecutionError): void;
+  /** The adapter took an order asked for (`orderPlace`): the one asked for, and the order it made of it. */
+  onOrderPlaced?(intent: OrderPlaceIntent, order: TradingOrder): void;
+  /** An id for an order the wiring makes itself (a confirmed bracket's, the one that reverses a position): no order goes out with none. */
+  newClientOrderId?(): string;
   /** An order filled or a position closed (the adapter's `fill`). */
   onFill?(fill: FillEvent): void;
   /** The positions on the chart, until the adapter reports its own. */
@@ -63,17 +67,18 @@ export interface ExecutionHost {
   onMarginCall?(call: MarginCall): void;
 }
 
-/** What a command can read: the latest positions, and the reverses under way. */
+/** What a command can read: the latest positions, the reverses under way, and an id for an order it makes. */
 interface CommandContext {
   positions: () => readonly TradingPosition[];
   reversing: Set<string>;
+  orderId: () => { clientOrderId?: string };
 }
 
+/** The commands routed as they come. An order asked for (`orderPlace`) is not one of them: what became of it is told (see below). */
 const COMMANDS: Record<
-  ExecutionIntentType,
+  Exclude<ExecutionIntentType, 'orderPlace'>,
   (adapter: ExecutionAdapter, payload: unknown, context: CommandContext) => Promise<unknown>
 > = {
-  orderPlace: (a, p) => a.placeOrder(p as OrderPlaceIntent),
   orderModify: (a, p) => a.modifyOrder(p as OrderModifyIntent),
   orderCancel: (a, p) => a.cancelOrder(p as OrderCancelIntent),
   positionModify: (a, p) => a.modifyPosition(p as PositionModifyIntent),
@@ -106,6 +111,7 @@ async function reverse(adapter: ExecutionAdapter, intent: PositionReverseIntent,
         type: 'market',
         price: position.entryPrice,
         quantity,
+        ...context.orderId(),
       });
     } catch (cause) {
       throw new Error(`Position ${intent.positionId} was closed, but the order the other way failed`, { cause });
@@ -158,6 +164,11 @@ export function wireExecution(adapter: ExecutionAdapter, host: ExecutionHost, op
   const context: CommandContext = {
     positions: () => positions ?? host.getPositions?.() ?? [],
     reversing: new Set(),
+    // An id of the host's for an order made here; none where the host gives none.
+    orderId: () => {
+      const id = host.newClientOrderId?.();
+      return id === undefined ? {} : { clientOrderId: id };
+    },
   };
   const onOrders = (e: ExecutionEvent<TradingOrder[]>) => host.setOrders(e.data ?? []);
   const onPositions = (e: ExecutionEvent<TradingPosition[]>) => {
@@ -194,8 +205,14 @@ export function wireExecution(adapter: ExecutionAdapter, host: ExecutionHost, op
     () => adapter.off('fill', onFill),
   );
 
+  // A bracket's answer that comes after the teardown is for an adapter no longer connected: it is dropped.
+  let connected = true;
+  teardowns.push(() => {
+    connected = false;
+  });
+
   // Host → adapter: route each emitted intent into the matching command.
-  for (const type of Object.keys(COMMANDS) as ExecutionIntentType[]) {
+  for (const type of Object.keys(COMMANDS) as (keyof typeof COMMANDS)[]) {
     const command = COMMANDS[type];
     const unsub = host.onIntent(type, (payload) => {
       Promise.resolve(command(adapter, payload, context)).catch((cause) =>
@@ -205,12 +222,23 @@ export function wireExecution(adapter: ExecutionAdapter, host: ExecutionHost, op
     teardowns.push(unsub);
   }
 
+  // An order asked for: the host is told what became of it, by the id it went out with. Until
+  // then it is on its way, and what asked for it (a ticket) can wait and not send it again. Told
+  // even when the adapter was taken away before it answered: the order went out, and a ticket
+  // that is never answered waits for good.
+  teardowns.push(host.onIntent('orderPlace', (payload) => {
+    const intent = payload as OrderPlaceIntent;
+    // An adapter that throws at once is reported as one that refuses.
+    Promise.resolve()
+      .then(() => adapter.placeOrder(intent))
+      .then((order) => host.onOrderPlaced?.(intent, order))
+      .catch((cause) => {
+        const named = intent.clientOrderId === undefined ? {} : { clientOrderId: intent.clientOrderId };
+        host.onError({ message: 'Execution command failed: orderPlace', cause, command: 'orderPlace', ...named });
+      });
+  }));
+
   // A confirmed bracket, as one order with its stop-loss and take-profit, unless the app places it itself.
-  // An answer that comes after the teardown is for an adapter no longer connected: it is dropped.
-  let connected = true;
-  teardowns.push(() => {
-    connected = false;
-  });
   if (options.brackets !== 'event') {
     teardowns.push(host.onIntent('bracketPlace', (payload) => {
       const bracket = payload as BracketPlacePayload;
@@ -220,7 +248,7 @@ export function wireExecution(adapter: ExecutionAdapter, host: ExecutionHost, op
         host.onError(refused);
         return;
       }
-      const intent = bracketOrderIntent(bracket as BracketPlacePayload & { quantity: number }, marketPrice as number);
+      const intent = { ...bracketOrderIntent(bracket as BracketPlacePayload & { quantity: number }, marketPrice as number), ...context.orderId() };
       // An adapter that throws at once is reported as one that refuses.
       Promise.resolve()
         .then(() => adapter.placeOrder(intent))

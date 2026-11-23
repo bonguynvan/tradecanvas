@@ -608,6 +608,8 @@ export const DA_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Hæv {field}',
   'ticket.placeBuy': 'Afgiv købsordre',
   'ticket.placeSell': 'Afgiv salgsordre',
+  'ticket.noAnswer': 'Mægleren har ikke svaret endnu. Tjek dine ordrer, før du sender igen.',
+  'ticket.sending': 'Sender…',
   'ticket.sent': 'Ordre sendt: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Angiv et antal over 0.',
   'ticket.problem.price': 'Angiv en kurs over 0.',

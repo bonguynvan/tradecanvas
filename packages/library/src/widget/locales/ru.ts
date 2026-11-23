@@ -602,6 +602,8 @@ export const RU_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Увеличить: {field}',
   'ticket.placeBuy': 'Разместить ордер на покупку',
   'ticket.placeSell': 'Разместить ордер на продажу',
+  'ticket.noAnswer': 'Брокер ещё не ответил. Проверьте свои ордера, прежде чем отправлять снова.',
+  'ticket.sending': 'Отправка…',
   'ticket.sent': 'Ордер отправлен: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Введите количество больше 0.',
   'ticket.problem.price': 'Введите цену больше 0.',

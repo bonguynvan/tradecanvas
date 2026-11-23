@@ -602,6 +602,8 @@ export const NL_MESSAGES: WidgetMessages = {
   'ticket.stepUp': '{field} omhoog',
   'ticket.placeBuy': 'Kooporder plaatsen',
   'ticket.placeSell': 'Verkooporder plaatsen',
+  'ticket.noAnswer': 'De broker heeft nog niet geantwoord. Controleer uw orders voordat u opnieuw verzendt.',
+  'ticket.sending': 'Verzenden…',
   'ticket.sent': 'Order verzonden: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Voer een aantal groter dan 0 in.',
   'ticket.problem.price': 'Voer een prijs groter dan 0 in.',

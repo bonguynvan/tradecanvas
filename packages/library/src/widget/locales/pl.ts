@@ -602,6 +602,8 @@ export const PL_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Zwiększ: {field}',
   'ticket.placeBuy': 'Złóż zlecenie kupna',
   'ticket.placeSell': 'Złóż zlecenie sprzedaży',
+  'ticket.noAnswer': 'Broker jeszcze nie odpowiedział. Sprawdź swoje zlecenia, zanim wyślesz ponownie.',
+  'ticket.sending': 'Wysyłanie…',
   'ticket.sent': 'Wysłano zlecenie: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Wpisz ilość większą od 0.',
   'ticket.problem.price': 'Wpisz cenę większą od 0.',
