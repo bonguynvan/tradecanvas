@@ -6,7 +6,7 @@ import { readWidgetFeatures, type WidgetFeatures } from './widgetFeatures.js';
 import { GRID_LAYOUT_SHAPES, GRID_LAYOUTS, gridAreas, gridChartCount, isGridLayout, placeGridCell, type GridLayout, type GridShape } from '../grid/gridShapes.js';
 import { GridLayoutPicker } from './GridLayoutPicker.js';
 import { injectWidgetStyles, removeWidgetStyles } from './WidgetStyles.js';
-import { createTranslator, fill, resolveMessages, type MessageKey, type Translator } from './i18n.js';
+import { createTranslator, fill, resolveMessages, writingDirection, type MessageKey, type Translator } from './i18n.js';
 import { createIcon } from './icons.js';
 import { escapeHtml as esc } from './escapeHtml.js';
 import { WidgetLayoutsUI } from './WidgetLayoutsUI.js';
@@ -158,6 +158,8 @@ export class ChartWidgetGrid {
 
     this.root = document.createElement('div');
     this.root.className = 'tcw-root tcw-grid';
+    // The bar and its menus are written the way the charts are.
+    this.root.dir = writingDirection(options.widget?.dir, options.widget?.locale);
     this.root.dataset.tcwTheme = options.widget?.theme === 'light' ? 'light' : 'dark';
     applyWidgetUI(this.root, resolveWidgetUI(options.widget?.ui), { variables: options.widget?.ui !== undefined });
     if (options.bar !== false) this.root.appendChild(this.buildBar());

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Chart
+
+- **A grid's bar in a language written right to left** (`@tradecanvas/chart`): with a right-to-left language (or `widget.dir: 'rtl'`), each chart of a `ChartWidgetGrid` was written right to left and the grid's own bar was not: its arrangement, sync and layouts stayed left to right. The bar and its menus are written the way the charts are. The charts keep the places their arrangement names ("one large on the left").
+- **A menu under a toolbar button gives the keyboard back to that button** (`@tradecanvas/chart`): shut with Escape in Safari, which focuses no pressed button, a menu left the keyboard nowhere.
+
 ## 2.17.0 (2026-11-22)
 
 ### Chart

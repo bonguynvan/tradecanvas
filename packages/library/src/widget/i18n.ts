@@ -59,6 +59,17 @@ export function findWidgetLocale(locale: string): Partial<WidgetMessages> | unde
 
 const warned = new Set<string>();
 
+/** Whether a language is written right to left: Arabic, Hebrew, Persian, Urdu and the like. */
+export function isRtlLocale(locale: string | undefined): boolean {
+  return !!locale && /^(ar|he|iw|fa|ur|ps|yi|dv|ckb|sd|ug)(-|$)/i.test(locale);
+}
+
+/** The way a widget is written: as it was told (`dir`), else as its language is. */
+export function writingDirection(dir: 'ltr' | 'rtl' | 'auto' | undefined, locale: string | undefined): 'ltr' | 'rtl' {
+  if (dir === 'ltr' || dir === 'rtl') return dir;
+  return isRtlLocale(locale) ? 'rtl' : 'ltr';
+}
+
 /**
  * Resolve the widget's message table: built-in English as the base, the
  * table for `locale` (or its language) on top, falling back key by key to
