@@ -4535,6 +4535,19 @@
 .tcw-account-buy, .tcw-account-up { color: var(--tcw-green); }
 .tcw-account-sell, .tcw-account-down { color: var(--tcw-red); }
 .tcw-account-actions { display: flex; justify-content: flex-end; gap: var(--tcw-space-1); }
+/*
+ * Graphite sets the table's columns as wide as their figures and no wider: a row is read across
+ * a hand's width, not the panel's. The last column takes what is left, its content at its start.
+ */
+.tcw-root:where([data-tcw-ui='graphite']):not([data-tcw-narrow]) .tcw-account-table :is(th, td) {
+  width: 1%;
+  padding-inline: var(--tcw-space-4) var(--tcw-space-5);
+}
+.tcw-root:where([data-tcw-ui='graphite']):not([data-tcw-narrow]) .tcw-account-table :is(th, td):last-child {
+  width: auto;
+  text-align: start;
+}
+.tcw-root:where([data-tcw-ui='graphite']) .tcw-account-actions { justify-content: flex-start; }
 .tcw-account-empty {
   margin: 0;
   padding: var(--tcw-space-6);
@@ -4594,6 +4607,8 @@
 .tcw-root[data-tcw-narrow] .tcw-account-table td:first-child,
 .tcw-root[data-tcw-narrow] .tcw-account-table td[data-label=''] { grid-column: 1 / -1; }
 .tcw-root[data-tcw-narrow] .tcw-account-table td[data-label='']::before { content: none; }
+/* A card's buttons close it, wherever the table has them. */
+.tcw-root[data-tcw-narrow] .tcw-account-table td[data-label=''] { order: 1; }
 .tcw-root[data-tcw-narrow] .tcw-account-table td[data-label=''] .tcw-account-actions { width: 100%; }
 .tcw-root[data-tcw-narrow] .tcw-account-table .tcw-tree-btn { width: 34px; height: 34px; }
 

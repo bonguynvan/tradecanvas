@@ -765,3 +765,14 @@
 .tcw-root:where([data-tcw-ui='graphite']) .tcw-toggle:focus-visible {
   box-shadow: var(--tcw-ring);
 }
+/* The box stays 16 px; a press takes a pointer's reach of it each way, and a finger's under one. */
+.tcw-root:where([data-tcw-ui='graphite']) .tcw-toggle::before {
+  content: '';
+  position: absolute;
+  inset: calc((100% - var(--tcw-hit-pointer)) / 2);
+}
+@media (pointer: coarse) {
+  .tcw-root:where([data-tcw-ui='graphite']) .tcw-toggle::before {
+    inset: calc((100% - var(--tcw-hit-finger)) / 2);
+  }
+}
