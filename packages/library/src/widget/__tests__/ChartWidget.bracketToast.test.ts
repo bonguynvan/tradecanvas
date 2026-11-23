@@ -100,6 +100,66 @@ describe('ChartWidget: what it says of a confirmed bracket', () => {
   });
 });
 
+describe('ChartWidget: what it says of an order', () => {
+  it('says so when the adapter refused it, in the adapter’s words', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    FakeChart.last.emit('executionError', {
+      message: 'Execution command failed: orderPlace',
+      cause: new Error('The fok order was not filled at once: it is cancelled'),
+      command: 'orderPlace',
+    });
+    expect(toasts()).toEqual(['The broker refused the order: The fok order was not filled at once: it is cancelled']);
+  });
+
+  it('says it of an order refused with no words of the adapter’s, and nothing of another command’s failure', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    FakeChart.last.emit('executionError', { message: 'Execution command failed: orderModify', command: 'orderModify' });
+    FakeChart.last.emit('executionError', { message: 'Execution connect failed' });
+    expect(toasts()).toEqual([]);
+    FakeChart.last.emit('executionError', { message: 'Execution command failed: orderPlace', cause: 'margin', command: 'orderPlace' });
+    expect(toasts()).toEqual(['The broker refused the order: margin']);
+  });
+
+  it('says an order from the ticket was sent before it says what became of it', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    // An account that fills a part at once, as the order is placed.
+    const chart = FakeChart.last as unknown as { placeOrderIntent(intent: unknown): void; getData(): unknown[]; roundPrice(p: number): number };
+    chart.getData = () => [{ time: 0, open: 100, high: 100, low: 100, close: 100, volume: 1 }];
+    chart.roundPrice = (p) => p;
+    chart.placeOrderIntent = () => FakeChart.last.emit('executionFill', { orderId: 'o1', side: 'buy', price: 100, quantity: 2, time: 1, reason: 'order', dropped: 3 });
+    (widget as unknown as { trading: { openOrderTicket(price?: number): void } }).trading.openOrderTicket(100);
+    host.querySelector<HTMLButtonElement>('.tcw-ticket-place')!.click();
+    // The last thing said is what shows: what became of the order, not that it was sent.
+    expect(toasts()).toEqual(['Filled 2 of 5: the rest was cancelled']);
+  });
+
+  it('shows one toast at a time: a new one takes the place of the one showing', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget.toast('first');
+    widget.toast('second', 'error');
+    expect(toasts()).toEqual(['second']);
+    // Another widget's toast is not this one's to take away.
+    const other = document.createElement('div');
+    document.body.appendChild(other);
+    const beside = new ChartWidget(other, { symbol: 'BBB' });
+    beside.toast('theirs');
+    widget.toast('third');
+    expect([...document.querySelectorAll<HTMLElement>('.tcw-toast')].map((t) => t.textContent).sort()).toEqual(['theirs', 'third']);
+    beside.destroy();
+    other.remove();
+  });
+
+  it('says how much filled when the rest of an order was dropped, and nothing of a fill that dropped none', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    FakeChart.last.emit('executionFill', { orderId: 'o1', side: 'buy', price: 100, quantity: 2, time: 1, reason: 'order' });
+    FakeChart.last.emit('executionFill', { orderId: 'o2', side: 'buy', price: 100, quantity: 2, time: 1, reason: 'order', remaining: 3 });
+    expect(toasts()).toEqual([]);
+    // A tenth and two tenths: three tenths, with no sum's dust.
+    FakeChart.last.emit('executionFill', { orderId: 'o3', side: 'buy', price: 100, quantity: 0.1, time: 2, reason: 'order', dropped: 0.2 });
+    expect(toasts()).toEqual(['Filled 0.1 of 0.3: the rest was cancelled']);
+  });
+});
+
 describe('ChartWidget: the quantity of a bracket it starts', () => {
   const field = () => host.querySelector<HTMLInputElement>('.tcw-bracket-quantity input')!;
   const type = (text: string) => {

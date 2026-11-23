@@ -609,6 +609,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'Take-profit-ul se plasează deasupra intrării la cumpărare și sub ea la vânzare.',
   'ticket.problem.limitSide': 'O cumpărare limită se plasează sub piață, iar o vânzare limită deasupra.',
   'ticket.problem.stopSide': 'O cumpărare stop se plasează deasupra pieței, iar o vânzare stop dedesubt.',
+  'ticket.problem.expireTime': 'Ordinul trebuie să expire la un moment viitor.',
   'ticket.problem.priceStep': 'Prețurile trebuie să respecte pasul de cotare al pieței.',
   'ticket.problem.priceLimits': 'Astăzi prețurile sunt între {floor} și {ceiling}.',
   'ticket.problem.lot': 'Peste un lot, introduceți loturi întregi de {lot}; acțiunile rămase merg într-un ordin separat.',
@@ -963,6 +964,8 @@ export const RO_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'Vânzare limită @ {price}',
   'order.buyStop': 'Cumpărare stop @ {price}',
   'order.sellStop': 'Vânzare stop @ {price}',
+  'order.refused': 'Brokerul a respins ordinul: {reason}',
+  'order.partDropped': 'Executat {filled} din {quantity}: restul a fost anulat',
 
   'toast.pinned': 'Fixat la favorite',
   'toast.unpinned': 'Fixare anulată',

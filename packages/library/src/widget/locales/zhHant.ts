@@ -609,6 +609,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': '買進時停利價應高於進場價，賣出時應低於進場價。',
   'ticket.problem.limitSide': '限價買進應低於市價，限價賣出應高於市價。',
   'ticket.problem.stopSide': '停損買進應高於市價，停損賣出應低於市價。',
+  'ticket.problem.expireTime': '委託的到期時間必須在將來。',
   'ticket.problem.priceStep': '價格須符合市場的升降單位。',
   'ticket.problem.priceLimits': '今日價格區間為 {floor} 至 {ceiling}。',
   'ticket.problem.lot': '超過一張時須以整張（每張 {lot} 股）下單；零股請另以單獨委託送出。',
@@ -963,6 +964,8 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'order.sellLimit': '限價賣出 @ {price}',
   'order.buyStop': '停損買進 @ {price}',
   'order.sellStop': '停損賣出 @ {price}',
+  'order.refused': '經紀商拒絕了委託：{reason}',
+  'order.partDropped': '已成交 {filled}，共 {quantity}：其餘已撤單',
 
   'toast.pinned': '已固定到我的最愛',
   'toast.unpinned': '已取消固定',

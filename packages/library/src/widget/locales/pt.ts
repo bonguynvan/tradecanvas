@@ -609,6 +609,7 @@ export const PT_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'O take profit fica acima da entrada em uma compra e abaixo em uma venda.',
   'ticket.problem.limitSide': 'Uma compra limitada fica abaixo do mercado e uma venda limitada, acima.',
   'ticket.problem.stopSide': 'Uma compra stop fica acima do mercado e uma venda stop, abaixo.',
+  'ticket.problem.expireTime': 'A ordem tem de terminar num momento futuro.',
   'ticket.problem.priceStep': 'Os preços devem seguir a variação mínima de preço (tick) do mercado.',
   'ticket.problem.priceLimits': 'Hoje os preços vão de {floor} a {ceiling}.',
   'ticket.problem.lot': 'Acima de um lote, negocie lotes inteiros de {lot}; as ações fracionárias vão em uma ordem separada.',
@@ -963,6 +964,8 @@ export const PT_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'Venda limitada @ {price}',
   'order.buyStop': 'Compra stop @ {price}',
   'order.sellStop': 'Venda stop @ {price}',
+  'order.refused': 'A corretora recusou a ordem: {reason}',
+  'order.partDropped': 'Executado {filled} de {quantity}: o restante foi cancelado',
 
   'toast.pinned': 'Fixado nos favoritos',
   'toast.unpinned': 'Desafixado',

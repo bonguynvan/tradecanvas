@@ -157,6 +157,55 @@ describe('the tags on the trading lines', () => {
     expect(events).toEqual([{ event: 'orderModify', data: { orderId: 'o1', newPrice: 60, previousPrice: 30 } }]);
   });
 
+  it('tell while a line is dragged to a price: once it has moved, until the release', () => {
+    expect(manager.isDraggingLine()).toBe(false);
+    const cancel = button(draw().buttons, 'cancelOrder');
+    const onTag = { x: cancel.x - 10, y: 62 };
+    manager.onPointerDown(onTag, unitViewport);
+    // Pressed, it has gone nowhere: a click moves no line.
+    expect(manager.isDraggingLine()).toBe(false);
+    // A hand's tremor is no drag either.
+    manager.onPointerMove({ x: onTag.x, y: 61 }, unitViewport);
+    expect(manager.isDraggingLine()).toBe(false);
+    manager.onPointerMove({ x: onTag.x, y: 32 }, unitViewport);
+    expect(manager.isDraggingLine()).toBe(true);
+    manager.onPointerUp({ x: onTag.x, y: 32 });
+    expect(manager.isDraggingLine()).toBe(false);
+    // The next press starts with nothing moved.
+    manager.onPointerDown({ x: onTag.x, y: 32 }, unitViewport);
+    expect(manager.isDraggingLine()).toBe(false);
+    manager.onPointerUp({ x: onTag.x, y: 32 });
+  });
+
+  it('tell of a bracket’s line and of a draft order’s the same way, and of none once the press is called off', () => {
+    manager.setOrders([]);
+    manager.setPositions([]);
+    manager.startBracket('buy', 60, { quantity: 1 });
+    // The entry's line is at y 40.
+    manager.onPointerDown({ x: 50, y: 40 }, unitViewport);
+    expect(manager.isDraggingLine()).toBe(false);
+    manager.onPointerMove({ x: 50, y: 30 }, unitViewport);
+    expect(manager.isDraggingLine()).toBe(true);
+    manager.cancelPointer();
+    expect(manager.isDraggingLine()).toBe(false);
+    manager.cancelBracket();
+    manager.startOrderDraft('buy', 60);
+    manager.onPointerDown({ x: 50, y: 40 }, unitViewport);
+    expect(manager.isDraggingLine()).toBe(false);
+    manager.onPointerMove({ x: 50, y: 30 }, unitViewport);
+    expect(manager.isDraggingLine()).toBe(true);
+    manager.onPointerUp({ x: 50, y: 30 });
+    expect(manager.isDraggingLine()).toBe(false);
+  });
+
+  it('tell of no drag while a button on a line is pressed: it moves no line', () => {
+    const cancel = button(draw().buttons, 'cancelOrder');
+    const onButton = { x: cancel.x + (cancel.width ?? cancel.size) / 2, y: cancel.y + cancel.size / 2 };
+    expect(manager.onPointerDown(onButton, unitViewport)).toBe(true);
+    expect(manager.isDraggingLine()).toBe(false);
+    manager.onPointerUp();
+  });
+
   it('leave a position’s entry where it is: its tag is not a handle', () => {
     const reverse = button(draw().buttons, 'reversePosition');
     expect(manager.isOverDraggableLine({ x: reverse.x - 10, y: 36 }, unitViewport)).toBe(false);

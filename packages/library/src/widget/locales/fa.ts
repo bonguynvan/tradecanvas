@@ -615,6 +615,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'حد سود در خرید بالای قیمت ورود و در فروش زیر آن قرار می‌گیرد.',
   'ticket.problem.limitSide': 'خرید لیمیت زیر قیمت بازار و فروش لیمیت بالای آن قرار می‌گیرد.',
   'ticket.problem.stopSide': 'خرید استاپ بالای قیمت بازار و فروش استاپ زیر آن قرار می‌گیرد.',
+  'ticket.problem.expireTime': 'سفارش باید در زمانی در آینده پایان یابد.',
   'ticket.problem.priceStep': 'قیمت‌ها باید مطابق پله‌های قیمت (تیک) بازار باشند.',
   'ticket.problem.priceLimits': 'دامنه قیمت امروز از {floor} تا {ceiling} است.',
   'ticket.problem.lot': 'برای بیش از یک لات، مضربی از {lot} سفارش دهید؛ سهام باقی‌مانده را در سفارشی جداگانه ثبت کنید.',
@@ -975,6 +976,8 @@ export const FA_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'فروش لیمیت @ {price}',
   'order.buyStop': 'خرید استاپ @ {price}',
   'order.sellStop': 'فروش استاپ @ {price}',
+  'order.refused': 'بروکر سفارش را رد کرد: {reason}',
+  'order.partDropped': '{filled} از {quantity} انجام شد: باقی‌مانده لغو شد',
 
   // Toasts
   'toast.pinned': 'به علاقه‌مندی‌ها سنجاق شد',

@@ -609,6 +609,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'ราคาทำกำไรต้องสูงกว่าราคาเข้าเมื่อซื้อ และต่ำกว่าเมื่อขาย',
   'ticket.problem.limitSide': 'คำสั่งซื้อแบบลิมิตต้องต่ำกว่าราคาตลาด ส่วนคำสั่งขายแบบลิมิตต้องสูงกว่า',
   'ticket.problem.stopSide': 'คำสั่งซื้อแบบสต็อปต้องสูงกว่าราคาตลาด ส่วนคำสั่งขายแบบสต็อปต้องต่ำกว่า',
+  'ticket.problem.expireTime': 'คำสั่งต้องสิ้นสุดในเวลาที่ยังมาไม่ถึง',
   'ticket.problem.priceStep': 'ราคาต้องเป็นไปตามช่วงราคา (tick) ของตลาด',
   'ticket.problem.priceLimits': 'ราคาวันนี้อยู่ระหว่าง {floor} ถึง {ceiling}',
   'ticket.problem.lot': 'หากเกินหนึ่งหน่วยการซื้อขาย ให้ส่งคำสั่งเป็นจำนวนเต็มหน่วยละ {lot} หุ้น ส่วนเศษหุ้นให้แยกเป็นอีกคำสั่ง',
@@ -963,6 +964,8 @@ export const TH_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'ขายแบบลิมิต @ {price}',
   'order.buyStop': 'ซื้อแบบสต็อป @ {price}',
   'order.sellStop': 'ขายแบบสต็อป @ {price}',
+  'order.refused': 'โบรกเกอร์ปฏิเสธคำสั่ง: {reason}',
+  'order.partDropped': 'จับคู่แล้ว {filled} จาก {quantity}: ส่วนที่เหลือถูกยกเลิก',
 
   'toast.pinned': 'ปักหมุดในรายการโปรดแล้ว',
   'toast.unpinned': 'เลิกปักหมุดแล้ว',

@@ -1736,6 +1736,19 @@ img.tcw-ss-badge {
   flex-wrap: wrap;
   gap: var(--tcw-space-3) var(--tcw-space-5);
 }
+/* When an order good till a date ends: its date and its time side by side, the date taking what room is left;
+   under each other where the ticket is too narrow for both. */
+.tcw-ticket-expiry {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--tcw-space-2);
+  min-width: 0;
+}
+.tcw-ticket-expiry > input {
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
 .tcw-ticket-market {
   color: var(--tcw-text-dim);
   font-family: var(--tcw-font-mono);

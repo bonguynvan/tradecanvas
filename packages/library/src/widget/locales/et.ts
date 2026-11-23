@@ -615,6 +615,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'Ostu korral on take-profit sisenemishinnast kõrgemal, müügi korral madalamal.',
   'ticket.problem.limitSide': 'Ostulimiit on turuhinnast madalamal ja müügilimiit kõrgemal.',
   'ticket.problem.stopSide': 'Ostustopp on turuhinnast kõrgemal ja müügistopp madalamal.',
+  'ticket.problem.expireTime': 'Order peab lõppema tulevikus.',
   'ticket.problem.priceStep': 'Hinnad peavad vastama turu hinnasammule.',
   'ticket.problem.priceLimits': 'Tänased hinnad jäävad vahemikku {floor} kuni {ceiling}.',
   'ticket.problem.lot': 'Üle ühe loti esita terveid lotte suurusega {lot}; ülejäävad aktsiad pane eraldi orderisse.',
@@ -975,6 +976,8 @@ export const ET_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'Müügilimiit @ {price}',
   'order.buyStop': 'Ostustopp @ {price}',
   'order.sellStop': 'Müügistopp @ {price}',
+  'order.refused': 'Maakler lükkas orderi tagasi: {reason}',
+  'order.partDropped': 'Täidetud {filled} / {quantity}: ülejäänu tühistati',
 
   // Toasts
   'toast.pinned': 'Lisatud lemmikutesse',

@@ -615,6 +615,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'Ved kjøp ligger take-profit over inngangskursen, ved salg under den.',
   'ticket.problem.limitSide': 'En limitordre for kjøp ligger under markedet, og en for salg ligger over det.',
   'ticket.problem.stopSide': 'En stoppordre for kjøp ligger over markedet, og en for salg ligger under det.',
+  'ticket.problem.expireTime': 'Ordren må utløpe på et tidspunkt i fremtiden.',
   'ticket.problem.priceStep': 'Kursen må følge markedets kurssteg (tick-størrelse).',
   'ticket.problem.priceLimits': 'Dagens kurser går fra {floor} til {ceiling}.',
   'ticket.problem.lot': 'Over én lot handles hele lots på {lot}; overskytende aksjer legges i en egen ordre.',
@@ -975,6 +976,8 @@ export const NB_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'Selg limit @ {price}',
   'order.buyStop': 'Kjøp stopp @ {price}',
   'order.sellStop': 'Selg stopp @ {price}',
+  'order.refused': 'Megleren avviste ordren: {reason}',
+  'order.partDropped': 'Utført {filled} av {quantity}: resten ble kansellert',
 
   // Toasts
   'toast.pinned': 'Festet til favoritter',

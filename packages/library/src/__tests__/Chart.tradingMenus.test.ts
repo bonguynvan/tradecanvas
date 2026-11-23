@@ -148,3 +148,46 @@ describe('Chart trading state and fills', () => {
     expect(chart.getFills().at(-1)).toMatchObject({ reason: 'close' });
   });
 });
+
+describe('Chart crosshair while an order is dragged', () => {
+  /** How many lines the crosshair draws now, and whether it writes a price on the axis. */
+  const crosshairNow = () => {
+    let lines = 0;
+    const texts: string[] = [];
+    const ctx = new Proxy({}, {
+      get: (_, key) => {
+        if (key === 'lineTo') return () => { lines++; };
+        if (key === 'fillText') return (text: string) => { texts.push(text); };
+        if (key === 'measureText') return (text: string) => ({ width: text.length * 6 });
+        return () => undefined;
+      },
+      set: () => true,
+    }) as unknown as CanvasRenderingContext2D;
+    const handler = (chart as unknown as { crosshairHandler: { render(...a: unknown[]): void; renderAxisLabels(...a: unknown[]): void } }).crosshairHandler;
+    const theme = (chart as unknown as { themeManager: { getTheme(): unknown } }).themeManager.getTheme();
+    handler.render(ctx, state(), theme);
+    // The labels' pills draw lines of their own: only the crosshair's count.
+    const drawn = lines;
+    handler.renderAxisLabels(ctx, state(), theme, chart.getData());
+    return { lines: drawn, labels: texts.length };
+  };
+
+  it('draws no horizontal line and no price beside the line dragged, and both again once it is let go', () => {
+    chart.setOrders([{ id: 'o1', side: 'buy', type: 'limit', price: 100, quantity: 1, draggable: true }]);
+    const moved: unknown[] = [];
+    chart.on('orderModify', (e) => moved.push(e.payload));
+    const plot = state().chartRect;
+    const { min, max } = state().priceRange;
+    const y = plot.y + ((max - 100) / (max - min)) * plot.height;
+    const x = plot.x + plot.width / 2;
+    mouse('mousemove', x, y);
+    expect(crosshairNow()).toEqual({ lines: 2, labels: 2 });
+    mouse('mousedown', x, y);
+    mouse('mousemove', x, y - 30);
+    // The vertical line and the time, not the price: the order's own tag has it.
+    expect(crosshairNow()).toEqual({ lines: 1, labels: 1 });
+    mouse('mouseup', x, y - 30);
+    expect(moved).toHaveLength(1);
+    expect(crosshairNow()).toEqual({ lines: 2, labels: 2 });
+  });
+});

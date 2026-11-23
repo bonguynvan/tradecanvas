@@ -615,6 +615,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'הטייק פרופיט נמצא מעל מחיר הכניסה בקנייה, ומתחתיו במכירה.',
   'ticket.problem.limitSide': 'לימיט קנייה ממוקם מתחת למחיר השוק, ולימיט מכירה מעליו.',
   'ticket.problem.stopSide': 'סטופ קנייה ממוקם מעל מחיר השוק, וסטופ מכירה מתחתיו.',
+  'ticket.problem.expireTime': 'הפקודה צריכה להסתיים במועד עתידי.',
   'ticket.problem.priceStep': 'המחירים חייבים להתאים למדרגות המחיר (טיק) של השוק.',
   'ticket.problem.priceLimits': 'טווח המחירים היום הוא מ-{floor} עד {ceiling}.',
   'ticket.problem.lot': 'מעל לוט אחד, יש להזמין לוטים שלמים של {lot}; מניות עודפות נשלחות בפקודה נפרדת.',
@@ -975,6 +976,8 @@ export const HE_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'לימיט מכירה @ {price}',
   'order.buyStop': 'סטופ קנייה @ {price}',
   'order.sellStop': 'סטופ מכירה @ {price}',
+  'order.refused': 'הברוקר דחה את הפקודה: {reason}',
+  'order.partDropped': 'בוצעו {filled} מתוך {quantity}: היתרה בוטלה',
 
   // Toasts
   'toast.pinned': 'הוצמד למועדפים',

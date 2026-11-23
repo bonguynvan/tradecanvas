@@ -140,6 +140,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid 中的每个图表`}</co
   在触摸屏上则在轻点展开该行后显示（再点它的名称会打开设置），因此在手机上按钮不会遮住K线；<code>menu.chart.*</code>
   同时作用于价格轴旁的 "+" 和右键菜单；<code>compare</code> 去掉对象树里的添加按钮，已有的对比仍保留在列表中；
   <code>toasts</code> 关闭组件自身的提示（错误提示仍会显示），你通过 <code>widget.toast()</code> 发出的提示也照常显示。
+  同一时间只显示一条提示：新的提示会取代正在显示的那条，较长的提示会换行。
   关闭 <code>selectionToolbar</code> 会隐藏选中画线上方的工具栏；右键菜单仍然保留。
   关闭 <code>statusBar.rangeTimeframe</code> 时，区间栏上的区间长于 K 线能放下的范围也保持周期；开启时切换为周线或月线并在之后切回。
   交易工具合并为工具栏上的一个交易菜单：<code>toolbar.bracketOrders</code>、<code>toolbar.depthLadder</code>、

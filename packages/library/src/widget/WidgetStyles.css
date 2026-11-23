@@ -2510,10 +2510,12 @@
   opacity: 0;
   transition: opacity var(--tcw-dur-normal) var(--tcw-ease-out), transform var(--tcw-dur-normal) var(--tcw-ease-out);
   pointer-events: none;
+  /* As wide as its words up to the room there is, then on another line: cut short, an error would lose its reason. */
+  width: max-content;
   max-width: calc(100% - 32px);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  text-align: center;
   letter-spacing: -0.005em;
 }
 

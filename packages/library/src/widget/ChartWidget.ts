@@ -100,7 +100,7 @@ import { CHART_STYLE_KEYS, type ChartStyleKey } from '@tradecanvas/commons';
 import { WidgetCompares, type ComparesHost } from './WidgetCompares.js';
 import { WidgetWatchlists, type WatchlistsHost } from './WidgetWatchlists.js';
 import { WidgetAlerts, type AlertsHost } from './WidgetAlerts.js';
-import { WidgetTrading, type TradingHost } from './WidgetTrading.js';
+import { WidgetTrading, refusalReason, type TradingHost } from './WidgetTrading.js';
 import { WidgetMenus, type MenusHost } from './WidgetMenus.js';
 import { WidgetLegendView, type LegendHost, legendRowInset, STACK_GAP } from './WidgetLegendView.js';
 import { WidgetCommands, type CommandsHost } from './WidgetCommands.js';
@@ -1356,16 +1356,22 @@ export class ChartWidget {
     if (options.trading !== false) {
       this.trading.orderTicket = new WidgetOrderTicket(this.root, {
         onSubmit: (intent) => {
-          this.chart.placeOrderIntent(intent);
+          // Said first: an account may fill or refuse the order as it is placed, and what became of it comes after.
           this.say(fill(this.t('ticket.sent'), {
             side: this.t(intent.side === 'buy' ? 'ticket.buy' : 'ticket.sell'),
             quantity: intent.quantity ?? 1,
             price: this.formatAlertPrice(intent.price),
           }));
+          this.chart.placeOrderIntent(intent);
         },
         formatPrice: (p) => this.formatAlertPrice(p),
         formatAmount: (v) => this.formatMoney(v),
         formatNumber: (v, d) => this.formatNumber(v, d),
+        // An order good till a date ends at a time on the chart's own clock.
+        toWallTime: (time) => utcToWallTime(time, this.displayTimezone()),
+        fromWallTime: (date, time) => wallTimeToUtc(date, time, this.displayTimezone()),
+        // On a replay a paper account trades on, "to come" is by the replay's clock, as the account has it.
+        now: () => this.chart.getTradingTime(),
       }, this.t);
       this.trading.accountPanel = new WidgetAccountPanel(accountHost, {
         onClosePosition: (id) => this.chart.closePositionIntent(id),
@@ -1429,6 +1435,7 @@ export class ChartWidget {
         this.say(fill(this.t(b.side === 'buy' ? 'bracket.longPlaced' : 'bracket.shortPlaced'), { rr: b.riskReward.toFixed(2) }));
       });
       this.chart.on('executionError', (e) => {
+        if (e.payload.command === 'orderPlace') this.trading.sayOrderRefused(e.payload);
         if (e.payload.command !== 'bracketPlace') return;
         if (e.payload.reason === 'noQuantity') {
           this.say(this.t('bracket.noQuantity'), 'error');
@@ -1436,10 +1443,9 @@ export class ChartWidget {
         }
         // No price yet: only code can confirm a bracket then, and the event tells it.
         if (e.payload.reason === 'noPrice') return;
-        const cause = e.payload.cause;
-        const reason = cause instanceof Error ? cause.message : typeof cause === 'string' ? cause : e.payload.message;
-        this.say(fill(this.t('bracket.refused'), { reason }), 'error');
+        this.say(fill(this.t('bracket.refused'), { reason: refusalReason(e.payload) }), 'error');
       });
+      this.chart.on('executionFill', (e) => this.trading.sayPartDropped(e.payload));
       // A warning the account gives once: it shows with the toasts off, as an error does.
       this.chart.on('marginCall', (e) => {
         // The figure with its sign and its percent is one thing, left to right, in a sentence written either way.
@@ -2222,6 +2228,9 @@ export class ChartWidget {
     if (this.destroyed) return;
     this.destroyed = true;
     this.scope.dispose();
+    // A toast over a dialog is in the layer the widgets share: it goes with its widget.
+    this.shownToast?.remove();
+    this.shownToast = null;
     this.stopPreload?.();
     this.stopKeyboardInset?.();
     this.stopKeyboardInset = null;
@@ -3404,14 +3413,21 @@ export class ChartWidget {
 
   // --- Toast ---
 
+  /** The toast showing, if one is: the next takes its place. */
+  private shownToast: HTMLElement | null = null;
+
   /**
    * Show a transient toast inside the widget. Auto-dismisses after 3.5s.
    * Used by the drag-drop importer for success / failure feedback, but
    * exposed so apps can post their own (e.g. "alert triggered at 64,200").
    * `icon`: one of the widget's icons (`'bell'`, `'check'`, `'info'`…) before the text.
+   * One shows at a time: a new one takes the place of the one showing.
    */
   toast(message: string, kind: 'info' | 'error' = 'info', icon?: string): void {
+    // They share one place: two at once would lie one over the other.
+    this.shownToast?.remove();
     const el = document.createElement('div');
+    this.shownToast = el;
     el.className = `tcw-toast ${kind === 'error' ? 'tcw-toast-error' : ''}`;
     el.setAttribute('role', kind === 'error' ? 'alert' : 'status');
     // An icon name the set doesn't have shows no icon.
@@ -3430,11 +3446,15 @@ export class ChartWidget {
     host.appendChild(el);
     // Trigger CSS transition on next frame
     requestAnimationFrame(() => el.classList.add('tcw-toast-in'));
+    const gone = () => {
+      el.remove();
+      if (this.shownToast === el) this.shownToast = null;
+    };
     setTimeout(() => {
       el.classList.remove('tcw-toast-in');
-      el.addEventListener('transitionend', () => el.remove(), { once: true });
+      el.addEventListener('transitionend', gone, { once: true });
       // Hard timeout in case transitionend doesn't fire (display:none, etc.)
-      setTimeout(() => el.remove(), 400);
+      setTimeout(gone, 400);
     }, 3500);
   }
 

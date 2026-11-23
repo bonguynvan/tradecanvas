@@ -609,6 +609,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': '买入时止盈价应高于入场价，卖出时应低于入场价。',
   'ticket.problem.limitSide': '限价买入应低于市价，限价卖出应高于市价。',
   'ticket.problem.stopSide': '止损买入应高于市价，止损卖出应低于市价。',
+  'ticket.problem.expireTime': '委托的到期时间必须在将来。',
   'ticket.problem.priceStep': '价格须符合市场的最小变动价位。',
   'ticket.problem.priceLimits': '今日价格范围为 {floor} 至 {ceiling}。',
   'ticket.problem.lot': '超过一手时须按整手（每手 {lot} 股）委托；零股请单独委托。',
@@ -963,6 +964,8 @@ export const ZH_MESSAGES: WidgetMessages = {
   'order.sellLimit': '限价卖出 @ {price}',
   'order.buyStop': '止损买入 @ {price}',
   'order.sellStop': '止损卖出 @ {price}',
+  'order.refused': '经纪商拒绝了委托：{reason}',
+  'order.partDropped': '已成交 {filled}，共 {quantity}：其余已撤单',
 
   'toast.pinned': '已固定到收藏',
   'toast.unpinned': '已取消固定',

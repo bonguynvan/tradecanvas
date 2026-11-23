@@ -609,6 +609,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'Vételnél a take-profit a belépő fölé kerül, eladásnál alá.',
   'ticket.problem.limitSide': 'A vételi limit a piaci ár alá, az eladási limit fölé kerül.',
   'ticket.problem.stopSide': 'A vételi stop a piaci ár fölé, az eladási stop alá kerül.',
+  'ticket.problem.expireTime': 'A megbízásnak egy jövőbeli időpontban kell lejárnia.',
   'ticket.problem.priceStep': 'Az árakat a piac árlépésközében kell megadni.',
   'ticket.problem.priceLimits': 'A mai árak {floor} és {ceiling} között mozoghatnak.',
   'ticket.problem.lot': 'Egy lot fölött {lot} egész többszörösét adja meg; a maradék darabokat külön megbízásban adja le.',
@@ -963,6 +964,8 @@ export const HU_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'Eladási limit @ {price}',
   'order.buyStop': 'Vételi stop @ {price}',
   'order.sellStop': 'Eladási stop @ {price}',
+  'order.refused': 'A bróker elutasította a megbízást: {reason}',
+  'order.partDropped': 'Teljesült {filled} / {quantity}: a maradék visszavonva',
 
   'toast.pinned': 'Rögzítve a kedvencekhez',
   'toast.unpinned': 'Rögzítés feloldva',

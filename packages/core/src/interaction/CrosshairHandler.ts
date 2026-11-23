@@ -66,6 +66,8 @@ export class CrosshairHandler {
   private magnetMode = true;
   private mode: CrosshairMode = 'magnet';
   private cursor: CrosshairCursor = 'cross';
+  /** Whether a line is being dragged to a price just now: asked at each frame. */
+  private priceHeld: () => boolean = () => false;
   /** The span tints drawn on the axes this frame: a label cleared for a pill gets its tint back. */
   private spanTints: SpanTint[] = [];
   /** Fixed decimals for the price pill; `null` follows the price axis. */
@@ -170,6 +172,17 @@ export class CrosshairHandler {
     this.position = pos;
   }
 
+  /**
+   * While `held()` says so, the crosshair draws no horizontal line and no
+   * price on the axis: a line dragged to a price (an order's, a stop's)
+   * writes that price itself, a few pixels from where the pointer is, and two
+   * lines and two prices that near read as one mistake. The vertical line and
+   * the time stay.
+   */
+  setPriceHeld(held: () => boolean): void {
+    this.priceHeld = held;
+  }
+
   /** The bar last reported under the pointer (the callback's `barIndex`); null with none. */
   getReportedBarIndex(): number | null {
     return this.lastCallbackBarIndex >= 0 ? this.lastCallbackBarIndex : null;
@@ -245,7 +258,7 @@ export class CrosshairHandler {
     drawVerticalLine(ctx, x, chartRect, looks.vertical);
 
     const h = looks.horizontal;
-    if (h.visible) {
+    if (h.visible && !this.priceHeld()) {
       ctx.setLineDash(lineDash(h.style, CROSSHAIR_DASH, h.width));
       ctx.strokeStyle = h.color;
       // On the same device-pixel row a drawing line this wide at this y takes.
@@ -297,22 +310,7 @@ export class CrosshairHandler {
     const font = `600 ${theme.font.sizeSmall}px ${theme.font.family}`;
 
     // ── Price pill (right axis) ──
-    const price = yToPrice(y, viewport);
-    const precision = this.pricePrecision ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
-    const priceText = priceScaleText(price, viewport, precision, this.locale);
-    const priceAxisX = chartRect.x + chartRect.width;
-    clearCoveredRows(ctx, priceRows, y, priceAxisX, viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH, theme, this.spanTints);
-    drawAxisPill(ctx, {
-      text: priceText,
-      anchorX: priceAxisX,
-      anchorY: y,
-      orientation: 'right',
-      axisWidth: viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH,
-      bg: crosshairLooks(theme).labelBackground,
-      fg: crosshairLooks(theme).labelText,
-      theme,
-      font,
-    });
+    if (!this.priceHeld()) this.drawPricePill(ctx, viewport, theme, y, font, priceRows);
 
     // ── Time pill (bottom axis) ──
     this.drawTimePill(ctx, viewport, theme, data, slot, x, timeAxisY, timeColumns);
@@ -432,6 +430,26 @@ export class CrosshairHandler {
     return this.timeFormatter
       ? this.timeFormatter(time * barTimeUnit(times), { kind: 'crosshair', timeZone: this.tz })
       : formatBarTime(time * barTimeUnit(times), this.tz, barsAreDaily(times), this.exchangeZone, this.locale);
+  }
+
+  private drawPricePill(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, y: number, font: string, priceRows: readonly number[]): void {
+    const { chartRect } = viewport;
+    const price = yToPrice(y, viewport);
+    const precision = this.pricePrecision ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
+    const priceText = priceScaleText(price, viewport, precision, this.locale);
+    const priceAxisX = chartRect.x + chartRect.width;
+    clearCoveredRows(ctx, priceRows, y, priceAxisX, viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH, theme, this.spanTints);
+    drawAxisPill(ctx, {
+      text: priceText,
+      anchorX: priceAxisX,
+      anchorY: y,
+      orientation: 'right',
+      axisWidth: viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH,
+      bg: crosshairLooks(theme).labelBackground,
+      fg: crosshairLooks(theme).labelText,
+      theme,
+      font,
+    });
   }
 
   private drawTimePill(

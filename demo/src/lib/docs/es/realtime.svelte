@@ -531,6 +531,8 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // todas las marcas
   cuando termina la repetición vuelve al precio en vivo, y las ejecuciones, a la hora real.
   Las alertas de precio siguen vigilando el mercado en vivo todo el tiempo; las alertas
   sobre líneas de indicador esperan a que termine la repetición.
+  <code>chart.getTradingTime()</code> es el momento en que se coloca una orden enviada ahora: el de la repetición mientras la
+  cuenta opera sobre ella; si no, el del reloj. El ticket de orden del widget cuenta desde él la fecha de una orden válida hasta una fecha.
 </p>
 <pre><code>{`chart.connectExecution(new PaperExecutionAdapter())
 chart.replayStart({ startIndex: 300, paused: true })

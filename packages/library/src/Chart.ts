@@ -243,6 +243,8 @@ export class Chart {
   private eventBus: EventBus;
   private streamManager: StreamManager | null = null;
   private executionAdapter: ExecutionAdapter | null = null;
+  /** The time of the last price the adapter was given on a replay, ms; undefined while it runs on the clock. */
+  private markedAt: number | undefined;
   /** What a confirmed bracket does with the adapter connected. */
   private executionBrackets: 'event' | 'place' = 'place';
   /** What happened to the orders: placed, moved, cancelled, filled, refused. */
@@ -717,6 +719,8 @@ export class Chart {
       this.crosshairHandler.setMode(options.crosshair.mode);
     }
     if (isCrosshairCursor(options.crosshair?.cursor)) this.crosshairHandler.setCursor(options.crosshair.cursor);
+    // An order's line dragged to a price writes that price itself: the crosshair's would sit a few pixels from it.
+    this.crosshairHandler.setPriceHeld(() => this.tradingManager.isDraggingLine());
     // Crosshair callback — fired via microtask AFTER render, only when the bar
     // changes: no extra render requests, and the tooltip's one measurement
     // happens once per bar, not per mouse move.
@@ -3307,6 +3311,16 @@ export class Chart {
     this.activity.clear();
   }
 
+  /**
+   * The moment an order placed now is placed at, in milliseconds: the clock's,
+   * or, while a paper account trades on a replay, the replay's (the time of
+   * the last price the account was given). It is what the account's fills are
+   * timed with, and what it holds the date of a good-till-date order against.
+   */
+  getTradingTime(): number {
+    return this.executionAdapter?.setMarkPrice !== undefined && this.markedAt !== undefined ? this.markedAt : Date.now();
+  }
+
   /** When something that is no fill happened: now, or on a replay the bar it is at (as the paper account's fills are timed). */
   private activityTime(): number {
     if (this.replaySession === null) return Date.now();
@@ -3800,6 +3814,8 @@ export class Chart {
   /** Tear down the active execution adapter (if any) and stop routing intents. */
   disconnectExecution(): void {
     this.returnMarkToLive();
+    // The next adapter starts on the clock, whatever this one was given.
+    this.markedAt = undefined;
     this.executionBrackets = 'place';
     if (this.execTeardown) {
       this.execTeardown();
@@ -6067,8 +6083,10 @@ export class Chart {
     const adapter = this.executionAdapter;
     if (!adapter?.setMarkPrice) return;
     for (const [price, time] of marks) adapter.setMarkPrice(price, time);
-    const price = marks[marks.length - 1]?.[0];
-    if (price !== undefined) this.tradingManager.setCurrentPrice(price);
+    const last = marks[marks.length - 1];
+    if (last === undefined) return;
+    this.markedAt = this.markTimeOf(last[1]);
+    this.tradingManager.setCurrentPrice(last[0]);
   }
 
   /** The store says the live series changed during a replay: the replay follows it, by time. */
@@ -6215,11 +6233,17 @@ export class Chart {
     this.replaySeek(Math.max(0, positionAt(this.replayStepsSeries ?? this.replayCoarse, time)));
   }
 
+  /** A mark's time as the paper account takes it: one that is no number is none, and the account runs on the clock. */
+  private markTimeOf(time: number | undefined): number | undefined {
+    return time !== undefined && Number.isFinite(time) ? time : undefined;
+  }
+
   /** A replay step's price to an adapter that takes a mark (a paper account), and to the orders on the chart. */
   private feedReplayPrice(price: number, time?: number): void {
     const adapter = this.executionAdapter;
     if (!adapter?.setMarkPrice) return;
     adapter.setMarkPrice(price, time);
+    this.markedAt = this.markTimeOf(time);
     this.tradingManager.setCurrentPrice(price);
   }
 

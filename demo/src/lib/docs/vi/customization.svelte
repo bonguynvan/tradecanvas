@@ -145,6 +145,7 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
   <code>menu.chart.*</code> áp dụng cho cả nút "+" cạnh trục giá lẫn menu chuột phải; <code>compare</code>
   bỏ nút thêm trong object tree, còn các mã so sánh đang có vẫn được liệt kê; <code>toasts</code> tắt
   thông báo của widget (lỗi vẫn hiện), còn thông báo của bạn qua <code>widget.toast()</code> vẫn hiện.
+  Mỗi lúc chỉ hiện một toast: toast mới thay cho toast đang hiện, và toast dài thì xuống dòng.
   Tắt <code>selectionToolbar</code> thì ẩn toolbar của hình vẽ đang chọn; menu chuột phải vẫn còn.
   Tắt <code>statusBar.rangeTimeframe</code> thì giữ nguyên khung thời gian khi một khoảng trên range bar dài hơn số nến có thể chứa; bật thì chuyển sang tuần hoặc tháng rồi chuyển lại.
   Các công cụ giao dịch gom vào một menu Giao dịch trên toolbar: <code>toolbar.bracketOrders</code>, <code>toolbar.depthLadder</code>,

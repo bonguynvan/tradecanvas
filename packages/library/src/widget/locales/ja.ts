@@ -609,6 +609,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': '利確は、買いなら建値より上、売りなら建値より下に置きます。',
   'ticket.problem.limitSide': '指値買いは現在値より下、指値売りは現在値より上に置きます。',
   'ticket.problem.stopSide': '逆指値買いは現在値より上、逆指値売りは現在値より下に置きます。',
+  'ticket.problem.expireTime': '注文の期限は、これから先の日時にしてください。',
   'ticket.problem.priceStep': '価格は市場の呼値の単位で入力してください。',
   'ticket.problem.priceLimits': '本日の値幅は{floor}から{ceiling}までです。',
   'ticket.problem.lot': '売買単位を超える数量は{lot}株単位で注文し、単元未満株は別の注文に分けてください。',
@@ -963,6 +964,8 @@ export const JA_MESSAGES: WidgetMessages = {
   'order.sellLimit': '指値売り @ {price}',
   'order.buyStop': '逆指値買い @ {price}',
   'order.sellStop': '逆指値売り @ {price}',
+  'order.refused': 'ブローカーが注文を拒否しました: {reason}',
+  'order.partDropped': '{quantity} のうち {filled} が約定：残りは取消されました',
 
   'toast.pinned': 'お気に入りに固定しました',
   'toast.unpinned': '固定を解除しました',

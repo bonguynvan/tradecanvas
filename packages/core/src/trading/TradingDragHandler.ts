@@ -138,4 +138,9 @@ export class TradingDragHandler {
   isActive(): boolean {
     return this.dragState !== null;
   }
+
+  /** Whether the line pressed has been moved: past the threshold that tells a drag from a click. */
+  isDragging(): boolean {
+    return this.dragState !== null && this.dragging;
+  }
 }

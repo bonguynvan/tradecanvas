@@ -54,6 +54,8 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   cách giá hiện tại ít nhất 1%, nên không mức nào bị chạm ngay khi vừa đặt. Thả chuột sẽ gửi
   <code>positionModify</code>, giống như khi kéo stop, nên execution adapter đang kết nối sẽ áp dụng nó.
   <code>lineButtons: {'{'} addStops: false {'}'}</code> bỏ các nút này.
+  Khi một đường đang được kéo tới một mức giá, crosshair không vẽ đường ngang và không ghi giá trên trục: tag của
+  chính đường đó đã có giá.
 </p>
 <p>
   Position, order và các fill của chúng có thể được ẩn, và các đường có thể được khoá. Khi ẩn, không có gì được vẽ và
@@ -145,6 +147,8 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1,
   ngay, tại giá đang có, khi giá đó nằm trong giới hạn, và bị từ chối khi không (<code>executionError</code>). Thị trường paper không có khối lượng riêng, nên ở đó hai loại này
   giống nhau, trừ khi nó được cho một khối lượng (<a href="#partial-fills">bên dưới</a>). Order ticket của widget có cả hai cho lệnh giới hạn, và panel tài khoản của widget ghi OCO cạnh
   order thuộc một nhóm và ghi ngày của order có ngày. Tài khoản paper để <code>'day'</code> cho app, vì app biết khi nào ngày giao dịch của thị trường kết thúc.
+  Ticket có lựa chọn good till date cho lệnh giới hạn và lệnh dừng: một ngày và một giờ theo đồng hồ của chart, ban đầu là một ngày kể từ bây giờ, và ticket không đặt lệnh nào hết hạn trong quá khứ.
+  Lệnh giới hạn IOC hoặc FOK có thể đặt giá qua giá thị trường: nó khớp ở giá thị trường, và ticket tính giá trị, rủi ro và các mục tiêu của lệnh từ giá đó.
 </p>
 <p>
   <strong>Một position net.</strong> Mặc định tài khoản paper mở một position cho mỗi order đã khớp, position mua
@@ -180,9 +184,9 @@ chart.on('ordersChange', (e) => console.log(e.payload.orders[0]?.filledQuantity)
   cũng khớp từng phần, khi nó đã hoạt động như một lệnh giới hạn. Mỗi phần trả phí giao dịch riêng, và phần mà tài khoản không còn đủ tiền để nhận thì huỷ phần còn lại của
   order (<code>executionError</code>). Phần còn lại có thể được dời, huỷ, hoặc kết thúc vào ngày của nó, và phần
   đầu tiên huỷ các order còn lại trong nhóm của order. Với order <code>'ioc'</code>, phần khớp được ngay thì khớp và
-  phần còn lại bị bỏ (order mà <code>placeOrder</code> trả về cho biết bao nhiêu:
-  <code>filledQuantity</code> của nó; biểu đồ và widget không báo gì về phần bị bỏ, và fill của nó
-  ít hơn khối lượng đã yêu cầu); order <code>'fok'</code> lớn hơn khối lượng đó thì bị từ chối. Lệnh market và
+  phần còn lại bị bỏ (fill của nó cho biết bao nhiêu: <code>dropped</code>, cạnh một <code>quantity</code> ít hơn khối lượng đã yêu cầu, và
+  order mà <code>placeOrder</code> trả về có <code>filledQuantity</code> của nó; nhật ký ghi phần còn lại là
+  đã huỷ, và widget báo đã khớp bao nhiêu); order <code>'fok'</code> lớn hơn khối lượng đó thì bị từ chối. Lệnh market và
   lệnh stop khớp toàn bộ, lệnh đóng cũng vậy: thị trường paper nhận chúng tại giá đang có, và không mô phỏng slippage.
   Adapter của riêng bạn báo các phần của broker theo cùng cách: order cùng
   <code>filledQuantity</code> trong <code>orders</code>, và một <code>fill</code> cho mỗi phần.
@@ -399,6 +403,10 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   Phần đầu của panel tài khoản luôn hiển thị P&amp;L đang mở và P&amp;L đã thực hiện ở mọi tab. Các con số được
   căn phải bằng font mono, tiền tệ theo số chữ số thập phân của bước giá và theo number locale; trên điện thoại mỗi dòng là một thẻ
   gồm các con số có tên.
+</p>
+<p>
+  Widget báo điều xảy ra với order nó đã gửi: order bị adapter từ chối, bằng chính lời của adapter, và order
+  khớp một phần rồi bỏ phần còn lại, đã khớp bao nhiêu.
 </p>
 <p>
   <strong>Tab Nhật ký</strong> liệt kê những gì đã xảy ra với các order, mới nhất trước: từng order được đặt, dời,

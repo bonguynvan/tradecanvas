@@ -145,6 +145,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid의 모든 차트`}</code
   <code>menu.chart.*</code>는 오른쪽 클릭 메뉴와 가격 축 옆의 "+" 모두에 적용됩니다. <code>compare</code>는 객체 트리의
   추가 버튼을 없애고, 이미 켜진 비교는 목록에 남습니다. <code>toasts</code>는 위젯 자체의 알림을 끄고(오류는 계속 보입니다),
   <code>widget.toast()</code>로 띄운 알림은 그대로 보입니다.
+  토스트는 한 번에 하나만 보입니다. 새 토스트가 보이던 것을 대신하고, 긴 것은 줄을 바꿉니다.
   <code>selectionToolbar</code>를 끄면 선택한 그림 위의 도구 모음이 숨겨집니다. 오른쪽 클릭 메뉴는 그대로입니다.
   <code>statusBar.rangeTimeframe</code>를 끄면 기간 막대의 기간이 봉에 비해 길어도 시간 단위를 유지하고, 켜면 주봉이나 월봉으로 바꿨다가 되돌립니다.
   거래 도구는 툴바의 거래 메뉴 하나에 모여 있습니다: <code>toolbar.bracketOrders</code>, <code>toolbar.depthLadder</code>,

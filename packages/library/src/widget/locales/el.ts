@@ -609,6 +609,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'Το take-profit τοποθετείται πάνω από την είσοδο για αγορά και κάτω από αυτήν για πώληση.',
   'ticket.problem.limitSide': 'Μια αγορά με όριο τοποθετείται κάτω από την τρέχουσα τιμή και μια πώληση με όριο πάνω από αυτήν.',
   'ticket.problem.stopSide': 'Μια αγορά stop τοποθετείται πάνω από την τρέχουσα τιμή και μια πώληση stop κάτω από αυτήν.',
+  'ticket.problem.expireTime': 'Η εντολή πρέπει να λήγει σε μελλοντική στιγμή.',
   'ticket.problem.priceStep': 'Οι τιμές ακολουθούν τα βήματα τιμής (tick) της αγοράς.',
   'ticket.problem.priceLimits': 'Οι σημερινές τιμές κυμαίνονται από {floor} έως {ceiling}.',
   'ticket.problem.lot': 'Πάνω από μία παρτίδα, δώστε εντολή σε ολόκληρες παρτίδες των {lot}· τα υπόλοιπα τεμάχια μπαίνουν σε ξεχωριστή εντολή.',
@@ -963,6 +964,8 @@ export const EL_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'Πώληση με όριο @ {price}',
   'order.buyStop': 'Αγορά stop @ {price}',
   'order.sellStop': 'Πώληση stop @ {price}',
+  'order.refused': 'Ο broker απέρριψε την εντολή: {reason}',
+  'order.partDropped': 'Εκτελέστηκαν {filled} από {quantity}: το υπόλοιπο ακυρώθηκε',
 
   'toast.pinned': 'Καρφιτσώθηκε στα αγαπημένα',
   'toast.unpinned': 'Ξεκαρφιτσώθηκε',

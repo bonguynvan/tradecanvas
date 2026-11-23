@@ -51,6 +51,7 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   或者只是点击，让它留在起始位置。与括号单一样，止损从距开仓价 1% 处开始，止盈位于止损距离的两倍处，并且两者都至少在当前价格
   之外 1% 开始，因此设置的那一刻都不会被触发。松开时会发出 <code>positionModify</code>，与拖动止损相同，由已连接的执行适配器应用。
   <code>lineButtons: {'{'} addStops: false {'}'}</code> 可去掉这些按钮。
+  把一条线拖到某个价格时，十字光标不画水平线，也不在价格轴上写价格：这条线自己的标签已经写着价格。
 </p>
 <p>
   持仓、订单及其成交可以隐藏，它们的线也可以锁定。隐藏时，它们都不绘制、也无法点按；但仍会保留并继续跟随执行适配器，
@@ -136,6 +137,8 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1,
   不在限价之内时被拒绝（<code>executionError</code>）。模拟市场本身没有可成交数量，所以两者在那里相同，
   除非给它设定一个（见<a href="#partial-fills">下文</a>）。组件的下单窗口为限价单提供这两种选项，
   账户面板会在属于某一组的订单旁写上 OCO，并写出带日期订单的日期。它把 <code>'day'</code> 留给应用处理，因为应用知道其市场的交易日何时结束。
+  下单窗口为限价单和止损单提供“指定日期前有效”：按图表自己的时钟选一个日期和时间，初始为一天之后；到期时间已过的订单不会被提交。
+  立即成交否则撤销的限价单（IOC、FOK）可以把价格设在市场价的另一侧：它按市场价成交，下单窗口从该价格计算其金额、风险和目标。
 </p>
 <p>
   <strong>一个净持仓。</strong>默认情况下，模拟账户为每笔成交的订单开一个持仓，买入的与卖出的并存
@@ -169,8 +172,8 @@ chart.on('ordersChange', (e) => console.log(e.payload.orders[0]?.filledQuantity)
   它平掉的数量不超过当前持有的数量。止损限价单一旦作为限价单生效，也会分部分成交。
   每一部分各自支付手续费，账户已无力承担的那一部分会撤销订单的剩余部分（<code>executionError</code>）。
   剩余部分可以移动、撤销，或在其日期到期，第一部分成交会撤销订单所在组的其余订单。
-  <code>'ioc'</code> 订单中能立即成交的部分成交，其余被丢弃（<code>placeOrder</code> 返回的订单说明成交了多少：
-  它的 <code>filledQuantity</code>；图表和组件对被丢弃的其余部分不作任何提示，它的成交数量少于所要求的）；
+  <code>'ioc'</code> 订单中能立即成交的部分成交，其余被丢弃（它的成交说明丢弃了多少：其 <code>dropped</code>，而 <code>quantity</code> 少于所要求的数量；
+  <code>placeOrder</code> 返回的订单带有它的 <code>filledQuantity</code>；日志把其余部分记为已撤单，组件会提示成交了多少）；
   超过可成交数量的 <code>'fok'</code> 订单被拒绝。市价单和止损单整笔成交，平仓也是如此：
   模拟市场按当前价格接受它们，不模拟滑点。你自己的适配器以同样的方式上报其经纪商的部分成交：
   在 <code>orders</code> 中给出带 <code>filledQuantity</code> 的订单，并为每一部分给出一个 <code>fill</code>。
@@ -364,6 +367,9 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
 <p>
   账户面板的顶部在每个标签页都显示浮动盈亏和已实现盈亏。数字以等宽字体右对齐，金额按最小价位的小数位数和数字区域格式书写；
   在手机上每一行是一张标明各项数字的卡片。
+</p>
+<p>
+  组件会提示它发出的订单的结果：被适配器拒绝的订单，用适配器自己的原话；部分成交而其余被丢弃的订单，提示成交了多少。
 </p>
 <p>
   <strong>日志标签页</strong>列出订单经历的事情，最新的在前：每一笔下单、改价、撤单或成交，

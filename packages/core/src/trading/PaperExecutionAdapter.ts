@@ -519,6 +519,8 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       reason: 'order',
     };
     if (working) fill.remaining = tidy(left - quantity);
+    // A part of an order that does not wait: the rest goes with it.
+    else if (!last) fill.dropped = tidy(left - quantity);
     // The part as an order of its own size: what a position is opened by, or added to.
     const { filledQuantity: _filled, ...whole } = order;
     const filled: TradingOrder = { ...whole, quantity };

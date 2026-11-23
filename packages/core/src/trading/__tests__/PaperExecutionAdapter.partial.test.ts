@@ -204,6 +204,27 @@ describe('PaperExecutionAdapter: orders that fill at once or not at all, in a ma
     expect(adapter.getPositions()).toHaveLength(1);
   });
 
+  it('tells with the fill how much of an immediate-or-cancel order was dropped, and of no other order', async () => {
+    const { adapter, fills } = connect();
+    await adapter.placeOrder({ side: 'buy', type: 'limit', price: 101, quantity: 5, timeInForce: 'ioc' });
+    expect(fills[0]).toMatchObject({ quantity: 2, dropped: 3 });
+    expect(fills[0]).not.toHaveProperty('remaining');
+    // One the market had whole dropped nothing.
+    await adapter.placeOrder({ side: 'buy', type: 'limit', price: 101, quantity: 2, timeInForce: 'ioc' });
+    expect(fills[1]).not.toHaveProperty('dropped');
+    // One that waits keeps its rest working: none of it is dropped, its last part's neither.
+    await adapter.placeOrder({ side: 'buy', type: 'limit', price: 95, quantity: 3 });
+    adapter.setMarkPrice(95);
+    adapter.setMarkPrice(95);
+    expect(fills.slice(2).map((fill) => [fill.quantity, fill.remaining, fill.dropped])).toEqual([[2, 1, undefined], [1, undefined, undefined]]);
+  });
+
+  it('drops a part of an immediate-or-cancel order to the digit, with no sum’s dust after it', async () => {
+    const { adapter, fills } = connect({ fillSize: 0.1 });
+    await adapter.placeOrder({ side: 'buy', type: 'limit', price: 101, quantity: 0.3, timeInForce: 'ioc' });
+    expect(fills[0]).toMatchObject({ quantity: 0.1, dropped: 0.2 });
+  });
+
   it('fills an immediate-or-cancel order whole when the market has it all', async () => {
     const { adapter, fills } = connect();
     const order = await adapter.placeOrder({ side: 'buy', type: 'limit', price: 101, quantity: 2, timeInForce: 'ioc' });

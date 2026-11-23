@@ -4,11 +4,20 @@ import type { OrderTicketRules } from './orderTicket.js';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
 import type { WidgetQuoteButtons } from './WidgetQuoteButtons.js';
-import type { DepthData } from '@tradecanvas/commons';
+import type { DepthData, ExecutionErrorPayload, FillEvent } from '@tradecanvas/commons';
 import { stepDecimals } from '@tradecanvas/commons';
 import { fill, type MessageKey } from './i18n.js';
 import { positionLevels, type BracketSize } from '@tradecanvas/core';
 import type { ChartWidget } from './ChartWidget.js';
+
+/** The digits a quantity is written to when it is a sum of parts: the sum's rounding is past them. */
+const QUANTITY_DIGITS = 12;
+
+/** Why the adapter refused something: its own words when it gave them, else the error's. */
+export function refusalReason(error: Pick<ExecutionErrorPayload, 'message' | 'cause'>): string {
+  const { cause } = error;
+  return cause instanceof Error ? cause.message : typeof cause === 'string' ? cause : error.message;
+}
 
 /** What trading reads of the widget around it, and asks of it. */
 export interface TradingHost {
@@ -48,6 +57,19 @@ export class WidgetTrading {
   /** The activity log as last read, and whether something was logged since: it is read again only then. */
   private log: ReturnType<TradingHost['chart']['getActivityLog']> = [];
   private logStale = true;
+
+  /** An order the adapter refused: the widget had said it was sent, so it says this too, with the toasts off as well. */
+  sayOrderRefused(error: ExecutionErrorPayload): void {
+    this.host.say(fill(this.host.t('order.refused'), { reason: refusalReason(error) }), 'error');
+  }
+
+  /** A fill that dropped the rest of its order (immediate-or-cancel, filled in part): how much filled, of how much. */
+  sayPartDropped(event: FillEvent): void {
+    const { quantity, dropped } = event;
+    if (dropped === undefined || !(dropped > 0)) return;
+    const asked = Number((quantity + dropped).toPrecision(QUANTITY_DIGITS));
+    this.host.say(fill(this.host.t('order.partDropped'), { filled: quantity, quantity: asked }));
+  }
 
   /** Something the log records happened: the panel reads it again on its next frame. */
   markLogStale(): void {

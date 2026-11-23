@@ -145,6 +145,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid のすべてのチャー
   <code>menu.chart.*</code> は右クリックメニューと価格軸の横の "+" の両方に効きます。<code>compare</code> はオブジェクト
   ツリーの追加ボタンを取り除き、表示中の比較は一覧に残ります。<code>toasts</code> はウィジェット自身の通知を止めます（エラーは表示されます）。
   <code>widget.toast()</code> による通知も表示されます。
+  トーストは一度に 1 つだけ表示されます。新しいものが表示中のものと入れ替わり、長いものは折り返します。
   <code>selectionToolbar</code> をオフにすると選択した描画の上のツールバーが隠れます。右クリックメニューは残ります。
   <code>statusBar.rangeTimeframe</code> をオフにすると、レンジバーの期間がバーに収まらなくても時間足を保ちます。オンでは週足や月足に切り替え、また戻します。
   取引ツールはツールバーの一つの取引メニューにまとまっています。<code>toolbar.bracketOrders</code>、<code>toolbar.depthLadder</code>、

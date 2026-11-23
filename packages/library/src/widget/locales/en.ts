@@ -616,6 +616,7 @@ export const EN_MESSAGES = {
   'ticket.problem.takeProfitSide': 'The take-profit goes above the entry for a buy, below it for a sell.',
   'ticket.problem.limitSide': 'A buy limit goes below the market and a sell limit above it.',
   'ticket.problem.stopSide': 'A buy stop goes above the market and a sell stop below it.',
+  'ticket.problem.expireTime': 'The order has to end at a time to come.',
   'ticket.problem.priceStep': 'Prices go in the market’s price steps.',
   'ticket.problem.priceLimits': 'Today’s prices run from {floor} to {ceiling}.',
   'ticket.problem.lot': 'Above one lot, order whole lots of {lot}; odd shares go in an order of their own.',
@@ -976,6 +977,8 @@ export const EN_MESSAGES = {
   'order.sellLimit': 'Sell limit @ {price}',
   'order.buyStop': 'Buy stop @ {price}',
   'order.sellStop': 'Sell stop @ {price}',
+  'order.refused': 'The broker refused the order: {reason}',
+  'order.partDropped': 'Filled {filled} of {quantity}: the rest was cancelled',
 
   // Toasts
   'toast.pinned': 'Pinned to favorites',

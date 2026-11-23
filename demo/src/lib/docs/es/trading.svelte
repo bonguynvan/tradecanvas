@@ -56,6 +56,8 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   empiezan al menos un 1% más allá del precio actual, para que ninguno se active nada más ponerlo. Al soltar se envía
   <code>positionModify</code>, como al arrastrar un stop, de modo que un adaptador de ejecución conectado lo aplica.
   <code>lineButtons: {'{'} addStops: false {'}'}</code> deja fuera los botones.
+  Mientras se arrastra una línea hasta un precio, la cruz no dibuja línea horizontal ni escribe el precio en el eje: la
+  etiqueta de la propia línea ya lo lleva.
 </p>
 <p>
   Las posiciones, las órdenes y sus ejecuciones se pueden ocultar, y sus líneas bloquear. Ocultas, ninguna se dibuja ni
@@ -149,6 +151,8 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1,
   instante, al precio que hay, cuando este está dentro de ella, y se rechaza cuando no lo está (<code>executionError</code>). El mercado de simulación no tiene tamaño propio, así que allí las dos son
   iguales, salvo que se le dé uno (<a href="#partial-fills">más abajo</a>). El ticket de orden del widget ofrece ambas para una orden límite, y su panel de cuenta escribe OCO junto a
   una orden de un grupo y la fecha de una orden con fecha. Deja <code>'day'</code> a la aplicación, que sabe cuándo termina el día de su mercado.
+  El ticket ofrece válida hasta una fecha para una orden límite y una orden stop: una fecha y una hora en el reloj del propio gráfico, un día desde ahora para empezar, y no envía ninguna orden que terminaría en el pasado.
+  Una orden límite IOC o FOK puede llevar un precio que atraviese el mercado: se ejecuta al precio de mercado, y el ticket calcula su valor, su riesgo y sus objetivos desde ahí.
 </p>
 <p>
   <strong>Una sola posición neta.</strong> Por defecto, la cuenta de simulación abre una posición por cada orden ejecutada, una compra
@@ -184,9 +188,9 @@ chart.on('ordersChange', (e) => console.log(e.payload.orders[0]?.filledQuantity)
   también se ejecuta por partes, una vez que funciona como límite. Una parte paga su propia comisión, y una que la cuenta ya no puede sostener cancela lo que queda de la
   orden (<code>executionError</code>). Lo que queda se puede mover, cancelar, o terminar en su fecha, y la primera
   parte cancela el resto del grupo de la orden. De una orden <code>'ioc'</code>, lo que se ejecuta al instante se ejecuta y el
-  resto se descarta (la orden que devuelve <code>placeOrder</code> dice cuánto: su
-  <code>filledQuantity</code>; el gráfico y el widget no dicen nada del resto descartado, y su ejecución es por
-  menos de lo pedido); una orden <code>'fok'</code> mayor que el tamaño se rechaza. Una orden a mercado y
+  resto se descarta (su ejecución dice cuánto: su <code>dropped</code>, junto a una <code>quantity</code> menor que la pedida, y la
+  orden que devuelve <code>placeOrder</code> lleva su <code>filledQuantity</code>; el registro anota el
+  resto como cancelado, y el widget dice cuánto se ejecutó); una orden <code>'fok'</code> mayor que el tamaño se rechaza. Una orden a mercado y
   una stop se ejecutan enteras, igual que los cierres: el mercado de simulación las toma al precio que hay, y no modela ningún deslizamiento.
   Un adaptador propio informa de las partes de su bróker de la misma manera: la orden con su
   <code>filledQuantity</code> en <code>orders</code>, y un <code>fill</code> por cada una.
@@ -412,6 +416,10 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   La cabecera del panel de cuenta muestra en todas las pestañas el P&amp;L abierto y el realizado. Sus cifras van
   alineadas a la derecha en tipo monoespaciado, el dinero con los decimales del paso de precio y en el formato numérico
   del idioma; en el móvil cada fila es una tarjeta con sus cifras rotuladas.
+</p>
+<p>
+  El widget dice qué fue de una orden que envió: la que el adaptador rechazó, con las palabras del propio adaptador, y la
+  que se ejecutó en parte y descartó el resto, cuánto se ejecutó.
 </p>
 <p>
   <strong>La pestaña Registro</strong> lista lo que pasó con las órdenes, lo más reciente primero: cada una colocada, movida,

@@ -609,6 +609,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'De take-profit ligt bij een aankoop boven de instap en bij een verkoop eronder.',
   'ticket.problem.limitSide': 'Een kooplimiet ligt onder de markt en een verkooplimiet erboven.',
   'ticket.problem.stopSide': 'Een koopstop ligt boven de markt en een verkoopstop eronder.',
+  'ticket.problem.expireTime': 'De order moet op een toekomstig moment aflopen.',
   'ticket.problem.priceStep': 'Prijzen volgen de tickgrootte van de markt.',
   'ticket.problem.priceLimits': 'Vandaag lopen de prijzen van {floor} tot {ceiling}.',
   'ticket.problem.lot': 'Boven één lot alleen hele lots van {lot}; losse aandelen gaan in een aparte order.',
@@ -963,6 +964,8 @@ export const NL_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'Verkooplimiet @ {price}',
   'order.buyStop': 'Koopstop @ {price}',
   'order.sellStop': 'Verkoopstop @ {price}',
+  'order.refused': 'De broker heeft de order geweigerd: {reason}',
+  'order.partDropped': '{filled} van {quantity} uitgevoerd: de rest is geannuleerd',
 
   'toast.pinned': 'Vastgezet bij favorieten',
   'toast.unpinned': 'Losgemaakt',

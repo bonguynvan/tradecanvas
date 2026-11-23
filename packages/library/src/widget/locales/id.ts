@@ -609,6 +609,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'ticket.problem.takeProfitSide': 'Take profit berada di atas harga entry untuk order beli, dan di bawahnya untuk order jual.',
   'ticket.problem.limitSide': 'Beli limit berada di bawah harga pasar, jual limit di atasnya.',
   'ticket.problem.stopSide': 'Beli stop berada di atas harga pasar, jual stop di bawahnya.',
+  'ticket.problem.expireTime': 'Order harus berakhir pada waktu yang akan datang.',
   'ticket.problem.priceStep': 'Harga harus mengikuti fraksi harga pasar.',
   'ticket.problem.priceLimits': 'Harga hari ini berkisar dari {floor} hingga {ceiling}.',
   'ticket.problem.lot': 'Di atas satu lot, gunakan lot penuh berisi {lot}; sisa saham (odd lot) masuk ke order tersendiri.',
@@ -963,6 +964,8 @@ export const ID_MESSAGES: WidgetMessages = {
   'order.sellLimit': 'Jual limit @ {price}',
   'order.buyStop': 'Beli stop @ {price}',
   'order.sellStop': 'Jual stop @ {price}',
+  'order.refused': 'Broker menolak order: {reason}',
+  'order.partDropped': 'Terisi {filled} dari {quantity}: sisanya dibatalkan',
 
   'toast.pinned': 'Disematkan ke favorit',
   'toast.unpinned': 'Sematan dilepas',

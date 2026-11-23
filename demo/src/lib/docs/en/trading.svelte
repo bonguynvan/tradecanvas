@@ -54,6 +54,8 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   least 1% beyond the price now, so neither is hit the moment it is set. Letting go sends
   <code>positionModify</code>, as dragging a stop does, so a connected execution adapter applies it.
   <code>lineButtons: {'{'} addStops: false {'}'}</code> leaves the buttons out.
+  While a line is dragged to a price, the crosshair draws no horizontal line and no price on the axis: the
+  line's own tag has the price.
 </p>
 <p>
   The positions, the orders and their fills can be hidden, and their lines locked. Hidden, none is drawn and none
@@ -145,6 +147,8 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1,
   once, at the price there is, when that is within it, and is refused when it is not (<code>executionError</code>). The paper market has no size of its own, so the two are the
   same there, unless it is given one (<a href="#partial-fills">below</a>). The widget's order ticket offers both for a limit order, and its account panel writes OCO beside
   an order of a group and a dated order's date. It leaves <code>'day'</code> to the app, which knows when its market's day ends.
+  The ticket offers good till a date for a limit and a stop order: a date and a time on the chart's own clock, a day from now to start with, and it places no order that would end in the past.
+  A limit that fills at once or not at all may be priced through the market: it fills at the market, and the ticket counts its value, its risk and its targets from there.
 </p>
 <p>
   <strong>One net position.</strong> By default the paper account opens a position for each filled order, a buy
@@ -180,9 +184,9 @@ chart.on('ordersChange', (e) => console.log(e.payload.orders[0]?.filledQuantity)
   fills in parts too, once it works as a limit. A part pays its own commission, and one the account can no longer carry cancels what is left of the
   order (<code>executionError</code>). What is left can be moved, cancelled, or end at its date, and the first
   part cancels the rest of the order's group. Of an <code>'ioc'</code> order what fills at once fills and the
-  rest is dropped (the order that <code>placeOrder</code> gives back says how much: its
-  <code>filledQuantity</code>; the chart and the widget say nothing of the dropped rest, and its fill is of
-  less than was asked); a <code>'fok'</code> order larger than the size is refused. A market order and
+  rest is dropped (its fill says how much: its <code>dropped</code>, beside a <code>quantity</code> of less than was asked, and the
+  order that <code>placeOrder</code> gives back has its <code>filledQuantity</code>; the activity log writes the
+  rest as cancelled, and the widget says how much filled); a <code>'fok'</code> order larger than the size is refused. A market order and
   a stop fill whole, as do closes: the paper market takes them at the price there is, and models no slippage.
   An adapter of your own reports its broker's parts the same way: the order with its
   <code>filledQuantity</code> in <code>orders</code>, and a <code>fill</code> for each.
@@ -399,6 +403,10 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   The account panel's head keeps the open P&amp;L and the P&amp;L realised in sight on every tab. Its figures are
   set right in the mono type, money to the price step's decimals in the number locale; on a phone each row is a card
   of named figures.
+</p>
+<p>
+  The widget says what became of an order it sent: one the adapter refused, in the adapter's own words, and one
+  that filled in part with the rest dropped, how much of it filled.
 </p>
 <p>
   <strong>The Log tab</strong> lists what happened to the orders, the newest first: each one placed, moved,
