@@ -255,6 +255,19 @@ describe('Chart: a price set by hand is a price of the market', () => {
     expect(adds[0].price).toBe(written);
   });
 
+  it('an alert dragged lands on the market’s step', () => {
+    const id = chart.addAlert(100.2, 'crossing');
+    const before = chart.getAlerts().find((a) => a.id === id)!.price;
+    const x = state().chartRect.x + state().chartRect.width / 2;
+    mouse('mousemove', x, yOf(before));
+    mouse('mousedown', x, yOf(before));
+    mouse('mousemove', x, yOf(before) - 33);
+    mouse('mouseup', x, yOf(before) - 33);
+    const after = chart.getAlerts().find((a) => a.id === id)!.price;
+    expect(after).not.toBe(before);
+    expect(halves(after)).toBe(true);
+  });
+
   it('follows the market set later, and the decimals the axis shows with none', () => {
     chart.setOrders([{ id: 'o1', side: 'buy', type: 'limit', price: 100, quantity: 1, draggable: true }]);
     const moved: { newPrice: number }[] = [];

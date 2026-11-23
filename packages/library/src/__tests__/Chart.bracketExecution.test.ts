@@ -269,3 +269,19 @@ describe('Chart: the activity log across brokers and symbols', () => {
     expect(quotes).toEqual([{ bid: 99, ask: 101 }, null]);
   });
 });
+
+describe('Chart: a bracket started at the market, on a market with a price step', () => {
+  it('is a limit there, though the grid puts its entry a step over the price to the digit', async () => {
+    // The last close is 100.3; prices go in halves, so the bracket starts at 100.5.
+    chart.setMarket({ type: 'stock', priceStep: 0.5 });
+    chart.setData(hourly(50).map((bar, i, all) => (i === all.length - 1 ? { ...bar, close: 100.3 } : bar)));
+    const paper = new PaperExecutionAdapter({ markPrice: 100.3 });
+    chart.connectExecution(paper);
+    const placed = vi.spyOn(paper, 'placeOrder');
+    chart.startBracket('buy', undefined, { quantity: 1 });
+    expect(chart.getBracket()).toMatchObject({ entry: 100.5 });
+    chart.confirmBracket();
+    await flush();
+    expect(placed).toHaveBeenCalledWith(expect.objectContaining({ side: 'buy', type: 'limit', price: 100.5, quantity: 1 }));
+  });
+});

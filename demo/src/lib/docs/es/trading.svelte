@@ -58,7 +58,7 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   <code>lineButtons: {'{'} addStops: false {'}'}</code> deja fuera los botones.
   Mientras se arrastra una línea hasta un precio, la cruz no dibuja línea horizontal ni escribe el precio en el eje: la
   etiqueta de la propia línea ya lo lleva.
-  Un precio fijado a mano se ajusta a la rejilla del mercado: una orden, un stop, un objetivo o un nivel arrastrados, las líneas de un bracket y de una orden en borrador, el precio que da un clic derecho o el “+” junto al eje. Queda en el paso de precio del mercado (<code>setMarket</code>, o el <code>minTick</code> del símbolo); si no, en los decimales que muestra el eje de precios: <code>chart.roundPrice</code>. La cruz escribe el precio bajo el puntero en la misma rejilla, así que lo que marca es donde coloca el “+” de al lado.
+  Un precio fijado a mano se ajusta a la rejilla del mercado: una orden, un stop, un objetivo o un nivel arrastrados, las líneas de un bracket y de una orden en borrador, una alerta arrastrada, el precio que da un clic derecho o el “+” junto al eje. Queda en el paso de precio del mercado (<code>setMarket</code>, o el <code>minTick</code> del símbolo); si no, en los decimales que muestra el eje de precios: <code>chart.roundPrice</code>. La cruz escribe el precio bajo el puntero en la misma rejilla, así que lo que marca es donde coloca el “+” de al lado.
 </p>
 <p>
   Las posiciones, las órdenes y sus ejecuciones se pueden ocultar, y sus líneas bloquear. Ocultas, ninguna se dibuja ni

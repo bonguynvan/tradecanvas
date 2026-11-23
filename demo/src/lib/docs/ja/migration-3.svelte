@@ -62,7 +62,7 @@ chart.startBracket('buy', undefined, { risk: 50 })   // ストップで 50 を�
   <code>orderModify</code>、<code>positionModify</code>、<code>bracketPlace</code>、下書き注文や右クリックメニューの <code>orderPlace</code>、
   <code>priceAxisAdd</code>、<code>chartContextMenu</code> は、これまでポインター下の価格をピクセルから求めたまま
   （<code>62549.71592675613</code>）運んでいました。今は市場の呼値に、なければ価格軸が表示する小数桁に丸めた価格を運びます：
-  <code>chart.roundPrice</code> が返す値です。ブラケットと下書き注文も刻みの上から始まります。自分で丸めていたコードは不要になります。
+  <code>chart.roundPrice</code> が返す値です。ブラケットと下書き注文も、どの価格から始めても刻みの上から始まり、ドラッグしたアラートも刻みに乗ります。元の刻みのまま離したラインは何も通知しません。自分で丸めていたコードは不要になります。
 </p>
 
 <h2 id="types">広がった型</h2>

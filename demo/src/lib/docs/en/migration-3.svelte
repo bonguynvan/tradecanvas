@@ -62,7 +62,7 @@ chart.startBracket('buy', undefined, { risk: 50 })   // the quantity that loses 
   <code>orderModify</code>, <code>positionModify</code>, <code>bracketPlace</code>, the <code>orderPlace</code> of a draft order or of the
   right-click menu, <code>priceAxisAdd</code> and <code>chartContextMenu</code> carried the price under the pointer as a pixel gives it
   (<code>62549.71592675613</code>). They now carry it on the market's price step, else to the decimals the price axis
-  shows: what <code>chart.roundPrice</code> gives. A bracket and a draft order start on the grid too. Code that rounded
+  shows: what <code>chart.roundPrice</code> gives. A bracket and a draft order start on the grid too, whatever price they are started at, and an alert dragged lands on it. A line let go on the step it was on reports nothing. Code that rounded
   these itself can stop.
 </p>
 

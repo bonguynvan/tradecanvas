@@ -58,7 +58,7 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 在止损处亏损 50 �
   <code>orderModify</code>、<code>positionModify</code>、<code>bracketPlace</code>、草稿订单或右键菜单发出的 <code>orderPlace</code>、
   <code>priceAxisAdd</code> 和 <code>chartContextMenu</code> 以前携带的是指针下按像素算出的价格（<code>62549.71592675613</code>）。
   现在它们携带的是落在市场最小变动价位上的价格，没有时则取价格轴显示的小数位数：即 <code>chart.roundPrice</code> 给出的值。
-  括号单和草稿订单也从网格上的价格开始。自己做过取整的代码可以去掉这一步。
+  括号单和草稿订单无论从什么价格开始，也都落在网格上；被拖动的提醒同样如此。松开时仍在原来价位上的线不会发出任何事件。自己做过取整的代码可以去掉这一步。
 </p>
 
 <h2 id="types">扩充的类型</h2>

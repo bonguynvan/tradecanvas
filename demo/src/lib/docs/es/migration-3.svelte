@@ -63,7 +63,7 @@ chart.startBracket('buy', undefined, { risk: 50 })   // la cantidad que pierde 5
   <code>orderModify</code>, <code>positionModify</code>, <code>bracketPlace</code>, el <code>orderPlace</code> de una orden en borrador o del
   menú del botón derecho, <code>priceAxisAdd</code> y <code>chartContextMenu</code> llevaban el precio bajo el puntero tal como lo da un píxel
   (<code>62549.71592675613</code>). Ahora lo llevan en el paso de precio del mercado; si no, en los decimales que muestra el eje de
-  precios: lo que da <code>chart.roundPrice</code>. Un bracket y una orden en borrador también empiezan en la rejilla. El código que
+  precios: lo que da <code>chart.roundPrice</code>. Un bracket y una orden en borrador también empiezan en la rejilla, sea cual sea el precio con que se inicien, y una alerta arrastrada queda en ella. Una línea soltada en el mismo paso en que estaba no avisa de nada. El código que
   redondeaba estos precios puede dejar de hacerlo.
 </p>
 

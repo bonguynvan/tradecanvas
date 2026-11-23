@@ -22,7 +22,8 @@ import { buttonAt, sameLineAction, type LineButton, type LineButtonAction } from
 import { renderFillMarks } from './fillMarks.js';
 import { drawAxisBadge, drawTags, spreadAxisBadges, tagAt, type AxisBadge, type TagBox, type TagRect } from './tradingTags.js';
 import { clampToPlot } from './plot.js';
-import { onGrid, onGridAwayFrom, type PriceRounding } from '../viewport/priceGrid.js';
+import { onGrid, onGridBeyond, type PriceRounding } from '../viewport/priceGrid.js';
+import { stopSide } from './positionStops.js';
 import { AXIS_LABEL_HEIGHT } from '../ui/axisValueLabels.js';
 
 /** Most fills kept for their marks; the oldest go first. */
@@ -336,7 +337,7 @@ export class TradingManager {
 
   /** Emit `orderPlace` with the drafted order (type inferred vs the market). */
   confirmOrderDraft(): boolean {
-    const intent = this.orderDraft.toIntent(this.currentPrice);
+    const intent = this.orderDraft.toIntent(this.marketOnGrid());
     if (!intent) return false;
     this.eventCallback?.('orderPlace', intent);
     this.orderDraft.cancel();
@@ -412,8 +413,11 @@ export class TradingManager {
   private dragOutStop(action: Extract<LineButtonAction, { type: 'addStop' }>, pos: Point, viewport: ViewportState): boolean {
     const position = this.positions.find((p) => p.id === action.positionId);
     if (!position) return false;
-    // Where it starts is a price of the market's too, and not the entry's own.
-    const price = onGridAwayFrom(this.round, position.entryPrice, action.price);
+    // Where it starts is a price of the market's too, still beyond the entry and the price now: not hit as it is set.
+    const way = stopSide(position, action.which);
+    const now = this.currentPrice !== null && Number.isFinite(this.currentPrice) ? this.currentPrice : position.entryPrice;
+    const bound = way > 0 ? Math.max(position.entryPrice, now) : Math.min(position.entryPrice, now);
+    const price = onGridBeyond(this.round, bound, action.price, way);
     // The drag is measured on the line, as a tag's is: the pointer only moves it.
     const lineY = priceToY(price, viewport);
     if (!this.dragHandler.beginNewStop(position, action.which, price, lineY)) return false;
@@ -548,6 +552,15 @@ export class TradingManager {
   }
 
   /**
+   * The price now as the market's grid has it: what a draft order's kind is
+   * told against. A draft started at the market is on the grid, a step from
+   * the price to the digit, and is still an order at the market: a limit.
+   */
+  private marketOnGrid(): number | null {
+    return this.currentPrice === null ? null : onGrid(this.round, this.currentPrice);
+  }
+
+  /**
    * What a drag asks of the broker for an order: where it goes, and where a
    * stop-limit's stop goes with it (the room between them kept) or alone.
    * Null for a stop whose order is gone, or has no stop any more.
@@ -651,7 +664,7 @@ export class TradingManager {
     this.orderDraft.renderLines(ctx, viewport, theme);
     const tags = [
       ...this.bracket.tags(viewport, theme),
-      ...this.orderDraft.tags(viewport, theme, this.currentPrice),
+      ...this.orderDraft.tags(viewport, theme, this.marketOnGrid()),
       ...this.positionRenderer.tags(positions, this.currentPrice, viewport, positionConfig, drag),
       ...this.orderRenderer.tags(orders, viewport, config, drag),
     ];

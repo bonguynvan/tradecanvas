@@ -1123,6 +1123,8 @@ export class Chart {
     }
     if (this.features.alerts) {
       const alertDrag = new AlertDragHandler(this.alertManager, () => this.viewport.getState());
+      // Dragged, an alert is at a price of the market, as one set from the "+" or the menu is.
+      alertDrag.setPriceRounding((price) => this.roundPrice(price));
       this.interactionManager.setAlertDragHandler(alertDrag);
     }
 
@@ -3792,7 +3794,11 @@ export class Chart {
         this.eventBus.emit('executionFill', fill);
       },
       getPositions: () => this.tradingManager.getPositions(),
-      marketPrice: () => this.series.bars().at(-1)?.close ?? null,
+      // On the market's grid, as a bracket's entry is: one started at the market is a limit there, not a stop a step over it.
+      marketPrice: () => {
+        const close = this.series.bars().at(-1)?.close;
+        return close === undefined ? null : this.roundPrice(close);
+      },
       onBracketOrder: (order, bracket) => this.eventBus.emit('bracketOrder', { order, bracket }),
       setAccount: (account) => {
         // Read on wiring and told again on connecting: the same figures are one change.

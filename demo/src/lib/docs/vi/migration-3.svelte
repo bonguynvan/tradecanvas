@@ -63,7 +63,7 @@ chart.startBracket('buy', undefined, { risk: 50 })   // khối lượng sẽ l�
   <code>orderModify</code>, <code>positionModify</code>, <code>bracketPlace</code>, <code>orderPlace</code> của order nháp hoặc của
   menu chuột phải, <code>priceAxisAdd</code> và <code>chartContextMenu</code> trước đây mang giá dưới con trỏ đúng như pixel cho ra
   (<code>62549.71592675613</code>). Giờ chúng mang giá trên bước giá của thị trường, còn không thì theo số chữ số thập phân trục giá
-  đang hiển thị: đúng giá trị <code>chart.roundPrice</code> trả về. Bracket và order nháp cũng bắt đầu trên lưới. Code tự làm tròn
+  đang hiển thị: đúng giá trị <code>chart.roundPrice</code> trả về. Bracket và order nháp cũng bắt đầu trên lưới, dù được bắt đầu ở giá nào, và alert được kéo cũng rơi trên lưới. Một đường được thả đúng bước giá cũ thì không báo gì. Code tự làm tròn
   các giá này có thể bỏ phần đó.
 </p>
 

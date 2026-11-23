@@ -143,6 +143,8 @@ export class TradingDragHandler {
     // A press that never moved changes nothing, but a stop being added is set where it started.
     if (!this.dragging && !state.created) return null;
     this.dragging = false;
+    // Nor does a line let go at the price it was at: on a grid, a pull of less than a step.
+    if (!state.created && state.currentPrice === state.startPrice) return null;
 
     return {
       sourceType: state.sourceType,
