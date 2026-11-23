@@ -99,6 +99,24 @@ chart.startBracket('buy', undefined, { risk: 50 })   // khối lượng sẽ l�
   còn order của ladder không có khối lượng).
 </p>
 
+<h3 id="orders-by-symbol">Order, position và fill được vẽ trên symbol của chính nó</h3>
+<p>
+  Order, position hoặc fill nào ghi <code>symbol</code> thì chỉ được vẽ khi chart đang hiển thị symbol đó. Ở symbol
+  khác nó được giữ lại: <code>getOrders()</code>, <code>getPositions()</code> và <code>getFills()</code> trả về
+  toàn bộ tài khoản, và <code>chart.getSymbol()</code> cho biết phần nào đang được vẽ. Giờ chart ghi symbol đang
+  hiển thị trên mọi payload <code>orderPlace</code> và tài khoản paper giữ nó, nên position mở ở một symbol không
+  còn bị vẽ ở symbol kế tiếp như trước, với lãi lỗ tính từ sai giá. Cái nào không ghi symbol thì được vẽ trên mọi
+  symbol, như trước: adapter của riêng bạn cho tài khoản nhiều symbol hãy ghi symbol trên order, position và fill
+  của nó.
+</p>
+<p>
+  Ba thứ thay đổi theo. Mọi fill mà <code>executionFill</code> và <code>getFills()</code> báo đều có
+  <code>symbol</code> khi chart đang hiển thị một symbol, và <code>ChartWidget</code> không còn xoá các fill khi
+  symbol của nó đổi: lịch sử và lãi lỗ đã chốt là của tài khoản, và các dấu trở lại cùng symbol của chúng.
+  <code>setMarkPrice</code> nhận symbol làm tham số thứ ba, chart đưa nó vào trong replay: được đưa giá có ghi
+  symbol, tài khoản paper khớp và định giá từng symbol theo giá của riêng nó; được đưa giá không ghi symbol, nó
+  là một thị trường, như trước. Và với các bar đặt bằng tay, chart không biết symbol cho tới khi được báo:
+  <code>chart.setSymbol(symbol)</code>, việc mà <code>ChartWidget</code> tự gọi.
 <h3 id="hold-tooltip">Click giữ trên chart thì hiện popup giá</h3>
 <p>
   Trong <code>ChartWidget</code>, giữ nút chuột yên trên vùng plot nửa giây sẽ hiện tooltip OHLCV nổi cho nến dưới con

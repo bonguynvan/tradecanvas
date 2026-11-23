@@ -274,6 +274,42 @@ chart.on('marginCall', (e) => warn(e.payload))   // { marginLevel: 0.9, level: 1
   并在其经纪商发出警告时发出 <code>marginCall</code>。
 </p>
 
+<h3 id="symbols">交易多个品种的账户</h3>
+<p>
+  一张图表只显示一个品种，而一个账户可以持有多个品种。订单、持仓和成交都可以写明它所属的品种（<code>symbol</code>）。
+  图表绘制属于当前显示品种的那些，以及没有写明品种的那些；写明其他品种的会被保留，等该品种显示时再画出来。
+  <code>getOrders()</code>、<code>getPositions()</code> 和 <code>getFills()</code> 返回整个账户，
+  <code>ordersChange</code> 和 <code>positionsChange</code> 也是如此；<code>chart.getSymbol()</code> 说明其中哪些在图表上。
+  图表发出的订单会写明当前显示的品种（<code>orderPlace</code> 中的 <code>symbol</code>），模拟账户会把它保留在订单、
+  订单开出的持仓以及它们的成交上。你自己为多品种账户写的适配器要在每一项上写明品种。图表从不猜测：
+  没有写明品种的会像以前一样画在每个品种上。两个名称不区分大小写即为同一品种；只有一方带交易所前缀时按代码比较
+  （<code>BTCUSDT</code> 与 <code>BINANCE:BTCUSDT</code>）；双方都带交易所前缀时，必须是同一个交易所。
+</p>
+<p>
+  成交是某一个品种 K 线上的标记，所以图表会给每笔成交一个品种：它自己的，否则是其持仓或订单的，再否则是成交到来时
+  图表显示的品种。组件的账户面板列出所有品种的行，并在有一行属于其他品种时写出品种名；其他品种的持仓显示适配器给它的
+  价格（持仓上的 <code>markPrice</code>）以及按该价格计算的盈亏，否则两者都不显示：图表的价格不是它的价格。
+  盘口深度只标出它所显示的那个品种的订单。
+</p>
+<p>
+  使用数据流（<code>connect</code>、<code>switchStream</code>）时，图表知道自己的品种。K 线由你自己设置时，
+  请在更换它们时告诉图表；<code>ChartWidget</code> 在选择品种时会自己这样做。
+</p>
+<pre><code>{`chart.setData(barsOf('ETHUSDT'))
+chart.setSymbol('ETHUSDT')        // 绘制 ETHUSDT 的订单和持仓；'' 则重新全部绘制
+chart.getSymbol()                 // 'ETHUSDT'
+
+chart.setPositions([
+  { id: 'p1', symbol: 'BTCUSDT', side: 'buy', entryPrice: 64_000, quantity: 1, markPrice: 64_250 },   // 保留，不绘制
+  { id: 'p2', symbol: 'ETHUSDT', side: 'sell', entryPrice: 3_150, quantity: 2 },                      // 绘制
+])`}</code></pre>
+<p>
+  价格同样属于某一个品种。向模拟账户提供价格时写明品种，每个价格就只撮合该品种的订单和止损，只为该品种的持仓估值；
+  持仓按它自己品种的最新价格平仓、反手和强平，净头寸账户每个品种保留一个持仓。没有写明品种的价格是账户所持全部内容的
+  价格，和以前一样。请在你提供的每个价格上都写明品种，或者都不写：一个没有写明品种的价格会让账户重新变成一个市场。回放时，图表会在它提供的价格上写明品种。
+</p>
+<pre><code>{`feed.onTrade((trade) => broker.setMarkPrice(trade.price, trade.time, trade.symbol))`}</code></pre>
+
 <h2>在图表上操作订单和持仓</h2>
 <p>
   订单线和持仓线的右端带有小按钮：<strong>×</strong> 撤销订单或平掉持仓，

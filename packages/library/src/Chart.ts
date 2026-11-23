@@ -143,6 +143,7 @@ import { SeriesStore, isWholeBar, type LiveChange } from './SeriesStore.js';
 import { PriceFit, hasVolume } from './model/PriceFit.js';
 import { FootprintFeed, barOfTrade, barSpanOf, footprintRowSize } from './model/FootprintFeed.js';
 import { TradeStream } from './model/TradeStream.js';
+import { TradingBook, ofSymbol } from './model/TradingBook.js';
 import { DisplaySeries } from './model/DisplaySeries.js';
 import { ActivityLog, type ActivityEntry } from './model/ActivityLog.js';
 import { PaneLayout } from './model/PaneLayout.js';
@@ -257,6 +258,13 @@ export class Chart {
   /** The connected adapter's account, when it keeps one. */
   private account: import('@tradecanvas/commons').AccountSummary | null = null;
   private execTeardown: (() => void) | null = null;
+  /** The orders, positions and fills the chart is told of, of every symbol: those of the symbol shown are drawn. */
+  private readonly book = new TradingBook();
+  /**
+   * The symbol whose orders, positions and fills are drawn: the stream's, or the one said for bars
+   * set by hand (`setSymbol`), whichever was told last. `''` with neither: all are drawn.
+   */
+  private tradedSymbol = '';
   /** This chart's own mark in the ids it gives orders, and how many it has given. */
   private readonly clientOrderMark = Math.random().toString(ID_RADIX).slice(2, 2 + ID_MARK_LENGTH).padEnd(ID_MARK_LENGTH, '0');
   private clientOrderSeq = 0;
@@ -3190,10 +3198,48 @@ export class Chart {
 
   // --- Trading ---
 
+  /**
+   * The account's working orders, all of them. One that names its symbol
+   * (`symbol`) is drawn on the chart of that symbol and kept on another,
+   * where `getOrders` and `ordersChange` still give it; one that names none
+   * is drawn on whatever the chart shows.
+   */
   setOrders(orders: TradingOrder[]): void {
     if (!this.features.trading) return;
-    this.tradingManager.setOrders(orders);
+    this.book.setOrders(orders);
+    this.tradingManager.setOrders(ofSymbol(orders, this.tradedSymbol));
     this.eventBus.emit('ordersChange', { orders });
+  }
+
+  /**
+   * The symbol the chart shows, as it was given: its stream's (`connect`,
+   * `switchStream`), or the one said for bars set by hand (`setSymbol`); `''`
+   * with neither. The orders, positions and fills it draws are those of this
+   * symbol, and the orders it asks for name it.
+   */
+  getSymbol(): string {
+    return this.tradedSymbol;
+  }
+
+  /**
+   * Say which symbol the chart's bars are of, where they are set by hand
+   * (`setData`); a stream names its own. The chart then draws that symbol's
+   * orders, positions and fills, keeps those that name another, and names it
+   * on the orders it asks for. `''` takes it back: everything is drawn.
+   */
+  setSymbol(symbol: string): void {
+    this.showTradingOf(symbol);
+  }
+
+  /** Another symbol shown: its own orders, positions and fills are drawn, and the last one's are kept. */
+  private showTradingOf(symbol: string): void {
+    if (symbol === this.tradedSymbol) return;
+    this.tradedSymbol = symbol;
+    if (!this.features.trading) return;
+    this.tradingManager.setOrders(ofSymbol(this.book.getOrders(), symbol));
+    this.tradingManager.setPositions(ofSymbol(this.book.getPositions(), symbol));
+    this.tradingManager.setFills(ofSymbol(this.book.getFills(), symbol));
+    this.engine.requestRender();
   }
 
   /**
@@ -3296,9 +3342,15 @@ export class Chart {
     return sent;
   }
 
-  /** An order with an id of its own (the one it has, else a new one), so that a broker can tell a press sent twice from two orders, and what became of it be told by it. */
+  /**
+   * An order as it goes out: with an id of its own (the one it has, else a new one), so that a
+   * broker can tell a press sent twice from two orders and what became of it be told by it; and
+   * with the symbol it is for, the one shown unless it names another, so that an account of many
+   * symbols knows which.
+   */
   private withClientOrderId(intent: import('@tradecanvas/commons').OrderPlaceIntent): import('@tradecanvas/commons').OrderPlaceIntent {
-    return intent.clientOrderId ? intent : { ...intent, clientOrderId: this.nextClientOrderId() };
+    const named = intent.symbol !== undefined || this.tradedSymbol === '' ? intent : { ...intent, symbol: this.tradedSymbol };
+    return named.clientOrderId ? named : { ...named, clientOrderId: this.nextClientOrderId() };
   }
 
   /** An id for one order asked for: this chart's own mark, the moment and a count, so that no two are alike on a page or across reloads. */
@@ -3307,20 +3359,22 @@ export class Chart {
     return `tc-${this.clientOrderMark}-${Date.now().toString(ID_RADIX)}-${this.clientOrderSeq.toString(ID_RADIX)}`;
   }
 
+  /** The account's open positions, all of them: one that names its symbol is drawn on the chart of that symbol and kept on another, as an order is (`setOrders`). */
   setPositions(positions: TradingPosition[]): void {
     if (!this.features.trading) return;
-    this.tradingManager.setPositions(positions);
+    this.book.setPositions(positions);
+    this.tradingManager.setPositions(ofSymbol(positions, this.tradedSymbol));
     this.eventBus.emit('positionsChange', { positions });
   }
 
-  /** The working orders on the chart (`setOrders`, or the execution adapter's). */
+  /** The account's working orders (`setOrders`, or the execution adapter's), of every symbol: the chart draws those of the one it shows (`getSymbol`). */
   getOrders(): TradingOrder[] {
-    return this.tradingManager.getOrders();
+    return this.book.getOrders();
   }
 
-  /** The open positions on the chart (`setPositions`, or the execution adapter's). */
+  /** The account's open positions (`setPositions`, or the execution adapter's), of every symbol: the chart draws those of the one it shows (`getSymbol`). */
   getPositions(): TradingPosition[] {
-    return this.tradingManager.getPositions();
+    return this.book.getPositions();
   }
 
   /**
@@ -3358,24 +3412,37 @@ export class Chart {
     return this.series.bars().at(-1)?.time ?? Date.now();
   }
 
-  /** Fills marked on the chart, oldest first: the execution adapter's, or `addFill`'s. */
+  /**
+   * The account's fills, oldest first, of every symbol (the latest 1000): the
+   * execution adapter's, or `addFill`'s. Each has its `symbol`: its own, else
+   * its position's or its order's, else the one the chart showed as it came.
+   * The chart marks those of the symbol it shows.
+   */
   getFills(): import('@tradecanvas/commons').FillEvent[] {
-    return this.tradingManager.getFills();
+    return this.book.getFills();
   }
 
-  /** The P&L the fills realised since the last `clearFills`, all of them (the marks keep the latest 1000). */
+  /** The P&L the fills realised since the last `clearFills`, all of them, of every symbol (the marks keep the latest 1000). */
   getRealisedPnl(): number {
-    return this.tradingManager.getRealisedPnl();
+    return this.book.realisedPnl();
   }
 
-  /** Mark a fill on the chart (without an execution adapter, a host reports its own). */
+  /** A fill of the account (without an execution adapter, a host reports its own): marked on the chart of its symbol. */
   addFill(fill: import('@tradecanvas/commons').FillEvent): void {
     if (!this.features.trading) return;
-    this.tradingManager.addFill(fill);
-    this.eventBus.emit('executionFill', fill);
+    this.tellFill(fill);
   }
 
+  /** A fill kept with its symbol, marked where the chart shows that symbol, and told. */
+  private tellFill(fill: import('@tradecanvas/commons').FillEvent): void {
+    const told = this.book.addFill(fill, this.tradedSymbol);
+    if (ofSymbol([told], this.tradedSymbol).length > 0) this.tradingManager.addFill(told);
+    this.eventBus.emit('executionFill', told);
+  }
+
+  /** Forget the fills, of every symbol: their marks, and the profit they realised. */
   clearFills(): void {
+    this.book.setFills([], this.tradedSymbol);
     this.tradingManager.setFills([]);
   }
 
@@ -3684,6 +3751,7 @@ export class Chart {
     // Another symbol's trades are all new.
     if (symbol !== this.currentSymbol) this.tradesTold = new TradeStream();
     this.currentSymbol = symbol;
+    this.showTradingOf(symbol);
     this.streamTimeframe = timeframe;
     this.tickStream = tickBarCount(timeframe) !== null;
     this.applyTimeSpacing();
@@ -3814,11 +3882,9 @@ export class Chart {
       onError: (error) => this.eventBus.emit('executionError', error),
       onOrderPlaced: (intent, order) => this.eventBus.emit('orderPlaced', { intent, order }),
       newClientOrderId: () => this.nextClientOrderId(),
-      onFill: (fill) => {
-        this.tradingManager.addFill(fill);
-        this.eventBus.emit('executionFill', fill);
-      },
-      getPositions: () => this.tradingManager.getPositions(),
+      onFill: (fill) => this.tellFill(fill),
+      getPositions: () => this.book.getPositions(),
+      symbol: () => this.tradedSymbol || undefined,
       // On the market's grid, as a bracket's entry is: one started at the market is a limit there, not a stop a step over it.
       marketPrice: () => {
         const close = this.series.bars().at(-1)?.close;
@@ -6166,7 +6232,8 @@ export class Chart {
   private feedReplayMarks(marks: readonly ReplayMark[]): void {
     const adapter = this.executionAdapter;
     if (!adapter?.setMarkPrice) return;
-    for (const [price, time] of marks) adapter.setMarkPrice(price, time);
+    // Each a price of the symbol shown: it works no order of another.
+    for (const [price, time] of marks) adapter.setMarkPrice(price, time, this.tradedSymbol || undefined);
     const last = marks[marks.length - 1];
     if (last === undefined) return;
     this.markedAt = this.markTimeOf(last[1]);
@@ -6326,7 +6393,7 @@ export class Chart {
   private feedReplayPrice(price: number, time?: number): void {
     const adapter = this.executionAdapter;
     if (!adapter?.setMarkPrice) return;
-    adapter.setMarkPrice(price, time);
+    adapter.setMarkPrice(price, time, this.tradedSymbol || undefined);
     this.markedAt = this.markTimeOf(time);
     this.tradingManager.setCurrentPrice(price);
   }
@@ -6987,6 +7054,9 @@ export class Chart {
       this.drawingManager.setActiveTool(null);
     }
     if (patch.trading === false) {
+      // Of every symbol: none is kept to come back on another.
+      this.book.setOrders([]);
+      this.book.setPositions([]);
       this.tradingManager.setOrders([]);
       this.tradingManager.setPositions([]);
     }

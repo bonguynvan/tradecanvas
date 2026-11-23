@@ -521,7 +521,7 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // todas las marcas
 
 <h3>Trading simulado en una repetición</h3>
 <p>
-  Un adaptador de ejecución con <code>setMarkPrice(price, time)</code> (como
+  Un adaptador de ejecución con <code>setMarkPrice(price, time, symbol)</code> (como
   <code>PaperExecutionAdapter</code>) opera sobre la repetición: durante una repetición, el
   gráfico le pasa cada precio y hora repetidos, así que las órdenes y los stops se ejecutan
   cuando la repetición pasa por ellos y las ejecuciones quedan sobre las barras repetidas.

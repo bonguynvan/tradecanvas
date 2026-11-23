@@ -9,6 +9,7 @@ import { stepDecimals } from '@tradecanvas/commons';
 import { fill, type MessageKey } from './i18n.js';
 import { positionLevels, type BracketSize } from '@tradecanvas/core';
 import type { ChartWidget } from './ChartWidget.js';
+import { ofSymbol } from '../model/TradingBook.js';
 
 /** Prices that differ by less than this are the same price (float dust), as the order ticket has it. */
 const LIMIT_EPSILON = 1e-9;
@@ -137,6 +138,11 @@ export class WidgetTrading {
     };
   }
 
+  /** The working orders the ladder marks on its rows: those of the symbol whose book it shows. */
+  refreshLadderOrders(): void {
+    this.depthLadder?.setOrders(ofSymbol(this.host.chart.getOrders(), this.host.chart.getSymbol()));
+  }
+
   /** Redraw the account panel once a frame at most (ticks, fills and order changes come in bursts). */
   refreshAccountSoon(): void {
     if (this.accountFrame || (!this.accountPanel && !this.quoteButtons)) return;
@@ -156,6 +162,7 @@ export class WidgetTrading {
       orders: this.host.chart.getOrders(),
       fills: this.host.chart.getFills(),
       price,
+      symbol: this.host.chart.getSymbol() || undefined,
       realisedPnl: this.host.chart.getRealisedPnl(),
       account: this.host.chart.getAccount(),
       log: this.activityLog(),

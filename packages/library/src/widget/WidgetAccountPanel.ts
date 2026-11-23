@@ -1,6 +1,6 @@
 import type { ActivityEntry } from '../model/ActivityLog.js';
 import type { AccountSummary, FillEvent, TradingOrder, TradingPosition } from '@tradecanvas/commons';
-import { orderQuantityText } from '@tradecanvas/commons';
+import { orderQuantityText, sameSymbol, tickerOf } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, type MessageKey, type Translator } from './i18n.js';
 import { markPart } from './widgetFeatures.js';
@@ -25,8 +25,14 @@ export interface AccountSnapshot {
   positions: readonly TradingPosition[];
   orders: readonly TradingOrder[];
   fills: readonly FillEvent[];
-  /** The latest price, for the positions' profit and loss. */
+  /** The latest price of the symbol the chart shows, for the profit and loss of the positions of that symbol. */
   price: number | null;
+  /**
+   * The symbol the chart shows. A row of another symbol names its own, and a position of another
+   * is valued by the adapter's own price for it (`markPrice`), or not at all: the chart's price is
+   * not that symbol's. Left out, every row is taken for the chart's.
+   */
+  symbol?: string;
   /** The P&L realised by every fill (the list may keep only the latest); else the listed fills' sum. */
   realisedPnl?: number;
   /** The account's money, from a broker that keeps one: its balance, equity and free margin head the totals. */
@@ -225,6 +231,8 @@ export class WidgetAccountPanel {
     const rowsSame = sameRows(before.positions, snapshot.positions)
       && sameRows(before.orders, snapshot.orders)
       && sameRows(before.fills, snapshot.fills)
+      // Another symbol shown: other rows are the chart's own, and are valued by its price.
+      && before.symbol === snapshot.symbol
       && before.realisedPnl === snapshot.realisedPnl
       && before.multiplier === snapshot.multiplier
       && sameLog(before.log, snapshot.log);
@@ -286,7 +294,7 @@ export class WidgetAccountPanel {
    * a figure), on every tab.
    */
   private renderTotals(): void {
-    const { positions, price, fills, realisedPnl, account } = this.snapshot;
+    const { positions, fills, realisedPnl, account } = this.snapshot;
     const totals: HTMLElement[] = [];
     if (account) {
       totals.push(this.sum('account.balance', account.balance), this.sum('account.equity', account.equity), this.sum('account.freeMargin', account.freeMargin));
@@ -294,7 +302,7 @@ export class WidgetAccountPanel {
     }
     // The broker's own figure when it keeps the account; else the rows' sum.
     const open = account && positions.length > 0 ? account.unrealisedPnl : positions.reduce<number | null>((sum, p) => {
-      const pnl = positionPnl(p, price, this.multiplier());
+      const pnl = this.pnlOf(p);
       return pnl === null ? sum : (sum ?? 0) + pnl.pnl;
     }, null);
     if (open !== null) totals.push(this.total('account.openPnl', open));
@@ -307,6 +315,39 @@ export class WidgetAccountPanel {
   private multiplier(): number {
     const m = this.snapshot.multiplier;
     return m !== undefined && Number.isFinite(m) && m > 0 ? m : 1;
+  }
+
+  /** Whether an order, a position or a fill is of the symbol the chart shows: its own says so, or it names none, or the chart's is not told. */
+  private ofChart(item: { symbol?: string }): boolean {
+    const shown = this.snapshot.symbol;
+    return shown === undefined || item.symbol === undefined || sameSymbol(item.symbol, shown);
+  }
+
+  /** Whether the rows name their symbols: once one of them is of another symbol than the chart's. */
+  private namesSymbols(): boolean {
+    const { positions, orders, fills } = this.snapshot;
+    return [...positions, ...orders, ...fills].some((item) => !this.ofChart(item));
+  }
+
+  /** A row's symbol as its first cell reads: the ticker, without the venue before it; the chart's for one that names none. */
+  private symbolText(item: { symbol?: string }): string {
+    const symbol = item.symbol ?? this.snapshot.symbol;
+    return symbol === undefined ? NONE : tickerOf(symbol);
+  }
+
+  /**
+   * The price a position is valued at: the chart's latest for one of the symbol it shows; for
+   * one of another, the adapter's own price for it, or none (the chart's price is not its own).
+   */
+  private markOf(position: TradingPosition): number | null {
+    if (this.ofChart(position)) return this.snapshot.price;
+    const mark = position.markPrice;
+    return mark !== undefined && Number.isFinite(mark) ? mark : null;
+  }
+
+  /** A position's open profit and loss at its own price. A contract's multiplier is the chart's market's: another symbol's position has none of it. */
+  private pnlOf(position: TradingPosition): ReturnType<typeof positionPnl> {
+    return positionPnl(position, this.markOf(position), this.ofChart(position) ? this.multiplier() : 1);
   }
 
   /** A sum of money that is no profit or loss: its words and the figure, in no tone; a debt reads with its minus. */
@@ -348,10 +389,10 @@ export class WidgetAccountPanel {
 
   /** The price and P&L cells, rewritten in place. */
   private patchPrices(): void {
-    const { price } = this.snapshot;
     for (const cells of this.live) {
+      const price = this.markOf(cells.position);
       cells.price.textContent = price === null ? NONE : this.callbacks.formatPrice(price);
-      this.writePnl(cells.pnl, positionPnl(cells.position, price, this.multiplier()));
+      this.writePnl(cells.pnl, this.pnlOf(cells.position));
     }
   }
 
@@ -486,16 +527,18 @@ export class WidgetAccountPanel {
 
   private renderPositions(): void {
     const { formatPrice } = this.callbacks;
-    const { price } = this.snapshot;
+    const named = this.namesSymbols();
     const pnls: HTMLSpanElement[] = [];
     const rows = this.snapshot.positions.map((p) => {
       const open = p.quantity - (p.closedQuantity ?? 0);
+      const price = this.markOf(p);
       const pnl = ltr('');
-      this.writePnl(pnl, positionPnl(p, price, this.multiplier()));
+      this.writePnl(pnl, this.pnlOf(p));
       pnls.push(pnl);
       // "Close position: Long 2 @ 100.00", so each row's buttons say which.
       const which = `${this.sideText(p.side, 'position')} ${open} @ ${formatPrice(p.entryPrice)}`;
       return [
+        ...(named ? [this.symbolText(p)] : []),
         this.sideCell(p.side),
         String(open),
         formatPrice(p.entryPrice),
@@ -511,6 +554,7 @@ export class WidgetAccountPanel {
     });
     const table = this.table(
       [
+        ...this.symbolColumn(named),
         { key: 'account.side' }, { key: 'account.quantity', num: true }, { key: 'account.entry', num: true },
         { key: 'account.price', num: true }, { key: 'account.pnl', num: true }, { key: 'account.stopLoss', num: true },
         { key: 'account.takeProfit', num: true }, { key: null },
@@ -520,11 +564,18 @@ export class WidgetAccountPanel {
     );
     if (!table) return;
     const trs = [...table.tBodies[0].rows];
-    this.snapshot.positions.forEach((position, i) => this.live.push({ position, price: trs[i].cells[PRICE_COLUMN], pnl: pnls[i] }));
+    const priceColumn = PRICE_COLUMN + (named ? 1 : 0);
+    this.snapshot.positions.forEach((position, i) => this.live.push({ position, price: trs[i].cells[priceColumn], pnl: pnls[i] }));
+  }
+
+  /** The column that names each row's symbol, when they are named. */
+  private symbolColumn(named: boolean): Column[] {
+    return named ? [{ key: 'watchlist.columnSymbol' }] : [];
   }
 
   private renderOrders(): void {
     const { formatPrice } = this.callbacks;
+    const named = this.namesSymbols();
     const rows = this.snapshot.orders.map((o) => {
       const type = known(ORDER_TYPES, o.type, 'limit');
       // A stop-limit's two prices, its stop before its limit as its name has them: one figure, left to right in any row.
@@ -533,6 +584,7 @@ export class WidgetAccountPanel {
       const quantity = orderQuantityText(o, ' / ');
       const which = `${this.sideText(o.side, 'trade')} ${o.quantity} @ ${formatPrice(o.price)}`;
       return [
+        ...(named ? [this.symbolText(o)] : []),
         this.sideCell(o.side, 'trade'),
         // One of a group where one cancels the others says so beside its type, as its tag on the chart does.
         o.ocoGroup ? `${this.t(`ticket.type.${type}` as MessageKey)} · ${this.t('account.oco')}` : this.t(`ticket.type.${type}` as MessageKey),
@@ -546,6 +598,7 @@ export class WidgetAccountPanel {
     });
     this.table(
       [
+        ...this.symbolColumn(named),
         { key: 'account.side' }, { key: 'ticket.type' }, { key: 'account.quantity', num: true }, { key: 'account.price', num: true },
         { key: 'account.stopLoss', num: true }, { key: 'account.takeProfit', num: true }, { key: 'ticket.timeInForce' }, { key: null },
       ],
@@ -556,6 +609,7 @@ export class WidgetAccountPanel {
 
   private renderHistory(): void {
     const { formatPrice, formatTime } = this.callbacks;
+    const named = this.namesSymbols();
     // The newest first.
     const rows = [...this.snapshot.fills].reverse().map((f) => {
       const pnl = ltr('');
@@ -566,6 +620,7 @@ export class WidgetAccountPanel {
         pnl.textContent = NONE;
       }
       return [
+        ...(named ? [this.symbolText(f)] : []),
         formatTime(f.time),
         this.sideCell(f.side, 'trade'),
         String(f.quantity),
@@ -576,6 +631,7 @@ export class WidgetAccountPanel {
     });
     this.table(
       [
+        ...this.symbolColumn(named),
         { key: 'account.time' }, { key: 'account.side' }, { key: 'account.quantity', num: true },
         { key: 'account.price', num: true }, { key: 'account.reason' }, { key: 'account.pnl', num: true },
       ],

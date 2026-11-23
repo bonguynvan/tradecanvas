@@ -477,7 +477,7 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // 처음부터 모
 
 <h3>리플레이 중 모의 거래</h3>
 <p>
-  <code>setMarkPrice(price, time)</code> 메서드가 있는 실행 어댑터(<code>PaperExecutionAdapter</code> 등)는
+  <code>setMarkPrice(price, time, symbol)</code> 메서드가 있는 실행 어댑터(<code>PaperExecutionAdapter</code> 등)는
   리플레이 위에서 거래합니다. 리플레이하는 동안 차트가 리플레이되는 가격과 시각을 차례로 넘겨 주므로,
   주문과 손절은 리플레이가 그 가격을 지날 때 체결되고 체결 내역은 리플레이된 봉 위에 놓입니다.
   각 스텝의 저가와 고가가 모두 반영되고, 앞으로 건너뛰면 그 사이의 스텝을 모두 거칩니다. 어댑터는 앞으로만

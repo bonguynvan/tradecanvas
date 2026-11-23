@@ -373,3 +373,89 @@ describe('WidgetAccountPanel: a part-filled order in a row written right to left
     expect(cellsOf(1)[2].querySelector('[dir]')).toBeNull();
   });
 });
+
+// A long of BTC stood in the panel of a chart showing ETHUSDT, its price and its profit worked out from ETH's.
+describe('WidgetAccountPanel: an account of more than the symbol shown', () => {
+  const head = () => [...host.querySelectorAll('thead th')].map((th) => th.textContent);
+  const totals = () => [...host.querySelectorAll('.tcw-account-total')].map((el) => el.textContent);
+  const BTC_LONG = { id: 'p1', side: 'buy', entryPrice: 100, quantity: 2, symbol: 'BINANCE:BTCUSDT' } as const;
+  const ETH_SHORT = { id: 'p2', side: 'sell', entryPrice: 50, quantity: 1, symbol: 'ETHUSDT' } as const;
+
+  beforeEach(() => {
+    if (!panel.isOpen()) panel.toggle();
+  });
+
+  it('names no symbol while everything is of the symbol shown, or of none known', () => {
+    panel.update({ ...current, symbol: 'ETHUSDT', positions: [ETH_SHORT, { id: 'p3', side: 'buy', entryPrice: 40, quantity: 1 }] });
+    expect(head()[0]).toBe('Side');
+  });
+
+  it('takes a row for the chart’s when its symbol is the chart’s under another name: its ticker, or with its venue', () => {
+    panel.update({ ...current, symbol: 'BINANCE:ETHUSDT', price: 48, positions: [ETH_SHORT], fills: [] });
+    expect(head()[0]).toBe('Side');
+    expect(cells()[0].slice(2, 5)).toEqual(['50.00', '48.00', '+2.00 · +4.00%']);
+  });
+
+  it('names each row’s symbol once a row is of another', () => {
+    panel.update({ ...current, symbol: 'ETHUSDT', positions: [BTC_LONG, ETH_SHORT] });
+    expect(head().slice(0, 2)).toEqual(['Symbol', 'Side']);
+    // The ticker, without the venue before it.
+    expect(cells().map((row) => row.slice(0, 2))).toEqual([['BTCUSDT', 'Long'], ['ETHUSDT', 'Short']]);
+  });
+
+  it('gives a position of another symbol no price and no profit: the price the chart has is not its own', () => {
+    panel.update({ ...current, symbol: 'ETHUSDT', price: 48, positions: [BTC_LONG, ETH_SHORT], fills: [] });
+    const [btc, eth] = cells();
+    expect(btc.slice(3, 6)).toEqual(['100.00', '—', '—']);
+    expect(eth.slice(3, 6)).toEqual(['50.00', '48.00', '+2.00 · +4.00%']);
+    // The total is of what has a price.
+    expect(totals()).toEqual(['Open P&L: +2.00']);
+  });
+
+  it('works its profit out from the adapter’s own price for it, where it gives one', () => {
+    panel.update({ ...current, symbol: 'ETHUSDT', price: 48, positions: [{ ...BTC_LONG, markPrice: 104 }, ETH_SHORT], fills: [] });
+    expect(cells()[0].slice(3, 6)).toEqual(['100.00', '104.00', '+8.00 · +4.00%']);
+    expect(totals()).toEqual(['Open P&L: +10.00']);
+  });
+
+  it('gives it no part of a contract’s multiplier, which is the chart’s market’s', () => {
+    panel.update({ ...current, symbol: 'VN30F1M', price: 48, multiplier: 100_000, positions: [{ ...BTC_LONG, markPrice: 104 }], fills: [] });
+    expect(cells()[0][5]).toBe('+8.00 · +4.00%');
+  });
+
+  it('keeps each row to its own price as the chart’s price moves', () => {
+    const positions = [{ ...BTC_LONG, markPrice: 104 }, ETH_SHORT];
+    panel.update({ ...current, symbol: 'ETHUSDT', price: 48, positions, fills: [] });
+    panel.update({ ...current, symbol: 'ETHUSDT', price: 47, positions, fills: [] });
+    const [btc, eth] = cells();
+    expect(btc.slice(4, 6)).toEqual(['104.00', '+8.00 · +4.00%']);
+    expect(eth.slice(4, 6)).toEqual(['47.00', '+3.00 · +6.00%']);
+  });
+
+  it('names the symbol of an order and of a fill too', () => {
+    panel.update({
+      ...current,
+      symbol: 'ETHUSDT',
+      positions: [],
+      orders: [{ id: 'o1', side: 'sell', type: 'limit', price: 110, quantity: 1, symbol: 'BTCUSDT' }],
+      fills: [{ orderId: 'a', side: 'buy', price: 100, quantity: 2, time: 1, reason: 'order', symbol: 'BTCUSDT' }],
+    });
+    tab(/Orders/).click();
+    expect(head()[0]).toBe('Symbol');
+    expect(cells()[0][0]).toBe('BTCUSDT');
+    tab(/History/).click();
+    expect(head()[0]).toBe('Symbol');
+    expect(cells()[0][0]).toBe('BTCUSDT');
+  });
+
+  it('draws again when the chart shows another symbol: the rows’ prices are others', () => {
+    const positions = [BTC_LONG];
+    panel.update({ ...current, symbol: 'BINANCE:BTCUSDT', price: 103, positions, fills: [] });
+    expect(head()[0]).toBe('Side');
+    expect(cells()[0][3]).toBe('103.00');
+    panel.update({ ...current, symbol: 'ETHUSDT', price: 48, positions, fills: [] });
+    expect(head()[0]).toBe('Symbol');
+    expect(cells()[0][4]).toBe('—');
+  });
+});
+

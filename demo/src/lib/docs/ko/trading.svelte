@@ -293,6 +293,47 @@ chart.on('marginCall', (e) => warn(e.payload))   // { marginLevel: 0.9, level: 1
   <code>account</code>를, 브로커가 경고할 때 <code>marginCall</code>을 내보내면 같은 일을 합니다.
 </p>
 
+<h3 id="symbols">여러 종목을 거래하는 계좌</h3>
+<p>
+  차트는 한 종목을 보여 주지만 계좌는 여러 종목을 가질 수 있습니다. 주문, 포지션, 체결은 각각 자신의 종목
+  (<code>symbol</code>)을 밝힐 수 있습니다. 차트는 지금 보여 주는 종목의 것과 종목을 밝히지 않은 것을 그립니다.
+  다른 종목을 밝힌 것은 보관해 두었다가 그 종목이 표시될 때 다시 그립니다. <code>getOrders()</code>,
+  <code>getPositions()</code>, <code>getFills()</code>는 계좌 전체를 돌려주며, <code>ordersChange</code>와
+  <code>positionsChange</code>도 마찬가지입니다. 그중 어느 것이 차트에 있는지는 <code>chart.getSymbol()</code>이
+  알려 줍니다. 차트가 내는 주문에는 표시 중인 종목이 붙고(<code>orderPlace</code>의 <code>symbol</code>), 모의
+  계좌는 그것을 주문, 그 주문이 여는 포지션, 그 체결에 그대로 둡니다. 여러 종목 계좌를 위한 직접 만든 어댑터는
+  각각에 종목을 밝혀 주세요. 차트는 추측하지 않습니다. 종목을 밝히지 않은 것은 이전처럼 모든 종목에 그려집니다.
+  두 이름은 대소문자와 관계없이 같은 종목이며, 한쪽만 거래소를 밝힌 경우에는 티커로 비교합니다(<code>BTCUSDT</code>와
+  <code>BINANCE:BTCUSDT</code>). 둘 다 거래소를 밝혔다면 같은 거래소여야 합니다.
+</p>
+<p>
+  체결은 한 종목의 봉 위에 찍히는 표시이므로 차트는 체결마다 종목을 줍니다. 체결 자신의 종목, 없으면 그 포지션이나
+  주문의 종목, 그것도 없으면 체결이 들어올 때 표시하던 종목입니다. 위젯의 계좌 패널은 모든 종목의 행을 나열하고,
+  다른 종목의 행이 있으면 종목 이름을 표시합니다. 다른 종목의 포지션에는 어댑터가 준 가격(포지션의
+  <code>markPrice</code>)과 그 가격의 손익이 표시되고, 없으면 둘 다 표시되지 않습니다. 차트의 가격은 그 종목의
+  가격이 아니기 때문입니다. 호가창은 자신이 보여 주는 종목의 주문만 표시합니다.
+</p>
+<p>
+  스트림(<code>connect</code>, <code>switchStream</code>)이 있으면 차트는 자신의 종목을 압니다. 봉을 직접 설정할
+  때는 봉을 바꿀 때 종목을 알려 주세요. <code>ChartWidget</code>은 종목이 선택되면 스스로 알립니다.
+</p>
+<pre><code>{`chart.setData(barsOf('ETHUSDT'))
+chart.setSymbol('ETHUSDT')        // ETHUSDT의 주문과 포지션을 그림. ''이면 다시 전부 그림
+chart.getSymbol()                 // 'ETHUSDT'
+
+chart.setPositions([
+  { id: 'p1', symbol: 'BTCUSDT', side: 'buy', entryPrice: 64_000, quantity: 1, markPrice: 64_250 },   // 보관되고 그려지지 않음
+  { id: 'p2', symbol: 'ETHUSDT', side: 'sell', entryPrice: 3_150, quantity: 2 },                      // 그려짐
+])`}</code></pre>
+<p>
+  가격도 한 종목의 것입니다. 모의 계좌에 가격을 줄 때 종목을 밝히면 그 가격은 그 종목의 주문과 스톱만 처리하고 그
+  종목의 포지션만 평가합니다. 포지션은 자기 종목의 최신 가격으로 청산, 반전, 강제 청산되며, 순포지션 계좌는 종목마다
+  포지션 하나를 유지합니다. 종목을 밝히지 않은 가격은 이전처럼 계좌가 가진 모든 것의 가격입니다. 넘겨주는 모든 가격에 종목을
+  밝히거나, 어느 가격에도 밝히지 마세요. 종목을 밝히지 않은 가격 하나가 계좌를 다시 하나의 시장으로 만듭니다. 리플레이에서는
+  차트가 넘겨주는 가격에 종목을 밝힙니다.
+</p>
+<pre><code>{`feed.onTrade((trade) => broker.setMarkPrice(trade.price, trade.time, trade.symbol))`}</code></pre>
+
 <h2>차트에서 주문과 포지션 다루기</h2>
 <p>
   주문선과 포지션선의 오른쪽 끝에는 작은 버튼이 있습니다. <strong>×</strong>는 주문을

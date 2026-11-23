@@ -53,6 +53,8 @@ export interface ExecutionHost {
   onOrderPlaced?(intent: OrderPlaceIntent, order: TradingOrder): void;
   /** An id for an order the wiring makes itself (a confirmed bracket's, the one that reverses a position): no order goes out with none. */
   newClientOrderId?(): string;
+  /** The symbol the chart shows, which a confirmed bracket's order is for; undefined with none shown. */
+  symbol?(): string | undefined;
   /** An order filled or a position closed (the adapter's `fill`). */
   onFill?(fill: FillEvent): void;
   /** The positions on the chart, until the adapter reports its own. */
@@ -112,6 +114,8 @@ async function reverse(adapter: ExecutionAdapter, intent: PositionReverseIntent,
         price: position.entryPrice,
         quantity,
         ...context.orderId(),
+        // Of the position's own symbol, whatever the chart shows now.
+        ...(position.symbol === undefined ? {} : { symbol: position.symbol }),
       });
     } catch (cause) {
       throw new Error(`Position ${intent.positionId} was closed, but the order the other way failed`, { cause });
@@ -248,7 +252,12 @@ export function wireExecution(adapter: ExecutionAdapter, host: ExecutionHost, op
         host.onError(refused);
         return;
       }
-      const intent = { ...bracketOrderIntent(bracket as BracketPlacePayload & { quantity: number }, marketPrice as number), ...context.orderId() };
+      const symbol = host.symbol?.();
+      const intent = {
+        ...bracketOrderIntent(bracket as BracketPlacePayload & { quantity: number }, marketPrice as number),
+        ...context.orderId(),
+        ...(symbol === undefined ? {} : { symbol }),
+      };
       // An adapter that throws at once is reported as one that refuses.
       Promise.resolve()
         .then(() => adapter.placeOrder(intent))

@@ -558,6 +558,54 @@ const SCENES = {
   },
 
   /**
+   * A long and a waiting order of BTCUSDT, and the chart moved on to ETHUSDT, where another order
+   * waits: only ETH's order is drawn on ETH's bars, and the account panel keeps the long, names
+   * its symbol and gives it no price or profit of ETH's. The long stayed on the chart of the
+   * other symbol, its profit worked out from that symbol's price.
+   */
+  async ordersBySymbol() {
+    const s = await widget({ trading: true });
+    const last = lastClose(s.chart);
+    // Money for both symbols' orders, whatever the day's price.
+    const broker = new PaperExecutionAdapter({ markPrice: last, balance: last * 20 });
+    s.chart.connectExecution(broker);
+    broker.setMarkPrice(last, undefined, 'BTCUSDT');
+    s.chart.placeOrderIntent({ side: 'buy', type: 'market', price: last, quantity: 1, stopLoss: s.chart.roundPrice(last * 0.99) });
+    s.chart.placeOrderIntent({ side: 'sell', type: 'limit', price: s.chart.roundPrice(last * 1.01), quantity: 1 });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    await s.widget.setSymbol('ETHUSDT');
+    await new Promise((resolve) => {
+      const check = () => (s.chart.getSymbol() === 'ETHUSDT' && s.chart.getData().length > 50 ? resolve() : setTimeout(check, 30));
+      check();
+    });
+    s.chart.disconnectStream();
+    // ETH's own price, named: it is no price of BTC's, and fills or stops nothing of it.
+    const eth = lastClose(s.chart);
+    broker.setMarkPrice(eth * 0.98, undefined, 'ETHUSDT');
+    broker.setMarkPrice(eth, undefined, 'ETHUSDT');
+    s.chart.placeOrderIntent({ side: 'buy', type: 'limit', price: s.chart.roundPrice(eth * 0.995), quantity: 2 });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    s.widget.toggleAccountPanel(true);
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const checks = () => {
+      const problems = [];
+      const held = s.chart.getPositions();
+      if (held.length !== 1 || held[0].symbol !== 'BTCUSDT') problems.push('the account does not hold the long of BTCUSDT, named, while ETHUSDT is shown');
+      if (broker.getAccount().unrealisedPnl !== 0) problems.push('the long of BTCUSDT was valued at a price of ETHUSDT');
+      const engine = s.chart.tradingManager;
+      if (engine.getPositions().length > 0) problems.push('a position of BTCUSDT is drawn on the bars of ETHUSDT');
+      const drawn = engine.getOrders();
+      if (drawn.length !== 1 || drawn[0].symbol !== 'ETHUSDT') problems.push(`the chart of ETHUSDT draws ${drawn.length} order(s), not the one of its own`);
+      if (s.chart.getOrders().length !== 2) problems.push('the account does not keep the orders of both symbols');
+      const row = [...(host.querySelector('.tcw-account tbody tr')?.cells ?? [])].map((cell) => cell.textContent);
+      if (row[0] !== 'BTCUSDT') problems.push(`the account panel does not name the symbol of the long's row (${row[0]})`);
+      if (row[4] !== '—' || row[5] !== '—') problems.push(`the account panel gives the long of BTCUSDT a price or a profit on ETHUSDT (${row[4]}, ${row[5]})`);
+      return problems;
+    };
+    return { ...s, broker, checks };
+  },
+
+  /**
    * A limit order that the paper account fills in parts, two of its five
    * filled: its tag reads 2/5, the position it is building beside it, and
    * its row in the account panel's orders.

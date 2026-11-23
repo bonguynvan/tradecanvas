@@ -20,6 +20,7 @@ import type {
   PositionReverseIntent,
   TakeProfitLevel,
 } from '@tradecanvas/commons';
+import { sameSymbol } from '@tradecanvas/commons';
 
 export interface PaperExecutionOptions {
   /** Mark price used to fill market orders before `setMarkPrice` is called. */
@@ -136,6 +137,13 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   /** The mark's time (ms), when the caller gives one (a replay). */
   private markTime: number | undefined;
   private seq = 0;
+  /**
+   * The latest price of each symbol the account was given one of. With none (an account told no
+   * symbols) it is one market, as it was: everything is worked and valued at `markPrice`.
+   */
+  private marks = new Map<string, number>();
+  /** The symbol the price now being worked is of: only its orders and positions are worked by it. Undefined: all are. */
+  private working: string | undefined;
   /** The orders placed, by the id they came with: one sent again is the order it was. */
   private placedById = new Map<string, TradingOrder>();
   private readonly net: boolean;
@@ -176,7 +184,8 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     let marginUsed = 0;
     for (const p of this.positions) {
       const open = p.quantity - (p.closedQuantity ?? 0);
-      if (this.markPrice > 0) unrealisedPnl += (this.markPrice - p.entryPrice) * open * (p.side === 'buy' ? 1 : -1) * this.multiplier;
+      const mark = this.markOf(p);
+      if (mark > 0) unrealisedPnl += (mark - p.entryPrice) * open * (p.side === 'buy' ? 1 : -1) * this.multiplier;
       marginUsed += this.marginOf(open, p.entryPrice);
     }
     const equity = this.balance + unrealisedPnl;
@@ -233,7 +242,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   private cannotCarry(order: TradingOrder, price: number): string | null {
     const account = this.getAccount();
     if (!account) return null;
-    const held = this.net ? this.positions[0] : undefined;
+    const held = this.net ? this.netPosition(order) : undefined;
     let opens = order.quantity;
     let freed = 0;
     if (held && held.side !== order.side) {
@@ -272,17 +281,63 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
    * Feed the latest traded price, and its time (fills are stamped with it: a
    * replay's fills land on the replayed bars; without one, fills are stamped
    * now); fills triggered limit/stop orders and SL/TP.
+   *
+   * `symbol` says what the price is of: only the orders and positions of that
+   * symbol (and those that name none) are worked by it, and each position is
+   * valued at its own symbol's latest price. Left out, the account is one
+   * market: the price is of everything it holds.
    */
-  setMarkPrice(price: number, time?: number): void {
+  setMarkPrice(price: number, time?: number, symbol?: string): void {
     this.markPrice = price;
     this.markTime = time !== undefined && Number.isFinite(time) ? time : undefined;
-    this.expireOrders();
-    this.checkPendingOrders();
-    this.checkStops();
+    // A price that names no symbol is the price of everything held: what was known by symbol is known no more.
+    if (symbol === undefined) this.marks.clear();
+    else {
+      // One price a symbol, the latest, under whichever of its names it came.
+      for (const known of [...this.marks.keys()]) if (sameSymbol(known, symbol)) this.marks.delete(known);
+      this.marks.set(symbol, price);
+    }
+    this.working = symbol;
+    try {
+      this.expireOrders();
+      this.checkPendingOrders();
+      this.checkStops();
+    } finally {
+      this.working = undefined;
+    }
     // What the orders and the stops left is what the margin is counted on.
     this.warnOfMargin();
     this.stopOut();
     this.tellAccount();
+  }
+
+  /** Whether the price being worked is this order's or position's: its symbol's, or it names none, or the price names none. */
+  private mine(item: { symbol?: string }): boolean {
+    return this.working === undefined || item.symbol === undefined || sameSymbol(item.symbol, this.working);
+  }
+
+  /**
+   * The price an order or a position is valued at: its own symbol's latest, 0 with none of it yet.
+   * Of what names no symbol, and on an account never told one, the latest price there is.
+   */
+  private markOf(item: { symbol?: string }): number {
+    const symbol = item.symbol;
+    if (symbol === undefined || this.marks.size === 0) return this.markPrice;
+    const named = this.marks.get(symbol);
+    if (named !== undefined) return named;
+    // Under its other name: its ticker alone, or with its venue.
+    for (const [known, price] of this.marks) if (sameSymbol(known, symbol)) return price;
+    return 0;
+  }
+
+  /** What a position is worth a unit: its symbol's price, and what it was opened at until one has come. */
+  private worthOf(position: TradingPosition): number {
+    return this.markOf(position) || position.entryPrice;
+  }
+
+  /** On a net account, the one position of an order's symbol: the one that names none, for an order that names none. */
+  private netPosition(order: { symbol?: string }): TradingPosition | undefined {
+    return this.positions.find((p) => (p.symbol === undefined || order.symbol === undefined ? p.symbol === order.symbol : sameSymbol(p.symbol, order.symbol)));
   }
 
   /** Whether the account's equity is under `level` of the margin it holds. */
@@ -311,15 +366,15 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     while (this.under(this.getAccount(), this.stopOutLevel)) {
       const worst = this.losingMost();
       if (!worst) break;
-      this.close(worst, this.markPrice, 'liquidation');
+      this.close(worst, this.worthOf(worst), 'liquidation');
       closed = true;
     }
     if (closed) this.emit('positions', this.positions);
   }
 
-  /** The position with the lowest open profit at the price, or undefined with none. */
+  /** The position with the lowest open profit at its price, or undefined with none. One with no price yet has neither profit nor loss. */
   private losingMost(): TradingPosition | undefined {
-    const pnl = (p: TradingPosition) => (this.markPrice - p.entryPrice) * (p.quantity - (p.closedQuantity ?? 0)) * (p.side === 'buy' ? 1 : -1);
+    const pnl = (p: TradingPosition) => (this.worthOf(p) - p.entryPrice) * (p.quantity - (p.closedQuantity ?? 0)) * (p.side === 'buy' ? 1 : -1);
     return this.positions.reduce<TradingPosition | undefined>((worst, p) => (worst === undefined || pnl(p) < pnl(worst) ? p : worst), undefined);
   }
 
@@ -378,6 +433,10 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       takeProfit: intent.takeProfit,
       timeInForce: intent.timeInForce,
     };
+    // The symbol it is of, where the order names one: its position and its fills are of it too.
+    if (intent.symbol !== undefined) order.symbol = intent.symbol;
+    // The price of its own symbol: what it fills at now, and is sized by.
+    const mark = this.markOf(order);
     // A trail is a distance: anything else asked for is not taken.
     if (intent.trailingStop !== undefined && Number.isFinite(intent.trailingStop) && intent.trailingStop > 0) order.trailingStop = intent.trailingStop;
     if (dated) order.expireTime = intent.expireTime;
@@ -386,22 +445,22 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     if (levels) order.takeProfits = levels;
 
     // An order that fills now is sized at the price there is; one that waits, at where it will fill.
-    const fillsNow = intent.type === 'market' || (atOnce && this.markPrice > 0);
-    const lack = this.cannotCarry(order, fillsNow ? this.markPrice || intent.price : this.sizedAt(order));
+    const fillsNow = intent.type === 'market' || (atOnce && mark > 0);
+    const lack = this.cannotCarry(order, fillsNow ? mark || intent.price : this.sizedAt(order));
     if (lack) throw new Error(lack);
 
     if (intent.type === 'market') {
-      this.fill(order, this.markPrice || intent.price);
+      this.fill(order, mark || intent.price);
     } else if (atOnce) {
       // With no price yet there is nothing to fill it at.
-      if (!(this.markPrice > 0) || !this.isTriggered(order)) throw new Error(`The ${intent.timeInForce} order was not filled at once: it is cancelled`);
+      if (!(mark > 0) || !this.isTriggered(order, mark)) throw new Error(`The ${intent.timeInForce} order was not filled at once: it is cancelled`);
       // What the market fills of it at this price: all of it, unless it fills in parts.
       const part = this.partOf(order);
       const whole = part >= order.quantity * (1 - QUANTITY_SLACK);
       // All of it now or none of it.
       if (!whole && intent.timeInForce === 'fok') throw new Error('The fok order was not filled at once: it is cancelled');
       // At the price there is: its limit is the worst it takes. Of an immediate-or-cancel order the rest is dropped.
-      this.fill(order, this.markPrice, part, false);
+      this.fill(order, mark, part, false);
       if (!whole) order.filledQuantity = part;
     } else {
       this.orders = [...this.orders, order];
@@ -443,7 +502,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       // The stop taken away: nothing left to trail.
       if (intent.stopLoss === null) delete next.trailingStop;
       // A stop put somewhere by hand stays there, looser than its distance too: it follows on from it.
-      return typeof intent.stopLoss === 'number' ? next : trailed(next, this.markPrice);
+      return typeof intent.stopLoss === 'number' ? next : trailed(next, this.markOf(next));
     });
     this.emit('positions', this.positions);
   }
@@ -451,7 +510,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   async closePosition(intent: PositionCloseIntent): Promise<void> {
     const position = this.positions.find((p) => p.id === intent.positionId);
     if (!position) return;
-    this.close(position, this.markPrice || position.entryPrice, 'close');
+    this.close(position, this.worthOf(position), 'close');
     this.emit('positions', this.positions);
     this.tellAccount();
   }
@@ -460,7 +519,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   async reversePosition(intent: PositionReverseIntent): Promise<void> {
     const position = this.positions.find((p) => p.id === intent.positionId);
     if (!position) return;
-    const price = this.markPrice || position.entryPrice;
+    const price = this.worthOf(position);
     const quantity = position.quantity - (position.closedQuantity ?? 0);
     // Both halves or neither: the close frees the position's margin and costs a commission, as the opening does.
     const account = this.getAccount();
@@ -470,6 +529,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     }
     this.close(position, price, 'reverse');
     const order: TradingOrder = { id: this.nextId('ord'), side: opposite(position.side), type: 'market', price, quantity };
+    if (position.symbol !== undefined) order.symbol = position.symbol;
     this.fill(order, price);
   }
 
@@ -535,6 +595,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       time: this.fillTime(),
       reason: 'order',
     };
+    if (order.symbol !== undefined) fill.symbol = order.symbol;
     if (working) fill.remaining = tidy(left - quantity);
     // A part of an order that does not wait: the rest goes with it.
     else if (!last) fill.dropped = tidy(left - quantity);
@@ -545,7 +606,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     // brought the order's stops and levels, and what was done to them since stands.
     const later = (order.filledQuantity ?? 0) > 0;
     const bare: TradingOrder = { id: order.id, side: order.side, type: order.type, price: order.price, quantity };
-    const held = this.net ? this.positions[0] : this.positions.find((p) => p.id === this.building.get(order.id));
+    const held = this.net ? this.netPosition(order) : this.positions.find((p) => p.id === this.building.get(order.id));
     // On a net account a part that takes from the position, or turns it round, is the order as it is.
     if (held && this.net) this.fillInto(held, later && held.side === order.side ? bare : filled, price, fill);
     else if (held) {
@@ -580,10 +641,16 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       stopLoss: order.stopLoss,
       takeProfit: order.takeProfit,
     };
+    if (order.symbol !== undefined) position.symbol = order.symbol;
     if (order.trailingStop !== undefined) position.trailingStop = order.trailingStop;
     const levels = beyondEntry(order.takeProfits, order.side, price);
     if (levels) position.takeProfits = levels;
     return position;
+  }
+
+  /** The positions with `held` replaced by `next`, or taken off with none: those of other symbols stay as they are. */
+  private inPlaceOf(held: TradingPosition, next: TradingPosition | null): TradingPosition[] {
+    return this.positions.flatMap((p) => (p.id === held.id ? (next ? [next] : []) : [p]));
   }
 
   /**
@@ -595,7 +662,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   private fillInto(held: TradingPosition, order: TradingOrder, price: number, fill: FillEvent): void {
     const open = held.quantity - (held.closedQuantity ?? 0);
     if (order.side === held.side) {
-      this.positions = [this.added(held, order, price)];
+      this.positions = this.inPlaceOf(held, this.added(held, order, price));
       fill.positionId = held.id;
       return;
     }
@@ -608,15 +675,12 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     if (!same && order.quantity < open) {
       const left: TradingPosition = { ...held, quantity: open - closed };
       delete left.closedQuantity;
-      this.positions = [left];
+      this.positions = this.inPlaceOf(held, left);
       return;
     }
-    this.positions = [];
-    if (!same && order.quantity > open) {
-      const turned = this.opened(order, price, order.quantity - open);
-      this.positions = [turned];
-      fill.positionId = turned.id;
-    }
+    const turned = !same && order.quantity > open ? this.opened(order, price, order.quantity - open) : null;
+    this.positions = this.inPlaceOf(held, turned);
+    if (turned) fill.positionId = turned.id;
   }
 
   /**
@@ -664,6 +728,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       reason,
       pnl: (price - position.entryPrice) * quantity * direction * this.multiplier,
     };
+    if (position.symbol !== undefined) fill.symbol = position.symbol;
     this.realise(fill.pnl!);
     this.charge(fill);
     this.tellAccount();
@@ -689,7 +754,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
 
   private checkPendingOrders(): void {
     // A stop-limit whose stop was reached works on as a limit at its price, and may fill at once.
-    const reached = new Set(this.orders.filter((o) => o.type === 'stopLimit' && this.isTriggered(o)).map((o) => o.id));
+    const reached = new Set(this.orders.filter((o) => o.type === 'stopLimit' && this.mine(o) && this.isTriggered(o)).map((o) => o.id));
     if (reached.size > 0) {
       this.orders = this.orders.map((o) => {
         if (!reached.has(o.id)) return o;
@@ -698,7 +763,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       });
       this.emit('orders', this.orders);
     }
-    for (const o of this.orders.filter((o) => this.isTriggered(o))) {
+    for (const o of this.orders.filter((o) => this.mine(o) && this.isTriggered(o))) {
       // One of its group filled before it in this pass, and cancelled it.
       if (!this.orders.includes(o)) continue;
       // What fills of it at this price: all that is left, or a part where the market fills in parts.
@@ -717,13 +782,14 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     }
   }
 
-  private isTriggered(o: TradingOrder): boolean {
+  /** Whether the price reaches the order: the price being worked, or `mark` (its own symbol's, as it is placed). */
+  private isTriggered(o: TradingOrder, mark = this.markPrice): boolean {
     if (o.type === 'limit') {
-      return o.side === 'buy' ? this.markPrice <= o.price : this.markPrice >= o.price;
+      return o.side === 'buy' ? mark <= o.price : mark >= o.price;
     }
     if (o.type === 'stop' || o.type === 'stopLimit') {
       const trigger = o.stopPrice ?? o.price;
-      return o.side === 'buy' ? this.markPrice >= trigger : this.markPrice <= trigger;
+      return o.side === 'buy' ? mark >= trigger : mark <= trigger;
     }
     return false;
   }
@@ -732,7 +798,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   private trailStops(): boolean {
     let moved = false;
     this.positions = this.positions.map((p) => {
-      const next = trailed(p, this.markPrice);
+      const next = this.mine(p) ? trailed(p, this.markPrice) : p;
       if (next !== p) moved = true;
       return next;
     });
@@ -743,7 +809,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     // The stops that were there are checked first: a price that falls through one fills it
     // where it was, and only then do the others follow the price.
     let changed = false;
-    for (const held of [...this.positions]) {
+    for (const held of this.positions.filter((p) => this.mine(p))) {
       const long = held.side === 'buy';
       const reached = (target: number) => (long ? this.markPrice >= target : this.markPrice <= target);
       const hitSL =

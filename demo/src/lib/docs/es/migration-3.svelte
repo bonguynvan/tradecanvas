@@ -100,6 +100,25 @@ chart.startBracket('buy', undefined, { risk: 50 })   // la cantidad que pierde 5
   del mercado donde lo hay (era por 1, y la de la escalera no llevaba cantidad).
 </p>
 
+<h3 id="orders-by-symbol">Órdenes, posiciones y ejecuciones se dibujan en su propio símbolo</h3>
+<p>
+  Una orden, una posición o una ejecución que nombra su <code>symbol</code> se dibuja solo mientras el gráfico
+  muestra ese símbolo. En otro se guarda: <code>getOrders()</code>, <code>getPositions()</code> y
+  <code>getFills()</code> dan toda la cuenta, y <code>chart.getSymbol()</code> dice cuáles se dibujan. El gráfico
+  nombra ahora el símbolo que muestra en cada carga de <code>orderPlace</code> y la cuenta de simulación lo
+  conserva, así que una posición abierta en un símbolo ya no se dibuja en el siguiente, como antes, con un
+  resultado calculado con el precio equivocado. Lo que no nombra símbolo se dibuja en todos los símbolos, como
+  antes: un adaptador propio para una cuenta de varios símbolos lo nombra en sus órdenes, posiciones y ejecuciones.
+</p>
+<p>
+  Con esto cambiaron tres cosas. Cada ejecución que dan <code>executionFill</code> y <code>getFills()</code> tiene
+  un <code>symbol</code> cuando el gráfico muestra uno, y <code>ChartWidget</code> ya no olvida las ejecuciones al
+  cambiar de símbolo: el historial y el resultado realizado son de la cuenta, y las marcas vuelven con su símbolo.
+  <code>setMarkPrice</code> recibe el símbolo como tercer argumento, que el gráfico da en una repetición: con
+  precios que nombran su símbolo, la cuenta de simulación trabaja y valora cada símbolo con el suyo; con precios
+  que no nombran ninguno, es un solo mercado, como era. Y con barras puestas a mano el gráfico no conoce ningún
+  símbolo hasta que se le dice: <code>chart.setSymbol(symbol)</code>, que <code>ChartWidget</code> llama por sí
+  mismo.
 <h3 id="hold-tooltip">Mantener pulsado sobre el gráfico muestra la ventana de precio</h3>
 <p>
   En <code>ChartWidget</code>, mantener el botón del ratón quieto sobre el área del gráfico durante medio segundo muestra

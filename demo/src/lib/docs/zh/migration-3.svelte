@@ -87,6 +87,20 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 在止损处亏损 50 �
   一次按下发出的订单（来自右键菜单或盘口深度面板）在市场有交易单位时数量为一手（以前是 1，而深度面板的订单没有数量）。
 </p>
 
+<h3 id="orders-by-symbol">订单、持仓和成交画在各自的品种上</h3>
+<p>
+  写明了 <code>symbol</code> 的订单、持仓或成交，只在图表显示该品种时绘制。在其他品种上它会被保留：
+  <code>getOrders()</code>、<code>getPositions()</code> 和 <code>getFills()</code> 返回整个账户，
+  <code>chart.getSymbol()</code> 说明其中哪些被绘制。图表现在会在每个 <code>orderPlace</code> 负载上写明当前显示的品种，
+  模拟账户会保留它，因此在一个品种上开出的持仓不会再像以前那样画到下一个品种上，并按错误的价格计算盈亏。
+  没有写明品种的仍像以前一样画在每个品种上：你自己为多品种账户写的适配器，要在它的订单、持仓和成交上写明品种。
+</p>
+<p>
+  随之改变的有三处。只要图表显示着某个品种，<code>executionFill</code> 和 <code>getFills()</code> 给出的每笔成交都带有
+  <code>symbol</code>，<code>ChartWidget</code> 在品种改变时不再清除成交：历史和已实现盈亏属于账户，标记会随它们的品种
+  一起回来。<code>setMarkPrice</code> 接受品种作为第三个参数，图表在回放时会传入它：提供的价格写明了品种时，
+  模拟账户按各品种自己的价格撮合和估值；提供的价格没有写明品种时，它和以前一样是一个市场。另外，K 线由手动设置时，
+  图表在被告知之前不知道品种：<code>chart.setSymbol(symbol)</code>，<code>ChartWidget</code> 会自己调用它。
 <h3 id="hold-tooltip">在图表上按住鼠标显示价格弹窗</h3>
 <p>
   在 <code>ChartWidget</code> 中，在绘图区按住鼠标不动半秒，会显示鼠标所在K线的浮动 OHLCV 提示，直到松开按钮：

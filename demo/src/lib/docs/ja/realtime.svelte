@@ -479,7 +479,7 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // 最初からす�
 
 <h3>リプレイ中のペーパー取引</h3>
 <p>
-  <code>PaperExecutionAdapter</code> のように <code>setMarkPrice(price, time)</code> を持つ実行アダプターは、
+  <code>PaperExecutionAdapter</code> のように <code>setMarkPrice(price, time, symbol)</code> を持つ実行アダプターは、
   リプレイ上で取引します。リプレイ中、チャートはリプレイされる価格と時刻を順に渡すので、注文や損切りは
   リプレイがその価格を通過したときに約定し、約定はリプレイ中のバーの上に記録されます。各ステップの安値と高値が
   考慮され、先へジャンプすると途中のステップをすべて通過します。進むのは前方向だけで、後ろへシークした後は、
