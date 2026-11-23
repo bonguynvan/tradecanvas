@@ -161,6 +161,22 @@ chart.startBracket('buy', undefined, { risk: 50 })   // khối lượng sẽ l�
   theo.
 </p>
 
+<h3 id="money">Cổ phiếu Việt Nam được tính giá trị bằng đồng</h3>
+<p>
+  <code>MARKET_HOSE</code>, <code>MARKET_HOSE_ETF</code>, <code>MARKET_HNX</code> và <code>MARKET_UPCOM</code>
+  ghi giá theo nghìn đồng (26.40 là 26.400 đồng) và giờ khai rõ điều đó: <code>contractMultiplier</code> của chúng
+  là 1.000. Giá trị order trong ticket, lãi lỗ của position trong bảng tài khoản và các số tiền trên tag của chart
+  đều tính theo hệ số này, nên 100 cổ phiếu giá 26.40 hiện 2.640.000 thay vì 2.640. Ở mọi thị trường, số tiền trên
+  tag của chart (lãi lỗ của position, số tiền stop hoặc target mang lại) giờ tính theo hệ số của thị trường như
+  bảng tài khoản vẫn làm: tag của một position VN30F hiện theo đồng, không theo điểm.
+  <code>scaleMarketPrices</code> chia hệ số cho factor của nó, nên
+  <code>scaleMarketPrices(MARKET_HOSE, 1000)</code>, với giá theo đồng, có hệ số 1. Nếu bạn đang tự nhân 1.000
+  (trong <code>formatAmount</code>, hoặc ở chỗ bạn hiển thị cạnh chart), hãy bỏ đi.
+  <code>PaperExecutionAdapter</code> nhận <code>multiplier</code> riêng: hãy truyền
+  <code>contractMultiplier</code> của thị trường, nếu không số dư và lãi lỗ của fill sẽ nhỏ hơn bảng tài khoản một
+  nghìn lần. Không có gì gửi tới broker thay đổi: giá và khối lượng vẫn như cũ.
+</p>
+
 <h2 id="types">Các type được mở rộng</h2>
 <p>
   <code>TimeInForce</code> nay là <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. Code xử lý mọi giá trị

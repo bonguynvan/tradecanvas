@@ -201,6 +201,12 @@ export interface TradingConfig {
   fillMarks?: boolean;
   /** Decimals of the prices on the trading tags; unset, the price axis's (the market's or the range's). */
   pricePrecision?: number;
+  /**
+   * What a move of one in price is worth for one unit, in the amounts on the trading tags (a
+   * position's profit, what a stop or a target would make). `setMarket` sets it from the market's
+   * `contractMultiplier`. Default 1.
+   */
+  amountMultiplier?: number;
   dragThreshold?: number;
 }
 

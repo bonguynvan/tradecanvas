@@ -152,7 +152,7 @@ export class PositionRenderer {
   ): void {
     const { chartRect } = viewport;
     const colors = colorsOf(config);
-    const labelCtx = buildPositionLabelContext(pos, currentPrice, config.pricePrecision ?? 2);
+    const labelCtx = buildPositionLabelContext(pos, currentPrice, config.pricePrecision ?? 2, undefined, undefined, config.amountMultiplier);
     const top = Math.min(entryY, currentY);
     const height = Math.abs(currentY - entryY);
     ctx.fillStyle = pickPnLColor(labelCtx.pnl, config.pnlThresholds, labelCtx.pnl >= 0 ? colors.profit : colors.loss);
@@ -207,7 +207,7 @@ export class PositionRenderer {
     } else {
       const precision = config.pricePrecision ?? 2;
       const labelCtx = buildPositionLabelContext(
-        pos, currentPrice, precision, (p) => priceTagText(p, viewport, config.pricePrecision), viewport.numberLocale,
+        pos, currentPrice, precision, (p) => priceTagText(p, viewport, config.pricePrecision), viewport.numberLocale, config.amountMultiplier,
       );
       if (config.positionLabel !== undefined) {
         cells.push({ kind: 'text', text: resolvePositionLabel(config.positionLabel, labelCtx) });
@@ -243,7 +243,7 @@ export class PositionRenderer {
     const y = price === undefined ? NaN : priceToY(price, viewport);
     if (price === undefined || !inPlot(y, viewport)) return null;
     const colors = colorsOf(config);
-    const amount = amountAt(pos.side, pos.entryPrice, openQuantity(pos), price);
+    const amount = amountAt(pos.side, pos.entryPrice, openQuantity(pos), price, config.amountMultiplier);
     // A distance, not the 0 or null a broker's own record may hold for "none".
     const trailing = typeof pos.trailingStop === 'number' && pos.trailingStop > 0;
     const cells: TagCell[] = [
@@ -331,7 +331,7 @@ export function levelTags(
     if (!(part > 0)) return;
     const y = priceToY(level.price, viewport);
     if (!inPlot(y, viewport)) return;
-    const amount = amountAt(side, entry, part, level.price);
+    const amount = amountAt(side, entry, part, level.price, config.amountMultiplier);
     tags.push({
       y,
       color: colors.profit,

@@ -15,11 +15,12 @@ export function buildPositionLabelContext(
   precision: number,
   formatPrice?: (price: number) => string,
   locale?: string,
+  multiplier?: number,
 ): PositionLabelContext {
   const closed = Math.min(Math.max(pos.closedQuantity ?? 0, 0), pos.quantity);
   const open = pos.quantity - closed;
   const direction = pos.side === 'buy' ? 1 : -1;
-  const pnl = (currentPrice - pos.entryPrice) * open * direction;
+  const pnl = (currentPrice - pos.entryPrice) * open * direction * worthOf(multiplier);
   const pnlPct =
     pos.entryPrice === 0
       ? 0
@@ -109,14 +110,23 @@ export function amountDecimals(amount: number, price: number, pricePrecision?: n
   return decimals <= smallValueDecimals(at) + PAST_PRICE_DECIMALS ? decimals : AMOUNT_DECIMALS;
 }
 
-/** What a position (or the order that opens it) makes when the price reaches `price`. */
+/** A market's multiplier as it counts: 1 for none given, or one that is no multiplier. */
+function worthOf(multiplier: number | undefined): number {
+  return multiplier !== undefined && Number.isFinite(multiplier) && multiplier > 0 ? multiplier : 1;
+}
+
+/**
+ * What a position (or the order that opens it) makes when the price reaches `price`, a move of
+ * one in price worth `multiplier` a unit (the market's contract multiplier; 1 without).
+ */
 export function amountAt(
   side: 'buy' | 'sell',
   entryPrice: number,
   quantity: number,
   price: number,
+  multiplier?: number,
 ): number {
-  return (price - entryPrice) * quantity * (side === 'buy' ? 1 : -1);
+  return (price - entryPrice) * quantity * (side === 'buy' ? 1 : -1) * worthOf(multiplier);
 }
 
 export const DEFAULT_POSITION_LABEL =

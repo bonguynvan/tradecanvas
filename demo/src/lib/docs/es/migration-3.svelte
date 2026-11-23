@@ -165,6 +165,24 @@ chart.startBracket('buy', undefined, { risk: 50 })   // la cantidad que pierde 5
   una columna por su lugar necesita el nuevo.
 </p>
 
+<h3 id="money">Las acciones vietnamitas valen su precio en dong</h3>
+<p>
+  <code>MARKET_HOSE</code>, <code>MARKET_HOSE_ETF</code>, <code>MARKET_HNX</code> y <code>MARKET_UPCOM</code>
+  escriben el precio en miles de dong (26.40 son 26.400 dong) y ahora lo declaran: su
+  <code>contractMultiplier</code> es 1.000. El valor de una orden en el ticket, el resultado de una posición en el
+  panel de la cuenta y los importes de las etiquetas del gráfico se cuentan con él, así que 100 acciones a 26.40
+  muestran 2.640.000 donde mostraban 2.640. En todos los mercados, los importes de las etiquetas del gráfico (el
+  resultado de una posición, lo que daría un stop o un objetivo) se cuentan ahora con el multiplicador del
+  mercado, como ya hacía el panel: la etiqueta de una posición de VN30F se lee en dong, no en puntos.
+  <code>scaleMarketPrices</code> divide el multiplicador por su factor, así que
+  <code>scaleMarketPrices(MARKET_HOSE, 1000)</code>, con precios en dong, tiene multiplicador 1. Si multiplicabas
+  por 1.000 por tu cuenta (en <code>formatAmount</code>, o en lo que muestras junto al gráfico), deja de hacerlo.
+  Un <code>PaperExecutionAdapter</code> recibe su propio <code>multiplier</code>: dale el
+  <code>contractMultiplier</code> del mercado, o su saldo y el resultado de sus ejecuciones seguirán siendo mil
+  veces menores que los del panel. Nada de lo que se envía a un bróker cambia: precios y cantidades son los de
+  antes.
+</p>
+
 <h2 id="types">Tipos que han crecido</h2>
 <p>
   <code>TimeInForce</code> es ahora <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. El código que trata todos

@@ -156,6 +156,22 @@ chart.startBracket('buy', undefined, { risk: 50 })   // ストップで 50 を�
   ドテンと決済のボタンが損益のすぐ後に来ます。ボタンの文字や列の位置を読むテストは直す必要があります。
 </p>
 
+<h3 id="money">ベトナム株の金額はドンで計算されます</h3>
+<p>
+  <code>MARKET_HOSE</code>、<code>MARKET_HOSE_ETF</code>、<code>MARKET_HNX</code>、<code>MARKET_UPCOM</code>
+  は価格を千ドン単位で表し（26.40 は 26,400 ドン）、それを明示するようになりました。
+  <code>contractMultiplier</code> は 1,000 です。注文チケットの注文金額、口座パネルのポジションの損益、
+  チャートのタグの金額はこの値で計算されるため、26.40 の 100 株は 2,640 ではなく 2,640,000 と表示されます。
+  どの市場でも、チャートのタグの金額（ポジションの損益、ストップやターゲットの金額）は、口座パネルと同じく
+  市場の乗数で計算されます。VN30F のポジションのタグはポイントではなくドンで表示されます。
+  <code>scaleMarketPrices</code> は乗数を係数で割るので、価格をドンで読む
+  <code>scaleMarketPrices(MARKET_HOSE, 1000)</code> の乗数は 1 です。自分で 1,000 を掛けていた場合
+  （<code>formatAmount</code> や、チャートの横に表示する値で）は、やめてください。
+  <code>PaperExecutionAdapter</code> は独自の <code>multiplier</code> を取ります。市場の
+  <code>contractMultiplier</code> を渡さないと、残高と約定の損益がパネルの千分の一のままになります。
+  ブローカーに送られる内容は変わりません。価格と数量は以前のままです。
+</p>
+
 <h2 id="types">広がった型</h2>
 <p>
   <code>TimeInForce</code> は <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code> になりました。すべてのメンバーを扱うコード（default

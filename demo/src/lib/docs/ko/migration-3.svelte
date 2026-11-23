@@ -152,6 +152,21 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 손절가에서 50을 �
   테스트는 고쳐야 합니다.
 </p>
 
+<h3 id="money">베트남 주식의 금액은 동으로 계산됩니다</h3>
+<p>
+  <code>MARKET_HOSE</code>, <code>MARKET_HOSE_ETF</code>, <code>MARKET_HNX</code>, <code>MARKET_UPCOM</code>은
+  가격을 천 동 단위로 적으며(26.40은 26,400동), 이제 그것을 명시합니다. <code>contractMultiplier</code>가
+  1,000입니다. 주문 티켓의 주문 금액, 계좌 패널의 포지션 손익, 차트 태그의 금액이 이 값으로 계산되므로
+  26.40에 100주는 2,640이 아니라 2,640,000으로 표시됩니다. 모든 시장에서 차트 태그의 금액(포지션 손익, 스톱이나
+  타깃의 금액)은 이제 계좌 패널처럼 시장의 승수로 계산됩니다. VN30F 포지션의 태그는 포인트가 아니라 동으로
+  표시됩니다. <code>scaleMarketPrices</code>는 승수를 계수로 나누므로, 가격을 동으로 읽는
+  <code>scaleMarketPrices(MARKET_HOSE, 1000)</code>의 승수는 1입니다. 직접 1,000을 곱하고 있었다면
+  (<code>formatAmount</code>에서, 또는 차트 옆에 표시하는 값에서) 그만두세요.
+  <code>PaperExecutionAdapter</code>는 자체 <code>multiplier</code>를 받습니다. 시장의
+  <code>contractMultiplier</code>를 주지 않으면 잔고와 체결 손익이 패널보다 천 배 작게 남습니다.
+  브로커에게 보내는 내용은 바뀌지 않습니다. 가격과 수량은 그대로입니다.
+</p>
+
 <h2 id="types">넓어진 타입</h2>
 <p>
   <code>TimeInForce</code>는 이제 <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>입니다. 모든 멤버를 처리하는 코드(default가

@@ -7047,6 +7047,8 @@ export class Chart {
 
     // Apply price precision to trading, alerts, and price line
     if (config.pricePrecision !== undefined) this.applyPricePrecision(config.pricePrecision);
+    // What a price is worth on this market, for the amounts on the trading tags: none given is none kept.
+    this.tradingManager.setConfig({ amountMultiplier: config.contractMultiplier });
 
     // Longer price labels may need a wider axis.
     this.updateViewportAndRender();

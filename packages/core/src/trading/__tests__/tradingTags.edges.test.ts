@@ -3,7 +3,7 @@ import type { Theme } from '@tradecanvas/commons';
 import { DARK_THEME, UI_ICONS } from '@tradecanvas/commons';
 import { TradingManager } from '../TradingManager.js';
 import { drawTags, layoutTags, type TagBox, type TradingTag } from '../tradingTags.js';
-import { amountAt, amountDecimals, formatAmount } from '../positionFormat.js';
+import { amountAt, amountDecimals, buildPositionLabelContext, formatAmount } from '../positionFormat.js';
 import { buttonAt, type LineButton } from '../lineButtons.js';
 import { tagPath } from '../../ui/shapes.js';
 import { recordingCtx, unitViewport } from '../../drawings/__tests__/fixtures.js';
@@ -189,5 +189,24 @@ describe('tagPath', () => {
     const { ctx, calls } = recordingCtx();
     tagPath(ctx, 1, 2, 30, 21, theme);
     expect(calls.map((c) => c.name)).toEqual(['beginPath', 'rect']);
+  });
+});
+
+describe('amounts on a market where a price is not the money', () => {
+  it('counts what a move is worth by the market’s multiplier', () => {
+    // 100 shares bought at 26.40 (thousand dong) and worth 27.00: 60,000 dong.
+    expect(amountAt('buy', 26.4, 100, 27, 1000)).toBeCloseTo(60_000, 6);
+    expect(amountAt('sell', 26.4, 100, 27, 1000)).toBeCloseTo(-60_000, 6);
+    // None given, or one that is no multiplier: the price is the money.
+    expect(amountAt('buy', 100, 2, 103)).toBe(6);
+    for (const bad of [0, -5, NaN, Infinity]) expect(amountAt('buy', 100, 2, 103, bad)).toBe(6);
+  });
+
+  it('writes a position’s profit by it, and its percent as before', () => {
+    const position = { id: 'p', side: 'buy' as const, entryPrice: 26.4, quantity: 100 };
+    const context = buildPositionLabelContext(position, 27, 2, undefined, undefined, 1000);
+    expect(context.pnl).toBeCloseTo(60_000, 6);
+    expect(context.pnlPct).toBeCloseTo((0.6 / 26.4) * 100, 6);
+    expect(buildPositionLabelContext(position, 27, 2).pnl).toBeCloseTo(60, 6);
   });
 });
