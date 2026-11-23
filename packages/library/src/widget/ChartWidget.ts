@@ -1491,9 +1491,10 @@ export class ChartWidget {
           onToggle: (open) => this.markOpen('ladder', open),
           onClose: () => this.docking.closePanelByHand('depthLadder'),
         }, undefined, this.t);
-        // Your working orders, marked on the rows where they wait.
-        const ladder = this.trading.depthLadder;
-        this.chart.on('ordersChange', () => ladder.setOrders(this.chart.getOrders()));
+        // Your working orders, marked on the rows where they wait: those of the symbol whose book this is.
+        for (const event of ['ordersChange', 'symbolChange'] as const) {
+          this.chart.on(event, () => this.trading.refreshLadderOrders());
+        }
       }
       // Esc-cancel originates in the chart; reflect it in the bar.
       this.chart.on('dataUpdate', (e) => {
@@ -1762,7 +1763,7 @@ export class ChartWidget {
       // No stream to say the interval or the symbol: the legend and the indicators kept to some take them from here.
       this.chart.setDataTimeframe(this.state.timeframe);
       // Only a symbol the host named: the fallback one (the first listed, or BTCUSDT) may not be its bars'.
-      if (options.symbol) this.chart.setSymbolName(options.symbol);
+      if (options.symbol) this.showHandSymbol(options.symbol);
     }
 
     // Watchlist live-update loop. 1s cadence keeps DOM churn low while still
@@ -2032,8 +2033,9 @@ export class ChartWidget {
     // saved snapshot reflects what the user actually saw under that ticker.
     this.layouts.flushActiveLayout();
     if (symbol !== this.state.symbol) {
-      // Fill marks sit on this symbol's bars; the next symbol starts with none.
-      this.chart.clearFills();
+      // The fills are the account's: the chart marks those of the symbol it shows, and keeps the rest.
+      // Those that came while it knew no symbol name none, and would be marked on every one: they go.
+      if (this.chart.getSymbol() === '') this.chart.clearFills();
       this.chartInfoAtSwitch = this.chart.getSymbolInfo();
     }
     this.state = { ...this.state, symbol };
@@ -2048,9 +2050,19 @@ export class ChartWidget {
     if (this.adapter) {
       await this.connectStream();
     } else {
-      // The bars are the host's: no stream names the symbol on the legend.
-      this.chart.setSymbolName(symbol);
+      this.showHandSymbol(symbol);
     }
+  }
+
+  /**
+   * The bars are the host's: no stream names their symbol. The chart is told it, so that it draws
+   * that symbol's orders and positions and no other's, and the legend names it.
+   */
+  private showHandSymbol(symbol: string): void {
+    this.chart.setSymbol(symbol);
+    this.chart.setSymbolName(symbol);
+    // The account panel follows with the host's bars (`dataUpdate`); the ladder's own orders have no such cue.
+    this.trading?.refreshLadderOrders();
   }
 
   /**

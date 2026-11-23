@@ -375,3 +375,44 @@ describe('wireExecution: what became of an order', () => {
     expect(broker.asked.at(-1)).toMatchObject({ side: 'sell', type: 'market', clientOrderId: 'w2' });
   });
 });
+
+describe('wireExecution: the orders it makes itself name their symbol', () => {
+  it('sends a confirmed bracket for the symbol the chart shows', async () => {
+    const adapter = new PaperExecutionAdapter({ markPrice: 100 });
+    const h = makeHost();
+    h.host.marketPrice = () => 100;
+    h.host.symbol = () => 'BTCUSDT';
+    wireExecution(adapter, h.host);
+    adapter.connect({});
+    h.emit('bracketPlace' as ExecutionIntentType, { side: 'buy', entry: 95, stopLoss: 90, takeProfit: 105, quantity: 2, riskReward: 2 });
+    await flush();
+    expect(h.orders).toEqual([expect.objectContaining({ price: 95, symbol: 'BTCUSDT' })]);
+  });
+
+  it('names none on a bracket while the chart shows no symbol', async () => {
+    const adapter = new PaperExecutionAdapter({ markPrice: 100 });
+    const h = makeHost();
+    h.host.marketPrice = () => 100;
+    h.host.symbol = () => undefined;
+    wireExecution(adapter, h.host);
+    adapter.connect({});
+    h.emit('bracketPlace' as ExecutionIntentType, { side: 'buy', entry: 95, stopLoss: 90, takeProfit: 105, quantity: 2, riskReward: 2 });
+    await flush();
+    expect(h.orders[0]).not.toHaveProperty('symbol');
+  });
+
+  it('reverses a position on its own symbol, whatever the chart shows by then', async () => {
+    const adapter = new PaperExecutionAdapter({ markPrice: 100 });
+    (adapter as { reversePosition?: unknown }).reversePosition = undefined;
+    const h = makeHost();
+    h.host.symbol = () => 'ETHUSDT';
+    wireExecution(adapter, h.host);
+    adapter.connect({});
+    h.emit('orderPlace', { side: 'sell', type: 'market', price: 100, quantity: 1, symbol: 'BTCUSDT' });
+    await flush();
+    h.emit('positionReverse', { positionId: h.positions[0].id });
+    await flush();
+    expect(h.positions).toEqual([expect.objectContaining({ side: 'buy', quantity: 1, symbol: 'BTCUSDT' })]);
+  });
+});
+

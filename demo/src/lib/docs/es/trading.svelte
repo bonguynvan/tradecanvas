@@ -302,6 +302,50 @@ chart.on('marginCall', (e) => warn(e.payload))   // { marginLevel: 0.9, level: 1
   con un <code>AccountSummary</code> cuando su dinero cambia, y <code>marginCall</code> cuando su bróker avisa.
 </p>
 
+<h3 id="symbols">Una cuenta con más de un símbolo</h3>
+<p>
+  Un gráfico muestra un símbolo, y una cuenta puede tener muchos. Una orden, una posición y una ejecución pueden
+  decir de qué símbolo son (<code>symbol</code>). El gráfico dibuja las del símbolo que muestra y las que no dicen
+  ninguno; las que nombran otro símbolo las guarda, y las vuelve a dibujar cuando se muestra ese símbolo.
+  <code>getOrders()</code>, <code>getPositions()</code> y <code>getFills()</code> dan toda la cuenta, igual que
+  <code>ordersChange</code> y <code>positionsChange</code>; <code>chart.getSymbol()</code> dice cuáles están en el
+  gráfico. Una orden que pide el gráfico nombra el símbolo mostrado (<code>symbol</code> en
+  <code>orderPlace</code>), y la cuenta de simulación lo conserva en la orden, en la posición que abre y en sus
+  ejecuciones. Un adaptador propio para una cuenta de varios símbolos lo nombra en cada una. El gráfico nunca
+  adivina: lo que no nombra símbolo se dibuja en todos los símbolos, como antes. Dos nombres son un mismo símbolo sin
+  importar mayúsculas, y por su ticker cuando solo uno nombra su mercado (<code>BTCUSDT</code> y
+  <code>BINANCE:BTCUSDT</code>); si los dos nombran un mercado, debe ser el mismo.
+</p>
+<p>
+  Una ejecución es una marca sobre las barras de un símbolo, así que el gráfico da un símbolo a cada una: el suyo;
+  si no, el de su posición o su orden; si no, el que se mostraba cuando llegó. El panel de cuenta del widget lista
+  las filas de todos los símbolos y nombra el símbolo cuando alguna es de otro; una posición de otro símbolo
+  muestra el precio que el adaptador da para ella (<code>markPrice</code> en la posición) y el resultado a ese
+  precio, o ninguno de los dos: el precio del gráfico no es el suyo. La escalera de profundidad marca las órdenes
+  del símbolo cuyo libro muestra.
+</p>
+<p>
+  Con un stream (<code>connect</code>, <code>switchStream</code>) el gráfico conoce su símbolo. Con barras que pones
+  tú, dilo al cambiarlas; <code>ChartWidget</code> lo hace cuando se elige su símbolo.
+</p>
+<pre><code>{`chart.setData(barsOf('ETHUSDT'))
+chart.setSymbol('ETHUSDT')        // dibuja las órdenes y posiciones de ETHUSDT; '' vuelve a dibujarlo todo
+chart.getSymbol()                 // 'ETHUSDT'
+
+chart.setPositions([
+  { id: 'p1', symbol: 'BTCUSDT', side: 'buy', entryPrice: 64_000, quantity: 1, markPrice: 64_250 },   // se guarda, no se dibuja
+  { id: 'p2', symbol: 'ETHUSDT', side: 'sell', entryPrice: 3_150, quantity: 2 },                      // se dibuja
+])`}</code></pre>
+<p>
+  Un precio también es de un símbolo. Nómbralo al alimentar la cuenta de simulación y cada precio trabaja solo las
+  órdenes y los stops de ese símbolo y valora solo sus posiciones; una posición se cierra, se invierte y se liquida
+  al último precio de su propio símbolo, y una cuenta neta lleva una posición por símbolo. Un precio que no nombra
+  símbolo es el precio de todo lo que tiene la cuenta, como antes. Nómbralo en todos los precios que entregas, o en ninguno:
+  uno que no nombra símbolo vuelve a hacer de la cuenta un solo mercado. En una repetición el gráfico nombra el símbolo
+  en los precios que entrega.
+</p>
+<pre><code>{`feed.onTrade((trade) => broker.setMarkPrice(trade.price, trade.time, trade.symbol))`}</code></pre>
+
 <h2>Actuar sobre órdenes y posiciones desde el gráfico</h2>
 <p>
   Las líneas de órdenes y de posiciones llevan pequeños botones en su extremo

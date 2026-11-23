@@ -225,7 +225,8 @@ describe('a paper account only goes forward in a replay', () => {
     chart.replayStart({ steps, startIndex: 2, paused: true });
     const spy = vi.spyOn(paper, 'setMarkPrice');
     chart.disconnectExecution();
-    expect(spy).toHaveBeenCalledWith(hours[9].close, undefined);
+    // No time (the clock's), and no symbol: these bars were set by hand.
+    expect(spy).toHaveBeenCalledWith(hours[9].close, undefined, undefined);
   });
 });
 

@@ -17,6 +17,21 @@ export function tickerOf(symbol: string): string {
   return at <= 0 || at === symbol.length - 1 ? symbol : symbol.slice(at + 1);
 }
 
+/**
+ * Whether two symbols name one instrument: the same letters in any case, and, where one alone
+ * names its venue ("BINANCE:BTCUSDT" and "BTCUSDT"), the same ticker. Two that each name a venue
+ * are the same only whole: "BINANCE:BTCUSDT" is not "SIM:BTCUSDT". An account's orders and a
+ * chart's symbol are matched by it, so that one named the other way is not taken for another's.
+ */
+export function sameSymbol(a: string, b: string): boolean {
+  const one = a.toUpperCase();
+  const other = b.toUpperCase();
+  if (one === other) return true;
+  const ticker = tickerOf(one);
+  // A venue on one alone: the other is taken for the same market's.
+  return (ticker === one) !== (tickerOf(other) === other) && ticker === tickerOf(other);
+}
+
 /** How well `query` (upper case) matches `text` (upper case): 0 when it doesn't. */
 function score(text: string, query: string): number {
   if (!text) return 0;

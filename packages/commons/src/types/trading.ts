@@ -19,6 +19,12 @@ export interface TakeProfitLevel {
 
 export interface TradingOrder {
   id: string;
+  /**
+   * The symbol the order is of. An adapter for an account that trades more than one names it: the
+   * chart draws the orders of the symbol it shows, and keeps the others. Left out, the order is
+   * drawn on whatever symbol the chart shows: the chart does not guess whose it is.
+   */
+  symbol?: string;
   side: OrderSide;
   type: OrderType;
   price: number;
@@ -48,6 +54,18 @@ export interface TradingOrder {
 
 export interface TradingPosition {
   id: string;
+  /**
+   * The symbol the position is of. An adapter for an account that trades more than one names it:
+   * the chart draws the positions of the symbol it shows, and keeps the others. Left out, the
+   * position is drawn on whatever symbol the chart shows: the chart does not guess whose it is.
+   */
+  symbol?: string;
+  /**
+   * The price the account values the position at, where the adapter says. The widget's account
+   * panel works out from it the profit and loss of a position of another symbol than the chart's;
+   * with none, it shows none (the chart's price is not that symbol's).
+   */
+  markPrice?: number;
   side: OrderSide;
   entryPrice: number;
   quantity: number;
@@ -202,6 +220,11 @@ export interface OrderPlaceIntent {
   expireTime?: number;
   /** A name shared by orders of which one cancels the others: when one fills, the rest are cancelled. */
   ocoGroup?: string;
+  /**
+   * The symbol the order is for: the one the chart shows as it is asked for, unless the order
+   * names another. An adapter keeps it on the order and the position it opens.
+   */
+  symbol?: string;
   /**
    * The id the order goes out with, its own: the chart gives one to every order asked for
    * (`placeOrderIntent`) that has none. A broker that takes it turns away a repeat of the same
