@@ -4563,13 +4563,14 @@
   --tcw-sell-fill-hover: #a81f26;
 }
 /* Its rows and its head are 28 px, its buttons 24 with 8 between, and the panel is as tall as its rows up to its old height. */
-.tcw-root[data-tcw-ui='graphite'] .tcw-account {
+/* On a phone the panel is a sheet with cards in it, and keeps the sheet's own height. */
+.tcw-root[data-tcw-ui='graphite']:not([data-tcw-narrow]) .tcw-account {
   height: auto;
   max-height: 233px;
 }
 .tcw-root[data-tcw-ui='graphite'] .tcw-account-head { min-height: 32px; }
 /* Its rows give the panel its height: the body is as tall as they are, and scrolls past the panel's limit. */
-.tcw-root[data-tcw-ui='graphite'] .tcw-account-body { flex: 0 1 auto; }
+.tcw-root[data-tcw-ui='graphite']:not([data-tcw-narrow]) .tcw-account-body { flex: 0 1 auto; }
 .tcw-root[data-tcw-ui='graphite']:not([data-tcw-narrow]) .tcw-account-table th { height: 28px; }
 .tcw-root[data-tcw-ui='graphite']:not([data-tcw-narrow]) .tcw-account-table td { height: 28px; }
 .tcw-root[data-tcw-ui='graphite'] .tcw-account-actions { gap: var(--tcw-space-4); }

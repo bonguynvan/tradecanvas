@@ -688,4 +688,12 @@ describe('ChartWidget: where the ticket opens', () => {
     trading().openOrderTicket();
     expect((document.activeElement as HTMLElement | null)?.dataset.ticketField).toBe('quantity');
   });
+
+  it('is on the side picked under a finger, where a focused field would bring the keyboard up', () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(pointer: coarse)' }));
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    trading().openOrderTicket();
+    expect(document.activeElement?.getAttribute('aria-pressed')).toBe('true');
+    vi.unstubAllGlobals();
+  });
 });

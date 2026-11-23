@@ -1965,3 +1965,11 @@ img.tcw-ss-badge {
   background: var(--tcw-side-fill);
   color: var(--tcw-fill-ink);
 }
+/* With the system's colours a ground is no edge: the buttons without a border get one back. */
+@media (forced-colors: active) {
+  .tcw-root[data-tcw-ui='graphite'] .tcw-ticket-side-btn,
+  .tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-footer-cancel,
+  .tcw-root[data-tcw-ui='graphite'] .tcw-quote-btn {
+    border: var(--tcw-border-w) solid ButtonText;
+  }
+}

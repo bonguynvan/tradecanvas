@@ -91,6 +91,10 @@ function soundQuote(quote: OrderTicketQuote | null | undefined): OrderTicketQuot
 
 /** How long an order may be on its way before the ticket says no answer has come (ms). */
 const NO_ANSWER_MS = 10_000;
+/** Whether the widget is used with a finger: a touch screen with no mouse beside it. */
+function underFinger(): boolean {
+  return typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+}
 /** The digits a quantity is written to on the ticket's button: past them is a float's noise. */
 const QUANTITY_DIGITS = 12;
 
@@ -258,8 +262,12 @@ export class WidgetOrderTicket {
     this.problemsEl.replaceChildren();
     this.render();
     this.backdrop.hidden = false;
-    // The quantity is what is typed first; a side is picked already. The side's button as the fallback, where there is no quantity to set.
-    (this.body.querySelector<HTMLElement>('[data-ticket-field="quantity"]') ?? this.body.querySelector<HTMLElement>('button[aria-pressed="true"]'))?.focus();
+    // The quantity is what is typed first; a side is picked already. Under a finger a focused field
+    // brings the keyboard up over the ticket, so there the side's button takes the focus, as it does
+    // where there is no quantity to set.
+    const sideButton = this.body.querySelector<HTMLElement>('button[aria-pressed="true"]');
+    const quantityField = underFinger() ? null : this.body.querySelector<HTMLElement>('[data-ticket-field="quantity"]');
+    (quantityField ?? sideButton)?.focus();
   }
 
   close(): void {
