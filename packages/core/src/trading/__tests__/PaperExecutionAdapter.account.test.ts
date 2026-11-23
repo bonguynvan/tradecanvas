@@ -150,14 +150,47 @@ describe('PaperExecutionAdapter: a position keeps what its price was worth when 
     expect(adapter.getPositions()[0].multiplier).toBe(1000);
   });
 
-  it('counts an order by its own symbol’s multiplier, whichever the chart said last', async () => {
+  it('keeps for a waiting order what its price was worth when it was placed', async () => {
     const { adapter } = connect({ markPrice: 26.4, balance: 100_000_000 });
-    adapter.setMultiplier(1000, 'HOSE:VNM');
-    adapter.setMultiplier(undefined, 'BINANCE:BTCUSDT');
-    adapter.setMarkPrice(26.4, undefined, 'VNM');
-    await adapter.placeOrder({ side: 'buy', type: 'market', quantity: 100, price: 26.4, symbol: 'VNM' });
+    adapter.setMultiplier(1000);
+    await adapter.placeOrder({ side: 'buy', type: 'limit', quantity: 100, price: 26 });
+    // The chart shows another market before the price comes.
+    adapter.setMultiplier(undefined);
+    adapter.setMarkPrice(26);
     expect(adapter.getPositions()[0].multiplier).toBe(1000);
-    expect(adapter.getAccount()!.marginUsed).toBe(2_640_000);
+    expect(adapter.getAccount()!.marginUsed).toBe(2_600_000);
+  });
+
+  it('turns a position into one of the same market, whatever the chart shows', async () => {
+    const { adapter, market } = connect({ markPrice: 26.4, balance: 100_000_000 });
+    adapter.setMultiplier(1000);
+    await market('buy', 100);
+    adapter.setMultiplier(undefined);
+    await adapter.reversePosition({ positionId: adapter.getPositions()[0].id });
+    expect(adapter.getPositions()).toHaveLength(1);
+    expect(adapter.getPositions()[0]).toEqual(expect.objectContaining({ side: 'sell', multiplier: 1000 }));
+  });
+
+  it('stops out the position that loses the most money, not the most points', async () => {
+    const { adapter, market } = connect({ markPrice: 100, balance: 1_500_000, stopOutLevel: 0.9 });
+    const closed: string[] = [];
+    adapter.on<FillEvent>('fill', (e) => { if (e.data.reason === 'liquidation') closed.push(e.data.positionId!); });
+    await market('buy', 1000); // a price worth 1: down 5 a share is 5,000
+    adapter.setMultiplier(1000);
+    await market('buy', 10); // a price worth 1,000: down 5 is 50,000
+    const [cheap, dear] = adapter.getPositions();
+    adapter.setMarkPrice(40);
+    expect(closed[0]).toBe(dear.id);
+    expect(closed).not.toContain(cheap.id);
+  });
+
+  it('says on what was open what it was opened at, once a chart tells it a multiplier', async () => {
+    const { adapter, market } = connect({ markPrice: 100, balance: 1_000_000 });
+    await market('buy', 2);
+    expect(adapter.getPositions()[0].multiplier).toBeUndefined();
+    adapter.setMultiplier(1000);
+    expect(adapter.getPositions()[0].multiplier).toBe(1);
+    expect(adapter.getAccount()!.marginUsed).toBe(200);
   });
 });
 

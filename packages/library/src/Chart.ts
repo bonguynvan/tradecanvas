@@ -3949,7 +3949,11 @@ export class Chart {
     this.executionBrackets = config.brackets ?? 'place';
     this.execTeardown = wireExecution(adapter, {
       onIntent: (type, handler) => {
-        const wrapped = (e: ChartEvent) => handler(e.payload);
+        // Charts may share one account: each says what a price is worth on its own market before the order it sends.
+        const wrapped = (e: ChartEvent) => {
+          adapter.setMultiplier?.(this.marketConfig?.contractMultiplier, this.tradedSymbol ?? undefined);
+          return handler(e.payload);
+        };
         this.eventBus.on(type, wrapped);
         return () => this.eventBus.off(type, wrapped);
       },
