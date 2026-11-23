@@ -1806,6 +1806,15 @@ img.tcw-ss-badge {
   font-family: var(--tcw-font-mono);
   font-variant-numeric: tabular-nums;
 }
+/* The order's value: the last line before the button that sends it, and the one read first. */
+.tcw-ticket-summary-row[data-row='value'] {
+  align-items: baseline;
+  color: var(--tcw-text-dim);
+}
+.tcw-ticket-summary-row[data-row='value'] .tcw-ticket-figure {
+  font-size: var(--tcw-font-size-lg);
+  font-weight: var(--tcw-weight-strong);
+}
 .tcw-ticket-figure.tcw-ticket-up { color: var(--tcw-green); }
 .tcw-ticket-figure.tcw-ticket-down { color: var(--tcw-red); }
 

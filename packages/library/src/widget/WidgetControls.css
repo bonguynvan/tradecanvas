@@ -734,3 +734,34 @@
   .tcw-stepper-btn:focus-visible { outline: 2px solid Highlight; outline-offset: -2px; }
   .tcw-stepper:focus-within { outline: 2px solid Highlight; }
 }
+
+/*
+ * Graphite's switch is a box that is ticked: a slider with a knob is a phone's control, and a
+ * ticket full of them reads as settings, not as an order. Its role and its keys are a switch's still.
+ */
+.tcw-root:where([data-tcw-ui='graphite']) .tcw-toggle {
+  width: 16px;
+  height: 16px;
+  border: var(--tcw-border-w) solid var(--tcw-field-line-hover);
+  border-radius: var(--tcw-radius-xs);
+  background: var(--tcw-field-bg);
+}
+.tcw-root:where([data-tcw-ui='graphite']) .tcw-toggle::after {
+  inset: 0;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  transition: none;
+}
+.tcw-root:where([data-tcw-ui='graphite']) .tcw-toggle.tcw-on {
+  border-color: var(--tcw-accent-fill);
+  background: var(--tcw-accent-fill);
+}
+.tcw-root:where([data-tcw-ui='graphite']) .tcw-toggle.tcw-on::after {
+  background: var(--tcw-check-mark) center / 14px 14px no-repeat;
+}
+.tcw-root:where([data-tcw-ui='graphite']) .tcw-toggle:focus-visible {
+  box-shadow: var(--tcw-ring);
+}
