@@ -128,8 +128,9 @@ chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.comma
   </li>
   <li>
     <strong><code>type: 'stopLimit'</code></strong>: <code>stopPrice</code> là mức mà order bắt đầu hoạt động và
-    <code>price</code> là giá giới hạn mà sau đó order hoạt động. Đường của order trên biểu đồ là giá giới hạn của nó: trên tài khoản paper,
-    kéo đường này dời stop đi cùng khoảng đó.
+    <code>price</code> là giá giới hạn mà sau đó order hoạt động. Đường của order trên biểu đồ là giá giới hạn của nó, còn stop có một đường riêng nét gạch chấm, gắn tag STOP, với giá của nó trên
+    trục. Kéo đường của order thì dời cả hai, giữ nguyên khoảng cách; kéo đường của stop, hoặc tag của nó, thì chỉ dời stop.
+    Khi đó <code>orderModify</code> mang <code>newStopPrice</code> bên cạnh <code>newPrice</code>, và tài khoản paper làm theo.
   </li>
 </ul>
 <pre><code>{`// A target and a stop for one exit: whichever fills first takes the other off
@@ -149,6 +150,7 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1,
   order thuộc một nhóm và ghi ngày của order có ngày. Tài khoản paper để <code>'day'</code> cho app, vì app biết khi nào ngày giao dịch của thị trường kết thúc.
   Ticket có lựa chọn good till date cho lệnh giới hạn và lệnh dừng: một ngày và một giờ theo đồng hồ của chart, ban đầu là một ngày kể từ bây giờ, và ticket không đặt lệnh nào hết hạn trong quá khứ.
   Lệnh giới hạn IOC hoặc FOK có thể đặt giá qua giá thị trường: nó khớp ở giá thị trường, và ticket tính giá trị, rủi ro và các mục tiêu của lệnh từ giá đó.
+  Ticket cũng nhận lệnh stop-limit, với giá stop và giá giới hạn, hiệu lực đến khi huỷ, trong ngày hoặc đến một ngày. Lệnh có thể khớp ở bất kỳ giá nào từ stop đến giá giới hạn, nên stop-loss phải nằm ngoài stop và take-profit nằm ngoài giá giới hạn; panel tài khoản ghi tên loại lệnh và cả hai giá, giá stop trước.
 </p>
 <p>
   <strong>Một position net.</strong> Mặc định tài khoản paper mở một position cho mỗi order đã khớp, position mua

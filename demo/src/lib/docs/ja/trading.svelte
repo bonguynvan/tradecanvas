@@ -121,8 +121,9 @@ chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.comma
   </li>
   <li>
     <strong><code>type: 'stopLimit'</code></strong>：<code>stopPrice</code> は注文が有効になり始める価格、
-    <code>price</code> はその後に有効になる指値です。チャート上のラインはその指値です：ペーパー口座では、
-    ラインをドラッグするとストップも同じだけ動きます。
+    <code>price</code> はその後に有効になる指値です。チャート上のラインはその指値で、ストップには STOP のタグが付いた一点鎖線が別に引かれ、その価格が価格軸に表示されます。
+    注文のラインをドラッグすると間隔を保ったまま両方が動き、ストップのライン（またはそのタグ）をドラッグするとストップだけが動きます。
+    このとき <code>orderModify</code> は <code>newPrice</code> に加えて <code>newStopPrice</code> を持ち、ペーパー口座はそれに従います。
   </li>
 </ul>
 <pre><code>{`// A target and a stop for one exit: whichever fills first takes the other off
@@ -141,6 +142,7 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1,
   期日付きの注文にはその期日を表示します。<code>'day'</code> はアプリに任せます。市場の 1 日がいつ終わるかを知っているのはアプリです。
   チケットは指値注文と逆指値注文で期日指定を選べます。チャートの時計での日付と時刻を指定し、初期値は今から 1 日後です。期限が過去になる注文は発注しません。
   IOC・FOK の指値注文は、市場価格を越えた価格を指定できます。約定は市場価格で行われ、チケットは金額・リスク・目標をその価格から計算します。
+  チケットはストップリミット注文も受け付け、逆指値価格と指値価格を指定します。有効期限は取消まで、当日、期日指定から選べます。逆指値価格から指値価格までのどこでも約定しうるため、損切りは逆指値価格の外側、利確は指値価格の外側に置きます。口座パネルは注文の種類と両方の価格を、逆指値価格を先にして表示します。
 </p>
 <p>
   <strong>ネットの 1 ポジション。</strong>既定では、ペーパー口座は約定した注文ごとにポジションを建て、買いと売りが並びます

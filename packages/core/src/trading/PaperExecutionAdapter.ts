@@ -394,10 +394,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   async modifyOrder(intent: OrderModifyIntent): Promise<void> {
     this.orders = this.orders.map((o) => {
       if (o.id !== intent.orderId) return o;
-      // A stop moves with its line, and a stop-limit's as far as its limit: the room between them stays.
-      // A stop at its price goes to the new one itself, not there by a sum that could leave it a hair off.
-      const stopPrice = o.stopPrice === undefined ? undefined : o.stopPrice === o.price ? intent.newPrice : o.stopPrice + (intent.newPrice - o.price);
-      return stopPrice === undefined ? { ...o, price: intent.newPrice } : { ...o, price: intent.newPrice, stopPrice };
+      return movedOrder(o, intent);
     });
     this.emit('orders', this.orders);
   }
@@ -817,6 +814,21 @@ function short(needed: number, available: number): string | null {
 /** A sum for a message: to the cent, or to four figures where it is under one. */
 function money(amount: number): string {
   return String(Number(Math.abs(amount) >= 1 ? amount.toFixed(2) : amount.toPrecision(4)));
+}
+
+/**
+ * An order moved as `intent` asks. A stop-limit's stop goes where it is told
+ * (`newStopPrice`); not told, a stop moves with its line, and a stop-limit's
+ * as far as its limit: the room between them stays. A stop order's stop is
+ * its price, whatever stop it is told.
+ */
+function movedOrder(order: TradingOrder, intent: OrderModifyIntent): TradingOrder {
+  if (order.stopPrice === undefined) return { ...order, price: intent.newPrice };
+  const told = intent.newStopPrice;
+  if (order.type === 'stopLimit' && told !== undefined && Number.isFinite(told) && told > 0) return { ...order, price: intent.newPrice, stopPrice: told };
+  // A stop at its price goes to the new one itself, not there by a sum that could leave it a hair off.
+  const stopPrice = order.stopPrice === order.price ? intent.newPrice : order.stopPrice + (intent.newPrice - order.price);
+  return { ...order, price: intent.newPrice, stopPrice };
 }
 
 /** How near two sizes are, as a part of the larger, to be the same size. */

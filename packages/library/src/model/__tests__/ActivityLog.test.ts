@@ -38,6 +38,15 @@ describe('ActivityLog: the orders', () => {
     expect(log.entries()[1]).toEqual({ time: 300, kind: 'cancelled', orderId: 'a', side: 'buy', type: 'limit', quantity: 2, price: 95 });
   });
 
+  it('logs a stop-limit order moved when its stop alone went elsewhere', () => {
+    log.orders([limit('a', 106, { type: 'stopLimit', stopPrice: 105 })], 100);
+    log.orders([limit('a', 106, { type: 'stopLimit', stopPrice: 104 })], 200);
+    expect(log.entries().at(-1)).toMatchObject({ time: 200, kind: 'moved', orderId: 'a', type: 'stopLimit', price: 106 });
+    // Where it was, told again: no news.
+    log.orders([limit('a', 106, { type: 'stopLimit', stopPrice: 104 })], 300);
+    expect(kinds()).toEqual(['placed', 'moved']);
+  });
+
   it('says nothing when a stop-limit becomes a limit at its price: it is the same order, working on', () => {
     log.orders([limit('a', 104, { type: 'stopLimit', stopPrice: 105 })], 100);
     log.orders([limit('a', 104, { type: 'limit' })], 200);

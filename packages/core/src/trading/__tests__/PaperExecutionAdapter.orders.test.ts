@@ -17,6 +17,29 @@ function connect(options: ConstructorParameters<typeof PaperExecutionAdapter>[0]
 
 beforeEach(() => connect());
 
+describe('PaperExecutionAdapter: a stop-limit order moved', () => {
+  it('takes its stop with it when told only where it goes, and puts its stop where it is told', async () => {
+    const order = await adapter.placeOrder({ side: 'buy', type: 'stopLimit', price: 106, stopPrice: 105, quantity: 1 });
+    await adapter.modifyOrder({ orderId: order.id, newPrice: 108 });
+    expect(adapter.getOrders()[0]).toMatchObject({ price: 108, stopPrice: 107 });
+    // The stop alone, the order where it is.
+    await adapter.modifyOrder({ orderId: order.id, newPrice: 108, newStopPrice: 104 });
+    expect(adapter.getOrders()[0]).toMatchObject({ type: 'stopLimit', price: 108, stopPrice: 104 });
+    // Both, told where each goes.
+    await adapter.modifyOrder({ orderId: order.id, newPrice: 110, newStopPrice: 109 });
+    expect(adapter.getOrders()[0]).toMatchObject({ price: 110, stopPrice: 109 });
+    // Told a stop that is no price, it moves the stop with the order.
+    await adapter.modifyOrder({ orderId: order.id, newPrice: 111, newStopPrice: Number.NaN });
+    expect(adapter.getOrders()[0]).toMatchObject({ price: 111, stopPrice: 110 });
+  });
+
+  it('keeps a stop order’s stop at its price, whatever stop it is told', async () => {
+    const order = await adapter.placeOrder({ side: 'buy', type: 'stop', price: 110, stopPrice: 110, quantity: 1 });
+    await adapter.modifyOrder({ orderId: order.id, newPrice: 112, newStopPrice: 150 });
+    expect(adapter.getOrders()[0]).toMatchObject({ type: 'stop', price: 112, stopPrice: 112 });
+  });
+});
+
 describe('PaperExecutionAdapter: a stop-limit order', () => {
   it('becomes a limit order at its price once the stop is reached, and fills there, not at the stop', async () => {
     // Buy when 105 trades, but pay no more than 104: the price has run past the limit.

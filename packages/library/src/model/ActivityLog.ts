@@ -60,7 +60,7 @@ export class ActivityLog {
     for (const order of next) {
       const was = before.get(order.id);
       if (!was) this.add(orderEntry('placed', order, time));
-      else if (was.price !== order.price) this.add(orderEntry('moved', order, time));
+      else if (was.price !== order.price || stopMoved(was, order)) this.add(orderEntry('moved', order, time));
     }
     for (const [id, order] of before) {
       if (now.has(id)) continue;
@@ -118,6 +118,15 @@ export class ActivityLog {
     this.list.push(entry);
     if (this.list.length > this.limit) this.list.splice(0, this.list.length - this.limit);
   }
+}
+
+/**
+ * Whether an order's stop went elsewhere while it stayed the kind it was: a
+ * stop-limit's, moved alone. One that began to work as a limit lost its stop
+ * and moved nowhere.
+ */
+function stopMoved(was: TradingOrder, order: TradingOrder): boolean {
+  return was.type === order.type && was.stopPrice !== undefined && order.stopPrice !== undefined && was.stopPrice !== order.stopPrice;
 }
 
 /** Why, in the broker's own words when it gave them: the cause's message, else the error's with the cause after it. */

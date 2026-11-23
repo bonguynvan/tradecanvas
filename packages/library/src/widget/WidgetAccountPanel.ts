@@ -43,7 +43,7 @@ const EVENTS = ['placed', 'moved', 'cancelled', 'filled', 'rejected'] as const;
 const REASONS = ['order', 'close', 'reverse', 'stopLoss', 'takeProfit', 'liquidation'] as const;
 /** A margin level is written to a tenth of a percent: near a margin call the tenths are what is read. */
 export const MARGIN_LEVEL_DECIMALS = 1;
-const ORDER_TYPES = ['market', 'limit', 'stop'] as const;
+const ORDER_TYPES = ['market', 'limit', 'stop', 'stopLimit'] as const;
 const TIME_IN_FORCE = ['gtc', 'day', 'gtd', 'ioc', 'fok'] as const;
 /** What a cell holds where there is nothing (no stop, no price yet). */
 const NONE = '—';
@@ -526,7 +526,9 @@ export class WidgetAccountPanel {
   private renderOrders(): void {
     const { formatPrice } = this.callbacks;
     const rows = this.snapshot.orders.map((o) => {
-      const type = known(ORDER_TYPES, o.type === 'stopLimit' ? 'stop' : o.type, 'limit');
+      const type = known(ORDER_TYPES, o.type, 'limit');
+      // A stop-limit's two prices, its stop before its limit as its name has them: one figure, left to right in any row.
+      const stop = o.type === 'stopLimit' && o.stopPrice !== undefined && Number.isFinite(o.stopPrice) && o.stopPrice !== o.price ? o.stopPrice : null;
       // Filled of the whole, once a part of it has filled, as its tag on the chart says: one figure, left to right in any row.
       const quantity = orderQuantityText(o, ' / ');
       const which = `${this.sideText(o.side, 'trade')} ${o.quantity} @ ${formatPrice(o.price)}`;
@@ -535,7 +537,7 @@ export class WidgetAccountPanel {
         // One of a group where one cancels the others says so beside its type, as its tag on the chart does.
         o.ocoGroup ? `${this.t(`ticket.type.${type}` as MessageKey)} · ${this.t('account.oco')}` : this.t(`ticket.type.${type}` as MessageKey),
         quantity === String(o.quantity) ? quantity : ltr(quantity),
-        formatPrice(o.price),
+        stop === null ? formatPrice(o.price) : ltr(`${formatPrice(stop)} / ${formatPrice(o.price)}`),
         this.price(o.stopLoss),
         this.target(o),
         this.timeInForceText(o),

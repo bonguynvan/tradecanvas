@@ -15,8 +15,11 @@ function leftOf(order: TradingOrder): number {
 
 export interface DragState {
   orderId: string;
-  /** What is dragged: an order's line, a position's stop or target, or one of its take-profit levels (`level`). */
-  sourceType: 'order' | 'stopLoss' | 'takeProfit' | 'level';
+  /**
+   * What is dragged: an order's line, a stop-limit order's stop (`'orderStop'`),
+   * a position's stop or target, or one of its take-profit levels (`level`).
+   */
+  sourceType: 'order' | 'orderStop' | 'stopLoss' | 'takeProfit' | 'level';
   /** Which of the position's take-profit levels, for a `'level'`. */
   level?: number;
   startPrice: number;
@@ -28,6 +31,10 @@ export interface DragState {
 /** A working order's line: long dashes. Its stop's and target's: dots, as prices it only brings. */
 const ORDER_DASH = [6, 4];
 const PLANNED_DASH = [2, 3];
+/** A stop-limit's stop: a dash and a dot, the order's own and yet not its line, nor a target of its colour. */
+const STOP_DASH = [6, 3, 1, 3];
+/** What a stop-limit's stop is called on its tag. */
+const STOP_STAMP = 'STOP';
 /** Where a dragged order was: dotted and faint. */
 const GHOST_DASH = [2, 4];
 const GHOST_ALPHA = 0.3;
@@ -58,6 +65,20 @@ function priceOf(order: TradingOrder, dragState: DragState | null): number {
   return isDragged(order, dragState) ? dragState!.currentPrice : order.price;
 }
 
+/**
+ * Where a stop-limit order's stop is drawn: the price at which it begins to
+ * work, when that is a price of its own (a stop order's is its line). With
+ * the order dragged it goes with it, the room between the two kept; dragged
+ * itself, it is where it is dragged to. None for any other order.
+ */
+export function stopOf(order: TradingOrder, dragState: DragState | null): number | undefined {
+  const stop = order.stopPrice;
+  if (order.type !== 'stopLimit' || stop === undefined || !Number.isFinite(stop) || stop === order.price) return undefined;
+  if (dragState?.orderId !== order.id) return stop;
+  if (dragState.sourceType === 'orderStop') return dragState.currentPrice;
+  return dragState.sourceType === 'order' ? stop + (dragState.currentPrice - dragState.startPrice) : stop;
+}
+
 export class OrderRenderer {
   /** The lines and their tags, the tags laid out among themselves. */
   render(
@@ -86,9 +107,17 @@ export class OrderRenderer {
       const y = priceToY(priceOf(order, dragState), viewport);
       const color = order.side === 'buy' ? colors.buy : colors.sell;
       if (inPlot(y, viewport)) levelLine(ctx, viewport, y, color, ORDER_DASH);
-      if (isDragged(order, dragState)) {
+      // Where a stop-limit begins to work: a price of the order's own, in its colour.
+      const stop = stopOf(order, dragState);
+      const triggerY = stop === undefined ? NaN : priceToY(stop, viewport);
+      if (inPlot(triggerY, viewport)) levelLine(ctx, viewport, triggerY, color, STOP_DASH);
+      // Where each line was, while one is dragged: the order's, and its stop's when that moved too.
+      const ghosts = [isDragged(order, dragState) ? dragState!.startPrice : undefined, stop !== undefined && stop !== order.stopPrice ? order.stopPrice : undefined];
+      for (const was of ghosts) {
+        const wasY = was === undefined ? NaN : priceToY(was, viewport);
+        if (!inPlot(wasY, viewport)) continue;
         ctx.globalAlpha = GHOST_ALPHA;
-        levelLine(ctx, viewport, priceToY(dragState!.startPrice, viewport), color, GHOST_DASH);
+        levelLine(ctx, viewport, wasY, color, GHOST_DASH);
         ctx.globalAlpha = 1;
       }
       for (const [price, stopColor] of [[order.stopLoss, colors.loss], [order.takeProfit, colors.profit]] as const) {
@@ -111,6 +140,8 @@ export class OrderRenderer {
   tags(orders: TradingOrder[], viewport: ViewportState, config: TradingConfig, dragState: DragState | null): TradingTag[] {
     const colors = colorsOf(config);
     const tags: TradingTag[] = [];
+    // The tags of the stop-limits' stops, laid out after all the others: they have the least to say, and give way.
+    const stops: TradingTag[] = [];
     for (const order of orders) {
       const price = priceOf(order, dragState);
       const y = priceToY(price, viewport);
@@ -126,6 +157,13 @@ export class OrderRenderer {
         }
         const grab = order.draggable === false ? undefined : { kind: 'order' as const, orderId: order.id };
         tags.push({ y, color: order.side === 'buy' ? colors.buy : colors.sell, cells, grab });
+      }
+      // A stop-limit's stop says what it is, and takes its own line: the stop moves alone, the order by its own.
+      const trigger = stopOf(order, dragState);
+      const triggerY = trigger === undefined ? NaN : priceToY(trigger, viewport);
+      if (inPlot(triggerY, viewport)) {
+        const grab = order.draggable === false ? undefined : { kind: 'orderStop' as const, orderId: order.id };
+        stops.push({ y: triggerY, color: order.side === 'buy' ? colors.buy : colors.sell, cells: [{ kind: 'stamp', text: STOP_STAMP }], grab });
       }
       // What its stop and its target would make is of what is left of it: what has filled is a position, with tags of its own.
       const left = leftOf(order);
@@ -147,7 +185,7 @@ export class OrderRenderer {
       // Its levels are sizes of the position's plan, not of what is left of the order: written as planned.
       tags.push(...levelTags(order.takeProfits, order.side, price, order.quantity, viewport, config));
     }
-    return tags;
+    return [...tags, ...stops];
   }
 
   /**
@@ -172,9 +210,12 @@ export class OrderRenderer {
     const colors = colorsOf(config);
     const badges: AxisBadge[] = [];
     for (const order of orders) {
-      const price = priceOf(order, dragState);
-      const y = priceToY(price, viewport);
-      if (inPlot(y, viewport)) badges.push({ y, text: priceTagText(price, viewport, config.pricePrecision), color: order.side === 'buy' ? colors.buy : colors.sell });
+      const color = order.side === 'buy' ? colors.buy : colors.sell;
+      // The order's price, and a stop-limit's stop.
+      for (const price of [priceOf(order, dragState), stopOf(order, dragState)]) {
+        const y = price === undefined ? NaN : priceToY(price, viewport);
+        if (price !== undefined && inPlot(y, viewport)) badges.push({ y, text: priceTagText(price, viewport, config.pricePrecision), color });
+      }
     }
     return badges;
   }
