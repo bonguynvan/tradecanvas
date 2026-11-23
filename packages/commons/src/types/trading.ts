@@ -210,6 +210,13 @@ export interface OrderModifyIntent {
   /** The price before the change, when known (e.g. from a drag). Optional so
    *  the chart's `orderModify` event payload routes straight to an adapter. */
   previousPrice?: number;
+  /**
+   * Where a stop-limit order's stop goes (see `OrderModifyPayload`). Left out,
+   * the paper account moves the stop with the order, the room between them kept.
+   */
+  newStopPrice?: number;
+  /** The stop before the change, when known. */
+  previousStopPrice?: number;
 }
 
 export interface OrderCancelIntent {

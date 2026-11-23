@@ -118,8 +118,9 @@ chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.comma
   </li>
   <li>
     <strong><code>type: 'stopLimit'</code></strong>：<code>stopPrice</code> 是它开始生效的价格，
-    <code>price</code> 是它此后所按的限价。它在图表上的线是它的限价，它的止损价另有一条点线，标签为 STOP，价格写在价格轴上。
-    订单通过它自己的线移动：在模拟账户上，拖动这条线会让止损价移动同样的距离。
+    <code>price</code> 是它此后所按的限价。它在图表上的线是它的限价，它的触发价另有一条点划线，标签为 STOP，价格写在价格轴上。
+    拖动订单的线会让两者一起移动，间距不变；拖动触发价的线或它的标签则只移动触发价。
+    这时 <code>orderModify</code> 在 <code>newPrice</code> 之外还带有 <code>newStopPrice</code>，模拟账户会照此执行。
   </li>
 </ul>
 <pre><code>{`// A target and a stop for one exit: whichever fills first takes the other off
@@ -139,7 +140,7 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1,
   账户面板会在属于某一组的订单旁写上 OCO，并写出带日期订单的日期。它把 <code>'day'</code> 留给应用处理，因为应用知道其市场的交易日何时结束。
   下单窗口为限价单和止损单提供“指定日期前有效”：按图表自己的时钟选一个日期和时间，初始为一天之后；到期时间已过的订单不会被提交。
   立即成交否则撤销的限价单（IOC、FOK）可以把价格设在市场价的另一侧：它按市场价成交，下单窗口从该价格计算其金额、风险和目标。
-  下单窗口也接受止损限价单，需填写止损价和限价；账户面板会写出它的类型和这两个价格，止损价在前。
+  下单窗口也接受止损限价单，需填写触发价和限价，可一直有效、当日有效或指定日期前有效。它可能在触发价到限价之间的任何价格成交，因此止损要设在触发价之外，止盈要设在限价之外；账户面板会写出它的类型和这两个价格，触发价在前。
 </p>
 <p>
   <strong>一个净持仓。</strong>默认情况下，模拟账户为每笔成交的订单开一个持仓，买入的与卖出的并存

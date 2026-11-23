@@ -128,8 +128,9 @@ chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.comma
   </li>
   <li>
     <strong><code>type: 'stopLimit'</code></strong>: <code>stopPrice</code> is where it starts working and
-    <code>price</code> the limit it then works at. Its line on the chart is its limit, and its stop has a dotted line of its own, tagged STOP, with its price on the
-    axis. The order is moved by its own line: on the paper account, dragging it moves the stop by as much.
+    <code>price</code> the limit it then works at. Its line on the chart is its limit, and its stop has a line of its own in dashes and dots, tagged STOP, with its price on the
+    axis. Dragging the order's line moves both, the room between them kept; dragging the stop's, or its tag, moves the stop alone.
+    <code>orderModify</code> then carries <code>newStopPrice</code> beside <code>newPrice</code>, which the paper account follows.
   </li>
 </ul>
 <pre><code>{`// A target and a stop for one exit: whichever fills first takes the other off
@@ -149,7 +150,7 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1,
   an order of a group and a dated order's date. It leaves <code>'day'</code> to the app, which knows when its market's day ends.
   The ticket offers good till a date for a limit and a stop order: a date and a time on the chart's own clock, a day from now to start with, and it places no order that would end in the past.
   A limit that fills at once or not at all may be priced through the market: it fills at the market, and the ticket counts its value, its risk and its targets from there.
-  The ticket takes a stop-limit order too, with a stop price and a limit price; the account panel names it and writes both, the stop first.
+  The ticket takes a stop-limit order too, with a stop price and a limit price, good till cancelled, for the day or till a date. It may fill anywhere from its stop to its limit, so its stop-loss goes beyond its stop and its take-profit beyond its limit; the account panel names it and writes both prices, the stop first.
 </p>
 <p>
   <strong>One net position.</strong> By default the paper account opens a position for each filled order, a buy

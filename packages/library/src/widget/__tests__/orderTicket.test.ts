@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { OrderPlaceIntent } from '@tradecanvas/commons';
-import { orderTicketIntent, orderTicketProblems, orderTicketRiskReward, orderTicketSummary, ticketEntry, ticketTakeProfitLevels, ticketTimesInForce, type OrderTicketDraft } from '../orderTicket.js';
+import { orderTicketIntent, orderTicketProblems, orderTicketRiskReward, orderTicketSummary, ticketEntry, ticketFillRange, ticketTakeProfitLevels, ticketTimesInForce, type OrderTicketDraft } from '../orderTicket.js';
 import { utcToWallTime, wallTimeToUtc } from '../wallTime.js';
 import { WidgetOrderTicket } from '../WidgetOrderTicket.js';
 
@@ -127,9 +127,42 @@ describe('a stop-limit order', () => {
     const order = stopLimit({ quantity: 2, stopLoss: 100, takeProfit: 118 });
     expect(ticketEntry(order, 100)).toBe(106);
     expect(orderTicketSummary(order, 100)).toMatchObject({ value: 212, risk: -12, reward: 24 });
-    // A stop-loss between its stop and its limit is on the losing side of where it is taken to start.
-    expect(orderTicketProblems({ ...order, stopLoss: 105.5 }, 100)).toEqual([]);
-    expect(orderTicketProblems({ ...order, stopLoss: 107 }, 100)).toEqual(['stopLossSide']);
+  });
+
+  it('may fill anywhere from its stop to its limit: its stop-loss goes beyond the one, its take-profit beyond the other', () => {
+    const order = stopLimit({ stopLoss: 100, takeProfit: 118 });
+    expect(ticketFillRange(order, 100)).toEqual({ low: 105, high: 106 });
+    expect(orderTicketProblems(order, 100)).toEqual([]);
+    // Filled at its stop's 105, a stop-loss at 105.5 is hit as the position opens.
+    expect(orderTicketProblems({ ...order, stopLoss: 105.5 }, 100)).toEqual(['stopLossSide']);
+    expect(orderTicketProblems({ ...order, stopLoss: 105 }, 100)).toEqual(['stopLossSide']);
+    expect(orderTicketProblems({ ...order, stopLoss: 104.5 }, 100)).toEqual([]);
+    // Filled at its limit's 106, a take-profit at 105.5 is hit at once too.
+    expect(orderTicketProblems({ ...order, takeProfit: 105.5 }, 100)).toEqual(['takeProfitSide']);
+    expect(orderTicketProblems({ ...order, takeProfit: 106 }, 100)).toEqual(['takeProfitSide']);
+    expect(orderTicketProblems({ ...order, takeProfit: 106.5 }, 100)).toEqual([]);
+    // A sell, the other way: from its stop's 95 down to its limit's 94.
+    const sell = stopLimit({ side: 'sell', stopPrice: 95, price: 94, stopLoss: 100, takeProfit: 90 });
+    expect(ticketFillRange(sell, 100)).toEqual({ low: 94, high: 95 });
+    expect(orderTicketProblems(sell, 100)).toEqual([]);
+    expect(orderTicketProblems({ ...sell, stopLoss: 94.5 }, 100)).toEqual(['stopLossSide']);
+    expect(orderTicketProblems({ ...sell, takeProfit: 94.5 }, 100)).toEqual(['takeProfitSide']);
+  });
+
+  it('fills at its limit when that waits on the near side of its stop: the market has to come back to it', () => {
+    const back = stopLimit({ price: 104, stopLoss: 103.5, takeProfit: 104.5 });
+    expect(ticketFillRange(back, 100)).toEqual({ low: 104, high: 104 });
+    expect(orderTicketProblems(back, 100)).toEqual([]);
+    expect(orderTicketProblems({ ...back, stopLoss: 104.5 }, 100)).toEqual(['stopLossSide']);
+  });
+
+  it('fills at one price for every other kind of order: where its position starts', () => {
+    expect(ticketFillRange(draft({ price: 95 }), 100)).toEqual({ low: 95, high: 95 });
+    expect(ticketFillRange(draft({ type: 'market', price: 0 }), 100)).toEqual({ low: 100, high: 100 });
+    expect(ticketFillRange(draft({ type: 'market', price: 0 }), null)).toBeNull();
+    expect(ticketFillRange(draft({ price: 105, timeInForce: 'ioc' }), 100)).toEqual({ low: 100, high: 100 });
+    // A stop-limit with no stop yet is taken at its limit.
+    expect(ticketFillRange(stopLimit({ stopPrice: undefined }), 100)).toEqual({ low: 106, high: 106 });
   });
 });
 
@@ -415,6 +448,35 @@ describe('WidgetOrderTicket', () => {
     stop.dispatchEvent(new Event('input'));
     expect(place().disabled).toBe(true);
     expect(host.querySelector('.tcw-ticket-problems')!.textContent).toBe('Enter a stop price above 0.');
+  });
+
+  it('starts a stop-limit’s stop-loss from its stop and its take-profit from its limit: the prices it may fill at', () => {
+    ticket.open({ price: 200, lastPrice: 100 });
+    radios('type')[3].click();
+    const field = (name: string) => host.querySelector<HTMLInputElement>(`input[data-ticket-field="${name}"]`)!;
+    field('price').value = '220';
+    field('price').dispatchEvent(new Event('input'));
+    const switches = () => [...host.querySelectorAll<HTMLButtonElement>('.tcw-ticket-optional .tcw-toggle')];
+    switches()[0].click();
+    // One percent under the stop's 200, not under the limit's 220, which would be over the stop.
+    expect(field('stopLoss').value).toBe('198');
+    switches()[1].click();
+    // Two percent over the limit's 220.
+    expect(field('takeProfit').value).toBe('224.4');
+    expect(place().disabled).toBe(false);
+  });
+
+  it('makes a stop-limit’s stop the price of the stop order it is changed to', () => {
+    ticket.open({ price: 105, lastPrice: 100 });
+    radios('type')[3].click();
+    const field = (name: string) => host.querySelector<HTMLInputElement>(`input[data-ticket-field="${name}"]`)!;
+    field('price').value = '106';
+    field('price').dispatchEvent(new Event('input'));
+    radios('type')[2].click();
+    // A stop order's one price is where it begins to work: the stop that was set, not the limit.
+    expect(field('price').value).toBe('105');
+    place().click();
+    expect(sent).toEqual([expect.objectContaining({ type: 'stop', price: 105, stopPrice: 105 })]);
   });
 
   it('keeps a stop-limit a stop-limit when the side changes, and its stop when another kind is tried', () => {

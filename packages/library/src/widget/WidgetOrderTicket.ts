@@ -16,6 +16,7 @@ import {
   type OrderTicketRules,
   ticketEntry,
   ticketExpireTime,
+  ticketFillRange,
   ticketStopPrice,
   ticketTimeInForce,
   ticketTimesInForce,
@@ -267,9 +268,18 @@ export class WidgetOrderTicket {
   private setType(type: OrderTicketDraft['type']): void {
     const draft = this.draft;
     if (!draft) return;
-    const starts = type === 'stopLimit' && Number.isNaN(ticketStopPrice(draft));
-    if (starts) this.typed.delete('stopPrice');
-    this.set({ type, ...(starts ? { stopPrice: draft.price > 0 ? draft.price : this.round(this.lastPrice ?? NaN) } : {}) }, true);
+    const patch: Partial<OrderTicketDraft> = { type };
+    const stop = ticketStopPrice(draft);
+    if (type === 'stopLimit' && Number.isNaN(stop)) {
+      patch.stopPrice = draft.price > 0 ? draft.price : this.round(this.lastPrice ?? NaN);
+      this.typed.delete('stopPrice');
+    }
+    // A stop-limit made a stop order: a stop order's one price is its stop, not the limit that was set.
+    if (draft.type === 'stopLimit' && type === 'stop' && !Number.isNaN(stop)) {
+      patch.price = stop;
+      this.typed.delete('price');
+    }
+    this.set(patch, true);
   }
 
   /** What is wrong with the draft, as the market's rules and the moment now find it. */
@@ -557,9 +567,12 @@ export class WidgetOrderTicket {
   private startOf(which: 'stopLoss' | 'takeProfit'): number {
     const draft = this.draft;
     if (!draft) return NaN;
-    const entry = ticketEntry(draft, this.lastPrice) ?? draft.price;
+    // From the price it may fill at that is nearest: a stop-loss from the best of them, a target from the worst.
+    const fills = ticketFillRange(draft, this.lastPrice) ?? { low: draft.price, high: draft.price };
+    const losing = which === 'stopLoss';
+    const entry = (draft.side === 'buy') === losing ? fills.low : fills.high;
     if (!(entry > 0)) return NaN;
-    const pct = which === 'stopLoss' ? -STOP_START_PCT : TARGET_START_PCT;
+    const pct = losing ? -STOP_START_PCT : TARGET_START_PCT;
     return this.round(entry * (1 + (draft.side === 'buy' ? pct : -pct) / 100));
   }
 

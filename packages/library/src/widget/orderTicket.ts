@@ -130,6 +130,23 @@ export function ticketEntry(draft: Pick<OrderTicketDraft, 'side' | 'type' | 'pri
 }
 
 /**
+ * The prices the order may fill between: where its position may start. One
+ * price for most (`ticketEntry`). A stop-limit fills from its stop as far as
+ * its limit, at whatever price the market is at when it begins to work; with
+ * its limit on the near side of its stop it waits there, and fills at it.
+ * Null with no price to tell by.
+ */
+export function ticketFillRange(draft: Pick<OrderTicketDraft, 'side' | 'type' | 'price' | 'stopPrice' | 'timeInForce'>, lastPrice: number | null): { low: number; high: number } | null {
+  const stop = ticketStopPrice(draft);
+  const limit = draft.price;
+  if (draft.type === 'stopLimit' && !Number.isNaN(stop) && limit > 0) {
+    return draft.side === 'buy' ? { low: Math.min(stop, limit), high: limit } : { low: limit, high: Math.max(stop, limit) };
+  }
+  const entry = ticketEntry(draft, lastPrice);
+  return entry !== null && entry > 0 ? { low: entry, high: entry } : null;
+}
+
+/**
  * The problems with a draft: a quantity or price that isn't positive, a stop-loss
  * or take-profit on the wrong side of the entry, a limit or stop on the wrong side
  * of the market (it would fill at once, which only an order that is not to wait may),
@@ -160,10 +177,11 @@ export function orderTicketProblems(draft: OrderTicketDraft, lastPrice: number |
   if (!valid(draft.stopLoss)) problems.push('stopLoss');
   if (!valid(draft.takeProfit)) problems.push('takeProfit');
   if (draft.type !== 'market' && ticketTimeInForce(draft) === 'gtd' && !(ticketExpireTime(draft) > (rules.now ?? Date.now()))) problems.push('expireTime');
-  const entry = ticketEntry(draft, lastPrice);
-  if (entry !== null && entry > 0) {
-    if (draft.stopLoss !== null && valid(draft.stopLoss) && (buy ? draft.stopLoss >= entry : draft.stopLoss <= entry)) problems.push('stopLossSide');
-    if (draft.takeProfit !== null && valid(draft.takeProfit) && (buy ? draft.takeProfit <= entry : draft.takeProfit >= entry)) problems.push('takeProfitSide');
+  // Neither is to be hit by the price the order fills at: a stop-loss beyond the best of them, a take-profit beyond the worst.
+  const fills = ticketFillRange(draft, lastPrice);
+  if (fills) {
+    if (draft.stopLoss !== null && valid(draft.stopLoss) && (buy ? draft.stopLoss >= fills.low : draft.stopLoss <= fills.high)) problems.push('stopLossSide');
+    if (draft.takeProfit !== null && valid(draft.takeProfit) && (buy ? draft.takeProfit <= fills.high : draft.takeProfit >= fills.low)) problems.push('takeProfitSide');
   }
   return [...problems, ...marketProblems(draft, rules)];
 }

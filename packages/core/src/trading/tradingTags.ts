@@ -33,6 +33,8 @@ export type TagCell =
 /** The line a press on a tag takes, by what it is: tags of lines near each other sit side by side. */
 export type TagGrab =
   | { kind: 'order'; orderId: string }
+  /** A stop-limit order's stop: it moves alone. */
+  | { kind: 'orderStop'; orderId: string }
   | { kind: 'stop'; positionId: string; which: 'stopLoss' | 'takeProfit' }
   | { kind: 'level'; positionId: string; index: number }
   | { kind: 'bracket'; handle: BracketHandle }

@@ -1,10 +1,10 @@
 import type { TradingOrder, TradingPosition, ViewportState, Point } from '@tradecanvas/commons';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
-import type { DragState } from './OrderRenderer.js';
+import { stopOf, type DragState } from './OrderRenderer.js';
 import { inPlot } from './plot.js';
 
 export interface DragResult {
-  sourceType: 'order' | 'stopLoss' | 'takeProfit' | 'level';
+  sourceType: 'order' | 'orderStop' | 'stopLoss' | 'takeProfit' | 'level';
   id: string;
   /** Which of the position's take-profit levels, for a `'level'`. */
   level?: number;
@@ -35,6 +35,9 @@ export class TradingDragHandler {
       return inPlot(y, viewport) && Math.abs(pos.y - y) <= tolerance;
     };
     const order = orders.find((o) => o.draggable !== false && near(o.price));
+    // A stop-limit's stop is a line of its own: of an order's two lines, the nearer to the press.
+    const stopped = this.nearestStop(pos, orders, viewport, tolerance);
+    if (stopped && (!order || stopped.distance < Math.abs(pos.y - priceToY(order.price, viewport)))) return this.beginOrderStop(stopped.order, pos.y);
     if (order) return this.beginOrder(order, pos.y);
     for (const position of positions) {
       for (const which of STOPS) {
@@ -61,6 +64,26 @@ export class TradingDragHandler {
   beginOrder(order: TradingOrder, y: number): boolean {
     if (order.draggable === false) return false;
     return this.start({ orderId: order.id, sourceType: 'order', startPrice: order.price, currentPrice: order.price }, y);
+  }
+
+  /** Drag the stop of a stop-limit `order`, pressed at `y`: the stop alone, the order where it is. */
+  beginOrderStop(order: TradingOrder, y: number): boolean {
+    const stop = stopOf(order, null);
+    if (order.draggable === false || stop === undefined) return false;
+    return this.start({ orderId: order.id, sourceType: 'orderStop', startPrice: stop, currentPrice: stop }, y);
+  }
+
+  /** The stop-limit order whose stop is nearest `pos`, within `tolerance` and on the plot; null with none. */
+  private nearestStop(pos: Point, orders: readonly TradingOrder[], viewport: ViewportState, tolerance: number): { order: TradingOrder; distance: number } | null {
+    let nearest: { order: TradingOrder; distance: number } | null = null;
+    for (const order of orders) {
+      const stop = order.draggable === false ? undefined : stopOf(order, null);
+      if (stop === undefined) continue;
+      const y = priceToY(stop, viewport);
+      const distance = Math.abs(pos.y - y);
+      if (inPlot(y, viewport) && distance <= tolerance && (!nearest || distance < nearest.distance)) nearest = { order, distance };
+    }
+    return nearest;
   }
 
   /** Drag `position`'s stop or target, pressed at `y`. */

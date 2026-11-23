@@ -132,8 +132,9 @@ chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.comma
   </li>
   <li>
     <strong><code>type: 'stopLimit'</code></strong>: <code>stopPrice</code> es donde empieza a funcionar y
-    <code>price</code> el límite al que funciona después. Su línea en el gráfico es su límite, y su stop tiene una línea de puntos propia, con la etiqueta STOP y su precio en el
-    eje. La orden se mueve por su propia línea: en la cuenta de simulación, arrastrarla mueve el stop en la misma medida.
+    <code>price</code> el límite al que funciona después. Su línea en el gráfico es su límite, y su stop tiene una línea propia de rayas y puntos, con la etiqueta STOP y su precio en el
+    eje. Arrastrar la línea de la orden mueve ambos, con la misma separación; arrastrar la del stop, o su etiqueta, mueve solo el stop.
+    <code>orderModify</code> lleva entonces <code>newStopPrice</code> junto a <code>newPrice</code>, y la cuenta de simulación lo sigue.
   </li>
 </ul>
 <pre><code>{`// A target and a stop for one exit: whichever fills first takes the other off
@@ -153,7 +154,7 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1,
   una orden de un grupo y la fecha de una orden con fecha. Deja <code>'day'</code> a la aplicación, que sabe cuándo termina el día de su mercado.
   El ticket ofrece válida hasta una fecha para una orden límite y una orden stop: una fecha y una hora en el reloj del propio gráfico, un día desde ahora para empezar, y no envía ninguna orden que terminaría en el pasado.
   Una orden límite IOC o FOK puede llevar un precio que atraviese el mercado: se ejecuta al precio de mercado, y el ticket calcula su valor, su riesgo y sus objetivos desde ahí.
-  El ticket acepta también una orden stop-límite, con un precio stop y un precio límite; el panel de cuenta la nombra y escribe ambos, el stop primero.
+  El ticket acepta también una orden stop-límite, con un precio stop y un precio límite, válida hasta cancelar, por el día o hasta una fecha. Puede ejecutarse en cualquier precio entre su stop y su límite, así que su stop-loss va más allá del stop y su take-profit más allá del límite; el panel de cuenta la nombra y escribe ambos precios, el stop primero.
 </p>
 <p>
   <strong>Una sola posición neta.</strong> Por defecto, la cuenta de simulación abre una posición por cada orden ejecutada, una compra

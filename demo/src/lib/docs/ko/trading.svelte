@@ -125,8 +125,9 @@ chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.comma
   </li>
   <li>
     <strong><code>type: 'stopLimit'</code></strong>: <code>stopPrice</code>는 주문이 동작하기 시작하는 가격이고
-    <code>price</code>는 그 뒤에 동작하는 지정가입니다. 차트에서 이 주문의 선은 지정가이고, 스톱에는 STOP 태그가 붙은 점선이 따로 그려지며 그 가격이 가격 축에 적힙니다.
-    주문은 자신의 선으로 옮깁니다: 모의 계좌에서는 선을 끌면 스톱도 같은 만큼 움직입니다.
+    <code>price</code>는 그 뒤에 동작하는 지정가입니다. 차트에서 이 주문의 선은 지정가이고, 스톱에는 STOP 태그가 붙은 일점쇄선이 따로 그려지며 그 가격이 가격 축에 적힙니다.
+    주문의 선을 끌면 간격을 유지한 채 둘 다 움직이고, 스톱의 선이나 그 태그를 끌면 스톱만 움직입니다.
+    이때 <code>orderModify</code>는 <code>newPrice</code>와 함께 <code>newStopPrice</code>를 담으며, 모의 계좌는 그대로 따릅니다.
   </li>
 </ul>
 <pre><code>{`// A target and a stop for one exit: whichever fills first takes the other off
@@ -146,7 +147,7 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1,
   그룹에 속한 주문 옆에 OCO를, 날짜가 있는 주문에는 그 날짜를 적습니다. <code>'day'</code>는 시장의 하루가 언제 끝나는지 아는 앱에 맡깁니다.
   티켓은 지정가 주문과 스톱 주문에 기한 지정을 제공합니다. 차트의 시계 기준으로 날짜와 시각을 고르며, 처음에는 지금부터 하루 뒤입니다. 기한이 지난 주문은 내지 않습니다.
   IOC·FOK 지정가 주문은 시장가를 넘어선 가격으로 낼 수 있습니다. 체결은 시장가에서 이루어지며, 티켓은 금액과 위험, 목표를 그 가격에서 계산합니다.
-  티켓은 스톱 리밋 주문도 받으며, 스톱 가격과 지정가를 입력합니다. 계좌 패널은 주문 종류와 두 가격을 스톱 가격부터 적습니다.
+  티켓은 스톱 리밋 주문도 받으며, 스톱 가격과 지정가를 입력합니다. 취소할 때까지, 당일, 또는 기한 지정으로 낼 수 있습니다. 스톱 가격에서 지정가 사이 어디서든 체결될 수 있으므로 손절은 스톱 가격 바깥에, 익절은 지정가 바깥에 둡니다. 계좌 패널은 주문 종류와 두 가격을 스톱 가격부터 적습니다.
 </p>
 <p>
   <strong>하나의 순포지션.</strong> 기본적으로 모의 계좌는 체결된 주문마다 포지션을 하나씩 열며, 매수 포지션이

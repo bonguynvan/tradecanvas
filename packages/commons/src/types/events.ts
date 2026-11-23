@@ -177,6 +177,12 @@ export interface BarClickPayload {
 export interface OrderModifyPayload {
   orderId: string;
   newPrice: number;
+  /**
+   * Where a stop-limit order's stop goes, when the move is of one: with the
+   * order dragged by its line (the room between the two kept), or alone,
+   * dragged by its own (`newPrice` is then the price the order has).
+   */
+  newStopPrice?: number;
 }
 
 export interface OrderCancelPayload {

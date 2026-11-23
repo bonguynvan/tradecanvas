@@ -12,9 +12,9 @@ import type {
 import { DARK_THEME, DEFAULT_TRADING_CONFIG, priceTagText } from '@tradecanvas/commons';
 import { inPlot } from './plot.js';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
-import { OrderRenderer } from './OrderRenderer.js';
+import { OrderRenderer, stopOf } from './OrderRenderer.js';
 import { PositionRenderer } from './PositionRenderer.js';
-import { TradingDragHandler } from './TradingDragHandler.js';
+import { TradingDragHandler, type DragResult } from './TradingDragHandler.js';
 import { TradingContextMenu } from './TradingContextMenu.js';
 import { BracketTool, bracketRiskReward, type BracketDraft, type BracketSize } from './BracketTool.js';
 import { OrderDraftTool } from './OrderDraftTool.js';
@@ -151,7 +151,10 @@ export class TradingManager {
    */
   private dropStaleOrderDrag(): void {
     const drag = this.dragHandler.getDragState();
-    if (!drag || drag.sourceType !== 'order' || this.orders.some((o) => o.id === drag.orderId)) return;
+    if (!drag || (drag.sourceType !== 'order' && drag.sourceType !== 'orderStop')) return;
+    const order = this.orders.find((o) => o.id === drag.orderId);
+    // A stop being dragged whose order began to work as a limit: it has no stop to move.
+    if (order && (drag.sourceType === 'order' || stopOf(order, null) !== undefined)) return;
     this.dragHandler.cancel();
     this.grabOffset = 0;
     this.lineMoved = false;
@@ -164,7 +167,7 @@ export class TradingManager {
    */
   private dropStaleStopDrag(): void {
     const drag = this.dragHandler.getDragState();
-    if (!drag || drag.sourceType === 'order') return;
+    if (!drag || drag.sourceType === 'order' || drag.sourceType === 'orderStop') return;
     const position = this.positions.find((p) => p.id === drag.orderId);
     if (drag.sourceType === 'level') {
       // A level the account took off or moved meanwhile: what is at its place now is not what was pressed.
@@ -340,7 +343,8 @@ export class TradingManager {
     };
     if (this.locked) return false;
     for (const o of this.shownOrders()) {
-      if (o.draggable !== false && near(o.price)) return true;
+      // An order's line, and a stop-limit's stop.
+      if (o.draggable !== false && (near(o.price) || near(stopOf(o, null)))) return true;
     }
     for (const p of this.shownPositions()) {
       if (near(p.stopLoss) || near(p.takeProfit) || p.takeProfits?.some((level) => near(level.price))) return true;
@@ -410,6 +414,11 @@ export class TradingManager {
         if (this.locked) return false;
         const order = this.orders.find((o) => o.id === grab.orderId);
         return order !== undefined && this.dragHandler.beginOrder(order, tag.lineY);
+      }
+      case 'orderStop': {
+        if (this.locked) return false;
+        const order = this.orders.find((o) => o.id === grab.orderId);
+        return order !== undefined && this.dragHandler.beginOrderStop(order, tag.lineY);
       }
       case 'stop': {
         if (this.locked) return false;
@@ -481,12 +490,9 @@ export class TradingManager {
     }
     const result = this.dragHandler.onPointerUp();
     if (result) {
-      if (result.sourceType === 'order') {
-        this.eventCallback?.('orderModify', {
-          orderId: result.id,
-          newPrice: result.newPrice,
-          previousPrice: result.previousPrice,
-        });
+      if (result.sourceType === 'order' || result.sourceType === 'orderStop') {
+        const moved = this.orderMove(result);
+        if (moved) this.eventCallback?.('orderModify', moved);
       } else if (result.sourceType === 'level') {
         const takeProfits = this.levelsWith(result.id, result.level, result.newPrice);
         if (takeProfits) this.eventCallback?.('positionModify', { positionId: result.id, takeProfits });
@@ -518,6 +524,22 @@ export class TradingManager {
     return levels
       .map((level, i) => (i === index ? { ...level, price } : { ...level }))
       .sort((a, b) => (long ? a.price - b.price : b.price - a.price));
+  }
+
+  /**
+   * What a drag asks of the broker for an order: where it goes, and where a
+   * stop-limit's stop goes with it (the room between them kept) or alone.
+   * Null for a stop whose order is gone, or has no stop any more.
+   */
+  private orderMove(result: DragResult): { orderId: string; newPrice: number; previousPrice: number; newStopPrice?: number; previousStopPrice?: number } | null {
+    const order = this.orders.find((o) => o.id === result.id);
+    const stop = order ? stopOf(order, null) : undefined;
+    if (result.sourceType === 'orderStop') {
+      if (!order || stop === undefined) return null;
+      return { orderId: order.id, newPrice: order.price, previousPrice: order.price, newStopPrice: result.newPrice, previousStopPrice: result.previousPrice };
+    }
+    const move = { orderId: result.id, newPrice: result.newPrice, previousPrice: result.previousPrice };
+    return stop === undefined ? move : { ...move, newStopPrice: stop + (result.newPrice - result.previousPrice), previousStopPrice: stop };
   }
 
   /**

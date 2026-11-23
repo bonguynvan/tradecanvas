@@ -830,6 +830,8 @@ chart.placeOrderIntent({ side: 'sell', type: 'limit', price: 66_000, quantity: 1
 chart.placeOrderIntent({ side: 'sell', type: 'stop', price: 63_000, stopPrice: 63_000, quantity: 1, ocoGroup: 'exit' });
 // timeInForce: 'gtc' | 'day' | 'gtd' (with expireTime, ms) | 'ioc' | 'fok' (filled at once, or refused: executionError)
 // an expireTime is to come by chart.getTradingTime(): the clock's, or a replay's while a paper account trades on it
+// type: 'stopLimit' has price (its limit) and stopPrice (where it begins to work): the chart draws both lines; dragging the order
+// moves both, dragging its stop moves the stop alone, and 'orderModify' then carries newStopPrice beside newPrice
 // Order flow: a bar may carry buyVolume (the part of its volume the buyers took) and a trade its side ('buy' | 'sell');
 // barDelta(bar) is bought less sold (null where the bar does not say), and chart.addIndicator('voldelta', { mode: 1, anchor: 'session' })
 // draws the true cumulative delta from such bars (an estimate from the close where they do not say). BinanceAdapter fills both in.
