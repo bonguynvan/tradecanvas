@@ -14,7 +14,7 @@
   Look của widget là một tập token: góc bo của từng loại thành phần, kích thước control và thanh, kiểu chữ, viền,
   bóng đổ, cách hiển thị nút đang chọn, và toolbar cùng công cụ vẽ nằm sát cạnh hay nổi.
   Bắt đầu từ một preset rồi đổi phần cần đổi. Màu sắc thuộc về theme (<code>dark</code> / <code>light</code>,
-  xem <a href={href('/docs/api')}>API</a>); một look dùng được với cả hai. Modern, preset mặc định, có dark và
+  xem <a href={href('/docs/api')}>API</a>); một look dùng được với cả hai. Graphite, preset mặc định, và Modern đều có dark và
   light riêng; các look khác dùng chung bộ màu mà widget dùng trước khi có Modern.
 </p>
 
@@ -22,7 +22,16 @@
 <table>
   <thead><tr><th>Preset</th><th>Look</th></tr></thead>
   <tbody>
-    <tr><td><code>modern</code> (mặc định)</td><td>
+    <tr><td><code>graphite</code> (mặc định)</td><td>
+      Khung của một bàn giao dịch, không mang sắc màu riêng: các nền lệch nhau một bậc (<code>#131416</code> /
+      <code>#ffffff</code>), ngăn bằng đường kẻ mảnh. Ít cỡ một cách có chủ ý: control cao 20, 24, 28, 36 hoặc
+      40 px, mọi góc bo 3 px, một kiểu bóng cho lớp nổi và không bóng ở chỗ khác. Thứ đang chọn (interval, tool,
+      tab) hiện trên nền sáng hơn với màu chữ thường; màu amber dành cho thứ bạn bấm để hành động. Công tắc là ô
+      tick, và cột của bảng tài khoản rộng vừa bằng số liệu. Font là IBM Plex Sans nếu trang của bạn tải nó, nếu
+      không thì font hệ thống. Trên chart, khi bạn không đưa theme object, màu là
+      <code>GRAPHITE_DARK_THEME</code> và <code>GRAPHITE_LIGHT_THEME</code>.
+    </td></tr>
+    <tr><td><code>modern</code></td><td>
       Giống cửa sổ một trình soạn code, dùng bộ màu Dark Modern và Light Modern. Chart nằm trên nền của vùng soạn
       (<code>#1f1f1f</code> / <code>#ffffff</code>), toolbar và các thanh quanh chart đậm hoặc nhạt hơn nền một chút, ngăn cách bằng đường mảnh;
       icon 16 px trong nút 28 px trên toolbar 38 px; control bo 4 px, menu 6 px và dialog 8 px. Màu amber của logo

@@ -15,15 +15,25 @@
   barras, la tipografía, los bordes, las sombras, cómo se ve un botón elegido y si la barra de herramientas y las
   herramientas de dibujo van pegadas a los bordes o flotan. Parte de un preajuste y cambia lo que quieras. Los colores
   siguen dependiendo del tema (<code>dark</code> / <code>light</code>; consulta la
-  <a href={href('/docs/api')}>referencia de la API</a>); cualquier aspecto funciona con ambos. Modern, el predeterminado, trae un
-  oscuro y un claro propios; los demás aspectos comparten los colores que tenía el widget antes de él.
+  <a href={href('/docs/api')}>referencia de la API</a>); cualquier aspecto funciona con ambos. Graphite, el predeterminado, y Modern traen cada uno un
+  oscuro y un claro propios; los demás aspectos comparten los colores que tenía el widget antes de ellos.
 </p>
 
 <h2>Preajustes</h2>
 <table>
   <thead><tr><th>Preajuste</th><th>Aspecto</th></tr></thead>
   <tbody>
-    <tr><td><code>modern</code> (predeterminado)</td><td>
+    <tr><td><code>graphite</code> (predeterminado)</td><td>
+      El marco de una mesa de trading, sin tono propio: fondos a un paso uno de otro (<code>#131416</code> /
+      <code>#ffffff</code>) separados por líneas finas. Pocos tamaños a propósito: controles de 20, 24, 28, 36 o
+      40 px de alto, todas las esquinas de 3 px, una sola sombra para lo que flota y ninguna en lo demás. Lo
+      elegido (un intervalo, una herramienta, una pestaña) se muestra sobre un fondo más claro con el color del
+      texto; el ámbar queda para lo que se ejecuta. Los interruptores son casillas que se marcan, y las columnas
+      de la tabla de la cuenta miden lo que sus cifras. Su tipografía es IBM Plex Sans si tu página la carga, la
+      del sistema si no. En el gráfico, sin un objeto de tema tuyo, sus colores son
+      <code>GRAPHITE_DARK_THEME</code> y <code>GRAPHITE_LIGHT_THEME</code>.
+    </td></tr>
+    <tr><td><code>modern</code></td><td>
       La ventana de un editor de código, con sus colores Dark Modern y Light Modern. El gráfico sobre el fondo del editor
       (<code>#1f1f1f</code> / <code>#ffffff</code>), las barras de alrededor un tono por encima o por debajo y líneas finas
       entre ellas; iconos de 16 px en botones de 28 px sobre una barra de herramientas de 38 px; controles de 4 px, menús de

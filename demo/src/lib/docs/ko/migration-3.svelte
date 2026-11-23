@@ -140,6 +140,18 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 손절가에서 50을 �
   확인 대화상자의 버튼(<code>.tcw-confirm .tcw-done-btn</code>)을 누르거나 이 옵션을 사용해야 합니다.
 </p>
 
+<h3 id="graphite">위젯의 기본 외관은 Graphite입니다</h3>
+<p>
+  <code>ui</code>가 없는 <code>ChartWidget</code>은 이제 Modern 대신 Graphite 외관으로 그려집니다. 중성 바탕,
+  3 px 모서리, 40 px 툴바이며, 선택된 것은 앰버가 아니라 더 밝은 바탕에 표시됩니다. 차트의 색도 함께 바뀝니다
+  (<code>GRAPHITE_DARK_THEME</code>, <code>GRAPHITE_LIGHT_THEME</code>). <code>theme</code>이 직접 만든 객체라면
+  바뀌지 않습니다. <code>ui: 'modern'</code>은 이전 외관과 색을 그대로 유지합니다. 스타일시트의 기본 토큰은
+  Graphite의 것이므로, Modern 위에 <code>--tcw-*</code> 토큰 몇 개를 설정하던 CSS는 이제 Graphite 위에 설정합니다.
+  모든 외관에서 주문 티켓의 버튼은 주문 내용을 적고(<code>Buy 100 HPG</code>), 주문 금액은 버튼 바로 위 마지막
+  줄이며, 계좌 패널에서 포지션의 반전과 청산 버튼은 손익 바로 뒤에 옵니다. 버튼의 글자나 열의 위치를 읽는
+  테스트는 고쳐야 합니다.
+</p>
+
 <h2 id="types">넓어진 타입</h2>
 <p>
   <code>TimeInForce</code>는 이제 <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>입니다. 모든 멤버를 처리하는 코드(default가

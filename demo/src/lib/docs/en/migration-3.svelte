@@ -149,6 +149,19 @@ chart.startBracket('buy', undefined, { risk: 50 })   // the quantity that loses 
   (<code>.tcw-confirm .tcw-done-btn</code>) or the option.
 </p>
 
+<h3 id="graphite">The widget's default look is Graphite</h3>
+<p>
+  A <code>ChartWidget</code> with no <code>ui</code> is now drawn in the Graphite look, where it was Modern:
+  neutral grounds, corners of 3 px, a 40 px toolbar, and what is picked shown on a lighter ground, not on amber. The
+  chart's own colours change with it (<code>GRAPHITE_DARK_THEME</code>, <code>GRAPHITE_LIGHT_THEME</code>) unless
+  <code>theme</code> is an object of yours. <code>ui: 'modern'</code> keeps the look before it, colours and all. The
+  stylesheet's default tokens are Graphite's, so CSS that set a few <code>--tcw-*</code> tokens over Modern's now
+  sets them over Graphite's. In every look the order ticket's button now names the order
+  (<code>Buy 100 HPG</code>), the order's value is the last line over it, and a position's Reverse and Close buttons
+  come right after its P&amp;L in the account panel: a test that read the button's text or a column by its place
+  needs the new one.
+</p>
+
 <h2 id="types">Types that grew</h2>
 <p>
   <code>TimeInForce</code> is now <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. Code that handles every

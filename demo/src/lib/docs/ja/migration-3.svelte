@@ -144,6 +144,18 @@ chart.startBracket('buy', undefined, { risk: 50 })   // ストップで 50 を�
   （<code>.tcw-confirm .tcw-done-btn</code>）を押すか、このオプションを使ってください。
 </p>
 
+<h3 id="graphite">ウィジェットの既定の外観は Graphite です</h3>
+<p>
+  <code>ui</code> のない <code>ChartWidget</code> は、これまでの Modern に代わって Graphite の外観で描かれます。
+  無彩色の地、3 px の角、40 px のツールバーで、選択中のものはアンバーではなく明るい地に示します。チャートの色も
+  それに合わせて変わります（<code>GRAPHITE_DARK_THEME</code>、<code>GRAPHITE_LIGHT_THEME</code>）。<code>theme</code> が
+  自分のオブジェクトなら変わりません。<code>ui: 'modern'</code> で以前の外観と色を保てます。スタイルシートの既定の
+  トークンは Graphite のものなので、Modern の上にいくつかの <code>--tcw-*</code> トークンを設定していた CSS は、
+  Graphite の上に設定することになります。どの外観でも、注文チケットのボタンは注文の内容を示し
+  （<code>Buy 100 HPG</code>）、注文の金額はボタンのすぐ上の最後の行になり、口座パネルではポジションの
+  ドテンと決済のボタンが損益のすぐ後に来ます。ボタンの文字や列の位置を読むテストは直す必要があります。
+</p>
+
 <h2 id="types">広がった型</h2>
 <p>
   <code>TimeInForce</code> は <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code> になりました。すべてのメンバーを扱うコード（default

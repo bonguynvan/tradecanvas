@@ -149,6 +149,18 @@ chart.startBracket('buy', undefined, { risk: 50 })   // khối lượng sẽ l�
   (<code>.tcw-confirm .tcw-done-btn</code>) hoặc dùng option trên.
 </p>
 
+<h3 id="graphite">Look mặc định của widget là Graphite</h3>
+<p>
+  <code>ChartWidget</code> không có <code>ui</code> giờ được vẽ theo look Graphite, trước đây là Modern: nền
+  trung tính, góc bo 3 px, toolbar 40 px, và thứ đang chọn hiện trên nền sáng hơn thay vì nền amber. Màu của chart
+  đổi theo (<code>GRAPHITE_DARK_THEME</code>, <code>GRAPHITE_LIGHT_THEME</code>) trừ khi <code>theme</code> là object
+  của bạn. <code>ui: 'modern'</code> giữ nguyên look cũ, cả màu. Token mặc định của stylesheet là của Graphite, nên
+  CSS từng đặt vài token <code>--tcw-*</code> đè lên Modern giờ đè lên Graphite. Ở mọi look, nút của order ticket
+  giờ ghi rõ order (<code>Buy 100 HPG</code>), giá trị order là dòng cuối ngay trên nút, và nút Reverse, Close của
+  một position nằm ngay sau P&amp;L trong bảng tài khoản: test đọc chữ trên nút hoặc đọc cột theo vị trí cần đổi
+  theo.
+</p>
+
 <h2 id="types">Các type được mở rộng</h2>
 <p>
   <code>TimeInForce</code> nay là <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. Code xử lý mọi giá trị
