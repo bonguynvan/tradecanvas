@@ -49,6 +49,17 @@ chart.connectExecution(broker, { brackets: 'place' })   →   chart.connectExecu
 <pre><code>{`chart.startBracket('buy', undefined, { quantity: 2 })
 chart.startBracket('buy', undefined, { risk: 50 })   // the quantity that loses 50 at the stop`}</code></pre>
 
+<h3 id="trade-buttons">Sell and Buy show on the chart with an execution adapter</h3>
+<p>
+  With an execution adapter connected and the order ticket on, the widget now shows Sell and Buy under the
+  chart's legend. A host that connects an adapter only to draw its orders and positions turns them off:
+</p>
+<pre><code>{`new ChartWidget(el, { features: { tradeButtons: false } });`}</code></pre>
+<p>
+  With <code>orderTicket</code> off, or with no adapter, they never show. A host that turns every order switch
+  off by name has one more to name: <code>tradeButtons</code> is new, and on unless set.
+</p>
+
 <h3 id="stop-limit">The paper account fills a stop-limit within its limit</h3>
 <p>
   <code>PaperExecutionAdapter</code> filled a <code>stopLimit</code> order at its stop, as a stop order. It now

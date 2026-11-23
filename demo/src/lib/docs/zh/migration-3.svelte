@@ -46,6 +46,15 @@ chart.connectExecution(broker, { brackets: 'place' })   →   chart.connectExecu
 <pre><code>{`chart.startBracket('buy', undefined, { quantity: 2 })
 chart.startBracket('buy', undefined, { risk: 50 })   // 在止损处亏损 50 的数量`}</code></pre>
 
+<h3 id="trade-buttons">连接执行适配器后，图表上显示卖出和买入</h3>
+<p>
+  连接了执行适配器并且下单窗口开启时，组件现在会在图表图例下方显示卖出和买入。只为画出自己的订单和持仓而连接适配器的宿主，可以把它们关掉：
+</p>
+<pre><code>{`new ChartWidget(el, { features: { tradeButtons: false } });`}</code></pre>
+<p>
+  关闭 <code>orderTicket</code>，或没有适配器时，这两个按钮不会出现。逐个按名称关闭下单开关的宿主多了一个要写的名称：<code>tradeButtons</code> 是新开关，不设置时为开启。
+</p>
+
 <h3 id="stop-limit">模拟账户在限价内成交止损限价单</h3>
 <p>
   <code>PaperExecutionAdapter</code> 以前在止损价处成交 <code>stopLimit</code> 订单，与止损单相同。现在，价格到达止损价后，

@@ -50,6 +50,17 @@ chart.connectExecution(broker, { brackets: 'place' })   →   chart.connectExecu
 <pre><code>{`chart.startBracket('buy', undefined, { quantity: 2 })
 chart.startBracket('buy', undefined, { risk: 50 })   // khối lượng sẽ lỗ 50 tại stop`}</code></pre>
 
+<h3 id="trade-buttons">Bán và Mua hiện trên biểu đồ khi có execution adapter</h3>
+<p>
+  Khi một execution adapter đang kết nối và order ticket đang bật, widget giờ hiện Bán và Mua dưới legend của biểu
+  đồ. Host nào kết nối adapter chỉ để vẽ order và position của mình thì tắt chúng đi:
+</p>
+<pre><code>{`new ChartWidget(el, { features: { tradeButtons: false } });`}</code></pre>
+<p>
+  Khi <code>orderTicket</code> tắt, hoặc không có adapter, hai nút này không bao giờ hiện. Host nào tắt từng công tắc
+  đặt lệnh theo tên thì có thêm một tên: <code>tradeButtons</code> là công tắc mới, và bật nếu không đặt.
+</p>
+
 <h3 id="stop-limit">Tài khoản paper khớp stop-limit trong giới hạn của nó</h3>
 <p>
   <code>PaperExecutionAdapter</code> trước đây khớp order <code>stopLimit</code> tại stop, như một stop order.

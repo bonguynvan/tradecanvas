@@ -48,6 +48,17 @@ chart.connectExecution(broker, { brackets: 'place' })   →   chart.connectExecu
 <pre><code>{`chart.startBracket('buy', undefined, { quantity: 2 })
 chart.startBracket('buy', undefined, { risk: 50 })   // 손절가에서 50을 잃는 수량`}</code></pre>
 
+<h3 id="trade-buttons">실행 어댑터를 연결하면 차트에 매도와 매수가 표시됩니다</h3>
+<p>
+  실행 어댑터가 연결되어 있고 주문 티켓이 켜져 있으면, 위젯은 이제 차트의 범례 아래에 매도와 매수를 보여 줍니다.
+  자신의 주문과 포지션을 그리기 위해서만 어댑터를 연결하는 호스트는 이 버튼을 끕니다:
+</p>
+<pre><code>{`new ChartWidget(el, { features: { tradeButtons: false } });`}</code></pre>
+<p>
+  <code>orderTicket</code>이 꺼져 있거나 어댑터가 없으면 이 버튼은 표시되지 않습니다. 주문 관련 스위치를 이름으로 하나씩 끄는 호스트에는
+  적을 이름이 하나 더 생겼습니다. <code>tradeButtons</code>는 새 스위치이며, 설정하지 않으면 켜져 있습니다.
+</p>
+
 <h3 id="stop-limit">모의 계좌는 스톱 리밋을 지정가 범위 안에서 체결합니다</h3>
 <p>
   <code>PaperExecutionAdapter</code>는 이전에 <code>stopLimit</code> 주문을 스톱 가격에서 스톱 주문처럼 체결했습니다. 이제
