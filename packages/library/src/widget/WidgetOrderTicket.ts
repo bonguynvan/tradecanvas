@@ -91,6 +91,8 @@ function soundQuote(quote: OrderTicketQuote | null | undefined): OrderTicketQuot
 
 /** How long an order may be on its way before the ticket says no answer has come (ms). */
 const NO_ANSWER_MS = 10_000;
+/** The digits a quantity is written to on the ticket's button: past them is a float's noise. */
+const QUANTITY_DIGITS = 12;
 
 /** The kinds of order the ticket takes, as its choices stand. */
 const ORDER_TYPES = ['market', 'limit', 'stop', 'stopLimit'] as const;
@@ -829,20 +831,37 @@ export class WidgetOrderTicket {
     this.renderSummary(draft);
     const sending = this.waiting !== null;
     this.submit.disabled = sending || this.blind(draft) || problems.length > 0;
-    this.submit.textContent = sending ? this.t('ticket.sending') : this.t(draft.side === 'buy' ? 'ticket.placeBuy' : 'ticket.placeSell');
+    this.submit.textContent = sending ? this.t('ticket.sending') : this.submitText(draft);
     this.submit.setAttribute('aria-busy', String(sending));
   }
 
-  /** The receipt: the order's value, then what the stop risks, the target makes, and the one over the other. */
+  /**
+   * What the button does, in its own words: the side, the quantity and the symbol ("Buy 100 HPG").
+   * With no symbol or no quantity yet, the side's own label.
+   */
+  private submitText(draft: OrderTicketDraft): string {
+    const symbol = this.symbolEl.textContent ?? '';
+    if (!(draft.quantity > 0) || !Number.isFinite(draft.quantity) || symbol === '') {
+      return this.t(draft.side === 'buy' ? 'ticket.placeBuy' : 'ticket.placeSell');
+    }
+    // A quantity summed from lots reads as it was meant: 0.3, not 0.30000000000000004.
+    const quantity = String(Number(draft.quantity.toPrecision(QUANTITY_DIGITS)));
+    return this.t('ticket.submit')
+      .replace('{side}', this.t(draft.side === 'buy' ? 'ticket.buy' : 'ticket.sell'))
+      .replace('{quantity}', quantity)
+      .replace('{symbol}', symbol);
+  }
+
+  /** The receipt: what the stop risks, the target makes and the one over the other, then the order's value, last and largest, over the button that sends it. */
   private renderSummary(draft: OrderTicketDraft): void {
     const sum = orderTicketSummary(draft, this.market(), this.rules);
     const risk = sum.risk === null ? null : this.amount(sum.risk);
     const reward = sum.reward === null ? null : this.amount(sum.reward);
     const rows: [string, MessageKey, string | null, 'up' | 'down' | null][] = [
-      ['value', 'ticket.value', sum.value === null ? null : this.money(sum.value), null],
       ['risk', 'ticket.risk', risk, risk === null ? null : toneOf(risk)],
       ['reward', 'ticket.reward', reward, reward === null ? null : toneOf(reward)],
       ['ratio', 'ticket.rewardRisk', sum.ratio === null ? null : this.number(sum.ratio, 2), null],
+      ['value', 'ticket.value', sum.value === null ? null : this.money(sum.value), null],
     ];
     this.summaryEl.replaceChildren(...rows.filter(([, , figure]) => figure !== null).map(([id, key, figure, mood]) => {
       const row = document.createElement('div');

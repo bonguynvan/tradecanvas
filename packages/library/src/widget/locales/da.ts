@@ -609,6 +609,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Hæv {field}',
   'ticket.placeBuy': 'Afgiv købsordre',
   'ticket.placeSell': 'Afgiv salgsordre',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': 'Mægleren har ikke svaret endnu. Tjek dine ordrer, før du sender igen.',
   'ticket.noLivePrice': 'Ingen livepris: kontrollér prisen, før du afgiver ordren.',
   'ticket.noLiveMarket': 'Ingen livepris: en markedsordre kan ikke sendes.',

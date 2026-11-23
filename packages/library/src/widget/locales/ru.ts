@@ -603,6 +603,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Увеличить: {field}',
   'ticket.placeBuy': 'Разместить ордер на покупку',
   'ticket.placeSell': 'Разместить ордер на продажу',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': 'Брокер ещё не ответил. Проверьте свои ордера, прежде чем отправлять снова.',
   'ticket.noLivePrice': 'Нет актуальной цены: проверьте цену перед отправкой заявки.',
   'ticket.noLiveMarket': 'Нет актуальной цены: рыночную заявку отправить нельзя.',

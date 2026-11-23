@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Styling — TradeCanvas docs</title>
-  <meta name="description" content="The widget's look as tokens, with six presets — Modern, Print, Studio, Terminal, Capsule, Desk — on even pixels, and the chart's look by key: the grid, crosshair, axes, panes, legend, last price, volume and each chart type, indicator plots and panes." />
+  <meta name="description" content="The widget's look as tokens, with seven presets — Graphite, Modern, Print, Studio, Terminal, Capsule, Desk — on even pixels, and the chart's look by key: the grid, crosshair, axes, panes, legend, last price, volume and each chart type, indicator plots and panes." />
 </svelte:head>
 
 <h1>Styling the widget</h1>
@@ -14,15 +14,24 @@
   The widget's look is a set of tokens: the corners of each kind of part, control and bar sizes, type, borders,
   shadows, how a chosen button shows, and whether the toolbar and drawing tools sit along the edges or float.
   Start from a preset and change what you like. Colours stay with the theme (<code>dark</code> / <code>light</code>,
-  see <a href={href('/docs/api')}>the API</a>); a look works with either. Modern, the default, brings a dark and a
-  light of its own; the other looks share the colours that were the widget's before it.
+  see <a href={href('/docs/api')}>the API</a>); a look works with either. Graphite, the default, and Modern each
+  bring a dark and a light of their own; the other looks share the colours that were the widget's before them.
 </p>
 
 <h2>Presets</h2>
 <table>
   <thead><tr><th>Preset</th><th>Look</th></tr></thead>
   <tbody>
-    <tr><td><code>modern</code> (default)</td><td>
+    <tr><td><code>graphite</code> (default)</td><td>
+      A trading desk's chrome with no hue of its own: grounds a shade apart (<code>#131416</code> /
+      <code>#ffffff</code>) with hairlines between. Few sizes on purpose: controls 20, 24, 28, 36 or 40 px tall,
+      every corner 3 px, one shadow for what floats and none elsewhere. What is picked (an interval, a tool, a tab)
+      shows on a lighter ground in the text's own colour; amber is kept for what you act on. Switches are boxes
+      that are ticked, and the account table's columns are as wide as their figures. Its face is IBM Plex Sans
+      where your page loads it, the system's own otherwise. On the chart, without a theme object of yours, its
+      colours are <code>GRAPHITE_DARK_THEME</code> and <code>GRAPHITE_LIGHT_THEME</code>.
+    </td></tr>
+    <tr><td><code>modern</code></td><td>
       A code editor's window, in its Dark Modern and Light Modern colours. The chart on the editor's ground
       (<code>#1f1f1f</code> / <code>#ffffff</code>) with the bars around it a shade off it and hairlines between;
       16 px icons in 28 px buttons on a 38 px toolbar; 4 px controls, 6 px menus and 8 px dialogs. The logo's amber
@@ -36,7 +45,7 @@
       the accent tokens sets those too.
     </td></tr>
     <tr><td><code>print</code></td><td>
-      The default before Modern, colours and all. Paper and ink. An off-white and an off-black ground, grey for everything that is normal and colour only where
+      The default before Modern and Graphite, colours and all. Paper and ink. An off-white and an off-black ground, grey for everything that is normal and colour only where
       it means something; hairlines, 3 px controls, 5 px menus and 8 px dialogs; large icons drawn in fine lines;
       labels as written and a medium weight for emphasis; the system's own face (Segoe UI Variable on Windows 11);
       every figure, on the chart too, in a sans face whose digits are one width (Segoe UI on Windows, Helvetica Neue on
@@ -178,7 +187,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 
 <h2>Your own look</h2>
 <p>
-  A theme starts from a preset (Modern when you name none) and changes what it names. Corners set on the scale
+  A theme starts from a preset (Graphite when you name none) and changes what it names. Corners set on the scale
   reach every part that follows it, unless you set that part's own.
 </p>
 <pre><code>{`widget.setUI({
@@ -257,7 +266,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 <h2>CSS variables</h2>
 <p>
   The tokens are CSS variables on the widget's root (and on its dialogs). Without the <code>ui</code> option they
-  stay the stylesheet's — Modern's — so your own CSS can set them: the widget puts its stylesheet first in the
+  stay the stylesheet's — Graphite's — so your own CSS can set them: the widget puts its stylesheet first in the
   page, so a rule of yours on <code>.tcw-root</code> wins. With <code>ui</code>, the widget writes them on the
   element, and they win.
 </p>

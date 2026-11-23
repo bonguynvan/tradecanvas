@@ -609,6 +609,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'הגדלת {field}',
   'ticket.placeBuy': 'שליחת פקודת קנייה',
   'ticket.placeSell': 'שליחת פקודת מכירה',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': 'הברוקר עדיין לא השיב. בדקו את הפקודות שלכם לפני שליחה חוזרת.',
   'ticket.noLivePrice': 'אין מחיר חי: בדקו את המחיר לפני שליחת ההוראה.',
   'ticket.noLiveMarket': 'אין מחיר חי: לא ניתן לשלוח הוראת שוק.',

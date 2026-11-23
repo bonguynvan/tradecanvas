@@ -603,6 +603,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Höj {field}',
   'ticket.placeBuy': 'Lägg köporder',
   'ticket.placeSell': 'Lägg säljorder',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': 'Mäklaren har inte svarat än. Kontrollera dina order innan du skickar igen.',
   'ticket.noLivePrice': 'Inget livepris: kontrollera priset innan du lägger ordern.',
   'ticket.noLiveMarket': 'Inget livepris: en marknadsorder kan inte skickas.',

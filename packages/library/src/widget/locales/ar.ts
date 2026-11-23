@@ -609,6 +609,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'زيادة {field}',
   'ticket.placeBuy': 'إرسال أمر الشراء',
   'ticket.placeSell': 'إرسال أمر البيع',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': 'لم يردّ الوسيط بعد. تحقّق من أوامرك قبل الإرسال مرة أخرى.',
   'ticket.noLivePrice': 'لا يوجد سعر مباشر: تحقق من السعر قبل إرسال الأمر.',
   'ticket.noLiveMarket': 'لا يوجد سعر مباشر: لا يمكن إرسال أمر سوق.',

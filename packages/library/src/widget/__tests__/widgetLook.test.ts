@@ -31,8 +31,8 @@ function ruleBody(selector: string): string {
 describe('the stylesheet’s look', () => {
   const root = declared('.tcw-root {');
 
-  it('defaults to Modern: every token the `ui` option sets, at Modern’s value', () => {
-    const modern = widgetUIVariables(resolveWidgetUI('modern'));
+  it('defaults to Graphite: every token the `ui` option sets, at Graphite’s value', () => {
+    const modern = widgetUIVariables(resolveWidgetUI());
     for (const [name, value] of Object.entries(modern)) {
       expect(root[name], name).toBeDefined();
       expect(resolved(root, root[name]), name).toBe(resolved(root, value));
@@ -275,5 +275,11 @@ describe('the symbol search on a phone', () => {
     expect(rule('.tcw-ss-exchange')).toContain('grid-row: 2');
     expect(rule('.tcw-ss-exchange')).not.toContain('text-overflow');
     expect(phone).not.toContain('fit-content(55px)');
+  });
+
+  it('draws Graphite’s tick box over the light theme’s switch: its rules are as specific', () => {
+    const controls = readFileSync(fileURLToPath(new URL('../WidgetControls.css', import.meta.url)), 'utf8');
+    expect(controls).toContain(".tcw-root[data-tcw-ui='graphite'] .tcw-toggle.tcw-on::after");
+    expect(controls).not.toContain(".tcw-root:where([data-tcw-ui='graphite']) .tcw-toggle");
   });
 });

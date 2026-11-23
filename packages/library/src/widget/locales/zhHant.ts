@@ -603,6 +603,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'ticket.stepUp': '{field}增加',
   'ticket.placeBuy': '送出買進委託',
   'ticket.placeSell': '送出賣出委託',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': '經紀商尚未回覆。再次送出前請先查看您的委託。',
   'ticket.noLivePrice': '沒有即時價格：下單前請核對價格。',
   'ticket.noLiveMarket': '沒有即時價格：無法送出市價單。',

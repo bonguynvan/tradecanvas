@@ -3,7 +3,7 @@ import { barTimeUnit, marketStatus, offsetAt, stepDecimals, timeframeFollowsDays
 import { settingToTimezone, timezoneOptions, timezoneToSetting } from './widgetTimezones.js';
 import { installFormControls } from './formControls.js';
 import { Chart } from '../Chart.js';
-import { DARK_THEME, LIGHT_THEME, MODERN_DARK_THEME, MODERN_LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
+import { DARK_THEME, LIGHT_THEME, GRAPHITE_DARK_THEME, GRAPHITE_LIGHT_THEME, MODERN_DARK_THEME, MODERN_LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
 import type { ActiveIndicatorInfo, BrokerOrderRules, ChartWidgetOptions, WidgetState, ChartSettingsState, DockPageHandle, DockPageSpec, DockPanelId } from './types.js';
 import { CHART_TYPES, DRAWING_TOOL_GROUPS, DEFAULT_SYMBOLS, DEFAULT_SETTINGS } from './widgetConfig.js';
 import { SETTINGS_LOOK_KEYS } from './widgetSettingsLook.js';
@@ -2147,11 +2147,11 @@ export class ChartWidget {
   }
 
   /**
-   * Change the widget's look: a preset (`'modern'`, `'print'`, `'studio'`,
+   * Change the widget's look: a preset (`'graphite'`, `'modern'`, `'print'`, `'studio'`,
    * `'terminal'`, `'capsule'`, `'desk'`) or your theme over one. Colours stay with
-   * `setTheme`, but for Modern's own dark and light, which the chart takes
+   * `setTheme`, but for Graphite's and Modern's own dark and light, which the chart takes
    * unless `setTheme` or the `theme` option gave it a theme object. The look sets the chart's bar layout and face too (its figures
-   * face, which is the system's sans in Modern and Print; golden bars, except when compact),
+   * face, which is the system's sans in Graphite, Modern and Print; golden bars, except when compact),
    * over any set on the chart itself, unless `chartOptions` set the bar
    * layout or a `font.family`; the sizes of `chartOptions.font` stay.
    */
@@ -3935,6 +3935,7 @@ export class ChartWidget {
   private themeFor(dark: boolean): Theme {
     const own = dark ? this.themeOf.dark : this.themeOf.light;
     if (own) return own;
+    if (this.ui.preset === 'graphite') return dark ? GRAPHITE_DARK_THEME : GRAPHITE_LIGHT_THEME;
     if (this.ui.preset === 'modern') return dark ? MODERN_DARK_THEME : MODERN_LIGHT_THEME;
     return dark ? DARK_THEME : LIGHT_THEME;
   }

@@ -128,6 +128,17 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 在止损处亏损 50 �
   需要点击确认对话框的按钮（<code>.tcw-confirm .tcw-done-btn</code>）或使用该选项。
 </p>
 
+<h3 id="graphite">组件的默认外观是 Graphite</h3>
+<p>
+  没有 <code>ui</code> 的 <code>ChartWidget</code> 现在以 Graphite 外观绘制，以前是 Modern：中性底色、3 px 圆角、
+  40 px 工具栏，选中的项显示在较亮的底色上，而不是琥珀色上。图表自身的颜色随之改变
+  （<code>GRAPHITE_DARK_THEME</code>、<code>GRAPHITE_LIGHT_THEME</code>），除非 <code>theme</code> 是你自己的对象。
+  <code>ui: 'modern'</code> 保留之前的外观和配色。样式表的默认令牌是 Graphite 的，因此原先在 Modern 之上设置少量
+  <code>--tcw-*</code> 令牌的 CSS，现在是设置在 Graphite 之上。在所有外观中，下单面板的按钮现在写明订单
+  （<code>Buy 100 HPG</code>），订单金额是按钮上方的最后一行，持仓的反手和平仓按钮在账户面板中紧跟盈亏之后：
+  读取按钮文字或按位置读取列的测试需要相应修改。
+</p>
+
 <h2 id="types">扩充的类型</h2>
 <p>
   <code>TimeInForce</code> 现在是 <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>。处理全部成员的代码

@@ -603,6 +603,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'ticket.stepUp': '{field}增加',
   'ticket.placeBuy': '提交买入委托',
   'ticket.placeSell': '提交卖出委托',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': '经纪商尚未答复。再次发送前请先查看您的委托。',
   'ticket.noLivePrice': '没有实时价格：下单前请核对价格。',
   'ticket.noLiveMarket': '没有实时价格：无法发送市价单。',

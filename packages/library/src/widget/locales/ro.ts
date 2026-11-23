@@ -603,6 +603,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Crește {field}',
   'ticket.placeBuy': 'Plasare ordin de cumpărare',
   'ticket.placeSell': 'Plasare ordin de vânzare',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': 'Brokerul nu a răspuns încă. Verificați ordinele înainte de a trimite din nou.',
   'ticket.noLivePrice': 'Fără preț în timp real: verificați prețul înainte de a plasa ordinul.',
   'ticket.noLiveMarket': 'Fără preț în timp real: nu se poate trimite un ordin la piață.',

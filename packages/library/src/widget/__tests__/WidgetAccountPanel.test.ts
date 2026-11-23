@@ -99,7 +99,9 @@ describe('WidgetAccountPanel', () => {
     panel.openPanel();
     const tabs = [...host.querySelectorAll('[role=tab]')].map((b) => [b.querySelector('.tcw-account-tab-label')!.textContent, b.querySelector('.tcw-account-count')!.textContent]);
     expect(tabs).toEqual([['Positions', '1'], ['Orders', '1'], ['History', '2'], ['Log', '0']]);
-    expect(cells()[0].slice(0, 7)).toEqual(['Long', '2', '100.00', '103.00', '+6.00 · +3.00%', '95.00', '—']);
+    // Its buttons stand beside its profit, before its stop and its target.
+    expect(cells()[0].slice(0, 5)).toEqual(['Long', '2', '100.00', '103.00', '+6.00 · +3.00%']);
+    expect(cells()[0].slice(6, 8)).toEqual(['95.00', '—']);
     expect(callbacks.onToggle).toHaveBeenCalledWith(true);
   });
 
@@ -108,7 +110,7 @@ describe('WidgetAccountPanel', () => {
     const row = host.querySelector('tbody tr')!;
     const named = [...row.querySelectorAll('td')].map((td) => [td.dataset.label, td.classList.contains('tcw-num')]);
     expect(named).toEqual([
-      ['Side', false], ['Qty', true], ['Entry', true], ['Price', true], ['P&L', true], ['SL', true], ['TP', true], ['', false],
+      ['Side', false], ['Qty', true], ['Entry', true], ['Price', true], ['P&L', true], ['', false], ['SL', true], ['TP', true],
     ]);
   });
 

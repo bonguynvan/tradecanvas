@@ -1589,8 +1589,9 @@ console.log(widget.getUI().sizes.control, WIDGET_UI_PRESETS.capsule.components.c
 ```
 
 The look changes shapes and sizes only; colours stay with `theme`, but for
-Modern's, the default: it brings a code editor's dark and light, on the chart
-too (`MODERN_DARK_THEME`, `MODERN_LIGHT_THEME`) unless `theme` is an object.
+Graphite's, the default: it brings a neutral dark and light, on the chart
+too (`GRAPHITE_DARK_THEME`, `GRAPHITE_LIGHT_THEME`) unless `theme` is an object;
+`ui: 'modern'` is the default before it, a code editor's colours.
 `ui: 'print'` gives back the look and colours the widget had before. Print
 keeps to the golden ratio: sizes in half steps of φ (20, 26, 33, 42, 53),
 Fibonacci spacing and corners, type a third of φ apart (11, 13, 15, 18, 21);

@@ -609,6 +609,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Hev {field}',
   'ticket.placeBuy': 'Legg inn kjøpsordre',
   'ticket.placeSell': 'Legg inn salgsordre',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': 'Megleren har ikke svart ennå. Sjekk ordrene dine før du sender på nytt.',
   'ticket.noLivePrice': 'Ingen sanntidspris: kontroller prisen før du legger inn ordren.',
   'ticket.noLiveMarket': 'Ingen sanntidspris: en markedsordre kan ikke sendes.',

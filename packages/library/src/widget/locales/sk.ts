@@ -603,6 +603,7 @@ export const SK_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Zvýšiť: {field}',
   'ticket.placeBuy': 'Zadať nákupný pokyn',
   'ticket.placeSell': 'Zadať predajný pokyn',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': 'Broker zatiaľ neodpovedal. Pred opätovným odoslaním skontrolujte svoje pokyny.',
   'ticket.noLivePrice': 'Žiadna živá cena: pred zadaním príkazu skontrolujte cenu.',
   'ticket.noLiveMarket': 'Žiadna živá cena: trhový príkaz nemožno odoslať.',

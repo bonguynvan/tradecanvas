@@ -603,6 +603,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'เพิ่ม{field}',
   'ticket.placeBuy': 'ส่งคำสั่งซื้อ',
   'ticket.placeSell': 'ส่งคำสั่งขาย',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': 'โบรกเกอร์ยังไม่ตอบกลับ โปรดตรวจสอบคำสั่งของคุณก่อนส่งอีกครั้ง',
   'ticket.noLivePrice': 'ไม่มีราคาสด: ตรวจสอบราคาก่อนส่งคำสั่ง',
   'ticket.noLiveMarket': 'ไม่มีราคาสด: ไม่สามารถส่งคำสั่งราคาตลาดได้',

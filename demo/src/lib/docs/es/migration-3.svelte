@@ -151,6 +151,20 @@ chart.startBracket('buy', undefined, { risk: 50 })   // la cantidad que pierde 5
   instante, necesita el botón de la confirmación (<code>.tcw-confirm .tcw-done-btn</code>) o la opción.
 </p>
 
+<h3 id="graphite">El aspecto predeterminado del widget es Graphite</h3>
+<p>
+  Un <code>ChartWidget</code> sin <code>ui</code> se dibuja ahora con el aspecto Graphite, donde antes era
+  Modern: fondos neutros, esquinas de 3 px, una barra de 40 px, y lo elegido sobre un fondo más claro, no sobre
+  ámbar. Los colores del gráfico cambian con él (<code>GRAPHITE_DARK_THEME</code>,
+  <code>GRAPHITE_LIGHT_THEME</code>) salvo que <code>theme</code> sea un objeto tuyo. <code>ui: 'modern'</code>
+  conserva el aspecto anterior, colores incluidos. Los tokens predeterminados de la hoja de estilos son los de
+  Graphite, así que el CSS que fijaba algunos tokens <code>--tcw-*</code> sobre los de Modern ahora los fija sobre
+  los de Graphite. En todos los aspectos, el botón del ticket de orden nombra ahora la orden
+  (<code>Buy 100 HPG</code>), el valor de la orden es la última línea sobre él, y los botones de invertir y cerrar
+  una posición van justo después de su P&amp;L en el panel de la cuenta: una prueba que leía el texto del botón o
+  una columna por su lugar necesita el nuevo.
+</p>
+
 <h2 id="types">Tipos que han crecido</h2>
 <p>
   <code>TimeInForce</code> es ahora <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. El código que trata todos

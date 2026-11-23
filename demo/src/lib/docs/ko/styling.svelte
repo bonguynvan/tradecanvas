@@ -14,7 +14,7 @@
   위젯의 외관은 토큰의 묶음입니다. 부품 종류별 모서리, 컨트롤과 바의 크기, 글꼴, 테두리, 그림자, 선택된 버튼의 표시
   방식, 그리고 도구 모음과 그리기 도구를 가장자리에 붙일지 띄울지까지 정합니다. 프리셋에서 시작해 원하는 부분만
   바꾸세요. 색상은 테마(<code>dark</code> / <code>light</code>, <a href={href('/docs/api')}>API 레퍼런스</a> 참고)가
-  맡으며, 어떤 외관이든 두 테마 모두와 함께 쓸 수 있습니다. 기본값인 Modern은 자체 dark와 light를 가지며, 다른
+  맡으며, 어떤 외관이든 두 테마 모두와 함께 쓸 수 있습니다. 기본값인 Graphite와 Modern은 각자 dark와 light를 가지며, 다른
   외관은 Modern 이전에 위젯이 쓰던 색을 함께 씁니다.
 </p>
 
@@ -22,7 +22,16 @@
 <table>
   <thead><tr><th>프리셋</th><th>외관</th></tr></thead>
   <tbody>
-    <tr><td><code>modern</code> (기본값)</td><td>
+    <tr><td><code>graphite</code> (기본값)</td><td>
+      트레이딩 데스크의 틀로, 자체 색조가 없습니다. 바탕은 한 단계씩 다르고(<code>#131416</code> /
+      <code>#ffffff</code>) 가는 선으로 나눕니다. 크기는 일부러 적게 두었습니다. 컨트롤 높이는 20, 24, 28, 36,
+      40 px, 모든 모서리는 3 px, 떠 있는 층의 그림자는 한 가지이며 그 밖에는 그림자가 없습니다. 선택된 것(주기,
+      도구, 탭)은 더 밝은 바탕에 본문 색으로 표시하고, 앰버는 실행하는 것에만 씁니다. 스위치는 체크 상자이고,
+      계좌 표의 열은 숫자 너비에 맞춥니다. 글꼴은 페이지가 불러온 경우 IBM Plex Sans, 아니면 시스템 글꼴입니다.
+      차트에서는 테마 객체를 주지 않으면 색이 <code>GRAPHITE_DARK_THEME</code>와
+      <code>GRAPHITE_LIGHT_THEME</code>입니다.
+    </td></tr>
+    <tr><td><code>modern</code></td><td>
       코드 편집기의 창을, 그 Dark Modern과 Light Modern 색으로. 차트는 편집기의 바탕
       (<code>#1f1f1f</code> / <code>#ffffff</code>) 위에 있고, 주위의 바는 바탕에서 한 단계 벗어난 색이며 사이는 가는 선입니다.
       38 px 도구 모음에 28 px 버튼과 16 px 아이콘, 4 px 컨트롤, 6 px 메뉴, 8 px 대화 상자. 로고의 호박색

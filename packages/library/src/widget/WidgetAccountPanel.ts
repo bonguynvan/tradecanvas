@@ -544,20 +544,21 @@ export class WidgetAccountPanel {
         formatPrice(p.entryPrice),
         price === null ? NONE : formatPrice(price),
         pnl,
-        this.price(p.stopLoss),
-        this.target(p),
+        // What is done about a position is done on reading its profit: the buttons stand beside it, not a table's width away.
         this.actions(
           { icon: 'arrowUpDown', label: `${this.t('account.reverse')}: ${which}`, key: `reverse:${p.id}`, run: () => this.callbacks.onReversePosition(p.id) },
           { icon: 'x', label: `${this.t('account.closePosition')}: ${which}`, key: `close:${p.id}`, run: () => this.callbacks.onClosePosition(p.id), danger: true },
         ),
+        this.price(p.stopLoss),
+        this.target(p),
       ];
     });
     const table = this.table(
       [
         ...this.symbolColumn(named),
         { key: 'account.side' }, { key: 'account.quantity', num: true }, { key: 'account.entry', num: true },
-        { key: 'account.price', num: true }, { key: 'account.pnl', num: true }, { key: 'account.stopLoss', num: true },
-        { key: 'account.takeProfit', num: true }, { key: null },
+        { key: 'account.price', num: true }, { key: 'account.pnl', num: true }, { key: null },
+        { key: 'account.stopLoss', num: true }, { key: 'account.takeProfit', num: true },
       ],
       rows,
       'account.noPositions',

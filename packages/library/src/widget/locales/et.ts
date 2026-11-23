@@ -609,6 +609,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Suurenda: {field}',
   'ticket.placeBuy': 'Esita ostuorder',
   'ticket.placeSell': 'Esita müügiorder',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': 'Maakler pole veel vastanud. Kontrollige oma ordereid enne uuesti saatmist.',
   'ticket.noLivePrice': 'Reaalajas hinda pole: kontrollige hinda enne orderi esitamist.',
   'ticket.noLiveMarket': 'Reaalajas hinda pole: tururorderit ei saa saata.',

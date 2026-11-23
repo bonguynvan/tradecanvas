@@ -54,11 +54,13 @@ export interface ChartWidgetOptions {
   theme?: ThemeName | Theme;
   /**
    * The widget's look: its corners, sizes, type, lines, shadows and bars.
-   * A preset (`'modern'`, the default; `'print'`; `'studio'`; `'terminal'`; `'capsule'`; `'desk'`)
-   * or your theme over one; a theme object without `preset` starts from Modern (`preset: 'print'`
-   * for the look before it). Colours stay with `theme`, but for Modern's: a code editor's dark and
-   * light (`MODERN_DARK_THEME` / `MODERN_LIGHT_THEME` on the chart), in each mode `theme` gave no
-   * object for.
+   * A preset (`'graphite'`, the default; `'modern'`; `'print'`; `'studio'`; `'terminal'`;
+   * `'capsule'`; `'desk'`) or your theme over one; a theme object without `preset` starts from
+   * Graphite (`preset: 'modern'` for the default before it, `'print'` for the one before that).
+   * Colours stay with `theme`, but for Graphite's and Modern's: each has a dark and a light of
+   * its own (`GRAPHITE_DARK_THEME` / `GRAPHITE_LIGHT_THEME`, `MODERN_DARK_THEME` /
+   * `MODERN_LIGHT_THEME` on the chart), in each mode `theme` gave no object for. Graphite's face
+   * is IBM Plex Sans where the page loads it (the widget loads no fonts), else the system's sans.
    */
   ui?: import('./widgetUI.js').WidgetUIPreset | import('./widgetUI.js').WidgetUITheme;
 

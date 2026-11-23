@@ -6417,6 +6417,7 @@
     "series.hlcArea.bottomColor": "color"
   },
   "looks": [
+    "graphite",
     "modern",
     "print",
     "studio",
@@ -6594,7 +6595,7 @@
       {
         "name": "ui",
         "type": "WidgetUIPreset | WidgetUITheme",
-        "doc": "The widget's look: its corners, sizes, type, lines, shadows and bars. A preset (`'modern'`, the default; `'print'`; `'studio'`; `'terminal'`; `'capsule'`; `'desk'`) or your theme over one; a theme object without `preset` starts from Modern (`preset: 'print'` for the look before it)."
+        "doc": "The widget's look: its corners, sizes, type, lines, shadows and bars. A preset (`'graphite'`, the default; `'modern'`; `'print'`; `'studio'`; `'terminal'`; `'capsule'`; `'desk'`) or your theme over one; a theme object without `preset` starts from Graphite (`preset: 'modern'` for the default before it, `'print'` for the one before that)."
       },
       {
         "name": "locale",

@@ -610,6 +610,7 @@ export const EN_MESSAGES = {
   'ticket.stepUp': '{field} up',
   'ticket.placeBuy': 'Place buy order',
   'ticket.placeSell': 'Place sell order',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': 'No answer from the broker yet. Check your orders before you send it again.',
   'ticket.noLivePrice': 'No live price: check the price before you place the order.',
   'ticket.noLiveMarket': 'No live price: a market order cannot be sent.',

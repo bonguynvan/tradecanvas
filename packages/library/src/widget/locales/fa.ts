@@ -609,6 +609,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'افزایش {field}',
   'ticket.placeBuy': 'ثبت سفارش خرید',
   'ticket.placeSell': 'ثبت سفارش فروش',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': 'بروکر هنوز پاسخ نداده است. پیش از ارسال دوباره، سفارش‌های خود را بررسی کنید.',
   'ticket.noLivePrice': 'قیمت زنده وجود ندارد: پیش از ثبت سفارش قیمت را بررسی کنید.',
   'ticket.noLiveMarket': 'قیمت زنده وجود ندارد: سفارش بازار قابل ارسال نیست.',

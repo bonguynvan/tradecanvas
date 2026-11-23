@@ -648,3 +648,36 @@ describe('ChartWidget: the broker’s order rules', () => {
     expect(FakeChart.last.placed[0]).not.toHaveProperty('exchangeType');
   });
 });
+
+// The button read "Place buy order" for any order, and the order's value was the smallest line of the ticket.
+describe('ChartWidget: the ticket says what its button does', () => {
+  it('names the side, the quantity and the symbol on the button, as they change', () => {
+    widget = new ChartWidget(host, { symbol: 'BINANCE:HPG', trading: true });
+    FakeChart.last.market = { volumeUnit: 100 };
+    trading().openOrderTicket();
+    expect(place().textContent).toBe('Buy 100 HPG');
+    host.querySelector<HTMLButtonElement>('.tcw-order-ticket [data-ticket-field="side-sell"], .tcw-order-ticket .tcw-ticket-side-sell')?.click();
+    const quantity = host.querySelector<HTMLInputElement>('.tcw-order-ticket [data-ticket-field="quantity"]')!;
+    quantity.value = '300';
+    quantity.dispatchEvent(new Event('input'));
+    expect(place().textContent).toMatch(/ 300 HPG$/);
+  });
+
+  it('writes the order’s value last, over the button', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    trading().openOrderTicket();
+    const rows = [...host.querySelectorAll<HTMLElement>('.tcw-ticket-summary-row')].map((row) => row.dataset.row);
+    expect(rows.at(-1)).toBe('value');
+  });
+});
+
+describe('ChartWidget: the quantity on the ticket’s button', () => {
+  it('is written without a float’s noise', () => {
+    widget = new ChartWidget(host, { symbol: 'BTC', trading: true });
+    trading().openOrderTicket();
+    const quantity = host.querySelector<HTMLInputElement>('.tcw-order-ticket [data-ticket-field="quantity"]')!;
+    quantity.value = String(0.1 + 0.2);
+    quantity.dispatchEvent(new Event('input'));
+    expect(place().textContent).toBe('Buy 0.3 BTC');
+  });
+});
