@@ -208,6 +208,7 @@ export const DA_MESSAGES: WidgetMessages = {
   // Status bar / connection
   'status.connecting': 'Opretter forbindelse…',
   'status.live': 'Live',
+  'status.noUpdates': 'Ingen prisopdateringer',
   'status.delayed': 'Forsinket {minutes} min',
   'status.connectionFailed': 'Forbindelsen mislykkedes',
   'status.loading': 'Indlæser graf…',
@@ -609,6 +610,8 @@ export const DA_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'Afgiv købsordre',
   'ticket.placeSell': 'Afgiv salgsordre',
   'ticket.noAnswer': 'Mægleren har ikke svaret endnu. Tjek dine ordrer, før du sender igen.',
+  'ticket.noLivePrice': 'Ingen livepris: kontrollér prisen, før du afgiver ordren.',
+  'ticket.noLiveMarket': 'Ingen livepris: en markedsordre kan ikke sendes.',
   'ticket.sending': 'Sender…',
   'ticket.sent': 'Ordre sendt: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Angiv et antal over 0.',
@@ -983,6 +986,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'order.buyStop': 'Køb stop @ {price}',
   'order.sellStop': 'Sælg stop @ {price}',
   'order.refused': 'Mægleren afviste ordren: {reason}',
+  'order.noLivePrice': 'Ingen livepris: ordren blev ikke sendt',
   'order.partDropped': 'Udført {filled} af {quantity}: resten blev annulleret',
 
   // Toasts

@@ -479,6 +479,10 @@ export class Chart {
   private announcedSymbol: string | null = null;
   private announcedTimeframe: TimeFrame | null = null;
   private streamAdapter: DataAdapter | null = null;
+  /** When the stream last told anything (bars, a bar's update or close, a trade, a quote, a price), by the clock; null before it has. */
+  private feedToldAt: number | null = null;
+  /** Asked before a bracket or a draft order is sent on being confirmed (`setOrderGate`). */
+  private orderGate: (() => boolean) | null = null;
   /** Pages older bars in as the view nears the oldest one. */
   private history: HistoryPager;
   /** Whether the history loader is the connected stream's (and goes with it). */
@@ -3289,7 +3293,19 @@ export class Chart {
       this.eventBus.emit('executionError', { message: 'A bracket with no quantity is not sent to the adapter', command: 'bracketPlace', reason: 'noQuantity' });
       return false;
     }
+    if (this.orderGate && !this.orderGate()) return false;
     return this.tradingManager.confirmBracket();
+  }
+
+  /**
+   * Ask before the chart sends an order it was only asked to confirm: a
+   * bracket or a draft order dragged on the plot (Enter, `confirmBracket`,
+   * `confirmOrderDraft`). Answered false, nothing is sent and the bracket or
+   * the draft stays as it is. `ChartWidget` holds them back while its feed is
+   * down; null asks no one.
+   */
+  setOrderGate(gate: (() => boolean) | null): void {
+    this.orderGate = gate;
   }
 
   isBracketActive(): boolean {
@@ -3317,7 +3333,8 @@ export class Chart {
   }
 
   confirmOrderDraft(): boolean {
-    return this.features.trading ? this.tradingManager.confirmOrderDraft() : false;
+    if (!this.features.trading || (this.orderGate && !this.orderGate())) return false;
+    return this.tradingManager.confirmOrderDraft();
   }
 
   isOrderDraftActive(): boolean {
@@ -3601,6 +3618,7 @@ export class Chart {
     this.streamManager.setTimeZone(this.studyZoneHeld ? this.studyZone : this.getExchangeTimeZone());
 
     this.streamManager.on('snapshot', (bars) => {
+      this.feedToldAt = Date.now();
       const key = this.streamSeriesKey(config.adapter);
       const reconnected = key === this.snapshotKey;
       if (key === this.snapshotKey && this.replaySession) {
@@ -3622,7 +3640,12 @@ export class Chart {
     // close included), a new one after it, or none when it is older. A
     // closed one older than the last is a correction of the bar loaded at
     // its time: final, even when the host's own bars run ahead of the stream.
+    // A trade at the price there was moves no bar and no price line: it is a word from the feed all the same.
+    this.streamManager.on('tick', () => {
+      this.feedToldAt = Date.now();
+    });
     this.streamManager.on('barClose', (bar) => {
+      this.feedToldAt = Date.now();
       if (!isValidBar(bar)) return;
       const write = this.series.placeStreamBar(bar);
       if (write.to === 'none') {
@@ -3645,10 +3668,12 @@ export class Chart {
 
     // The feed's last word on a bar already past: no live price.
     this.streamManager.on('barCorrection', (bar) => {
+      this.feedToldAt = Date.now();
       this.updateBar(bar);
     });
 
     this.streamManager.on('barUpdate', (bar) => {
+      this.feedToldAt = Date.now();
       if (!isValidBar(bar)) return;
       const write = this.series.placeStreamBar(bar);
       // A frame of a bar older than the last is stale: it moves nothing, the price line included.
@@ -3677,11 +3702,13 @@ export class Chart {
     this.setBidAsk(null); // the last symbol's quote
     // A tick may carry one side only: the other stays.
     this.streamManager.on('quote', (quote) => {
+      this.feedToldAt = Date.now();
       const now = this.priceLines.getBidAsk();
       this.setBidAsk({ bid: quote.bid ?? now?.bid, ask: quote.ask ?? now?.ask });
     });
 
     this.streamManager.on('priceChange', ({ price, previousClose }) => {
+      this.feedToldAt = Date.now();
       if (!Number.isFinite(price) || price < 0) return;
       // Orders and alerts keep tracking the live market during a replay; the
       // price line shows the replayed close instead.
@@ -3695,6 +3722,8 @@ export class Chart {
     });
 
     this.streamManager.on('connectionChange', (info) => {
+      // Connected again: it has the wait from now to tell something.
+      if (info.state === 'connected') this.feedToldAt = Date.now();
       this.eventBus.emit('dataUpdate', { kind: 'connection', connection: info } satisfies DataUpdatePayload);
     });
 
@@ -3788,6 +3817,16 @@ export class Chart {
   }
 
   /**
+   * When the connected stream last told anything: its bars, a bar's update,
+   * a quote or a price, by the clock (ms); null before it has, and with bars
+   * set by hand. A feed that is connected and tells nothing has stalled, or
+   * its market is shut: `ChartWidget` reads this to stop saying "Live".
+   */
+  getFeedTime(): number | null {
+    return this.feedToldAt;
+  }
+
+  /**
    * Switch symbol or timeframe on an active stream without full reconnect.
    */
   async switchStream(symbol: string, timeframe: TimeFrame): Promise<void> {
@@ -3834,6 +3873,8 @@ export class Chart {
    */
   disconnectStream(): void {
     this.symbolInfoSeq++; // a lookup still on its way no longer applies
+    // No stream: nothing is told, and nothing is waited for.
+    this.feedToldAt = null;
     this.releaseStudyZoneAfterCaller();
     this.priceLines.setBidAsk(null);
     if (this.streamManager) {

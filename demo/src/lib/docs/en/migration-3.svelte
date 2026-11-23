@@ -128,6 +128,16 @@ chart.startBracket('buy', undefined, { risk: 50 })   // the quantity that loses 
   unless told otherwise, and takes <code>'hold'</code> too.
 </p>
 
+<h3 id="live-price">One-press orders wait for a live price</h3>
+<p>
+  With a feed of its own (<code>adapter</code>), <code>ChartWidget</code> no longer sends an order asked for in one
+  press (the right-click menu, the depth ladder), nor a bracket or a draft order confirmed, while that feed is not
+  connected: it says why instead. While the feed is not connected, or has told nothing for a minute
+  (<code>feedQuietAfter</code>), the ticket sends no market order, and the status bar says “No price updates” where
+  it said “Live” over a stalled stream. <code>feedQuietAfter: 0</code> never calls a connected feed quiet; a feed
+  that is not connected holds orders back all the same.
+</p>
+
 <h2 id="types">Types that grew</h2>
 <p>
   <code>TimeInForce</code> is now <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. Code that handles every

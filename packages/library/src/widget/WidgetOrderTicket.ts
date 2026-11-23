@@ -128,6 +128,8 @@ export class WidgetOrderTicket {
   private refusal: string | null = null;
   /** No answer has come in `NO_ANSWER_MS`: the ticket says so, and waits on. */
   private unanswered = false;
+  /** The price it values the order at is live. Not so (a feed down or quiet), it says so, and sends no order at the market. */
+  private priceLive = true;
   private answerTimer: ReturnType<typeof setTimeout> | null = null;
   /** What was switched off while an order is on its way, to be switched on again. */
   private held: (HTMLInputElement | HTMLButtonElement | HTMLSelectElement | HTMLTextAreaElement)[] = [];
@@ -362,9 +364,21 @@ export class WidgetOrderTicket {
     return this.step === defaultStep ? String(price) : price.toFixed(stepDecimals(this.step(price)));
   }
 
+  /** Whether the price on the chart is live: a feed that is down or tells nothing leaves the last one standing. */
+  setPriceLive(live: boolean): void {
+    if (live === this.priceLive) return;
+    this.priceLive = live;
+    this.check();
+  }
+
+  /** A market order trades at a price the ticket does not have: it is not sent on the last one known. */
+  private blind(draft: OrderTicketDraft): boolean {
+    return !this.priceLive && draft.type === 'market';
+  }
+
   private place(): void {
     const draft = this.draft;
-    if (!draft || this.waiting !== null || this.problems(draft).length > 0) return;
+    if (!draft || this.waiting !== null || this.blind(draft) || this.problems(draft).length > 0) return;
     this.refusal = null;
     const waitOn = this.callbacks.onSubmit(orderTicketIntent(draft, this.market(), this.rules));
     if (typeof waitOn === 'string' && waitOn !== '') this.hold(waitOn);
@@ -700,6 +714,7 @@ export class WidgetOrderTicket {
     // What the broker refused the last order for comes first, and stays until the order is changed.
     const said = [
       ...(this.unanswered ? [this.t('ticket.noAnswer')] : []),
+      ...(this.priceLive ? [] : [this.t(draft.type === 'market' ? 'ticket.noLiveMarket' : 'ticket.noLivePrice')]),
       ...(this.refusal === null ? [] : [fill(this.t('order.refused'), { reason: this.refusal })]),
       ...problems.map((p) => this.problemText(p)),
     ];
@@ -720,7 +735,7 @@ export class WidgetOrderTicket {
     if (levels) levels.textContent = this.levelsText(draft);
     this.renderSummary(draft);
     const sending = this.waiting !== null;
-    this.submit.disabled = sending || problems.length > 0;
+    this.submit.disabled = sending || this.blind(draft) || problems.length > 0;
     this.submit.textContent = sending ? this.t('ticket.sending') : this.t(draft.side === 'buy' ? 'ticket.placeBuy' : 'ticket.placeSell');
     this.submit.setAttribute('aria-busy', String(sending));
   }

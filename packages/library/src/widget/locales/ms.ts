@@ -208,6 +208,7 @@ export const MS_MESSAGES: WidgetMessages = {
   // Status bar / connection
   'status.connecting': 'Menyambung…',
   'status.live': 'Langsung',
+  'status.noUpdates': 'Tiada kemas kini harga',
   'status.delayed': 'Tertunda {minutes} min',
   'status.connectionFailed': 'Sambungan gagal',
   'status.loading': 'Memuatkan carta…',
@@ -609,6 +610,8 @@ export const MS_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'Hantar pesanan beli',
   'ticket.placeSell': 'Hantar pesanan jual',
   'ticket.noAnswer': 'Broker belum menjawab. Semak pesanan anda sebelum menghantar semula.',
+  'ticket.noLivePrice': 'Tiada harga langsung: semak harga sebelum membuat pesanan.',
+  'ticket.noLiveMarket': 'Tiada harga langsung: pesanan pasaran tidak dapat dihantar.',
   'ticket.sending': 'Menghantar…',
   'ticket.sent': 'Pesanan dihantar: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Masukkan kuantiti melebihi 0.',
@@ -983,6 +986,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'order.buyStop': 'Beli stop @ {price}',
   'order.sellStop': 'Jual stop @ {price}',
   'order.refused': 'Broker menolak pesanan: {reason}',
+  'order.noLivePrice': 'Tiada harga langsung: pesanan tidak dihantar',
   'order.partDropped': 'Dipenuhi {filled} daripada {quantity}: bakinya dibatalkan',
 
   // Toasts

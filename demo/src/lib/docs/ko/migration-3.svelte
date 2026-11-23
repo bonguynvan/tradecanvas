@@ -121,6 +121,15 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 손절가에서 50을 �
   따라가며, <code>'hold'</code>도 받습니다.
 </p>
 
+<h3 id="live-price">한 번 눌러 내는 주문은 실시간 가격을 기다립니다</h3>
+<p>
+  자체 피드(<code>adapter</code>)가 있을 때, 그 피드가 끊긴 동안 <code>ChartWidget</code>은 한 번 눌러 내는 주문
+  (우클릭 메뉴, 호가창)도, 확정한 브래킷 주문이나 초안 주문도 더 이상 보내지 않습니다. 대신 이유를 알립니다. 피드가
+  끊겼거나 1분 동안 아무것도 보내지 않는 동안(<code>feedQuietAfter</code>) 티켓은 시장가 주문을 보내지 않으며, 멈춘
+  스트림에 “Live”라고 표시하던 상태 표시줄은 “가격 업데이트 없음”이라고 표시합니다. <code>feedQuietAfter: 0</code>이면
+  연결된 피드를 조용하다고 판단하지 않습니다. 끊긴 피드는 그래도 주문을 보류합니다.
+</p>
+
 <h2 id="types">넓어진 타입</h2>
 <p>
   <code>TimeInForce</code>는 이제 <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>입니다. 모든 멤버를 처리하는 코드(default가

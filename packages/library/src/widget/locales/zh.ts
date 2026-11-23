@@ -204,6 +204,7 @@ export const ZH_MESSAGES: WidgetMessages = {
 
   'status.connecting': '连接中…',
   'status.live': '实时',
+  'status.noUpdates': '没有价格更新',
   'status.delayed': '延迟 {minutes} 分钟',
   'status.connectionFailed': '连接失败',
   'status.loading': '图表加载中…',
@@ -603,6 +604,8 @@ export const ZH_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': '提交买入委托',
   'ticket.placeSell': '提交卖出委托',
   'ticket.noAnswer': '经纪商尚未答复。再次发送前请先查看您的委托。',
+  'ticket.noLivePrice': '没有实时价格：下单前请核对价格。',
+  'ticket.noLiveMarket': '没有实时价格：无法发送市价单。',
   'ticket.sending': '发送中…',
   'ticket.sent': '委托已提交：{side} {quantity} @ {price}',
   'ticket.problem.quantity': '请输入大于 0 的数量。',
@@ -971,6 +974,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'order.buyStop': '止损买入 @ {price}',
   'order.sellStop': '止损卖出 @ {price}',
   'order.refused': '经纪商拒绝了委托：{reason}',
+  'order.noLivePrice': '没有实时价格：订单未发送',
   'order.partDropped': '已成交 {filled}，共 {quantity}：其余已撤单',
 
   'toast.pinned': '已固定到收藏',

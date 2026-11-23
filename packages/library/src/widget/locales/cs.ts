@@ -204,6 +204,7 @@ export const CS_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Připojování…',
   'status.live': 'Živě',
+  'status.noUpdates': 'Žádné aktualizace ceny',
   'status.delayed': 'Zpoždění {minutes} min',
   'status.connectionFailed': 'Připojení se nezdařilo',
   'status.loading': 'Načítání grafu…',
@@ -603,6 +604,8 @@ export const CS_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'Zadat nákupní pokyn',
   'ticket.placeSell': 'Zadat prodejní pokyn',
   'ticket.noAnswer': 'Broker zatím neodpověděl. Než odešlete znovu, zkontrolujte své pokyny.',
+  'ticket.noLivePrice': 'Žádná živá cena: před zadáním příkazu zkontrolujte cenu.',
+  'ticket.noLiveMarket': 'Žádná živá cena: tržní příkaz nelze odeslat.',
   'ticket.sending': 'Odesílání…',
   'ticket.sent': 'Pokyn odeslán: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Zadejte množství větší než 0.',
@@ -971,6 +974,7 @@ export const CS_MESSAGES: WidgetMessages = {
   'order.buyStop': 'Stop nákup @ {price}',
   'order.sellStop': 'Stop prodej @ {price}',
   'order.refused': 'Broker pokyn odmítl: {reason}',
+  'order.noLivePrice': 'Žádná živá cena: příkaz nebyl odeslán',
   'order.partDropped': 'Vyplněno {filled} z {quantity}: zbytek byl zrušen',
 
   'toast.pinned': 'Připnuto k oblíbeným',

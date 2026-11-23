@@ -251,6 +251,16 @@ export interface ChartWidgetOptions {
    */
   searchSymbols?: (query: string, signal: AbortSignal) => Promise<SymbolInfo[]>;
   historyLimit?: number;
+  /**
+   * How long, seconds, the widget's feed may be connected and tell nothing before its price stops
+   * counting as live: the status bar then says so in place of "Live", and the ticket warns and
+   * sends no order at the market. A feed that is not connected does the same at once, and holds
+   * back as well an order asked for in one press (the right-click menu, the depth ladder) and a
+   * bracket or a draft order confirmed; 0 here does not switch that off. Not judged while the
+   * symbol's market is shut (its `sessions`), in a replay, nor with bars of your own (no
+   * `adapter`). Default 60; 0 never calls a connected feed quiet.
+   */
+  feedQuietAfter?: number;
   /** Bars per request when scrolling back for older bars (adapters with `fetchHistoryBefore`). Default 500. */
   historyPageSize?: number;
 

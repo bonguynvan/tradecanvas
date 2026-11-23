@@ -111,6 +111,14 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 在止损处亏损 50 �
   它同样接受 <code>'hold'</code>。
 </p>
 
+<h3 id="live-price">一键下单要等实时价格</h3>
+<p>
+  有自己的数据源（<code>adapter</code>）时，在该数据源断开期间，<code>ChartWidget</code> 不再发送一键下单（右键菜单、
+  盘口深度）的订单，也不发送已确认的括号单或草稿订单：它会说明原因。数据源断开，或一分钟内没有任何推送
+  （<code>feedQuietAfter</code>）期间，下单窗口不发送市价单；数据流停滞时，状态栏显示“没有价格更新”，而以前显示“Live”。
+  <code>feedQuietAfter: 0</code> 表示已连接的数据源永远不会被视为静默；断开的数据源仍然会拦下订单。
+</p>
+
 <h2 id="types">扩充的类型</h2>
 <p>
   <code>TimeInForce</code> 现在是 <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>。处理全部成员的代码

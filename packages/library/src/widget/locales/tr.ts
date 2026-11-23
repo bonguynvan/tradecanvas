@@ -204,6 +204,7 @@ export const TR_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Bağlanıyor…',
   'status.live': 'Canlı',
+  'status.noUpdates': 'Fiyat güncellemesi yok',
   'status.delayed': '{minutes} dk gecikmeli',
   'status.connectionFailed': 'Bağlantı başarısız',
   'status.loading': 'Grafik yükleniyor…',
@@ -603,6 +604,8 @@ export const TR_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'Alış emri gönder',
   'ticket.placeSell': 'Satış emri gönder',
   'ticket.noAnswer': 'Aracı kurum henüz yanıt vermedi. Yeniden göndermeden önce emirlerinizi kontrol edin.',
+  'ticket.noLivePrice': 'Canlı fiyat yok: emri vermeden önce fiyatı kontrol edin.',
+  'ticket.noLiveMarket': 'Canlı fiyat yok: piyasa emri gönderilemez.',
   'ticket.sending': 'Gönderiliyor…',
   'ticket.sent': 'Emir gönderildi: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Sıfırdan büyük bir miktar girin.',
@@ -971,6 +974,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'order.buyStop': 'Stop alış @ {price}',
   'order.sellStop': 'Stop satış @ {price}',
   'order.refused': 'Aracı kurum emri reddetti: {reason}',
+  'order.noLivePrice': 'Canlı fiyat yok: emir gönderilmedi',
   'order.partDropped': '{quantity} içinden {filled} gerçekleşti: kalanı iptal edildi',
 
   'toast.pinned': 'Favorilere sabitlendi',

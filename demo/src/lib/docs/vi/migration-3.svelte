@@ -128,6 +128,16 @@ chart.startBracket('buy', undefined, { risk: 50 })   // khối lượng sẽ l�
   con trỏ trừ khi được chỉ định khác, và nó cũng nhận <code>'hold'</code>.
 </p>
 
+<h3 id="live-price">Order một lần nhấn chờ giá trực tiếp</h3>
+<p>
+  Khi có feed riêng (<code>adapter</code>), <code>ChartWidget</code> không còn gửi order đặt bằng một lần nhấn (menu
+  chuột phải, depth ladder), cũng như bracket hay draft order được xác nhận, trong lúc feed đó mất kết nối: nó nói lý
+  do. Trong lúc feed mất kết nối, hoặc không gửi gì trong một phút (<code>feedQuietAfter</code>), ticket không gửi order
+  thị trường, và status bar ghi “Không có cập nhật giá” ở chỗ trước đây vẫn ghi “Live” trên một stream đã đứng.
+  <code>feedQuietAfter: 0</code> thì feed đang kết nối không bao giờ bị coi là im lặng; feed mất kết nối vẫn giữ order
+  lại như thường.
+</p>
+
 <h2 id="types">Các type được mở rộng</h2>
 <p>
   <code>TimeInForce</code> nay là <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. Code xử lý mọi giá trị

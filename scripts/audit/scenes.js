@@ -637,6 +637,38 @@ const SCENES = {
   },
 
   /**
+   * A feed that is connected and tells nothing (the widget waits a second here, a minute by
+   * default): the status bar no longer says it is live, and the ticket sends no market order. It
+   * said "Live" two minutes after the stream's last word, and the order went out.
+   */
+  async feedQuiet() {
+    // Its stream stays connected (the other scenes let theirs go, and a stream let go is not judged): the made-up
+    // market's next tick is a minute off.
+    const w = new ChartWidget(host, { symbol: 'BTCUSDT', timeframe: '5m', theme, ui, locale, adapter: market('BTCUSDT'), historyLimit: HISTORY, trading: true, feedQuietAfter: 1 });
+    const s = { widget: w, chart: w.getChart() };
+    await loaded(s.chart);
+    const broker = new PaperExecutionAdapter({ markPrice: lastClose(s.chart) });
+    s.chart.connectExecution(broker);
+    const dot = () => host.querySelector('.tcw-status-dot');
+    const liveAtFirst = dot()?.classList.contains('tcw-connected') ?? false;
+    // The widget's clock looks each second: two and a bit are past the wait.
+    await new Promise((resolve) => setTimeout(resolve, 2400));
+    host.querySelector('.tcw-quote-buy')?.click();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const checks = () => {
+      const problems = [];
+      if (!liveAtFirst) problems.push('the feed was not live as its bars came');
+      if (dot()?.classList.contains('tcw-connected')) problems.push('the status bar says the feed is live though it has told nothing');
+      const place = host.querySelector('.tcw-ticket-place');
+      if (!place) problems.push('the ticket did not open');
+      else if (!place.disabled) problems.push('the ticket would send a market order at a price that is no longer live');
+      if (!host.querySelector('.tcw-ticket-problems')?.textContent.trim()) problems.push('the ticket does not say the price is not live');
+      return problems;
+    };
+    return { ...s, broker, checks };
+  },
+
+  /**
    * The mouse pressed and held still on the plot: the floating tooltip of the bar under it, beside
    * the pointer and inside the plot. A pointer that only moves shows none: the legend says the bar.
    */

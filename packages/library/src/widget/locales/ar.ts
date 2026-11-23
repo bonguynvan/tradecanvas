@@ -208,6 +208,7 @@ export const AR_MESSAGES: WidgetMessages = {
   // Status bar / connection
   'status.connecting': 'جارٍ الاتصال…',
   'status.live': 'مباشر',
+  'status.noUpdates': 'لا توجد تحديثات للسعر',
   'status.delayed': 'متأخر {minutes} د',
   'status.connectionFailed': 'فشل الاتصال',
   'status.loading': 'جارٍ تحميل الرسم البياني…',
@@ -609,6 +610,8 @@ export const AR_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'إرسال أمر الشراء',
   'ticket.placeSell': 'إرسال أمر البيع',
   'ticket.noAnswer': 'لم يردّ الوسيط بعد. تحقّق من أوامرك قبل الإرسال مرة أخرى.',
+  'ticket.noLivePrice': 'لا يوجد سعر مباشر: تحقق من السعر قبل إرسال الأمر.',
+  'ticket.noLiveMarket': 'لا يوجد سعر مباشر: لا يمكن إرسال أمر سوق.',
   'ticket.sending': 'جارٍ الإرسال…',
   'ticket.sent': 'تم إرسال الأمر: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'أدخل كمية أكبر من 0.',
@@ -983,6 +986,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'order.buyStop': 'شراء وقف @ {price}',
   'order.sellStop': 'بيع وقف @ {price}',
   'order.refused': 'رفض الوسيط الأمر: {reason}',
+  'order.noLivePrice': 'لا يوجد سعر مباشر: لم يُرسل الأمر',
   'order.partDropped': 'تم تنفيذ {filled} من {quantity}: أُلغي الباقي',
 
   // Toasts

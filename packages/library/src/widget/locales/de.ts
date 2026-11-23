@@ -204,6 +204,7 @@ export const DE_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Verbinde…',
   'status.live': 'Live',
+  'status.noUpdates': 'Keine Kursaktualisierungen',
   'status.delayed': '{minutes} Min. verzögert',
   'status.connectionFailed': 'Verbindung fehlgeschlagen',
   'status.loading': 'Chart wird geladen…',
@@ -603,6 +604,8 @@ export const DE_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'Kauforder platzieren',
   'ticket.placeSell': 'Verkaufsorder platzieren',
   'ticket.noAnswer': 'Der Broker hat noch nicht geantwortet. Prüfen Sie Ihre Orders, bevor Sie erneut senden.',
+  'ticket.noLivePrice': 'Kein Live-Kurs: Prüfen Sie den Preis, bevor Sie die Order aufgeben.',
+  'ticket.noLiveMarket': 'Kein Live-Kurs: Eine Market-Order kann nicht gesendet werden.',
   'ticket.sending': 'Wird gesendet…',
   'ticket.sent': 'Order gesendet: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Geben Sie eine Menge größer als 0 ein.',
@@ -971,6 +974,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'order.buyStop': 'Kauf-Stop @ {price}',
   'order.sellStop': 'Verkauf-Stop @ {price}',
   'order.refused': 'Der Broker hat die Order abgelehnt: {reason}',
+  'order.noLivePrice': 'Kein Live-Kurs: Die Order wurde nicht gesendet',
   'order.partDropped': '{filled} von {quantity} ausgeführt: der Rest wurde storniert',
 
   'toast.pinned': 'Zu den Favoriten angeheftet',

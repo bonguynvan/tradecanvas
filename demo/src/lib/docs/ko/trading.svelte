@@ -334,6 +334,20 @@ chart.setPositions([
 </p>
 <pre><code>{`feed.onTrade((trade) => broker.setMarkPrice(trade.price, trade.time, trade.symbol))`}</code></pre>
 
+<h3 id="live-price">더 이상 실시간이 아닌 가격</h3>
+<p>
+  위젯의 피드가 연결되어 데이터를 보내는 동안 차트의 가격은 실시간입니다. 피드가 끊겼거나, 연결되어 있어도 1분
+  (<code>feedQuietAfter</code>, 초) 동안 아무것도 보내지 않으면 마지막 가격이 그대로 남습니다. 이때 상태 표시줄은
+  “Live” 대신 그 사실을 알리고, 티켓은 시장가 주문을 보내지 않으며 다른 주문에는 경고를 표시합니다(가격은 트레이더가
+  직접 입력한 것이므로). 피드가 끊긴 동안에는 한 번 눌러 내는 주문(우클릭 메뉴, 호가창)과 차트에서 확정한 브래킷 주문이나
+  초안 주문도 안내와 함께 보류됩니다(뒤의 둘은 <code>chart.setOrderGate</code>가 보류합니다). 포지션 청산과 주문 취소는
+  보류되지 않습니다. 닫힌 시장(종목의 <code>sessions</code>)은 원래 조용하므로 판단하지 않고, 리플레이와 직접 넣은 봉
+  (<code>adapter</code> 없음)도 판단하지 않습니다. 그런 경우에는 직접 만든 <code>orderPlace</code> 핸들러에서 주문을
+  막으세요.
+</p>
+<pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, feedQuietAfter: 30 })   // seconds; 0: never
+chart.getFeedTime()   // when the stream last told anything, ms; null before it has`}</code></pre>
+
 <h2>차트에서 주문과 포지션 다루기</h2>
 <p>
   주문선과 포지션선의 오른쪽 끝에는 작은 버튼이 있습니다. <strong>×</strong>는 주문을

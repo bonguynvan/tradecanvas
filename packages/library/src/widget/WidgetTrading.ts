@@ -10,6 +10,7 @@ import { fill, type MessageKey } from './i18n.js';
 import { positionLevels, type BracketSize } from '@tradecanvas/core';
 import type { ChartWidget } from './ChartWidget.js';
 import { ofSymbol } from '../model/TradingBook.js';
+import type { FeedHealth } from './feedHealth.js';
 
 /** Prices that differ by less than this are the same price (float dust), as the order ticket has it. */
 const LIMIT_EPSILON = 1e-9;
@@ -45,6 +46,7 @@ export class WidgetTrading {
   accountPanel: WidgetAccountPanel | null = null;
 
   orderTicket: WidgetOrderTicket | null = null;
+  private feed: FeedHealth = 'live';
 
   accountFrame = 0;
 
@@ -123,6 +125,7 @@ export class WidgetTrading {
       step: (p) => this.host.chart.getPriceStep(p),
       round: (p) => this.host.chart.roundPrice(p),
     });
+    this.orderTicket?.setPriceLive(this.feed === 'live');
   }
 
   /** A market's rules for the order ticket (`setMarket`): its step, the day's limits, its lot. */
@@ -188,9 +191,28 @@ export class WidgetTrading {
     return lot !== undefined && lot > 1 ? lot : 1;
   }
 
+  /**
+   * What the price on the chart is worth (`feedHealth`). Not live, the ticket says so and sends
+   * no order at the market. With the feed down, an order asked for in one press, or a bracket
+   * or a draft confirmed, is held back too: the chart itself has stopped. A feed that is only
+   * quiet holds none of those back: their price is the trader's own, and a market after hours
+   * is quiet.
+   */
+  setFeed(health: FeedHealth): void {
+    this.feed = health;
+    this.orderTicket?.setPriceLive(health === 'live');
+  }
+
+  /** Whether an order asked for in one press may go out: not while the feed is down, and it says why. */
+  feedUp(): boolean {
+    if (this.feed !== 'down') return true;
+    this.host.say(this.host.t('order.noLivePrice'), 'error');
+    return false;
+  }
+
   /** A limit order from a rung of the depth ladder, for the market's lot. Past the day's limits it is not asked for. */
   placeLadderOrder(side: 'buy' | 'sell', price: number): void {
-    if (!this.allowedToday(price)) return;
+    if (!this.feedUp() || !this.allowedToday(price)) return;
     this.host.chart.placeOrderIntent({ side, type: 'limit', price, quantity: this.quickQuantity() });
     this.host.say(fill(this.host.t(side === 'buy' ? 'order.buyLimit' : 'order.sellLimit'), { price: this.host.formatAlertPrice(price) }));
   }
@@ -219,7 +241,7 @@ export class WidgetTrading {
 
   /** Ask for a limit or stop order at `price`, for the market's lot, and say so. Past the day's limits it is not asked for. */
   placeOrderAt(kind: 'buyLimit' | 'sellLimit' | 'buyStop' | 'sellStop', price: number): void {
-    if (!this.allowedToday(price)) return;
+    if (!this.feedUp() || !this.allowedToday(price)) return;
     const side = kind.startsWith('buy') ? 'buy' : 'sell';
     const stop = kind.endsWith('Stop');
     const quantity = this.quickQuantity();

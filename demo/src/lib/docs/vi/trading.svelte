@@ -341,6 +341,20 @@ chart.setPositions([
 </p>
 <pre><code>{`feed.onTrade((trade) => broker.setMarkPrice(trade.price, trade.time, trade.symbol))`}</code></pre>
 
+<h3 id="live-price">Giá không còn là giá trực tiếp</h3>
+<p>
+  Giá trên chart là giá trực tiếp khi feed của widget đang kết nối và còn gửi dữ liệu. Feed mất kết nối, hoặc còn kết
+  nối nhưng không gửi gì trong một phút (<code>feedQuietAfter</code>, tính bằng giây), thì mức giá cuối cùng vẫn nằm
+  đó: status bar khi ấy nói rõ thay cho “Live”, và ticket không gửi order thị trường, còn các loại khác thì cảnh báo vì
+  giá là do trader tự nhập. Trong lúc feed mất kết nối, order đặt bằng một lần nhấn (menu chuột phải, depth ladder) và
+  bracket hay draft order được xác nhận trên chart cũng bị giữ lại, kèm thông báo (<code>chart.setOrderGate</code> là
+  thứ giữ hai loại sau). Đóng position và huỷ order không bao giờ bị giữ lại. Thị trường đang đóng cửa
+  (<code>sessions</code> của symbol) vốn im lặng nên không bị xét, replay và các bar do bạn tự đặt (không có
+  <code>adapter</code>) cũng vậy: ở đó hãy tự giữ order trong handler <code>orderPlace</code> của bạn.
+</p>
+<pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, feedQuietAfter: 30 })   // seconds; 0: never
+chart.getFeedTime()   // when the stream last told anything, ms; null before it has`}</code></pre>
+
 <h2>Thao tác với order và position trên biểu đồ</h2>
 <p>
   Đường order và position có các nút nhỏ ở đầu bên phải: <strong>×</strong>

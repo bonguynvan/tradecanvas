@@ -91,6 +91,7 @@ import type { CrosshairMovePayload, CrosshairSyncPayload, DataSeries } from '@tr
 import { formatVolumeLoc, timeframeToMs } from '@tradecanvas/commons';
 import { resolveMessages, createTranslator, fill, writingDirection, type MessageKey, type Translator } from './i18n.js';
 import { shownConnection } from './connectionStatus.js';
+import { feedHealth, FEED_QUIET_AFTER_S, type FeedHealth } from './feedHealth.js';
 import { localizeToolGroups } from './widgetLocales.js';
 import { WidgetLoadingOverlay } from './WidgetLoadingOverlay.js';
 import { WidgetHistoryPill } from './WidgetHistoryPill.js';
@@ -928,6 +929,7 @@ export class ChartWidget {
     // The clock each second, while the page is in view.
     this.clockTimer = setInterval(() => {
       if (!pageHidden() && this.featureState.statusBar && this.featureState['statusBar.clock']) this.statusBar?.tick();
+      this.checkFeed();
     }, CLOCK_TICK_MS);
     // A drag on the price axis turns auto off without a settings change: the switch follows the chart.
     this.chart.on('priceRangeChange', () => this.chartSettings.refreshScaleSwitches());
@@ -1427,6 +1429,8 @@ export class ChartWidget {
       }
     }
 
+    // A bracket or a draft order confirmed on the chart is held back while the feed is down, as an order in one press is.
+    this.chart.setOrderGate(() => this.trading.feedUp());
     // Bracket-order placement: floating confirm/cancel bar + event wiring.
     if (options.trading !== false) {
       this.trading.bracketBar = new WidgetBracketBar(this.chartContainer, {
@@ -3808,12 +3812,38 @@ export class ChartWidget {
     this.toolbar?.update(this.state);
     this.sidebar?.update(this.state);
     this.favoritesBar?.setActive(this.state.activeTool);
+    // The connection is set in several places, each followed by this: the feed's health is read again with it.
+    this.checkFeed();
     this.showConnection();
   }
 
-  /** The feed's state in the status bar: "Live", or how far behind a delayed symbol runs. */
+  /** The feed's health as the last second found it. */
+  private feed: FeedHealth = 'live';
+
+  /**
+   * The feed's health now: down, or connected and telling nothing for longer than `feedQuietAfter`.
+   * The status bar stops saying "Live" and trading is told, as it changes.
+   */
+  private checkFeed(): void {
+    const market = marketStatus(this.chart.getSymbolInfo?.(), Date.now()).state;
+    // A replay's prices are its own: what the live feed does is nothing to an order placed there.
+    const health = this.chart.isReplayActive?.() ? 'live' : feedHealth({
+      hasFeed: this.adapter != null,
+      state: this.state.connectionState,
+      lastUpdate: this.chart.getFeedTime?.() ?? null,
+      now: Date.now(),
+      quietAfter: this.options.feedQuietAfter ?? FEED_QUIET_AFTER_S,
+      marketOpen: market === 'open' ? true : market === 'closed' ? false : null,
+    });
+    if (health === this.feed) return;
+    this.feed = health;
+    this.trading?.setFeed(health);
+    this.showConnection();
+  }
+
+  /** The feed's state in the status bar: "Live", how far behind a delayed symbol runs, or that it tells nothing. */
   private showConnection(): void {
-    const shown = shownConnection(this.state.connectionState, this.state.connectionMessage, this.chart.getSymbolInfo?.(), this.t);
+    const shown = shownConnection(this.state.connectionState, this.state.connectionMessage, this.chart.getSymbolInfo?.(), this.t, this.feed === 'quiet');
     this.statusBar?.update({
       connectionState: this.state.connectionState,
       message: shown.message,

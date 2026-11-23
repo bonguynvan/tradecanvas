@@ -204,6 +204,7 @@ export const SV_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Ansluter…',
   'status.live': 'Live',
+  'status.noUpdates': 'Inga prisuppdateringar',
   'status.delayed': 'Fördröjd {minutes} min',
   'status.connectionFailed': 'Anslutningen misslyckades',
   'status.loading': 'Läser in diagram…',
@@ -603,6 +604,8 @@ export const SV_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'Lägg köporder',
   'ticket.placeSell': 'Lägg säljorder',
   'ticket.noAnswer': 'Mäklaren har inte svarat än. Kontrollera dina order innan du skickar igen.',
+  'ticket.noLivePrice': 'Inget livepris: kontrollera priset innan du lägger ordern.',
+  'ticket.noLiveMarket': 'Inget livepris: en marknadsorder kan inte skickas.',
   'ticket.sending': 'Skickar…',
   'ticket.sent': 'Order skickad: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Ange ett antal över 0.',
@@ -971,6 +974,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'order.buyStop': 'Köpstopp @ {price}',
   'order.sellStop': 'Säljstopp @ {price}',
   'order.refused': 'Mäklaren avvisade ordern: {reason}',
+  'order.noLivePrice': 'Inget livepris: ordern skickades inte',
   'order.partDropped': 'Utfört {filled} av {quantity}: resten annullerades',
 
   'toast.pinned': 'Fäst bland favoriter',

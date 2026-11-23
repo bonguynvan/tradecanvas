@@ -204,6 +204,7 @@ export const JA_MESSAGES: WidgetMessages = {
 
   'status.connecting': '接続中…',
   'status.live': 'ライブ',
+  'status.noUpdates': '価格の更新がありません',
   'status.delayed': '{minutes}分遅延',
   'status.connectionFailed': '接続に失敗しました',
   'status.loading': 'チャートを読み込み中…',
@@ -603,6 +604,8 @@ export const JA_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': '買い注文を発注',
   'ticket.placeSell': '売り注文を発注',
   'ticket.noAnswer': 'ブローカーからまだ応答がありません。再送信する前に注文を確認してください。',
+  'ticket.noLivePrice': 'リアルタイム価格がありません：発注前に価格を確認してください。',
+  'ticket.noLiveMarket': 'リアルタイム価格がありません：成行注文は送信できません。',
   'ticket.sending': '送信中…',
   'ticket.sent': '注文を送信しました：{side} {quantity} @ {price}',
   'ticket.problem.quantity': '数量は0より大きい値を入力してください。',
@@ -971,6 +974,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'order.buyStop': '逆指値買い @ {price}',
   'order.sellStop': '逆指値売り @ {price}',
   'order.refused': 'ブローカーが注文を拒否しました: {reason}',
+  'order.noLivePrice': 'リアルタイム価格がありません：注文は送信されませんでした',
   'order.partDropped': '{quantity} のうち {filled} が約定：残りは取消されました',
 
   'toast.pinned': 'お気に入りに固定しました',

@@ -204,6 +204,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
 
   'status.connecting': '連線中…',
   'status.live': '即時',
+  'status.noUpdates': '沒有價格更新',
   'status.delayed': '延遲 {minutes} 分鐘',
   'status.connectionFailed': '連線失敗',
   'status.loading': '圖表載入中…',
@@ -603,6 +604,8 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': '送出買進委託',
   'ticket.placeSell': '送出賣出委託',
   'ticket.noAnswer': '經紀商尚未回覆。再次送出前請先查看您的委託。',
+  'ticket.noLivePrice': '沒有即時價格：下單前請核對價格。',
+  'ticket.noLiveMarket': '沒有即時價格：無法送出市價單。',
   'ticket.sending': '傳送中…',
   'ticket.sent': '委託已送出：{side} {quantity} @ {price}',
   'ticket.problem.quantity': '請輸入大於 0 的數量。',
@@ -971,6 +974,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'order.buyStop': '停損買進 @ {price}',
   'order.sellStop': '停損賣出 @ {price}',
   'order.refused': '經紀商拒絕了委託：{reason}',
+  'order.noLivePrice': '沒有即時價格：訂單未送出',
   'order.partDropped': '已成交 {filled}，共 {quantity}：其餘已撤單',
 
   'toast.pinned': '已固定到我的最愛',

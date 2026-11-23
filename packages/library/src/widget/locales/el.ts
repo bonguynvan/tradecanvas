@@ -204,6 +204,7 @@ export const EL_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Σύνδεση…',
   'status.live': 'Ζωντανά',
+  'status.noUpdates': 'Καμία ενημέρωση τιμής',
   'status.delayed': 'Καθυστέρηση {minutes} λ.',
   'status.connectionFailed': 'Η σύνδεση απέτυχε',
   'status.loading': 'Φόρτωση γραφήματος…',
@@ -603,6 +604,8 @@ export const EL_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'Υποβολή εντολής αγοράς',
   'ticket.placeSell': 'Υποβολή εντολής πώλησης',
   'ticket.noAnswer': 'Ο broker δεν έχει απαντήσει ακόμη. Ελέγξτε τις εντολές σας πριν στείλετε ξανά.',
+  'ticket.noLivePrice': 'Χωρίς ζωντανή τιμή: ελέγξτε την τιμή πριν δώσετε την εντολή.',
+  'ticket.noLiveMarket': 'Χωρίς ζωντανή τιμή: δεν μπορεί να σταλεί εντολή αγοράς.',
   'ticket.sending': 'Αποστολή…',
   'ticket.sent': 'Η εντολή στάλθηκε: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Εισαγάγετε ποσότητα μεγαλύτερη από 0.',
@@ -971,6 +974,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'order.buyStop': 'Αγορά stop @ {price}',
   'order.sellStop': 'Πώληση stop @ {price}',
   'order.refused': 'Ο broker απέρριψε την εντολή: {reason}',
+  'order.noLivePrice': 'Χωρίς ζωντανή τιμή: η εντολή δεν στάλθηκε',
   'order.partDropped': 'Εκτελέστηκαν {filled} από {quantity}: το υπόλοιπο ακυρώθηκε',
 
   'toast.pinned': 'Καρφιτσώθηκε στα αγαπημένα',

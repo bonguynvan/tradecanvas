@@ -339,6 +339,21 @@ chart.setPositions([
 </p>
 <pre><code>{`feed.onTrade((trade) => broker.setMarkPrice(trade.price, trade.time, trade.symbol))`}</code></pre>
 
+<h3 id="live-price">A price that is no longer live</h3>
+<p>
+  The price on the chart is live while the widget's feed is connected and telling. A feed that is not connected, or
+  that is connected and has told nothing for a minute (<code>feedQuietAfter</code>, seconds), leaves the last price
+  standing: the status bar then says so in place of “Live”, and the ticket sends no market order and warns on any
+  other, whose price is the trader's own. While the feed is not connected, an order asked for in one press (the
+  right-click menu, the depth ladder) and a bracket or a draft order confirmed on the chart are held back too, with a
+  note (<code>chart.setOrderGate</code> is what holds the last two). Closing a position and cancelling an order are
+  never held back. A market that is shut (the symbol's <code>sessions</code>) is quiet by nature and is not judged,
+  and neither are a replay or bars of your own (no <code>adapter</code>): hold orders back there in your own
+  <code>orderPlace</code> handler.
+</p>
+<pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, feedQuietAfter: 30 })   // seconds; 0: never
+chart.getFeedTime()   // when the stream last told anything, ms; null before it has`}</code></pre>
+
 <h2>Act on orders and positions from the chart</h2>
 <p>
   Order and position lines carry small buttons at their right end: <strong>×</strong>

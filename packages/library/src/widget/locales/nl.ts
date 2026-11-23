@@ -204,6 +204,7 @@ export const NL_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Verbinden…',
   'status.live': 'Live',
+  'status.noUpdates': 'Geen koersupdates',
   'status.delayed': '{minutes} min vertraagd',
   'status.connectionFailed': 'Verbinding mislukt',
   'status.loading': 'Grafiek laden…',
@@ -603,6 +604,8 @@ export const NL_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'Kooporder plaatsen',
   'ticket.placeSell': 'Verkooporder plaatsen',
   'ticket.noAnswer': 'De broker heeft nog niet geantwoord. Controleer uw orders voordat u opnieuw verzendt.',
+  'ticket.noLivePrice': 'Geen live koers: controleer de prijs voordat u de order plaatst.',
+  'ticket.noLiveMarket': 'Geen live koers: een marktorder kan niet worden verzonden.',
   'ticket.sending': 'Verzenden…',
   'ticket.sent': 'Order verzonden: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Voer een aantal groter dan 0 in.',
@@ -971,6 +974,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'order.buyStop': 'Koopstop @ {price}',
   'order.sellStop': 'Verkoopstop @ {price}',
   'order.refused': 'De broker heeft de order geweigerd: {reason}',
+  'order.noLivePrice': 'Geen live koers: de order is niet verzonden',
   'order.partDropped': '{filled} van {quantity} uitgevoerd: de rest is geannuleerd',
 
   'toast.pinned': 'Vastgezet bij favorieten',

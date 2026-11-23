@@ -204,6 +204,7 @@ export const ID_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Menghubungkan…',
   'status.live': 'Langsung',
+  'status.noUpdates': 'Tidak ada pembaruan harga',
   'status.delayed': 'Tertunda {minutes} mnt',
   'status.connectionFailed': 'Koneksi gagal',
   'status.loading': 'Memuat grafik…',
@@ -603,6 +604,8 @@ export const ID_MESSAGES: WidgetMessages = {
   'ticket.placeBuy': 'Kirim order beli',
   'ticket.placeSell': 'Kirim order jual',
   'ticket.noAnswer': 'Broker belum menjawab. Periksa order Anda sebelum mengirim lagi.',
+  'ticket.noLivePrice': 'Tidak ada harga langsung: periksa harga sebelum memasang order.',
+  'ticket.noLiveMarket': 'Tidak ada harga langsung: order pasar tidak dapat dikirim.',
   'ticket.sending': 'Mengirim…',
   'ticket.sent': 'Order terkirim: {side} {quantity} @ {price}',
   'ticket.problem.quantity': 'Masukkan jumlah di atas 0.',
@@ -971,6 +974,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'order.buyStop': 'Beli stop @ {price}',
   'order.sellStop': 'Jual stop @ {price}',
   'order.refused': 'Broker menolak order: {reason}',
+  'order.noLivePrice': 'Tidak ada harga langsung: order tidak dikirim',
   'order.partDropped': 'Terisi {filled} dari {quantity}: sisanya dibatalkan',
 
   'toast.pinned': 'Disematkan ke favorit',
