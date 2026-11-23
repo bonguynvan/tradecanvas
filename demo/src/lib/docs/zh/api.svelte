@@ -242,6 +242,19 @@ formatVolumeLoc(345_000_000, 'ko')           // '3.45억'`}</code></pre>
   没有 <code>priceLimits</code> 的自定义主题在浅色背景上使用浅色主题的颜色，在深色背景上使用深色主题的颜色。
 </p>
 
+<h3 id="broker-limits">由经纪商提供的当日涨跌停价</h3>
+<p>
+  <code>setPriceLimits</code> 可以直接接收该品种当日的涨停价、跌停价和参考价，而不只是参考价。只要经纪商或交易所提供，
+  就请直接传入：特殊涨跌幅，或股票转板后的首个交易日，都不是参考价的某个百分比，这时市场的百分比只是没有更好数据时的
+  备用方案。图表上的线、订单可以拖到的价格以及下单窗口的检查都以传入的值为准。组件的下单窗口在价格栏上方显示这三个价格，
+  点击其中一个即设为订单价格；<code>priceLimitOrder</code> 按你的行情板顺序排列它们，未列出的不显示。
+</p>
+<pre><code>{`chart.setMarket(MARKET_HOSE)
+chart.setPriceLimits({ ceiling: 27.1, floor: 23.6, reference: 25.35 })   // as the broker gives them for the symbol
+chart.setPriceLimits(25.35)                                              // or the reference alone: the market's percentages of it
+
+new ChartWidget(host, { trading: true, priceLimitOrder: ['reference', 'ceiling', 'floor'] })   // the ticket's row, in your board's order`}</code></pre>
+
 <h3 id="comparing-symbols">品种对比</h3>
 <p>
   可以在价格坐标上显示另一个品种的涨跌幅（<code>addCompareSymbol</code>），也可以把它的价格放在独立坐标或独立窗格中，

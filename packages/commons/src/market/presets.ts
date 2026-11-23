@@ -386,6 +386,9 @@ export function scaleMarketPrices(config: MarketConfig, factor: number): MarketC
     priceLimits: config.priceLimits && {
       ...config.priceLimits,
       referencePrice: config.priceLimits.referencePrice === undefined ? undefined : scaled(config.priceLimits.referencePrice, factor),
+      // A ceiling and a floor given as they are for the day are prices too.
+      ...(config.priceLimits.ceiling === undefined ? {} : { ceiling: scaled(config.priceLimits.ceiling, factor) }),
+      ...(config.priceLimits.floor === undefined ? {} : { floor: scaled(config.priceLimits.floor, factor) }),
     },
   };
 }

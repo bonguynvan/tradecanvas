@@ -245,6 +245,20 @@ formatVolumeLoc(345_000_000, 'ko')           // '3.45억'`}</code></pre>
   <code>priceLimits</code>가 없는 자체 테마는 밝은 배경에서는 라이트 테마의 색을, 어두운 배경에서는 다크 테마의 색을 씁니다.
 </p>
 
+<h3 id="broker-limits">브로커가 주는 당일 가격 제한</h3>
+<p>
+  <code>setPriceLimits</code>는 기준가만이 아니라 그 종목의 당일 상한가, 하한가, 기준가를 그대로 받습니다. 브로커나
+  거래소가 제공한다면 그것을 넘기세요. 특별한 제한폭이나 다른 거래소로 옮긴 종목의 첫 거래일은 기준가의 몇 퍼센트로
+  구할 수 없으며, 그럴 때 시장의 퍼센트는 더 나은 정보가 없을 때 쓰는 대안일 뿐입니다. 차트의 선, 주문을 끌어다 놓을 수
+  있는 가격, 티켓의 검사는 모두 넘겨받은 값을 따릅니다. 위젯의 주문 티켓은 가격 칸 위에 이 세 가격을 보여 주며, 누르면
+  그 가격이 설정됩니다. <code>priceLimitOrder</code>로 시세판과 같은 순서로 배치하고, 적지 않은 것은 표시하지 않습니다.
+</p>
+<pre><code>{`chart.setMarket(MARKET_HOSE)
+chart.setPriceLimits({ ceiling: 27.1, floor: 23.6, reference: 25.35 })   // as the broker gives them for the symbol
+chart.setPriceLimits(25.35)                                              // or the reference alone: the market's percentages of it
+
+new ChartWidget(host, { trading: true, priceLimitOrder: ['reference', 'ceiling', 'floor'] })   // the ticket's row, in your board's order`}</code></pre>
+
 <h3 id="comparing-symbols">종목 비교</h3>
 <p>
   다른 종목의 변동률을 가격 눈금에 표시하거나(<code>addCompareSymbol</code>), 그 가격을 별도 눈금이나

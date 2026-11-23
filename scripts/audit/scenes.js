@@ -697,6 +697,42 @@ const SCENES = {
   },
 
   /**
+   * The order ticket on a market with limits for the day, given as the broker gives them: the
+   * ceiling, the reference and the floor over the price, and the floor pressed. The ticket knew
+   * them and showed none.
+   */
+  async ticketLimits() {
+    const s = await widget({ symbol: 'VNM', trading: true });
+    s.chart.setMarket(MARKET_HOSE);
+    const last = s.chart.roundPrice(lastClose(s.chart));
+    const limits = { ceiling: s.chart.roundPrice(last * 1.07), floor: s.chart.roundPrice(last * 0.93), reference: last };
+    s.chart.setPriceLimits(limits);
+    s.chart.connectExecution(new PaperExecutionAdapter({ markPrice: last }));
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    host.querySelector('.tcw-quote-buy')?.click();
+    // A limit order: one at the market has no price to set.
+    host.querySelectorAll('.tcw-order-ticket [data-ticket-field="type"] button')[1]?.click();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    host.querySelector('.tcw-ticket-limit[data-limit="floor"]')?.click();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const checks = () => {
+      const cells = [...host.querySelectorAll('.tcw-ticket-limit')];
+      if (cells.length !== 3) return [`the ticket shows ${cells.length} of the day's three prices`];
+      const problems = [];
+      if (cells.map((cell) => cell.dataset.limit).join() !== 'ceiling,reference,floor') problems.push('the three are not ceiling, reference, floor');
+      const price = Number(host.querySelector('.tcw-order-ticket [data-ticket-field="price"]')?.value);
+      if (price !== limits.floor) problems.push(`a press on the floor left the price at ${price}, not ${limits.floor}`);
+      const ticket = host.querySelector('.tcw-order-ticket').getBoundingClientRect();
+      for (const cell of cells) {
+        const box = cell.getBoundingClientRect();
+        if (box.left < ticket.left || box.right > ticket.right) problems.push(`"${cell.textContent}" reaches outside the ticket`);
+      }
+      return problems;
+    };
+    return { ...s, checks };
+  },
+
+  /**
    * The mouse pressed and held still on the plot: the floating tooltip of the bar under it, beside
    * the pointer and inside the plot. A pointer that only moves shows none: the legend says the bar.
    */

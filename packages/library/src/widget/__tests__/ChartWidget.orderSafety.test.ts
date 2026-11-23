@@ -477,3 +477,54 @@ describe('ChartWidget: a trade that one press would make is confirmed first', ()
     expect(FakeChart.last.placed).toEqual([]);
   });
 });
+
+// The ticket knew the day's ceiling and floor and showed neither until a price was refused for being past them.
+describe('ChartWidget: the day’s ceiling, reference and floor in the ticket', () => {
+  type Limits = { ceiling: number; floor: number; reference: number };
+  const open = (limits: Limits | null, options: object = {}) => {
+    widget = new ChartWidget(host, { symbol: 'VNM', trading: true, ...options });
+    (FakeChart.last as unknown as { getPriceLimits(): Limits | null }).getPriceLimits = () => limits;
+    FakeChart.last.market = { volumeUnit: 100 };
+    // Under the market: a limit, with a price of its own.
+    trading().openOrderTicket(25);
+  };
+  const row = () => host.querySelector<HTMLElement>('.tcw-ticket-limits');
+  const cells = () => [...host.querySelectorAll<HTMLButtonElement>('.tcw-ticket-limits button')];
+  const price = () => host.querySelector<HTMLInputElement>('.tcw-order-ticket input[data-ticket-field="price"]')!.value;
+
+  it('shows the three over the price, the ceiling first, each named', () => {
+    open({ ceiling: 27.1, floor: 23.6, reference: 25.35 });
+    expect(cells().map((cell) => cell.textContent)).toEqual(['Ceiling 27.10', 'Ref 25.35', 'Floor 23.60']);
+    expect(cells().map((cell) => cell.dataset.limit)).toEqual(['ceiling', 'reference', 'floor']);
+  });
+
+  it('puts a price in the field at a press on it', () => {
+    open({ ceiling: 27.1, floor: 23.6, reference: 25.35 });
+    cells()[2].click();
+    expect(Number(price())).toBe(23.6);
+    cells()[0].click();
+    expect(Number(price())).toBe(27.1);
+  });
+
+  it('keeps the order a broker asks for', () => {
+    open({ ceiling: 27.1, floor: 23.6, reference: 25.35 }, { priceLimitOrder: ['reference', 'ceiling', 'floor'] });
+    expect(cells().map((cell) => cell.dataset.limit)).toEqual(['reference', 'ceiling', 'floor']);
+  });
+
+  it('shows each once, and only the three there are, whatever order is asked for', () => {
+    open({ ceiling: 27.1, floor: 23.6, reference: 25.35 }, { priceLimitOrder: ['floor', 'floor', 'ceiling'] });
+    expect(cells().map((cell) => cell.dataset.limit)).toEqual(['floor', 'ceiling']);
+  });
+
+  it('keeps the focus on the price pressed, through the ticket drawn anew', () => {
+    open({ ceiling: 27.1, floor: 23.6, reference: 25.35 });
+    cells()[2].focus();
+    cells()[2].click();
+    expect((document.activeElement as HTMLElement | null)?.dataset.limit).toBe('floor');
+  });
+
+  it('shows none on a market with no limits for the day', () => {
+    open(null);
+    expect(row()).toBeNull();
+  });
+});

@@ -254,6 +254,21 @@ formatVolumeLoc(345_000_000, 'ko')           // '3.45억'`}</code></pre>
   Theme riêng không có <code>priceLimits</code> dùng màu của theme sáng trên nền sáng, của theme tối trên nền tối.
 </p>
 
+<h3 id="broker-limits">Biên độ trong ngày do broker cung cấp</h3>
+<p>
+  <code>setPriceLimits</code> nhận trực tiếp giá trần, giá sàn và giá tham chiếu trong ngày của symbol, thay vì chỉ
+  giá tham chiếu. Hãy truyền chúng khi broker hoặc sở giao dịch cung cấp: biên độ đặc biệt, hay phiên đầu tiên của một
+  cổ phiếu trên sàn khác, không phải là một tỷ lệ phần trăm của giá tham chiếu, và khi đó tỷ lệ của thị trường chỉ là
+  phương án dùng khi không có gì tốt hơn. Các đường trên chart, mức giá mà một order được kéo tới và các kiểm tra của
+  ticket đều theo giá trị được cung cấp. Order ticket của widget hiện ba mức giá này ngay trên ô giá, nhấn vào mức nào
+  thì đặt giá đó; <code>priceLimitOrder</code> xếp chúng theo thứ tự bảng giá của bạn, và bỏ những mức không được nêu.
+</p>
+<pre><code>{`chart.setMarket(MARKET_HOSE)
+chart.setPriceLimits({ ceiling: 27.1, floor: 23.6, reference: 25.35 })   // as the broker gives them for the symbol
+chart.setPriceLimits(25.35)                                              // or the reference alone: the market's percentages of it
+
+new ChartWidget(host, { trading: true, priceLimitOrder: ['reference', 'ceiling', 'floor'] })   // the ticket's row, in your board's order`}</code></pre>
+
 <h3 id="comparing-symbols">So sánh mã</h3>
 <p>
   Phần trăm thay đổi của một mã khác trên thang giá (<code>addCompareSymbol</code>), hoặc

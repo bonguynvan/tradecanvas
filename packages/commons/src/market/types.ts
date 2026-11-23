@@ -37,6 +37,15 @@ export interface MarketConfig {
     /** The price the limits are counted from, the last session's close; `chart.setPriceLimits(price)` sets it. */
     referencePrice?: number;
     /**
+     * The day's ceiling, as the broker or the exchange gives it for this symbol
+     * (`chart.setPriceLimits({ ceiling, floor, reference })`). With `floor`, it
+     * stands over what the percentages make: a special band, or a stock's first
+     * session on another exchange, is not the exchange's percentage of anything.
+     */
+    ceiling?: number;
+    /** The day's floor as given, with `ceiling`. */
+    floor?: number;
+    /**
      * Round the move first (KRX): the percentage of the reference is rounded
      * down to the reference's step, then each limit down to the step of the
      * price it lands on. Without it, the ceiling rounds down and the floor up

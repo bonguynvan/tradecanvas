@@ -23,6 +23,7 @@ import {
   ticketTakeProfitLevels,
   ticketTargets,
   TICKET_MAX_TARGETS,
+  type PriceLimitName,
 } from './orderTicket.js';
 
 /** The best bid and ask now: what a Sell and a Buy trade at. */
@@ -91,6 +92,8 @@ const NO_ANSWER_MS = 10_000;
 
 /** The kinds of order the ticket takes, as its choices stand. */
 const ORDER_TYPES = ['market', 'limit', 'stop', 'stopLimit'] as const;
+/** The ticket's row of the day's prices, where no order is asked for: the ceiling first, as most boards have it. */
+const PRICE_LIMIT_ORDER: readonly PriceLimitName[] = ['ceiling', 'reference', 'floor'];
 
 /** The key code a browser gives a key an input method takes. */
 const IME_KEY_CODE = 229;
@@ -479,6 +482,8 @@ export class WidgetOrderTicket {
       const twoPrices = draft.type === 'stopLimit';
       if (twoPrices) this.body.append(this.row('ticket.stopPrice', this.priceField('stopPrice', draft.stopPrice ?? NaN, (stopPrice) => this.set({ stopPrice }))));
       const priceKey: MessageKey = twoPrices ? 'ticket.limitPrice' : 'ticket.price';
+      const limits = this.limitsRow();
+      if (limits) this.body.append(limits);
       this.body.append(
         this.row(priceKey, this.priceField('price', draft.price, (price) => this.set({ price }), priceKey)),
         this.row('ticket.timeInForce', this.choices('timeInForce', ticketTimesInForce(draft.type), ticketTimeInForce(draft), 'ticket.timeInForce', (timeInForce: TimeInForce) => this.setTimeInForce(timeInForce))),
@@ -567,6 +572,43 @@ export class WidgetOrderTicket {
       group.appendChild(btn);
     }
     return group;
+  }
+
+  /**
+   * The day's ceiling, reference and floor over the price, in the order the broker's board has
+   * them: a press on one is the order's price. None on a market with no limits for the day.
+   */
+  private limitsRow(): HTMLElement | null {
+    const limits = this.rules.limits;
+    if (!limits) return null;
+    const row = document.createElement('div');
+    row.className = 'tcw-ticket-limits';
+    // Each once, and only the three there are: an order given may name one twice, or none.
+    const names = [...new Set(this.rules.limitOrder ?? PRICE_LIMIT_ORDER)].filter((name) => PRICE_LIMIT_ORDER.includes(name));
+    for (const name of names) {
+      const price = limits[name];
+      if (price === undefined || !Number.isFinite(price)) continue;
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'tcw-ticket-limit';
+      cell.dataset.limit = name;
+      // Found again after the ticket is drawn anew: the focus stays on the price pressed.
+      field(`limit-${name}`, cell);
+      const label = document.createElement('span');
+      label.className = 'tcw-ticket-limit-name';
+      label.textContent = this.t(`ticket.${name}` as MessageKey);
+      const figure = document.createElement('span');
+      figure.className = 'tcw-ticket-limit-price';
+      figure.textContent = this.callbacks.formatPrice(price);
+      cell.append(label, ' ', figure);
+      cell.addEventListener('click', () => {
+        // What was typed gives way to the price pressed.
+        this.typed.delete('price');
+        this.set({ price }, true);
+      });
+      row.appendChild(cell);
+    }
+    return row.childElementCount > 0 ? row : null;
   }
 
   /** A price field: stepped by the market's step, an empty one from the market's price. Named by `label`, else by what it is. */

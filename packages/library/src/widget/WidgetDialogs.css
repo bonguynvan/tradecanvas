@@ -1870,3 +1870,31 @@ img.tcw-ss-badge {
   padding-block: 0;
 }
 
+/* The day's ceiling, reference and floor over the ticket's price: each a press that sets the price. */
+.tcw-ticket-limits {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--tcw-space-2);
+}
+
+.tcw-ticket-limit {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tcw-space-2);
+  height: var(--tcw-control-h-sm);
+  padding: 0 var(--tcw-space-4);
+  border: var(--tcw-border-w) solid var(--tcw-border);
+  border-radius: var(--tcw-control-radius);
+  background: transparent;
+  color: var(--tcw-text);
+  font: inherit;
+  font-size: var(--tcw-font-size-sm);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background var(--tcw-dur-fast) var(--tcw-ease), border-color var(--tcw-dur-fast) var(--tcw-ease);
+}
+
+.tcw-ticket-limit:hover { background: var(--tcw-hover-bg); border-color: var(--tcw-border-strong); }
+.tcw-ticket-limit:focus-visible { outline: none; box-shadow: var(--tcw-ring); }
+.tcw-ticket-limit-name { color: var(--tcw-text-dim); }

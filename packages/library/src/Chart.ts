@@ -225,6 +225,12 @@ const NUDGE_KEYS: Record<string, [bars: number, px: number]> = {
 const FULL_WIDTH_DRAWINGS = new Set(['horizontalLine', 'crossLine']);
 const FULL_HEIGHT_DRAWINGS = new Set(['verticalLine', 'crossLine']);
 
+/** Whether a day's limits given whole are prices: three numbers, the reference between a floor above zero and its ceiling. */
+function soundLimits(limits: PriceLimitInfo): boolean {
+  const { ceiling, floor, reference } = limits;
+  return [ceiling, floor, reference].every(Number.isFinite) && floor > 0 && floor <= reference && reference <= ceiling;
+}
+
 export class Chart {
   static version = typeof __TC_VERSION__ !== 'undefined' ? __TC_VERSION__ : '0.0.0-dev';
 
@@ -7054,16 +7060,37 @@ export class Chart {
   getPriceLimits(): PriceLimitInfo | null {
     const market = this.marketConfig;
     if (!market?.priceLimits?.enabled || !market.priceLimits.referencePrice) return null;
-    return computePriceLimits(market.priceLimits.referencePrice, market);
+    const { referencePrice, ceiling, floor } = market.priceLimits;
+    // Given as they are for the day: they stand over what the percentages make.
+    if (ceiling !== undefined && floor !== undefined) return { ceiling, floor, reference: referencePrice };
+    return computePriceLimits(referencePrice, market);
   }
 
-  /** The day's reference price, for the limits; a later `setMarket` starts without one. */
-  setPriceLimits(referencePrice: number): void {
-    if (!this.marketConfig?.priceLimits) return;
+  /**
+   * The day's limits; a later `setMarket` starts without them. A number is the
+   * reference price: the ceiling and the floor are the market's percentages of
+   * it. An object is the three as the broker or the exchange gives them for
+   * the symbol, which is what to pass where it does: a special band, or a
+   * stock's first session on another exchange, is no percentage of the
+   * reference. They are taken as given, not put on the market's price step,
+   * and they are the day's limits on a market whose preset has none. Ones
+   * that are no prices (not numbers, a ceiling under its floor, a reference
+   * outside the two) are not taken.
+   */
+  setPriceLimits(limits: number | PriceLimitInfo): void {
+    if (!this.marketConfig) return;
+    const given = typeof limits === 'number' ? null : limits;
+    // A reference alone needs the market's percentages; the three given need nothing of the market.
+    if (!given && !this.marketConfig.priceLimits) return;
+    if (given && !soundLimits(given)) return;
+    const { ceiling: _ceiling, floor: _floor, ...kept } = this.marketConfig.priceLimits ?? { enabled: true };
     // A copy: the market given may be a preset other charts share.
     this.marketConfig = {
       ...this.marketConfig,
-      priceLimits: { ...this.marketConfig.priceLimits, referencePrice },
+      priceLimits: given
+        // Given for the day, they are the day's limits on a market whose preset has none too.
+        ? { ...kept, enabled: true, referencePrice: given.reference, ceiling: given.ceiling, floor: given.floor }
+        : { ...kept, referencePrice: limits as number },
     };
     // The lines are drawn from the render context, not read each frame: give it the new ones.
     this.syncRenderContext();

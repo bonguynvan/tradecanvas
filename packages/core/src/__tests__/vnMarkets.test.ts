@@ -167,3 +167,12 @@ describe('Vietnamese colours', () => {
     expect(theme.volumeDown).toBe(DARK_THEME.volumeDown);
   });
 });
+
+describe('scaleMarketPrices: limits given for the day', () => {
+  it('scales a ceiling and a floor given whole, as it scales the reference', () => {
+    const scaledUp = scaleMarketPrices({ type: 'stock', priceLimits: { enabled: true, referencePrice: 25.35, ceiling: 27.1, floor: 23.6 } }, 1000);
+    expect(scaledUp.priceLimits).toMatchObject({ referencePrice: 25350, ceiling: 27100, floor: 23600 });
+    // None given: none made.
+    expect(scaleMarketPrices({ type: 'stock', priceLimits: { enabled: true, referencePrice: 25.35 } }, 1000).priceLimits).not.toHaveProperty('ceiling');
+  });
+});

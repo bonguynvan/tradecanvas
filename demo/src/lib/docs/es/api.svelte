@@ -260,6 +260,21 @@ formatVolumeLoc(345_000_000, 'ko')           // '3.45억'`}</code></pre>
   Un tema propio sin <code>priceLimits</code> toma los del tema claro sobre un fondo claro y los del oscuro sobre uno oscuro.
 </p>
 
+<h3 id="broker-limits">Los límites del día tal como los da el bróker</h3>
+<p>
+  <code>setPriceLimits</code> acepta el techo, el suelo y la referencia del día tal como son para el símbolo, en lugar
+  de solo la referencia. Pásalos cuando tu bróker o la bolsa los den: una banda especial, o la primera sesión de una
+  acción en otra bolsa, no son un porcentaje de la referencia, y los porcentajes del mercado son entonces solo lo que
+  se usa cuando no se sabe nada mejor. Las líneas del gráfico, los precios a los que se puede arrastrar una orden y las
+  comprobaciones del ticket siguen lo que se da. El ticket de orden del widget muestra los tres sobre su precio, y
+  pulsar uno lo pone como precio; <code>priceLimitOrder</code> los ordena como tu tablero y omite los no nombrados.
+</p>
+<pre><code>{`chart.setMarket(MARKET_HOSE)
+chart.setPriceLimits({ ceiling: 27.1, floor: 23.6, reference: 25.35 })   // as the broker gives them for the symbol
+chart.setPriceLimits(25.35)                                              // or the reference alone: the market's percentages of it
+
+new ChartWidget(host, { trading: true, priceLimitOrder: ['reference', 'ceiling', 'floor'] })   // the ticket's row, in your board's order`}</code></pre>
+
 <h3 id="comparing-symbols">Comparar símbolos</h3>
 <p>
   El cambio porcentual de otro símbolo en la escala de precio (<code>addCompareSymbol</code>), o su

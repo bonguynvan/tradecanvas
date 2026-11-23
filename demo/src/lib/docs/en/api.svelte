@@ -254,6 +254,21 @@ formatVolumeLoc(345_000_000, 'ko')           // '3.45억'`}</code></pre>
   A theme of your own without <code>priceLimits</code> takes the light theme's on a light background, the dark theme's on a dark one.
 </p>
 
+<h3 id="broker-limits">The day's limits as the broker gives them</h3>
+<p>
+  <code>setPriceLimits</code> takes the day's ceiling, floor and reference as they are for the symbol, in place of the
+  reference alone. Pass them where your broker or the exchange gives them: a special band, or a stock's first session
+  on another exchange, is no percentage of the reference, and the market's percentages are then only what is used when
+  nothing better is known. The lines on the chart, the prices an order may be dragged to and the ticket's checks all
+  follow what is given. The widget's order ticket shows the three over its price, each a press that sets the price;
+  <code>priceLimitOrder</code> puts them in the order of your board, and leaves out the ones not named.
+</p>
+<pre><code>{`chart.setMarket(MARKET_HOSE)
+chart.setPriceLimits({ ceiling: 27.1, floor: 23.6, reference: 25.35 })   // as the broker gives them for the symbol
+chart.setPriceLimits(25.35)                                              // or the reference alone: the market's percentages of it
+
+new ChartWidget(host, { trading: true, priceLimitOrder: ['reference', 'ceiling', 'floor'] })   // the ticket's row, in your board's order`}</code></pre>
+
 <h3 id="comparing-symbols">Comparing symbols</h3>
 <p>
   Another symbol's percent change on the price scale (<code>addCompareSymbol</code>), or

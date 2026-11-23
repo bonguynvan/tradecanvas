@@ -260,6 +260,13 @@ export interface ChartWidgetOptions {
    */
   confirmOrders?: boolean;
   /**
+   * The order the ticket shows the day's ceiling, reference and floor in, over its price: boards
+   * differ, and a trader reads them where their broker's board has them. Leave one out not to
+   * show it. Default `['ceiling', 'reference', 'floor']`. The row shows on a market with limits
+   * for the day (`chart.setPriceLimits`), and a press on a price is the order's price.
+   */
+  priceLimitOrder?: readonly ('ceiling' | 'reference' | 'floor')[];
+  /**
    * How long, seconds, the widget's feed may be connected and tell nothing before its price stops
    * counting as live: the status bar then says so in place of "Live", and the ticket warns and
    * sends no order at the market. A feed that is not connected does the same at once, and holds
