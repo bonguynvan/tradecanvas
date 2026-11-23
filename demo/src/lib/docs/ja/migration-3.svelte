@@ -133,6 +133,17 @@ chart.startBracket('buy', undefined, { risk: 50 })   // ストップで 50 を�
   判定されることはなくなりますが、切断されたフィードは変わらず注文を保留します。
 </p>
 
+<h3 id="confirmations">ワンクリックの取引は確認され、板の買い気配は買う価格になります</h3>
+<p>
+  <code>ChartWidget</code> は、ポジションの決済やドテン（口座パネル、チャート上のボタン）の前と、右クリックメニューや
+  板情報からの発注の前に確認するようになりました。これまではワンクリックで送信されていました。
+  <code>confirmOrders: false</code> でワンクリックのままにできます。板情報では、買い気配を押すとその価格に
+  <strong>買い</strong>指値が、売り気配を押すと<strong>売り</strong>指値が出されるようになりました。これまでは
+  買い気配に売り、売り気配で買っていました。同じセルからの <code>orderPlace</code> は、以前とは反対の売買になります。
+  これらのセルを押していた、あるいは注文がすぐ出ることを前提にしていたテストやスクリプトは、確認ダイアログのボタン
+  （<code>.tcw-confirm .tcw-done-btn</code>）を押すか、このオプションを使ってください。
+</p>
+
 <h2 id="types">広がった型</h2>
 <p>
   <code>TimeInForce</code> は <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code> になりました。すべてのメンバーを扱うコード（default

@@ -669,6 +669,34 @@ const SCENES = {
   },
 
   /**
+   * Close pressed on a position's row in the account panel: asked first, in a dialog that says the
+   * trade in full, and nothing is closed until it is answered. It closed in one press.
+   */
+  async confirmClose() {
+    const s = await widget({ trading: true });
+    const last = lastClose(s.chart);
+    const broker = new PaperExecutionAdapter({ markPrice: last });
+    s.chart.connectExecution(broker);
+    await broker.placeOrder({ side: 'buy', type: 'market', price: last, quantity: 2, symbol: 'BTCUSDT' });
+    s.widget.toggleAccountPanel(true);
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    host.querySelector('.tcw-account tbody tr button:last-of-type')?.click();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const checks = () => {
+      const problems = [];
+      const dialog = host.querySelector('.tcw-confirm');
+      if (!dialog || dialog.closest('.tcw-modal-backdrop')?.hidden) return ['Close on a position asked nothing'];
+      if (s.chart.getPositions().length !== 1) problems.push('the position was closed before the question was answered');
+      const text = dialog.querySelector('.tcw-confirm-text')?.textContent ?? '';
+      if (!text.includes('2') || !text.includes('BTCUSDT')) problems.push(`the question does not say the quantity and the symbol (${text})`);
+      const box = dialog.getBoundingClientRect();
+      if (box.left < 0 || box.right > innerWidth || box.top < 0 || box.bottom > innerHeight) problems.push('the question reaches outside the page');
+      return problems;
+    };
+    return { ...s, broker, checks };
+  },
+
+  /**
    * The mouse pressed and held still on the plot: the floating tooltip of the bar under it, beside
    * the pointer and inside the plot. A pointer that only moves shows none: the legend says the bar.
    */

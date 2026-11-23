@@ -119,6 +119,15 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 在止损处亏损 50 �
   <code>feedQuietAfter: 0</code> 表示已连接的数据源永远不会被视为静默；断开的数据源仍然会拦下订单。
 </p>
 
+<h3 id="confirmations">一键交易会先确认，盘口深度上的买价是买入价</h3>
+<p>
+  <code>ChartWidget</code> 现在会在平仓或反手（账户面板、图表上的按钮）之前，以及在右键菜单或盘口深度下单之前先询问：
+  以前它们一次点击就发出。<code>confirmOrders: false</code> 保留一次点击。在盘口深度上，点击买价现在会在该价格挂出
+  <strong>买入</strong>限价单，点击卖价会挂出<strong>卖出</strong>限价单，而以前是卖给买价、买入卖价：
+  同一个单元格发出的 <code>orderPlace</code> 方向与以前相反。点击这些单元格或期望订单立即发出的测试或脚本，
+  需要点击确认对话框的按钮（<code>.tcw-confirm .tcw-done-btn</code>）或使用该选项。
+</p>
+
 <h2 id="types">扩充的类型</h2>
 <p>
   <code>TimeInForce</code> 现在是 <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>。处理全部成员的代码

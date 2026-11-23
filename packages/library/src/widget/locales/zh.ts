@@ -975,6 +975,10 @@ export const ZH_MESSAGES: WidgetMessages = {
   'order.sellStop': '止损卖出 @ {price}',
   'order.refused': '经纪商拒绝了委托：{reason}',
   'order.noLivePrice': '没有实时价格：订单未发送',
+  'confirm.close': '以市价平掉 {side} {quantity} {symbol}？',
+  'confirm.reverse': '以市价反手 {side} {quantity} {symbol}？将平仓并反向开出相同数量。',
+  'confirm.order': '{order}，数量 {quantity}，{symbol}',
+  'confirm.place': '下单',
   'order.partDropped': '已成交 {filled}，共 {quantity}：其余已撤单',
 
   'toast.pinned': '已固定到收藏',

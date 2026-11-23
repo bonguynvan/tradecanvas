@@ -481,6 +481,8 @@ export class Chart {
   private streamAdapter: DataAdapter | null = null;
   /** When the stream last told anything (bars, a bar's update or close, a trade, a quote, a price), by the clock; null before it has. */
   private feedToldAt: number | null = null;
+  /** Asked before a button on the chart closes or reverses a position (`setPositionGuard`). */
+  private positionGuard: ((action: 'positionClose' | 'positionReverse', positionId: string, send: () => void) => void) | null = null;
   /** Asked before a bracket or a draft order is sent on being confirmed (`setOrderGate`). */
   private orderGate: (() => boolean) | null = null;
   /** Pages older bars in as the view nears the oldest one. */
@@ -676,7 +678,13 @@ export class Chart {
     this.tradingManager.setEventCallback((event, data) => {
       // An order asked for on the chart itself (a draft confirmed, the engine's own menu) goes out with an id, as one asked for by code.
       const payload = event === 'orderPlace' ? this.withClientOrderId(data as import('@tradecanvas/commons').OrderPlaceIntent) : data;
-      this.eventBus.emit(event as ChartEventType, payload);
+      const send = () => this.eventBus.emit(event as ChartEventType, payload);
+      // A button on a position's line closes or reverses it in one press: whoever guards those is asked first.
+      if (this.positionGuard && (event === 'positionClose' || event === 'positionReverse')) {
+        this.positionGuard(event, (data as { positionId: string }).positionId, send);
+        return;
+      }
+      send();
     });
     // The activity log hears what the chart is told, whoever tells it: an adapter, or the app's own calls.
     this.eventBus.on('ordersChange', (e) => this.activity.orders((e.payload as { orders: TradingOrder[] }).orders, this.activityTime()));
@@ -3306,6 +3314,17 @@ export class Chart {
    */
   setOrderGate(gate: (() => boolean) | null): void {
     this.orderGate = gate;
+  }
+
+  /**
+   * Ask before a button on a position's line closes or reverses it: the guard
+   * is given what was pressed, the position's id and `send`, and calls `send`
+   * when it is to go ahead (after a confirmation, say), or never. Your own
+   * calls of `closePositionIntent` and `reversePositionIntent` are not asked
+   * about. `ChartWidget` confirms these presses with it; null asks no one.
+   */
+  setPositionGuard(guard: ((action: 'positionClose' | 'positionReverse', positionId: string, send: () => void) => void) | null): void {
+    this.positionGuard = guard;
   }
 
   isBracketActive(): boolean {

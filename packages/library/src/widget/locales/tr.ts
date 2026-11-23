@@ -975,6 +975,10 @@ export const TR_MESSAGES: WidgetMessages = {
   'order.sellStop': 'Stop satış @ {price}',
   'order.refused': 'Aracı kurum emri reddetti: {reason}',
   'order.noLivePrice': 'Canlı fiyat yok: emir gönderilmedi',
+  'confirm.close': '{side} {quantity} {symbol} piyasa fiyatından kapatılsın mı?',
+  'confirm.reverse': '{side} {quantity} {symbol} piyasa fiyatından ters çevrilsin mi? Pozisyon kapatılır ve aynı miktar ters yönde açılır.',
+  'confirm.order': '{order}, miktar {quantity}, {symbol}',
+  'confirm.place': 'Emir ver',
   'order.partDropped': '{quantity} içinden {filled} gerçekleşti: kalanı iptal edildi',
 
   'toast.pinned': 'Favorilere sabitlendi',

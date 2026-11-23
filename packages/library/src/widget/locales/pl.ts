@@ -975,6 +975,10 @@ export const PL_MESSAGES: WidgetMessages = {
   'order.sellStop': 'Sprzedaż stop @ {price}',
   'order.refused': 'Broker odrzucił zlecenie: {reason}',
   'order.noLivePrice': 'Brak ceny na żywo: zlecenie nie zostało wysłane',
+  'confirm.close': 'Zamknąć {side} {quantity} {symbol} po cenie rynkowej?',
+  'confirm.reverse': 'Odwrócić {side} {quantity} {symbol} po cenie rynkowej? Pozycja zostanie zamknięta i otwarta w tej samej ilości w przeciwną stronę.',
+  'confirm.order': '{order}, ilość {quantity}, {symbol}',
+  'confirm.place': 'Złóż zlecenie',
   'order.partDropped': 'Zrealizowano {filled} z {quantity}: reszta została anulowana',
 
   'toast.pinned': 'Przypięto do ulubionych',

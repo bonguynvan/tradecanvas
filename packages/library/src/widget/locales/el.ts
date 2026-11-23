@@ -975,6 +975,10 @@ export const EL_MESSAGES: WidgetMessages = {
   'order.sellStop': 'Πώληση stop @ {price}',
   'order.refused': 'Ο broker απέρριψε την εντολή: {reason}',
   'order.noLivePrice': 'Χωρίς ζωντανή τιμή: η εντολή δεν στάλθηκε',
+  'confirm.close': 'Κλείσιμο {side} {quantity} {symbol} στην τιμή αγοράς;',
+  'confirm.reverse': 'Αντιστροφή {side} {quantity} {symbol} στην τιμή αγοράς; Η θέση κλείνει και ανοίγει η ίδια ποσότητα προς την αντίθετη κατεύθυνση.',
+  'confirm.order': '{order}, ποσότητα {quantity}, {symbol}',
+  'confirm.place': 'Υποβολή εντολής',
   'order.partDropped': 'Εκτελέστηκαν {filled} από {quantity}: το υπόλοιπο ακυρώθηκε',
 
   'toast.pinned': 'Καρφιτσώθηκε στα αγαπημένα',

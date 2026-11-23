@@ -67,14 +67,14 @@ const bracket = { side: 'buy', entry: 99, stopLoss: 98, takeProfit: 101, riskRew
 
 describe('ChartWidget: what it says of a confirmed bracket', () => {
   it('says it is confirmed, not placed, when it goes no further than the event', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     FakeChart.last.emit('bracketPlace', bracket);
     expect(toasts()).toEqual(['Long bracket confirmed · 2.00R']);
   });
 
   it('says it is placed once the adapter took it, and not before', () => {
     FakeChart.places = true;
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     FakeChart.last.emit('bracketPlace', bracket);
     expect(toasts()).toEqual([]);
     FakeChart.last.emit('bracketOrder', { order: { id: 'o1' }, bracket });
@@ -83,7 +83,7 @@ describe('ChartWidget: what it says of a confirmed bracket', () => {
 
   it('says a bracket with no quantity was not sent', () => {
     FakeChart.places = true;
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     FakeChart.last.emit('bracketPlace', bracket);
     FakeChart.last.emit('executionError', { message: 'A bracket with no quantity is not sent to the adapter', command: 'bracketPlace', reason: 'noQuantity' });
     expect(toasts()).toEqual(['The bracket has no quantity, so it was not sent to the broker']);
@@ -91,7 +91,7 @@ describe('ChartWidget: what it says of a confirmed bracket', () => {
 
   it('says so when the adapter refused it', () => {
     FakeChart.places = true;
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     FakeChart.last.emit('bracketPlace', { ...bracket, side: 'sell' });
     FakeChart.last.emit('executionError', { message: 'Execution command failed: bracketPlace', cause: new Error('margin'), command: 'bracketPlace' });
     // Another command's failure is not the bracket's.
@@ -102,7 +102,7 @@ describe('ChartWidget: what it says of a confirmed bracket', () => {
 
 describe('ChartWidget: what it says of an order', () => {
   it('says so when the adapter refused it, in the adapter’s words', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     FakeChart.last.emit('executionError', {
       message: 'Execution command failed: orderPlace',
       cause: new Error('The fok order was not filled at once: it is cancelled'),
@@ -112,7 +112,7 @@ describe('ChartWidget: what it says of an order', () => {
   });
 
   it('says it of an order refused with no words of the adapter’s, and nothing of another command’s failure', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     FakeChart.last.emit('executionError', { message: 'Execution command failed: orderModify', command: 'orderModify' });
     FakeChart.last.emit('executionError', { message: 'Execution connect failed' });
     expect(toasts()).toEqual([]);
@@ -121,7 +121,7 @@ describe('ChartWidget: what it says of an order', () => {
   });
 
   it('says an order from the ticket was sent before it says what became of it', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     // An account that fills a part at once, as the order is placed.
     const chart = FakeChart.last as unknown as { placeOrderIntent(intent: unknown): void; getData(): unknown[]; roundPrice(p: number): number };
     chart.getData = () => [{ time: 0, open: 100, high: 100, low: 100, close: 100, volume: 1 }];
@@ -134,7 +134,7 @@ describe('ChartWidget: what it says of an order', () => {
   });
 
   it('shows one toast at a time: a new one takes the place of the one showing', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     widget.toast('first');
     widget.toast('second', 'error');
     expect(toasts()).toEqual(['second']);
@@ -150,7 +150,7 @@ describe('ChartWidget: what it says of an order', () => {
   });
 
   it('says how much filled when the rest of an order was dropped, and nothing of a fill that dropped none', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     FakeChart.last.emit('executionFill', { orderId: 'o1', side: 'buy', price: 100, quantity: 2, time: 1, reason: 'order' });
     FakeChart.last.emit('executionFill', { orderId: 'o2', side: 'buy', price: 100, quantity: 2, time: 1, reason: 'order', remaining: 3 });
     expect(toasts()).toEqual([]);
@@ -164,7 +164,7 @@ describe('ChartWidget: an order asked for past the day’s limits', () => {
   type Trading = { trading: { placeOrderAt(kind: string, price: number): void; allowedToday(price: number): boolean } };
 
   it('is not placed, and the widget says what today’s prices are', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     const chart = FakeChart.last as unknown as { getPriceLimits(): unknown; placeOrderIntent(intent: unknown): void };
     const placed: unknown[] = [];
     chart.placeOrderIntent = (intent) => { placed.push(intent); };
@@ -181,7 +181,7 @@ describe('ChartWidget: an order asked for past the day’s limits', () => {
   });
 
   it('is placed anywhere on a market with no limits for the day', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     const chart = FakeChart.last as unknown as { placeOrderIntent(intent: unknown): void };
     const placed: unknown[] = [];
     chart.placeOrderIntent = (intent) => { placed.push(intent); };
@@ -198,14 +198,14 @@ describe('ChartWidget: the quantity of a bracket it starts', () => {
   };
 
   it('starts at one, in a field on the bar, and the bracket has it', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     widget.startBracket('buy');
     expect(FakeChart.last.started).toEqual([['buy', undefined, { quantity: 1 }]]);
     expect(field().value).toBe('1');
   });
 
   it('starts at the market’s lot, and steps by it', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     FakeChart.last.market = { volumeUnit: 100 };
     widget.startBracket('sell');
     expect(FakeChart.last.started[0][2]).toEqual({ quantity: 100 });
@@ -214,7 +214,7 @@ describe('ChartWidget: the quantity of a bracket it starts', () => {
   });
 
   it('gives the bracket the quantity typed, and starts the next one with it', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     widget.startBracket('buy');
     type('2.5');
     expect(FakeChart.last.sizes).toEqual([{ quantity: 2.5 }]);
@@ -223,21 +223,21 @@ describe('ChartWidget: the quantity of a bracket it starts', () => {
   });
 
   it('leaves the bracket with no quantity while the field has none', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     widget.startBracket('buy');
     type('');
     expect(FakeChart.last.sizes).toEqual([undefined]);
   });
 
   it('starts at the quantity it is asked for', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     widget.startBracket('buy', { quantity: 7 });
     expect(FakeChart.last.started[0][2]).toEqual({ quantity: 7 });
     expect(field().value).toBe('7');
   });
 
   it('has no field for a bracket sized by its risk: the quantity follows its lines', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     widget.startBracket('buy', { risk: 50, quantityStep: 0.1 });
     expect(FakeChart.last.started[0][2]).toEqual({ risk: 50, quantityStep: 0.1 });
     expect(host.querySelector<HTMLElement>('.tcw-bracket-quantity')!.hidden).toBe(true);
@@ -253,7 +253,7 @@ describe('ChartWidget: what it says of a margin call', () => {
   });
 
   it('keeps the figure, its sign and its percent as one thing left to right, for a sentence written the other way', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     FakeChart.last.emit('marginCall', { marginLevel: -0.25, level: 1, equity: -125, marginUsed: 500 });
     expect(toasts()[0]).toMatch(/\u2066-[^\u2069]*%\u2069/);
   });

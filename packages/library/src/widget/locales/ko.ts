@@ -975,6 +975,10 @@ export const KO_MESSAGES: WidgetMessages = {
   'order.sellStop': '스톱 매도 @ {price}',
   'order.refused': '브로커가 주문을 거부했습니다: {reason}',
   'order.noLivePrice': '실시간 가격이 없습니다: 주문을 보내지 않았습니다',
+  'confirm.close': '{side} {quantity} {symbol}을(를) 시장가로 청산할까요?',
+  'confirm.reverse': '{side} {quantity} {symbol}을(를) 시장가로 반전할까요? 청산한 뒤 같은 수량을 반대 방향으로 엽니다.',
+  'confirm.order': '{order}, 수량 {quantity}, {symbol}',
+  'confirm.place': '주문하기',
   'order.partDropped': '{quantity} 중 {filled} 체결: 나머지는 취소되었습니다',
 
   'toast.pinned': '즐겨찾기에 고정했습니다',

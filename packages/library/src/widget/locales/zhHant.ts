@@ -975,6 +975,10 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'order.sellStop': '停損賣出 @ {price}',
   'order.refused': '經紀商拒絕了委託：{reason}',
   'order.noLivePrice': '沒有即時價格：訂單未送出',
+  'confirm.close': '以市價平掉 {side} {quantity} {symbol}？',
+  'confirm.reverse': '以市價反手 {side} {quantity} {symbol}？將平倉並反向開出相同數量。',
+  'confirm.order': '{order}，數量 {quantity}，{symbol}',
+  'confirm.place': '下單',
   'order.partDropped': '已成交 {filled}，共 {quantity}：其餘已撤單',
 
   'toast.pinned': '已固定到我的最愛',

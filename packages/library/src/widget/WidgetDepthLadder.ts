@@ -5,8 +5,10 @@ import { EN_TRANSLATOR, fill, type Translator } from './i18n.js';
 import { markPart } from './widgetFeatures.js';
 
 export interface DepthLadderCallbacks {
-  /** Buy at `price` (clicked an ask cell) or sell at `price` (clicked a bid cell). */
+  /** A limit order at `price`: to buy (a bid's cell, joining the bids there) or to sell (an ask's cell). */
   onTrade: (side: 'buy' | 'sell', price: number) => void;
+  /** The quantity an order placed from a cell is for: its cell says it before the press. Unset, it says none. */
+  quantity?: () => number;
   formatPrice: (price: number) => string;
   /** The market's price step at a price: an order marks the row within half of it. Unset, half the nearest rows' gap. */
   priceStep?: (price: number) => number;
@@ -32,7 +34,7 @@ interface DrawnRow {
 /**
  * Depth-of-market ladder (DOM), a page of the dock: the order book as price
  * rows, asks over bids with the spread between, a bar for each side's size.
- * A press on an ask buys at its price, on a bid sells; the rows where your
+ * A press on a bid places a buy limit at its price, on an ask a sell limit; the rows where your
  * orders wait carry their quantity. Fed by `setData(depth)` and `setOrders`;
  * drawn only while open.
  */
@@ -156,7 +158,7 @@ export class WidgetDepthLadder {
       this.bodyEl.replaceChildren(...this.drawn.map((drawn) => drawn.row));
     }
     const scale = model.maxVolume > 0 ? 100 / model.maxVolume : 0;
-    model.rows.forEach((row, i) => this.fillRow(this.drawn[i], row, scale, this.nearness(row.price, gap)));
+    model.rows.forEach((row, i) => this.fillRow(this.drawn[i], row, scale, this.nearness(row.price, gap), model));
     this.putSpread(model, gap);
     this.placeSpread();
   }
@@ -192,8 +194,8 @@ export class WidgetDepthLadder {
     const figure = document.createElement('span');
     figure.className = 'tcw-ladder-figure';
     cell.appendChild(figure);
-    const bid = this.newCell('sell', price);
-    const ask = this.newCell('buy', price);
+    const bid = this.newCell('buy', price);
+    const ask = this.newCell('sell', price);
     row.append(bid, cell, ask);
     return { price, row, bid, ask, cell, figure };
   }
@@ -201,17 +203,21 @@ export class WidgetDepthLadder {
   private newCell(side: 'buy' | 'sell', price: number): HTMLButtonElement {
     const cell = document.createElement('button');
     cell.type = 'button';
-    cell.className = `tcw-ladder-cell ${side === 'sell' ? 'tcw-ladder-bid' : 'tcw-ladder-ask'}`;
+    cell.className = `tcw-ladder-cell ${side === 'buy' ? 'tcw-ladder-bid' : 'tcw-ladder-ask'}`;
     cell.addEventListener('click', () => this.callbacks.onTrade(side, price));
     return cell;
   }
 
   /** A row's price and sizes, its colour by side, and your orders at its price (a buy before the price, a sell after). */
-  private fillRow(drawn: DrawnRow, row: LadderRow, scale: number, tolerance: number): void {
+  private fillRow(drawn: DrawnRow, row: LadderRow, scale: number, tolerance: number, book: Pick<LadderModel, 'bestBid' | 'bestAsk'>): void {
     drawn.cell.className = `tcw-ladder-price ${row.askVolume > 0 ? 'tcw-ask' : 'tcw-bid'}`;
     drawn.figure.textContent = this.callbacks.formatPrice(row.price);
-    this.fillCell(drawn.bid, 'sell', row.bidVolume, row.price, scale);
-    this.fillCell(drawn.ask, 'buy', row.askVolume, row.price, scale);
+    // A limit that rests: in a book that is crossed or locked, a bid at or over the best ask (an ask at or
+    // under the best bid) would trade at once, which no cell of a ladder is for. It shows its size and takes no press.
+    const buyRests = book.bestAsk === null || row.price < book.bestAsk;
+    const sellRests = book.bestBid === null || row.price > book.bestBid;
+    this.fillCell(drawn.bid, 'buy', row.bidVolume, row.price, scale, buyRests);
+    this.fillCell(drawn.ask, 'sell', row.askVolume, row.price, scale, sellRests);
     for (const old of drawn.cell.querySelectorAll('.tcw-ladder-own')) old.remove();
     for (const side of ['buy', 'sell'] as const) {
       const quantity = this.orders
@@ -232,7 +238,7 @@ export class WidgetDepthLadder {
   }
 
   /** A side's size at a price, a bar as long as its share of the largest; named by the size it shows, then what a press does. */
-  private fillCell(cell: HTMLButtonElement, side: 'buy' | 'sell', volume: number, price: number, scale: number): void {
+  private fillCell(cell: HTMLButtonElement, side: 'buy' | 'sell', volume: number, price: number, scale: number, rests = true): void {
     if (!(volume > 0)) {
       cell.disabled = true;
       cell.textContent = '';
@@ -241,11 +247,19 @@ export class WidgetDepthLadder {
       cell.style.removeProperty('--w');
       return;
     }
-    cell.disabled = false;
     const size = formatSize(volume);
     cell.textContent = size;
     cell.style.setProperty('--w', `${(volume * scale).toFixed(1)}%`);
-    const action = fill(this.t(side === 'sell' ? 'ladder.sellAt' : 'ladder.buyAt'), { price: this.callbacks.formatPrice(price) });
+    cell.disabled = !rests;
+    if (!rests) {
+      cell.setAttribute('aria-label', size);
+      cell.title = '';
+      return;
+    }
+    // What a press places, before it is pressed: the side, the kind of order, the price, the quantity.
+    const order = fill(this.t(side === 'buy' ? 'order.buyLimit' : 'order.sellLimit'), { price: this.callbacks.formatPrice(price) });
+    const quantity = this.callbacks.quantity?.();
+    const action = quantity === undefined ? order : `${order} · ${this.t('account.quantity')} ${quantity}`;
     cell.setAttribute('aria-label', `${size}, ${action}`);
     cell.title = action;
   }

@@ -138,6 +138,17 @@ chart.startBracket('buy', undefined, { risk: 50 })   // khối lượng sẽ l�
   lại như thường.
 </p>
 
+<h3 id="confirmations">Giao dịch một lần nhấn được hỏi xác nhận, và bid trên ladder là giá mua</h3>
+<p>
+  <code>ChartWidget</code> giờ hỏi trước khi đóng hoặc đảo chiều một position (panel tài khoản, các nút trên chart) và
+  trước khi đặt order từ menu chuột phải hay depth ladder: trước đây chúng được gửi đi chỉ bằng một lần nhấn.
+  <code>confirmOrders: false</code> giữ cách một lần nhấn. Trên depth ladder, nhấn vào một bid giờ đặt
+  <strong>buy</strong> limit tại giá đó, và nhấn vào một ask đặt <strong>sell</strong> limit, trong khi trước đây là
+  bán vào bid và mua ở ask: <code>orderPlace</code> từ cùng một ô giờ mang side ngược lại so với trước. Test hay script
+  nào nhấn các ô đó, hoặc chờ một order ngay lập tức, cần nhấn nút của hộp xác nhận
+  (<code>.tcw-confirm .tcw-done-btn</code>) hoặc dùng option trên.
+</p>
+
 <h2 id="types">Các type được mở rộng</h2>
 <p>
   <code>TimeInForce</code> nay là <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. Code xử lý mọi giá trị

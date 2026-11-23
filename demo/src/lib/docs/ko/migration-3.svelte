@@ -130,6 +130,16 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 손절가에서 50을 �
   연결된 피드를 조용하다고 판단하지 않습니다. 끊긴 피드는 그래도 주문을 보류합니다.
 </p>
 
+<h3 id="confirmations">한 번 눌러 하는 거래는 확인을 거치고, 호가창의 매수 호가는 사는 가격입니다</h3>
+<p>
+  <code>ChartWidget</code>은 이제 포지션을 청산하거나 반전하기 전(계좌 패널, 차트 위의 버튼)과 우클릭 메뉴나 호가창에서
+  주문을 내기 전에 먼저 묻습니다. 예전에는 한 번 누르면 나갔습니다. <code>confirmOrders: false</code>는 한 번 누르는
+  방식을 유지합니다. 호가창에서 매수 호가를 누르면 이제 그 가격에 <strong>매수</strong> 지정가가, 매도 호가를 누르면
+  <strong>매도</strong> 지정가가 나갑니다. 예전에는 매수 호가에 팔고 매도 호가에 샀습니다. 같은 칸에서 나오는
+  <code>orderPlace</code>의 방향이 예전과 반대입니다. 그 칸을 누르거나 주문이 바로 나가기를 기대하던 테스트나 스크립트는
+  확인 대화상자의 버튼(<code>.tcw-confirm .tcw-done-btn</code>)을 누르거나 이 옵션을 사용해야 합니다.
+</p>
+
 <h2 id="types">넓어진 타입</h2>
 <p>
   <code>TimeInForce</code>는 이제 <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>입니다. 모든 멤버를 처리하는 코드(default가

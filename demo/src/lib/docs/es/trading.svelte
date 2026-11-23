@@ -361,6 +361,20 @@ chart.setPositions([
 <pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, feedQuietAfter: 30 })   // seconds; 0: never
 chart.getFeedTime()   // when the stream last told anything, ms; null before it has`}</code></pre>
 
+<h3 id="confirmations">Confirmaciones</h3>
+<p>
+  En <code>ChartWidget</code>, una operación que se haría con una sola pulsación se confirma antes: cerrar o invertir
+  una posición (su fila en el panel de cuenta, sus botones en el gráfico), y una orden del menú del botón derecho o de
+  la escalera de profundidad. El diálogo dice la operación completa (el lado, la cantidad, el precio, el símbolo);
+  Enter la hace, Escape la deja sin hacer. <code>confirmOrders: false</code> es la operativa de un clic, para un
+  bróker cuyos traders la piden. El ticket de orden no se pregunta dos veces: su botón de enviar es la confirmación.
+  En la escalera de profundidad, pulsar una celda de bid coloca una orden limitada de compra a ese precio, junto a
+  los bids que hay allí, y pulsar una celda de ask, una limitada de venta; cada celda lo dice, con la cantidad, antes
+  de pulsarla.
+</p>
+<pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, confirmOrders: false })   // one-click trading
+chart.setPositionGuard((action, positionId, send) => ask(action, positionId).then((yes) => yes && send()))   // your own, on a headless Chart`}</code></pre>
+
 <h2>Actuar sobre órdenes y posiciones desde el gráfico</h2>
 <p>
   Las líneas de órdenes y de posiciones llevan pequeños botones en su extremo

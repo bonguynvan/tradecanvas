@@ -138,6 +138,17 @@ chart.startBracket('buy', undefined, { risk: 50 })   // the quantity that loses 
   that is not connected holds orders back all the same.
 </p>
 
+<h3 id="confirmations">One-press trades are confirmed, and a bid on the ladder is bought at</h3>
+<p>
+  <code>ChartWidget</code> now asks before a position is closed or reversed (the account panel, the buttons on the
+  chart) and before an order from the right-click menu or the depth ladder is placed: they went out in one press.
+  <code>confirmOrders: false</code> keeps one press. On the depth ladder a press on a bid now places a
+  <strong>buy</strong> limit at that price, and a press on an ask a <strong>sell</strong> limit, where a bid was sold
+  into and an ask bought: <code>orderPlace</code> carries the other side from the same cell than it did. A test or a
+  script that pressed those cells, or expected an order at once, needs the confirmation's button
+  (<code>.tcw-confirm .tcw-done-btn</code>) or the option.
+</p>
+
 <h2 id="types">Types that grew</h2>
 <p>
   <code>TimeInForce</code> is now <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. Code that handles every

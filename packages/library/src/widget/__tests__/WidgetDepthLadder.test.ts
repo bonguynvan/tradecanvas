@@ -37,14 +37,34 @@ describe('WidgetDepthLadder', () => {
     expect(rows[2].textContent).toBe('Spread 2.00');
   });
 
-  it('sells at a bid and buys at an ask, saying which on each', () => {
+  // A press on the green Bid column sold into the bid: the word for it was in the cell's label alone.
+  it('places a buy limit at a bid and a sell limit at an ask, saying which on each before the press', () => {
     const bid = host.querySelector<HTMLButtonElement>('.tcw-ladder-bid:not(:disabled)')!;
     const ask = host.querySelector<HTMLButtonElement>('.tcw-ladder-ask:not(:disabled)')!;
     // The size it shows first, then what a press does.
-    expect(bid.getAttribute('aria-label')).toBe('2, Sell @ 99.00');
+    expect(bid.getAttribute('aria-label')).toBe('2, Buy limit @ 99.00');
+    expect(bid.title).toBe('Buy limit @ 99.00');
+    expect(ask.title).toBe('Sell limit @ 102.00');
     bid.click();
     ask.click();
-    expect(onTrade.mock.calls).toEqual([['sell', 99], ['buy', 102]]);
+    expect(onTrade.mock.calls).toEqual([['buy', 99], ['sell', 102]]);
+  });
+
+  it('takes no press on a cell whose limit would trade at once: a book that is crossed', () => {
+    // A bid at 101 over an ask at 100.
+    ladder.setData({ bids: [{ price: 101, volume: 2 }, { price: 99, volume: 1 }], asks: [{ price: 100, volume: 3 }, { price: 102, volume: 1 }] });
+    const cells = [...host.querySelectorAll<HTMLButtonElement>('.tcw-ladder-row')].map((row) => [
+      row.querySelector('.tcw-ladder-figure')!.textContent,
+      row.querySelector<HTMLButtonElement>('.tcw-ladder-bid')!.disabled,
+      row.querySelector<HTMLButtonElement>('.tcw-ladder-ask')!.disabled,
+    ]);
+    const at = (price: string) => cells.find(([p]) => p === price)!;
+    // The bid at 101 is over the best ask; the ask at 100 is under the best bid: neither takes a press.
+    expect(at('101.00')[1]).toBe(true);
+    expect(at('100.00')[2]).toBe(true);
+    // Those that rest still do.
+    expect(at('99.00')[1]).toBe(false);
+    expect(at('102.00')[2]).toBe(false);
   });
 
   it('writes sizes short and in the mono figures: thousands as k', () => {

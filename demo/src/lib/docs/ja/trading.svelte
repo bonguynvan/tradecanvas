@@ -341,6 +341,19 @@ chart.setPositions([
 <pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, feedQuietAfter: 30 })   // seconds; 0: never
 chart.getFeedTime()   // when the stream last told anything, ms; null before it has`}</code></pre>
 
+<h3 id="confirmations">確認</h3>
+<p>
+  <code>ChartWidget</code> では、ワンクリックで成立する取引は先に確認されます。ポジションの決済やドテン
+  （口座パネルの行、チャート上のボタン）、右クリックメニューや板情報からの注文です。ダイアログには取引の内容
+  （売買の別、数量、価格、銘柄）がすべて表示されます。Enter で実行し、Escape で取りやめます。
+  <code>confirmOrders: false</code> はワンクリック取引で、トレーダーがそれを求めるブローカー向けです。
+  注文チケットは二重に確認されません。その発注ボタンが確認だからです。板情報では、買い気配のセルを押すとその価格に
+  買い指値が出され、そこにある買い注文に並びます。売り気配のセルを押すと売り指値が出されます。各セルは押す前に、
+  数量とともにそのことを示します。
+</p>
+<pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, confirmOrders: false })   // one-click trading
+chart.setPositionGuard((action, positionId, send) => ask(action, positionId).then((yes) => yes && send()))   // your own, on a headless Chart`}</code></pre>
+
 <h2>チャート上で注文とポジションを操作する</h2>
 <p>
   注文とポジションのラインの右端には小さなボタンがあります。<strong>×</strong> は注文をキャンセルするか

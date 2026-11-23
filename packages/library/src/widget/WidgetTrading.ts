@@ -5,7 +5,7 @@ import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
 import type { WidgetQuoteButtons } from './WidgetQuoteButtons.js';
 import type { DepthData, ExecutionErrorPayload, FillEvent } from '@tradecanvas/commons';
-import { stepDecimals } from '@tradecanvas/commons';
+import { stepDecimals, tickerOf } from '@tradecanvas/commons';
 import { fill, type MessageKey } from './i18n.js';
 import { positionLevels, type BracketSize } from '@tradecanvas/core';
 import type { ChartWidget } from './ChartWidget.js';
@@ -32,6 +32,8 @@ export interface TradingHost {
   readonly featureState: ChartWidget['featureState'];
   formatAlertPrice: ChartWidget['formatAlertPrice'];
   say: ChartWidget['say'];
+  /** Ask before something that cannot be taken back; with confirmations off (`confirmOrders: false`) it is done at once. */
+  confirm: ChartWidget['confirmTrade'];
   readonly state: ChartWidget['state'];
   readonly t: ChartWidget['t'];
 }
@@ -212,9 +214,39 @@ export class WidgetTrading {
 
   /** A limit order from a rung of the depth ladder, for the market's lot. Past the day's limits it is not asked for. */
   placeLadderOrder(side: 'buy' | 'sell', price: number): void {
-    if (!this.feedUp() || !this.allowedToday(price)) return;
-    this.host.chart.placeOrderIntent({ side, type: 'limit', price, quantity: this.quickQuantity() });
-    this.host.say(fill(this.host.t(side === 'buy' ? 'order.buyLimit' : 'order.sellLimit'), { price: this.host.formatAlertPrice(price) }));
+    this.placeOrderAt(side === 'buy' ? 'buyLimit' : 'sellLimit', price);
+  }
+
+  /** The quantity an order asked for in one press is for: what the ladder's cells say before the press. */
+  oneTouchQuantity(): number {
+    return this.quickQuantity();
+  }
+
+  /** Close a position at the market, once it is confirmed: from its row in the account panel, or its button on the chart. */
+  closePosition(positionId: string, send: () => void = () => this.host.chart.closePositionIntent(positionId)): void {
+    const text = this.positionText('confirm.close', positionId);
+    // Gone since its button was drawn: there is nothing to ask about.
+    if (text === null) return;
+    this.host.confirm({ title: this.host.t('account.closePosition'), text, confirmLabel: this.host.t('account.closePosition'), about: 'position' }, send);
+  }
+
+  /** Reverse a position at the market, once it is confirmed. */
+  reversePosition(positionId: string, send: () => void = () => this.host.chart.reversePositionIntent(positionId)): void {
+    const text = this.positionText('confirm.reverse', positionId);
+    if (text === null) return;
+    this.host.confirm({ title: this.host.t('account.reverse'), text, confirmLabel: this.host.t('account.reverse'), about: 'position' }, send);
+  }
+
+  /** What is about to be done to a position, in full: its side, what is open of it and its symbol. Null for one the account no longer holds. */
+  private positionText(key: 'confirm.close' | 'confirm.reverse', positionId: string): string | null {
+    const position = this.host.chart.getPositions().find((p) => p.id === positionId);
+    if (!position) return null;
+    const symbol = position.symbol ?? this.host.state.symbol;
+    return fill(this.host.t(key), {
+      side: this.host.t(position.side === 'buy' ? 'account.long' : 'account.short'),
+      quantity: String(position.quantity - (position.closedQuantity ?? 0)),
+      symbol: symbol ? tickerOf(symbol) : '',
+    }).replace(/\s+/g, ' ').trim();
   }
 
   /** The activity log, read from the chart only when something was logged since the last read. */
@@ -245,8 +277,18 @@ export class WidgetTrading {
     const side = kind.startsWith('buy') ? 'buy' : 'sell';
     const stop = kind.endsWith('Stop');
     const quantity = this.quickQuantity();
-    this.host.chart.placeOrderIntent(stop ? { side, type: 'stop', price, stopPrice: price, quantity } : { side, type: 'limit', price, quantity });
-    this.host.say(fill(this.host.t(`order.${kind}` as MessageKey), { price: this.host.formatAlertPrice(price) }));
+    const order = fill(this.host.t(`order.${kind}` as MessageKey), { price: this.host.formatAlertPrice(price) });
+    const symbol = this.host.state.symbol;
+    this.host.confirm({
+      title: this.host.t('confirm.place'),
+      text: fill(this.host.t('confirm.order'), { order, quantity: String(quantity), symbol: symbol ? tickerOf(symbol) : '' }).replace(/\s+/g, ' ').trim(),
+      confirmLabel: this.host.t('confirm.place'),
+    }, () => {
+      // Asked a moment ago: the feed may have gone since, and the price was this symbol's.
+      if (this.host.state.symbol !== symbol || !this.feedUp()) return;
+      this.host.chart.placeOrderIntent(stop ? { side, type: 'stop', price, stopPrice: price, quantity } : { side, type: 'limit', price, quantity });
+      this.host.say(order);
+    });
   }
 
   /** The depth ladder, a page of the dock: open or shut it (the Trade menu's entry). */

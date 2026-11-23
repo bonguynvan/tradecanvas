@@ -975,6 +975,10 @@ export const SK_MESSAGES: WidgetMessages = {
   'order.sellStop': 'Stop predaj @ {price}',
   'order.refused': 'Broker pokyn odmietol: {reason}',
   'order.noLivePrice': 'Žiadna živá cena: príkaz nebol odoslaný',
+  'confirm.close': 'Uzavrieť {side} {quantity} {symbol} za trhovú cenu?',
+  'confirm.reverse': 'Obrátiť {side} {quantity} {symbol} za trhovú cenu? Pozícia sa uzavrie a v rovnakom množstve otvorí opačným smerom.',
+  'confirm.order': '{order}, množstvo {quantity}, {symbol}',
+  'confirm.place': 'Zadať príkaz',
   'order.partDropped': 'Vyplnené {filled} z {quantity}: zvyšok bol zrušený',
 
   'toast.pinned': 'Pripnuté k obľúbeným',

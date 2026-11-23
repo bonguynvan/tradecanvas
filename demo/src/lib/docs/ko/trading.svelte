@@ -348,6 +348,18 @@ chart.setPositions([
 <pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, feedQuietAfter: 30 })   // seconds; 0: never
 chart.getFeedTime()   // when the stream last told anything, ms; null before it has`}</code></pre>
 
+<h3 id="confirmations">확인</h3>
+<p>
+  <code>ChartWidget</code>에서는 한 번 눌러 이루어지는 거래를 먼저 확인합니다. 포지션 청산이나 반전(계좌 패널의 행,
+  차트 위의 버튼), 그리고 우클릭 메뉴나 호가창에서 내는 주문입니다. 대화상자는 거래 내용을 모두(방향, 수량, 가격,
+  종목) 알려 줍니다. Enter로 실행하고 Escape로 그만둡니다. <code>confirmOrders: false</code>는 원클릭 거래로,
+  트레이더가 그것을 원하는 브로커를 위한 것입니다. 주문 티켓은 두 번 묻지 않습니다. 티켓의 주문 버튼이 곧 확인이기
+  때문입니다. 호가창에서 매수 호가 칸을 누르면 그 가격에 매수 지정가 주문이 나가 그곳의 매수 주문과 함께 놓이고,
+  매도 호가 칸을 누르면 매도 지정가 주문이 나갑니다. 각 칸은 누르기 전에 수량과 함께 그 내용을 알려 줍니다.
+</p>
+<pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, confirmOrders: false })   // one-click trading
+chart.setPositionGuard((action, positionId, send) => ask(action, positionId).then((yes) => yes && send()))   // your own, on a headless Chart`}</code></pre>
+
 <h2>차트에서 주문과 포지션 다루기</h2>
 <p>
   주문선과 포지션선의 오른쪽 끝에는 작은 버튼이 있습니다. <strong>×</strong>는 주문을

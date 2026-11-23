@@ -50,13 +50,16 @@ class FakeChart {
   /** What the widget asks the chart to ask before a bracket or a draft is sent. */
   gate: (() => boolean) | null = null;
   setOrderGate(gate: (() => boolean) | null): void { this.gate = gate; }
+  /** What the widget asks the chart to ask before a button on the chart closes or reverses a position. */
+  guard: ((action: string, id: string, send: () => void) => void) | null = null;
+  setPositionGuard(guard: (action: string, id: string, send: () => void) => void): void { this.guard = guard; }
   /** The symbols said for bars set by hand, and how often the fills were forgotten. */
   said: string[] = [];
   cleared = 0;
   setSymbol(symbol: string): void { this.said.push(symbol); }
   getSymbol(): string { return this.said.at(-1) ?? ''; }
   clearFills(): void { this.cleared += 1; }
-  getPositions(): unknown[] { return []; }
+  getPositions: () => unknown[] = () => [];
   getFills(): unknown[] { return []; }
   getRequiredSymbols(): string[] { return []; }
   getTradingTime(): number { return Date.UTC(2026, 10, 23); }
@@ -100,7 +103,7 @@ const problems = () => host.querySelector('.tcw-ticket-problems')?.textContent ?
 // A right-click "Buy limit" went out for one share on a market that trades in hundreds.
 describe('ChartWidget: the quantity of an order asked for in one press', () => {
   it('is the market’s lot, from the chart’s menu and from the depth ladder', () => {
-    widget = new ChartWidget(host, { symbol: 'VNM', trading: true });
+    widget = new ChartWidget(host, { symbol: 'VNM', trading: true, confirmOrders: false });
     FakeChart.last.market = { volumeUnit: 100 };
     trading().placeOrderAt('buyLimit', 95);
     trading().placeOrderAt('sellStop', 90);
@@ -111,7 +114,7 @@ describe('ChartWidget: the quantity of an order asked for in one press', () => {
   });
 
   it('is one on a market with no lot', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     trading().placeOrderAt('buyLimit', 95);
     trading().placeLadderOrder('buy', 94);
     expect(FakeChart.last.placed.map((order) => order.quantity)).toEqual([1, 1]);
@@ -120,7 +123,7 @@ describe('ChartWidget: the quantity of an order asked for in one press', () => {
 
 describe('ChartWidget: the price the order ticket trades at', () => {
   it('is the ask for a Buy and the bid for a Sell where the feed gives both, and follows them', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     FakeChart.last.quote = { bid: 99.5, ask: 100.5 };
     trading().openOrderTicket();
     expect(market()).toContain('100.50');
@@ -133,7 +136,7 @@ describe('ChartWidget: the price the order ticket trades at', () => {
   });
 
   it('is the last price with one side only, and on a replay', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     FakeChart.last.quote = { bid: 99.5 };
     trading().openOrderTicket(undefined, { side: 'sell' });
     expect(market()).toContain('100.00');
@@ -147,7 +150,7 @@ describe('ChartWidget: the price the order ticket trades at', () => {
 
 describe('ChartWidget: an order from the ticket, with a broker connected', () => {
   beforeEach(() => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     FakeChart.last.broker = {};
     trading().openOrderTicket();
   });
@@ -186,7 +189,7 @@ describe('ChartWidget: an order from the ticket, with a broker connected', () =>
 
 describe('ChartWidget: an order with nothing to wait for', () => {
   it('shuts the ticket as it places and says it is sent, with no broker connected', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     trading().openOrderTicket();
     place().click();
     expect(FakeChart.last.placed).toHaveLength(1);
@@ -196,7 +199,7 @@ describe('ChartWidget: an order with nothing to wait for', () => {
 
   it('says the refusal of an order asked for in one press as a note, which stays long enough to be read', () => {
     vi.useFakeTimers();
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     FakeChart.last.broker = {};
     trading().placeOrderAt('buyLimit', 95);
     FakeChart.last.emit('executionError', { message: 'Execution command failed: orderPlace', cause: new Error('Market closed'), command: 'orderPlace', clientOrderId: 'c1' });
@@ -216,7 +219,7 @@ describe('ChartWidget: the depth ladder marks the orders of the symbol whose boo
   const UNNAMED = { id: 'o3', side: 'buy', type: 'limit', price: 94, quantity: 1 };
 
   it('gives it only those, and again when the chart shows another symbol', () => {
-    widget = new ChartWidget(host, { symbol: 'ETHUSDT', trading: true, depthLadder: true });
+    widget = new ChartWidget(host, { symbol: 'ETHUSDT', trading: true, depthLadder: true, confirmOrders: false });
     const chart = FakeChart.last as FakeChart & { getSymbol(): string };
     let shown = 'ETHUSDT';
     chart.getSymbol = () => shown;
@@ -234,19 +237,19 @@ describe('ChartWidget: the depth ladder marks the orders of the symbol whose boo
 // With the host's own bars no stream told the chart its symbol: it drew every symbol's positions on each.
 describe('ChartWidget: the bars are the host’s', () => {
   it('tells the chart which symbol they are of, as it starts and as another is picked', async () => {
-    widget = new ChartWidget(host, { symbol: 'BTCUSDT', trading: true });
+    widget = new ChartWidget(host, { symbol: 'BTCUSDT', trading: true, confirmOrders: false });
     expect(FakeChart.last.said).toEqual(['BTCUSDT']);
     await widget.setSymbol('ETHUSDT');
     expect(FakeChart.last.said).toEqual(['BTCUSDT', 'ETHUSDT']);
   });
 
   it('says none for the symbol it falls back on: the bars may not be its', () => {
-    widget = new ChartWidget(host, { trading: true });
+    widget = new ChartWidget(host, { trading: true, confirmOrders: false });
     expect(FakeChart.last.said).toEqual([]);
   });
 
   it('forgets the fills that came while the chart knew no symbol, as the first is picked: they name none, and would be marked on every one', async () => {
-    widget = new ChartWidget(host, { trading: true });
+    widget = new ChartWidget(host, { trading: true, confirmOrders: false });
     await widget.setSymbol('ETHUSDT');
     expect(FakeChart.last.cleared).toBe(1);
     expect(FakeChart.last.said).toEqual(['ETHUSDT']);
@@ -255,7 +258,7 @@ describe('ChartWidget: the bars are the host’s', () => {
   });
 
   it('keeps the account’s fills when another symbol is picked: the chart marks those of the one it shows', async () => {
-    widget = new ChartWidget(host, { symbol: 'BTCUSDT', trading: true });
+    widget = new ChartWidget(host, { symbol: 'BTCUSDT', trading: true, confirmOrders: false });
     await widget.setSymbol('ETHUSDT');
     expect(FakeChart.last.cleared).toBe(0);
   });
@@ -267,7 +270,7 @@ describe('ChartWidget: a price that is no longer live', () => {
   const status = () => host.querySelector('.tcw-status-indicator')?.textContent ?? '';
 
   it('holds back an order asked for in one press while the feed is down, and says why', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     trading().setFeed('down');
     trading().placeOrderAt('buyLimit', 95);
     trading().placeLadderOrder('sell', 105);
@@ -279,14 +282,14 @@ describe('ChartWidget: a price that is no longer live', () => {
   });
 
   it('lets one through on a feed that is only quiet: its price is the trader’s own, and a market after hours is quiet', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     trading().setFeed('quiet');
     trading().placeOrderAt('buyLimit', 95);
     expect(FakeChart.last.placed).toHaveLength(1);
   });
 
   it('asks the chart to hold back a bracket or a draft confirmed while the feed is down', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     const gate = FakeChart.last.gate!;
     expect(gate()).toBe(true);
     trading().setFeed('quiet');
@@ -296,7 +299,7 @@ describe('ChartWidget: a price that is no longer live', () => {
   });
 
   it.each(['quiet', 'down'] as const)('sends no market order from the ticket on a %s feed, and says so', (health) => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     trading().openOrderTicket();
     expect(place().disabled).toBe(false);
     trading().setFeed(health);
@@ -308,7 +311,7 @@ describe('ChartWidget: a price that is no longer live', () => {
   });
 
   it('opens the ticket knowing the price is not live', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     trading().setFeed('quiet');
     trading().openOrderTicket();
     expect(place().disabled).toBe(true);
@@ -317,7 +320,7 @@ describe('ChartWidget: a price that is no longer live', () => {
   it('follows the feed: quiet when it tells nothing, down when it is not connected, and says so in place of Live', () => {
     vi.useFakeTimers();
     vi.setSystemTime(Date.UTC(2026, 10, 23, 10));
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     const feed = widget as unknown as Feed;
     const chart = FakeChart.last as FakeChart & { getFeedTime(): number | null };
     feed.adapter = {};
@@ -348,9 +351,129 @@ describe('ChartWidget: a price that is no longer live', () => {
   });
 
   it('judges no feed where the bars are the host’s own', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
     (widget as unknown as Feed).checkFeed();
     trading().placeOrderAt('buyLimit', 95);
     expect(FakeChart.last.placed).toHaveLength(1);
+  });
+});
+
+// A right-click "Buy limit", a ladder cell and the panel's Close each traded in one press, with nothing asked.
+describe('ChartWidget: a trade that one press would make is confirmed first', () => {
+  const dialog = () => host.querySelector<HTMLElement>('.tcw-confirm')?.closest<HTMLElement>('.tcw-modal-backdrop') ?? null;
+  const asked = () => dialog() !== null && !dialog()!.hidden;
+  const words = () => host.querySelector('.tcw-confirm-text')?.textContent ?? '';
+  const yes = () => host.querySelector<HTMLButtonElement>('.tcw-confirm .tcw-done-btn')!;
+  const no = () => host.querySelector<HTMLButtonElement>('.tcw-confirm .tcw-footer-cancel')!;
+  type Closes = { trading: { closePosition(id: string): void; reversePosition(id: string): void } };
+
+  it('asks before an order from the menu or the ladder, saying it in full, and places it once on a yes', () => {
+    widget = new ChartWidget(host, { symbol: 'VNM', trading: true });
+    FakeChart.last.market = { volumeUnit: 100 };
+    trading().placeOrderAt('buyLimit', 95);
+    expect(FakeChart.last.placed).toEqual([]);
+    expect(asked()).toBe(true);
+    expect(words()).toBe('Buy limit @ 95.00, quantity 100, VNM');
+    expect(document.activeElement).toBe(yes());
+    yes().click();
+    yes().click();
+    expect(asked()).toBe(false);
+    expect(FakeChart.last.placed.map((o) => [o.side, o.type, o.price, o.quantity])).toEqual([['buy', 'limit', 95, 100]]);
+    trading().placeLadderOrder('sell', 105);
+    expect(words()).toBe('Sell limit @ 105.00, quantity 100, VNM');
+  });
+
+  it('places nothing on a no, on Escape, or when another is asked for in its place', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    trading().placeOrderAt('buyLimit', 95);
+    no().click();
+    expect(asked()).toBe(false);
+    trading().placeOrderAt('sellStop', 90);
+    host.querySelector('.tcw-confirm')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(asked()).toBe(false);
+    trading().placeOrderAt('buyLimit', 95);
+    trading().placeOrderAt('buyLimit', 96);
+    yes().click();
+    expect(FakeChart.last.placed.map((o) => o.price)).toEqual([96]);
+  });
+
+  it('asks before a position is closed or reversed, naming its side, what is open of it and its symbol', () => {
+    widget = new ChartWidget(host, { symbol: 'ETHUSDT', trading: true });
+    const chart = FakeChart.last as FakeChart & { closePositionIntent(id: string): void; reversePositionIntent(id: string): void };
+    const closed: string[] = [];
+    const reversed: string[] = [];
+    chart.closePositionIntent = (id) => { closed.push(id); };
+    chart.reversePositionIntent = (id) => { reversed.push(id); };
+    chart.getPositions = () => [{ id: 'p1', side: 'buy', entryPrice: 100, quantity: 3, closedQuantity: 1, symbol: 'BINANCE:BTCUSDT' }];
+    const closes = (widget as unknown as Closes).trading;
+    closes.closePosition('p1');
+    expect(closed).toEqual([]);
+    expect(words()).toBe('Close Long 2 BTCUSDT at the market?');
+    yes().click();
+    expect(closed).toEqual(['p1']);
+    closes.reversePosition('p1');
+    expect(words()).toContain('Reverse Long 2 BTCUSDT at the market?');
+    no().click();
+    expect(reversed).toEqual([]);
+  });
+
+  it('confirms a press on a position’s button on the chart the same way, and sends it on a yes', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    const sent: string[] = [];
+    FakeChart.last.getPositions = () => [{ id: 'p1', side: 'sell', entryPrice: 100, quantity: 1 }];
+    FakeChart.last.guard!('positionClose', 'p1', () => sent.push('close'));
+    expect(asked()).toBe(true);
+    expect(sent).toEqual([]);
+    yes().click();
+    expect(sent).toEqual(['close']);
+  });
+
+  it('puts the question aside when what it said is no longer so: another symbol, or the positions changed under a close', async () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    trading().placeOrderAt('buyLimit', 95);
+    await widget.setSymbol('BBB');
+    expect(asked()).toBe(false);
+    expect(FakeChart.last.placed).toEqual([]);
+    FakeChart.last.getPositions = () => [{ id: 'p1', side: 'buy', entryPrice: 100, quantity: 3 }];
+    (widget as unknown as Closes).trading.closePosition('p1');
+    expect(asked()).toBe(true);
+    FakeChart.last.emit('positionsChange', {});
+    expect(asked()).toBe(false);
+    // An order's question does not go with the positions.
+    trading().placeOrderAt('buyLimit', 95);
+    FakeChart.last.emit('positionsChange', {});
+    expect(asked()).toBe(true);
+    FakeChart.last.emit('executionChange', {});
+    expect(asked()).toBe(false);
+  });
+
+  it('asks nothing about a position the account no longer holds', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    (widget as unknown as Closes).trading.closePosition('gone');
+    expect(asked()).toBe(false);
+  });
+
+  it('takes no answer from a key still held from the press that asked', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    trading().placeOrderAt('buyLimit', 95);
+    const held = new KeyboardEvent('keydown', { key: 'Enter', repeat: true, bubbles: true, cancelable: true });
+    yes().dispatchEvent(held);
+    expect(held.defaultPrevented).toBe(true);
+    expect(asked()).toBe(true);
+  });
+
+  it('asks nothing with confirmations off: one-click trading', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, confirmOrders: false });
+    trading().placeOrderAt('buyLimit', 95);
+    expect(asked()).toBe(false);
+    expect(FakeChart.last.placed).toHaveLength(1);
+  });
+
+  it('places nothing when the feed went down while it asked', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    trading().placeOrderAt('buyLimit', 95);
+    trading().setFeed('down');
+    yes().click();
+    expect(FakeChart.last.placed).toEqual([]);
   });
 });

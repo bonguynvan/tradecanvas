@@ -975,6 +975,10 @@ export const RO_MESSAGES: WidgetMessages = {
   'order.sellStop': 'Vânzare stop @ {price}',
   'order.refused': 'Brokerul a respins ordinul: {reason}',
   'order.noLivePrice': 'Fără preț în timp real: ordinul nu a fost trimis',
+  'confirm.close': 'Închideți {side} {quantity} {symbol} la piață?',
+  'confirm.reverse': 'Inversați {side} {quantity} {symbol} la piață? Poziția se închide și se deschide aceeași cantitate în sens opus.',
+  'confirm.order': '{order}, cantitate {quantity}, {symbol}',
+  'confirm.place': 'Plasează ordinul',
   'order.partDropped': 'Executat {filled} din {quantity}: restul a fost anulat',
 
   'toast.pinned': 'Fixat la favorite',

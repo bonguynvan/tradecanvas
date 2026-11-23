@@ -988,6 +988,10 @@ export const EN_MESSAGES = {
   'order.sellStop': 'Sell stop @ {price}',
   'order.refused': 'The broker refused the order: {reason}',
   'order.noLivePrice': 'No live price: the order was not sent',
+  'confirm.close': 'Close {side} {quantity} {symbol} at the market?',
+  'confirm.reverse': 'Reverse {side} {quantity} {symbol} at the market? It closes, and opens the same quantity the other way.',
+  'confirm.order': '{order}, quantity {quantity}, {symbol}',
+  'confirm.place': 'Place order',
   'order.partDropped': 'Filled {filled} of {quantity}: the rest was cancelled',
 
   // Toasts

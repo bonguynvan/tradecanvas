@@ -975,6 +975,10 @@ export const SV_MESSAGES: WidgetMessages = {
   'order.sellStop': 'Säljstopp @ {price}',
   'order.refused': 'Mäklaren avvisade ordern: {reason}',
   'order.noLivePrice': 'Inget livepris: ordern skickades inte',
+  'confirm.close': 'Stäng {side} {quantity} {symbol} till marknadspris?',
+  'confirm.reverse': 'Vänd {side} {quantity} {symbol} till marknadspris? Positionen stängs och samma antal öppnas åt andra hållet.',
+  'confirm.order': '{order}, antal {quantity}, {symbol}',
+  'confirm.place': 'Lägg order',
   'order.partDropped': 'Utfört {filled} av {quantity}: resten annullerades',
 
   'toast.pinned': 'Fäst bland favoriter',
