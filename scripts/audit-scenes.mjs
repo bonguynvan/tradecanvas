@@ -132,12 +132,19 @@ function hitAreaChecks({ least, kept }) {
     while (after < REACH && owner(cx + dx * (after + 1), cy + dy * (after + 1)) === el) after++;
     return [before, after];
   };
-  /** What a press at a point lands on, and whether it is drawn there or only reaches there (a hit area made wider than its drawing). */
+  /**
+   * What a press at a point lands on, and whether it is drawn there or only reaches there: a
+   * control whose hit area is made wider than its drawing. Anything else is drawn where it is hit
+   * (a menu, a row's plate; an icon's line and a word take a press a little outside their own box).
+   */
   const taker = (x, y) => {
-    const el = x < 0 || y < 0 || x >= innerWidth || y >= innerHeight ? null : document.elementFromPoint(x, y);
-    if (!el) return null;
-    const b = el.getBoundingClientRect();
-    return { el, drawn: x >= b.left && x < b.right && y >= b.top && y < b.bottom };
+    const hit = x < 0 || y < 0 || x >= innerWidth || y >= innerHeight ? null : document.elementFromPoint(x, y);
+    if (!hit) return null;
+    const control = hit.closest(CONTROLS);
+    if (!control) return { el: hit, drawn: true };
+    const b = control.getBoundingClientRect();
+    // A pixel's leave: a box may start at a fraction of one.
+    return { el: control, drawn: x >= b.left - 1 && x < b.right + 1 && y >= b.top - 1 && y < b.bottom + 1 };
   };
   /** Whether what holds the control cuts it off at a point of its own drawing (a row no wider than its pane). */
   const cutOffAt = (el, r, x, y) => {
