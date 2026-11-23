@@ -855,6 +855,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>Va a una fecha</td></tr>
     <tr><td><kbd>?</kbd></td><td>La hoja de atajos, que se busca por lo que hace una tecla o por la tecla</td></tr>
     <tr><td><kbd>Alt</kbd> + clic en el gráfico</td><td>Fija la información OHLC en la barra bajo el cursor (muestra la diferencia con la cruz en vivo)</td></tr>
+    <tr><td>Mantener pulsado sobre el gráfico</td><td>La información OHLCV flotante de la barra bajo el cursor, mientras se mantiene el botón: sigue al cursor y el gráfico no se desplaza (<code>{`chartOptions: { features: { crosshairTooltip: true } }`}</code> hace que siga a un cursor que solo pasa por encima, <code>false</code> nunca la muestra)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Desfija la información / cancela el dibujo</td></tr>
     <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td><td>Retroceder / avanzar la repetición</td></tr>
     <tr><td><kbd>Space</kbd></td><td>Reproducir o pausar la repetición (en el gráfico o su pista; fuera de una repetición ajusta el gráfico)</td></tr>

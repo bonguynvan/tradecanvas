@@ -93,6 +93,17 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 손절가에서 50을 �
   그리고 오른쪽 클릭 메뉴나 호가창에서 한 번 눌러 내는 주문은 시장에 매매 단위가 있으면 그 단위만큼입니다(이전에는 1이었고, 호가창의 주문에는 수량이 없었습니다).
 </p>
 
+<h3 id="hold-tooltip">차트를 길게 누르면 가격 팝업이 표시됩니다</h3>
+<p>
+  <code>ChartWidget</code>에서 플롯 위에 마우스 버튼을 움직이지 않고 0.5초 누르고 있으면, 버튼을 놓을 때까지 포인터 아래
+  봉의 플로팅 OHLCV 툴팁이 표시됩니다. 툴팁은 포인터를 따라가고 그동안 차트는 이동하지 않습니다. 따라서 그만큼 길게 누른
+  동작은 더 이상 클릭도, 이동의 시작도 아닙니다. 위젯의 <code>crosshairTooltip</code> 기능은 이제
+  <code>'hold'</code>이며 이전에는 <code>false</code>였습니다. 이전처럼 팝업이 없게 하려면
+  <code>{`chartOptions: { features: { crosshairTooltip: false } }`}</code>를, 포인터를 올려놓기만 해도 표시하려면
+  <code>true</code>를 넘기세요. 헤드리스 <code>Chart</code>는 바뀌지 않았습니다. 따로 지정하지 않으면 툴팁이 포인터를
+  따라가며, <code>'hold'</code>도 받습니다.
+</p>
+
 <h2 id="types">넓어진 타입</h2>
 <p>
   <code>TimeInForce</code>는 이제 <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>입니다. 모든 멤버를 처리하는 코드(default가

@@ -834,6 +834,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>Go to a date</td></tr>
     <tr><td><kbd>?</kbd></td><td>The shortcut sheet, searchable by what a key does or by the keys</td></tr>
     <tr><td><kbd>Alt</kbd> + click chart</td><td>Pin OHLC tooltip at the hovered bar (delta to live crosshair shown)</td></tr>
+    <tr><td>Press and hold on the chart</td><td>The floating OHLCV tooltip for the bar under the pointer, while the button is held: it follows the pointer, and the chart does not pan (<code>{`chartOptions: { features: { crosshairTooltip: true } }`}</code> has it follow a pointer that only hovers, <code>false</code> never shows it)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Unpin tooltip / cancel drawing</td></tr>
     <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td><td>Step the replay back / forward</td></tr>
     <tr><td><kbd>Space</kbd></td><td>Play or pause the replay (on the chart or its track; outside a replay it fits the chart)</td></tr>

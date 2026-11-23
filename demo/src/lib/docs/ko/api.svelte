@@ -803,6 +803,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>날짜로 이동</td></tr>
     <tr><td><kbd>?</kbd></td><td>키보드 단축키 목록. 기능이나 키로 검색할 수 있습니다</td></tr>
     <tr><td><kbd>Alt</kbd> + 차트 클릭</td><td>마우스를 올린 봉에 OHLC 툴팁 고정(실시간 십자선과의 차이 표시)</td></tr>
+    <tr><td>차트에서 마우스 길게 누르기</td><td>버튼을 누르고 있는 동안 포인터 아래 봉의 플로팅 OHLCV 툴팁 표시. 포인터를 따라가며 차트는 이동하지 않음(<code>{`chartOptions: { features: { crosshairTooltip: true } }`}</code>이면 올려놓기만 해도 따라다니고, <code>false</code>이면 표시하지 않음)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>툴팁 고정 해제 / 그리기 취소</td></tr>
     <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td><td>리플레이 한 단계 뒤로 / 앞으로</td></tr>
     <tr><td><kbd>Space</kbd></td><td>리플레이 재생 또는 일시정지(차트나 트랙에서; 리플레이 밖에서는 차트 맞춤)</td></tr>

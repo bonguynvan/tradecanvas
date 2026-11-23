@@ -38,6 +38,7 @@ import type {
   TimeZoneSetting,
   SymbolInfo,
   OverlayScale,
+  Point,
   ViewportState,
   FeaturesConfig,
   ExecutionAdapter,
@@ -387,6 +388,10 @@ export class Chart {
   private animator: Animator;
   private crosshairTooltip: CrosshairTooltip;
   private pinnedTooltip: PinnedTooltip;
+  /** Where the crosshair rests: the bar and the point the floating tooltip is shown for when a press is held there. */
+  private crosshairAt: { barIndex: number; point: Point } | null = null;
+  /** A mouse press is held still on the plot: the floating tooltip shows where it is asked for that way (`crosshairTooltip: 'hold'`). */
+  private tooltipHeld = false;
   private interactionManager: InteractionManager;
   private crosshairHandler: CrosshairHandler;
   private chartRenderer: ChartRendererInterface;
@@ -741,6 +746,7 @@ export class Chart {
     // happens once per bar, not per mouse move.
     this.crosshairHandler.setDataSource(() => this.crosshairSeries());
     this.crosshairHandler.setCallback((barIndex, point) => {
+      this.crosshairAt = barIndex !== null && point ? { barIndex, point } : null;
       if (barIndex !== null && point) {
         const data = this.crosshairSeries();
         const bar = barIndex >= 0 && barIndex < data.length ? data[barIndex] : undefined;
@@ -756,21 +762,7 @@ export class Chart {
         if (this.features.legend) this.engine.requestRender(LayerType.Hover);
 
         // Update tooltip (DOM, lightweight update only when bar changes).
-        // Over an indicator pane there is no price crosshair to sit beside.
-        const vs = this.viewport.getState();
-        const inPlot = point.y >= vs.chartRect.y && point.y <= vs.chartRect.y + vs.chartRect.height;
-        if (bar && inPlot && this.features.crosshairTooltip) {
-          const dated = time === bar.time ? bar : { ...bar, time: time ?? bar.time };
-          this.crosshairTooltip.show(point, dated, this.themeManager.getTheme(), this.cachedContainerSize(), {
-            prevClose,
-            priceRange: vs.priceRange,
-            plot: vs.chartRect,
-            barStepMs: barTimeStepMs(times),
-            timeUnit: barTimeUnit(times),
-          });
-        } else {
-          this.crosshairTooltip.hide();
-        }
+        this.placeCrosshairTooltip(barIndex, point, times);
 
         // Refresh the pinned tooltip's delta strip against the hovered bar.
         // Cheap when there's nothing pinned (early returns inside reposition).
@@ -1168,6 +1160,7 @@ export class Chart {
       );
       this.engine.requestRender(LayerType.Overlay);
     });
+    this.applyTooltipHold();
 
     // A mark's badge reacts to the pointer always (it shows what it marks);
     // a signal marker when someone listens. A badge is over a marker under it.
@@ -5241,6 +5234,53 @@ export class Chart {
 
   // --- Tooltip ---
 
+  /**
+   * The floating tooltip for the bar at `barIndex`, beside `point`: under a
+   * pointer that hovers (`crosshairTooltip: true`), or only while a press is
+   * held still (`'hold'`). Hidden otherwise, and over an indicator pane, where
+   * there is no price crosshair to sit beside.
+   */
+  private placeCrosshairTooltip(barIndex: number, point: Point, times = axisTimes(this.crosshairSeries())): void {
+    const data = this.crosshairSeries();
+    const bar = barIndex >= 0 && barIndex < data.length ? data[barIndex] : undefined;
+    const vs = this.viewport.getState();
+    const inPlot = point.y >= vs.chartRect.y && point.y <= vs.chartRect.y + vs.chartRect.height;
+    const asked = this.features.crosshairTooltip === 'hold' ? this.tooltipHeld : this.features.crosshairTooltip;
+    if (!bar || !inPlot || !asked) {
+      this.crosshairTooltip.hide();
+      return;
+    }
+    // A brick's own time only counts bricks: the tooltip gets the date the axis gives it.
+    const time = times[barIndex]?.time ?? bar.time;
+    this.crosshairTooltip.show(point, time === bar.time ? bar : { ...bar, time }, this.themeManager.getTheme(), this.cachedContainerSize(), {
+      prevClose: barIndex > 0 ? data[barIndex - 1]?.close : undefined,
+      priceRange: vs.priceRange,
+      plot: vs.chartRect,
+      barStepMs: barTimeStepMs(times),
+      timeUnit: barTimeUnit(times),
+    });
+  }
+
+  /**
+   * A mouse press held still asks for the tooltip only where the feature says
+   * so (`crosshairTooltip: 'hold'`, with a crosshair to sit beside): elsewhere
+   * a press held stays the pan it was, and a click when let go.
+   */
+  private applyTooltipHold(): void {
+    const asked = this.features.crosshair && this.features.crosshairTooltip === 'hold';
+    this.interactionManager.setHoldHandler(asked ? (held, pos) => this.holdTooltip(held, pos) : null);
+    if (!asked) this.tooltipHeld = false;
+  }
+
+  /** The press is held still (the tooltip shows for the bar the crosshair rests on), or let go (it goes). */
+  private holdTooltip(held: boolean, pos: Point): void {
+    this.tooltipHeld = held;
+    const at = this.crosshairAt;
+    // Beside the press itself: the crosshair's own point is where the pointer came onto this bar.
+    if (held && at) this.placeCrosshairTooltip(at.barIndex, pos);
+    else this.crosshairTooltip.hide();
+  }
+
   setTooltipVisible(visible: boolean): void {
     if (!visible) this.crosshairTooltip.hide();
   }
@@ -6922,8 +6962,10 @@ export class Chart {
     }
 
     // Apply immediate side-effects
-    if (patch.crosshair === false || patch.crosshairTooltip === false) {
-      this.crosshairTooltip.hide();
+    if (patch.crosshair !== undefined || patch.crosshairTooltip !== undefined) {
+      this.applyTooltipHold();
+      // No longer under a hovering pointer: it shows again when it is asked for.
+      if (!this.features.crosshair || this.features.crosshairTooltip !== true) this.crosshairTooltip.hide();
     }
     if (patch.priceAxisAddButton !== undefined || patch.crosshair !== undefined) {
       this.applyPriceAxisAdd();

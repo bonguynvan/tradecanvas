@@ -94,6 +94,17 @@ chart.startBracket('buy', undefined, { risk: 50 })   // ストップで 50 を�
   右クリックメニューや板情報ラダーから 1 回の操作で出す注文は、市場に売買単位があればその単位の数量になります（以前は 1 で、ラダーの注文には数量がありませんでした）。
 </p>
 
+<h3 id="hold-tooltip">チャート上の長押しで価格ポップアップを表示します</h3>
+<p>
+  <code>ChartWidget</code> では、プロット上でマウスボタンを動かさずに 0.5 秒押し続けると、カーソル位置のバーの
+  フローティング OHLCV ツールチップが、ボタンを離すまで表示されます。ツールチップはカーソルに追従し、その間チャートは
+  パンしません。そのため、これだけ長く押した操作はクリックにもパンの開始にもなりません。ウィジェットの
+  <code>crosshairTooltip</code> 機能は、<code>false</code> だったものが <code>'hold'</code> になりました。
+  これまでどおりポップアップなしにするには <code>{`chartOptions: { features: { crosshairTooltip: false } }`}</code> を、
+  ホバーで表示するには <code>true</code> を渡してください。ヘッドレスの <code>Chart</code> は変わりません。
+  指定しない限りツールチップはカーソルに追従し、<code>'hold'</code> も受け付けます。
+</p>
+
 <h2 id="types">広がった型</h2>
 <p>
   <code>TimeInForce</code> は <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code> になりました。すべてのメンバーを扱うコード（default

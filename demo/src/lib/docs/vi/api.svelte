@@ -834,6 +834,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>Chuyển đến một ngày</td></tr>
     <tr><td><kbd>?</kbd></td><td>Bảng phím tắt, tìm được theo chức năng của phím hoặc theo phím</td></tr>
     <tr><td><kbd>Alt</kbd> + click chart</td><td>Ghim tooltip OHLC tại nến đang hover (hiển thị chênh lệch so với crosshair hiện tại)</td></tr>
+    <tr><td>Click giữ trên chart</td><td>Tooltip OHLCV nổi cho nến dưới con trỏ, trong lúc còn giữ nút chuột: nó đi theo con trỏ, và chart không pan (<code>{`chartOptions: { features: { crosshairTooltip: true } }`}</code> thì nó đi theo cả con trỏ chỉ hover, <code>false</code> thì không bao giờ hiện)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Bỏ ghim tooltip / huỷ vẽ</td></tr>
     <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td><td>Lùi / tiến replay một bước</td></tr>
     <tr><td><kbd>Space</kbd></td><td>Chạy hoặc tạm dừng replay (trên chart hoặc thanh tiến trình của replay; ngoài replay thì fit chart)</td></tr>

@@ -210,6 +210,9 @@ chart.removeAll('indicators'); // or 'drawings', or 'all': everything of that ki
 - Panel indicators may share a pane: `addIndicator('stochastic', {}, 'bottom', { pane: rsi })`.
 - The legend shows each line's latest value; tag it on the axis too with
   `features.indicatorValueLabels: true` (off by default).
+- The floating OHLCV tooltip: `features.crosshairTooltip: true` follows the pointer
+  (`Chart`'s default), `'hold'` shows it only while a mouse press is held still on the
+  plot (`ChartWidget`'s default, set there through `chartOptions.features`), `false` never.
 - Price axis tags that would cover one another (last price, bid/ask, high/low,
   limits, orders, positions) are moved apart, the last price's staying on its line
   (`features.alignAxisLabels`, on by default; `chart.setAxisLabelsAligned(false)`

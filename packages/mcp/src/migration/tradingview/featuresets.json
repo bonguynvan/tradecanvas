@@ -959,11 +959,11 @@
       "to": [
         {
           "option": "ChartWidget.chartOptions.features.crosshairTooltip",
-          "on": true,
+          "on": "hold",
           "off": false
         }
       ],
-      "note": "Near: a floating OHLCV tooltip for mouse and touch alike. Off by default in the widget."
+      "note": "The floating OHLCV tooltip while a mouse press is held still on the chart; it is the widget's default. A finger's long press pins a tooltip at its bar instead."
     },
     {
       "kind": "featureset",

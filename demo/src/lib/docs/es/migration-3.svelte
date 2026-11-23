@@ -100,6 +100,17 @@ chart.startBracket('buy', undefined, { risk: 50 })   // la cantidad que pierde 5
   del mercado donde lo hay (era por 1, y la de la escalera no llevaba cantidad).
 </p>
 
+<h3 id="hold-tooltip">Mantener pulsado sobre el gráfico muestra la ventana de precio</h3>
+<p>
+  En <code>ChartWidget</code>, mantener el botón del ratón quieto sobre el área del gráfico durante medio segundo muestra
+  la información OHLCV flotante de la barra bajo el cursor, hasta soltar el botón: sigue al cursor y el gráfico no se
+  desplaza mientras tanto. Una pulsación tan larga ya no es, por tanto, un clic ni el comienzo de un desplazamiento. La
+  función <code>crosshairTooltip</code> del widget es ahora <code>'hold'</code>, donde era <code>false</code>: pasa
+  <code>{`chartOptions: { features: { crosshairTooltip: false } }`}</code> para no tener ventana, como antes, o
+  <code>true</code> para tenerla bajo un cursor que solo pasa por encima. El <code>Chart</code> sin interfaz no cambia:
+  su información sigue al cursor salvo que se indique otra cosa, y también acepta <code>'hold'</code>.
+</p>
+
 <h2 id="types">Tipos que han crecido</h2>
 <p>
   <code>TimeInForce</code> es ahora <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. El código que trata todos

@@ -252,7 +252,13 @@ export class CrosshairTooltip {
     let x = pos.x + POINTER_GAP;
     let y = pos.y - this.height / 2;
     if (x + this.width > right - 4) x = pos.x - this.width - POINTER_GAP;
-    if (x < area.x + 4) x = area.x + 4;
+    if (x < area.x + 4) {
+      // Room on neither side (a phone's plot): over the pointer, or under it near the top,
+      // and as near its middle as the plot lets it be. Pushed back inside, it lay on the bar it reads.
+      x = Math.max(area.x + 4, Math.min(pos.x - this.width / 2, right - 4 - this.width));
+      const over = pos.y - this.height - POINTER_GAP;
+      y = over >= area.y + 4 ? over : pos.y + POINTER_GAP;
+    }
     if (y + this.height > bottom - 4) y = bottom - this.height - 4;
     if (y < area.y + 4) y = area.y + 4;
     el.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
