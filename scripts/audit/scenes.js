@@ -265,6 +265,59 @@ const SCENES = {
     return s;
   },
 
+  /**
+   * A drawing selected, and what opens over its toolbar: the intervals' menu from the top bar, or
+   * on a phone the drawing tools. The toolbar was a layer above the bars' and lay over them: the
+   * rows of a menu under it took no press, and on a phone it covered the tools' button, with its
+   * bin alone on a second line once its buttons were a finger's.
+   */
+  async menuOverSelection() {
+    const s = await widget();
+    const bars = s.chart.getData();
+    const back = (n) => bars[bars.length - n];
+    // A line with words: the toolbar at its fullest, with the colour of the words and the box to type them in.
+    const id = s.chart.addDrawing({ type: 'trendLine', text: 'Support', anchors: [{ time: back(70).time, price: back(70).low }, { time: back(20).time, price: back(20).close }] });
+    s.chart.selectDrawing(id);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const bar = document.querySelector('.tcw-sel-toolbar');
+    const middle = (el) => {
+      const r = el.getBoundingClientRect();
+      return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    };
+    const named = (el) => el.getAttribute('aria-label') || el.title || el.textContent.trim().slice(0, 24);
+    const before = [];
+    const tools = document.querySelector('.tcw-sidebar-fab');
+    const phone = tools !== null && tools.offsetWidth > 0;
+    // The tools' button itself, while the tools are shut: the toolbar waits beside it.
+    if (phone && !tools.contains(middle(tools))) before.push('the drawing tools button is under the toolbar of the selected drawing');
+    (phone ? tools : document.querySelector('[data-role="timeframes"]')).click();
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    const checks = () => {
+      if (!bar || bar.hidden) return ['the toolbar of the selected drawing is not shown'];
+      const problems = [...before];
+      const box = bar.getBoundingClientRect();
+      const buttons = [...bar.querySelectorAll('button')].filter((b) => !b.hidden);
+      const tallest = Math.max(...buttons.map((b) => b.getBoundingClientRect().height));
+      // On one line: a button and the bar's own padding, not two rows of them.
+      if (box.height > tallest * 1.5) problems.push(`the toolbar of the selected drawing is ${Math.round(box.height)} px tall: its ${buttons.length} buttons are on more than one line`);
+      if (box.left < 0 || box.right > window.innerWidth + 0.5) problems.push('the toolbar of the selected drawing runs off the chart');
+      if (!buttons.some((b) => b.dataset.action === 'delete') || !buttons.some((b) => b.dataset.action === 'more')) problems.push('the toolbar of the selected drawing lost its menu or its bin');
+      // Under the top bar, whose menus open over the chart, on every size; and where they meet, below.
+      const layer = (el) => Number(getComputedStyle(el).zIndex);
+      const topBar = document.querySelector('.tcw-toolbar');
+      if (!(layer(bar) < layer(topBar))) problems.push(`the toolbar of the selected drawing is on layer ${layer(bar)}, the top bar on ${layer(topBar)}: its menus open under it`);
+      // What opened is over the toolbar: none of its controls has the toolbar at its middle.
+      const opened = [...document.querySelectorAll('.tcw-dropdown button, .tcw-sidebar-open .tcw-sidebar-btn')].filter((el) => el.getBoundingClientRect().width > 0);
+      if (opened.length === 0) problems.push('nothing opened over the chart');
+      for (const el of opened) {
+        const hit = middle(el);
+        if (hit && bar.contains(hit)) problems.push(`"${named(el)}" is under the toolbar of the selected drawing`);
+      }
+      return problems;
+    };
+    return { ...s, checks };
+  },
+
   /** Long/Short Positions played over the bars: a long selected (its four handles), a short, one running past the last bar. */
   async positions() {
     const s = await widget();

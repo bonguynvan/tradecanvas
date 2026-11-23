@@ -4136,6 +4136,7 @@ export class ChartWidget {
       get root() { return w.root; },
       say: (...args) => w.say(...args),
       get t() { return w.t; },
+      get toolsButton() { return w.sidebar?.buttonAtFoot() ?? null; },
       get ui() { return w.ui; },
       whenLoaded: (...args) => w.whenLoaded(...args),
     };

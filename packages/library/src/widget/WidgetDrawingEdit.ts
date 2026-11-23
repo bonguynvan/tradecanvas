@@ -5,6 +5,7 @@ import { TEXT_COLORS, TEXT_LAYOUTS, TEXT_PLACES } from './drawingText.js';
 import { WidgetInlineText } from './WidgetInlineText.js';
 import { WidgetNamePrompt } from './WidgetNamePrompt.js';
 import { fill } from './i18n.js';
+import { DRAWING_MENU_FEATURES } from './widgetFeatures.js';
 import { positionLevels } from '@tradecanvas/core';
 import type { ChartWidget } from './ChartWidget.js';
 
@@ -37,6 +38,9 @@ function unionRects(rects: (Box | null)[]): Box | null {
 
 type Box = { x: number; y: number; width: number; height: number };
 
+/** The selection toolbar's buttons whose work a drawing's menu does too, where the host leaves their entries in it. */
+const TOOLBAR_IN_MENU = ['alert', 'lock', 'text', 'settings'] as const;
+
 /** What editing a drawing reads of the widget around it, and asks of it. */
 export interface DrawingEditHost {
   readonly chart: ChartWidget['chart'];
@@ -49,6 +53,8 @@ export interface DrawingEditHost {
   readonly featureState: ChartWidget['featureState'];
   /** The order ticket is there to fill (trading was on when the widget was built). */
   readonly orderTicketReady: boolean;
+  /** On a phone, the drawing tools' button at the plot's foot: its reach from the plot's left edge, its middle above the foot and its height (px); null where it does not show. */
+  readonly toolsButton: { reach: number; middle: number; height: number } | null;
   readonly root: ChartWidget['root'];
   say: ChartWidget['say'];
   readonly t: ChartWidget['t'];
@@ -148,6 +154,10 @@ export class WidgetDrawingEdit {
       canFill: this.host.chart.getDrawingToolDescriptor(primary.type)?.fill === true,
       canText: this.host.chart.getDrawingToolDescriptor(primary.type)?.text === true,
       canType: drawings.length === 1 && this.canTypeText(primary.id),
+      menuHolds: this.host.featureState['menu.drawing']
+        ? TOOLBAR_IN_MENU.filter((action) => DRAWING_MENU_FEATURES[action].every((name) => this.host.featureState[name]))
+        : [],
+      footButton: this.host.toolsButton ?? undefined,
     });
   }
 

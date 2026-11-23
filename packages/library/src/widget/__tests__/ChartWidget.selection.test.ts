@@ -302,6 +302,35 @@ describe('ChartWidget selection toolbar', () => {
     expect(button('lock').getAttribute('aria-pressed')).toBe('true');
   });
 
+  /** A widget 240 px wide, its toolbar as wide as the buttons it shows (jsdom lays nothing out): seven are 292 px. */
+  function narrow(): void {
+    Object.defineProperty(host.querySelector('.tcw-root')!, 'clientWidth', { value: 240, configurable: true });
+    const shown = () => [...bar()!.querySelectorAll<HTMLButtonElement>('button')].filter((b) => !b.hidden).length;
+    Object.defineProperty(bar()!, 'offsetWidth', { configurable: true, get: () => 54 + shown() * 34 });
+  }
+  const given = () => ['settings', 'lock'].filter((name) => button(name).hidden);
+
+  it('gives up on a narrow chart the buttons its menu holds too', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    narrow();
+    FakeChart.last.select(['d1']);
+    expect(given()).toEqual(['settings', 'lock']);
+    expect(button('delete').hidden).toBe(false);
+  });
+
+  it('keeps a button whose entry the host took out of the menu, and all of them with the menu off', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, features: { 'menu.drawing.lock': false } });
+    narrow();
+    FakeChart.last.select(['d1']);
+    expect(given()).toEqual(['settings']);
+    widget.destroy();
+    host.replaceChildren();
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, features: { 'menu.drawing': false } });
+    narrow();
+    FakeChart.last.select(['d1']);
+    expect(given()).toEqual([]);
+  });
+
   it('can be switched off by the host', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, features: { selectionToolbar: false } });
     FakeChart.last.select(['d1']);
