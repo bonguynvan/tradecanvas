@@ -593,7 +593,7 @@ new ChartWidget(host, {
   },
   {
     id: 'looks',
-    code: `new ChartWidget(host, { ui: 'terminal' })   // 'modern' (default) · 'print' · 'studio' · 'terminal' · 'capsule' · 'desk'
+    code: `new ChartWidget(host, { ui: 'terminal' })   // 'graphite' (default) · 'modern' · 'print' · 'studio' · 'terminal' · 'capsule' · 'desk'
 
 widget.setUI({
   preset: 'studio',

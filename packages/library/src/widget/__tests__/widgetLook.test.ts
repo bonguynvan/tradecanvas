@@ -276,4 +276,10 @@ describe('the symbol search on a phone', () => {
     expect(rule('.tcw-ss-exchange')).not.toContain('text-overflow');
     expect(phone).not.toContain('fit-content(55px)');
   });
+
+  it('draws Graphite’s tick box over the light theme’s switch: its rules are as specific', () => {
+    const controls = readFileSync(fileURLToPath(new URL('../WidgetControls.css', import.meta.url)), 'utf8');
+    expect(controls).toContain(".tcw-root[data-tcw-ui='graphite'] .tcw-toggle.tcw-on::after");
+    expect(controls).not.toContain(".tcw-root:where([data-tcw-ui='graphite']) .tcw-toggle");
+  });
 });

@@ -603,6 +603,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Naikkan {field}',
   'ticket.placeBuy': 'Kirim order beli',
   'ticket.placeSell': 'Kirim order jual',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': 'Broker belum menjawab. Periksa order Anda sebelum mengirim lagi.',
   'ticket.noLivePrice': 'Tidak ada harga langsung: periksa harga sebelum memasang order.',
   'ticket.noLiveMarket': 'Tidak ada harga langsung: order pasar tidak dapat dikirim.',

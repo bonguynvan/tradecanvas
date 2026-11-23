@@ -603,6 +603,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'ticket.stepUp': '{field} erhöhen',
   'ticket.placeBuy': 'Kauforder platzieren',
   'ticket.placeSell': 'Verkaufsorder platzieren',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': 'Der Broker hat noch nicht geantwortet. Prüfen Sie Ihre Orders, bevor Sie erneut senden.',
   'ticket.noLivePrice': 'Kein Live-Kurs: Prüfen Sie den Preis, bevor Sie die Order aufgeben.',
   'ticket.noLiveMarket': 'Kein Live-Kurs: Eine Market-Order kann nicht gesendet werden.',

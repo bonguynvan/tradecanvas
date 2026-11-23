@@ -91,6 +91,8 @@ function soundQuote(quote: OrderTicketQuote | null | undefined): OrderTicketQuot
 
 /** How long an order may be on its way before the ticket says no answer has come (ms). */
 const NO_ANSWER_MS = 10_000;
+/** The digits a quantity is written to on the ticket's button: past them is a float's noise. */
+const QUANTITY_DIGITS = 12;
 
 /** The kinds of order the ticket takes, as its choices stand. */
 const ORDER_TYPES = ['market', 'limit', 'stop', 'stopLimit'] as const;
@@ -842,7 +844,12 @@ export class WidgetOrderTicket {
     if (!(draft.quantity > 0) || !Number.isFinite(draft.quantity) || symbol === '') {
       return this.t(draft.side === 'buy' ? 'ticket.placeBuy' : 'ticket.placeSell');
     }
-    return `${this.t(draft.side === 'buy' ? 'ticket.buy' : 'ticket.sell')} ${draft.quantity} ${symbol}`;
+    // A quantity summed from lots reads as it was meant: 0.3, not 0.30000000000000004.
+    const quantity = String(Number(draft.quantity.toPrecision(QUANTITY_DIGITS)));
+    return this.t('ticket.submit')
+      .replace('{side}', this.t(draft.side === 'buy' ? 'ticket.buy' : 'ticket.sell'))
+      .replace('{quantity}', quantity)
+      .replace('{symbol}', symbol);
   }
 
   /** The receipt: what the stop risks, the target makes and the one over the other, then the order's value, last and largest, over the button that sends it. */

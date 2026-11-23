@@ -603,6 +603,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'ticket.stepUp': '{field} 올리기',
   'ticket.placeBuy': '매수 주문 전송',
   'ticket.placeSell': '매도 주문 전송',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': '브로커가 아직 응답하지 않았습니다. 다시 보내기 전에 주문을 확인하세요.',
   'ticket.noLivePrice': '실시간 가격이 없습니다: 주문하기 전에 가격을 확인하세요.',
   'ticket.noLiveMarket': '실시간 가격이 없습니다: 시장가 주문을 보낼 수 없습니다.',

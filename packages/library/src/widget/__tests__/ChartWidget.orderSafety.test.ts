@@ -671,3 +671,13 @@ describe('ChartWidget: the ticket says what its button does', () => {
   });
 });
 
+describe('ChartWidget: the quantity on the ticket’s button', () => {
+  it('is written without a float’s noise', () => {
+    widget = new ChartWidget(host, { symbol: 'BTC', trading: true });
+    trading().openOrderTicket();
+    const quantity = host.querySelector<HTMLInputElement>('.tcw-order-ticket [data-ticket-field="quantity"]')!;
+    quantity.value = String(0.1 + 0.2);
+    quantity.dispatchEvent(new Event('input'));
+    expect(place().textContent).toBe('Buy 0.3 BTC');
+  });
+});

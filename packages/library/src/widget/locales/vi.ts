@@ -609,6 +609,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Tăng {field}',
   'ticket.placeBuy': 'Đặt lệnh mua',
   'ticket.placeSell': 'Đặt lệnh bán',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': 'Broker chưa trả lời. Hãy kiểm tra các order của bạn trước khi gửi lại.',
   'ticket.noLivePrice': 'Không có giá trực tiếp: hãy kiểm tra giá trước khi đặt lệnh.',
   'ticket.noLiveMarket': 'Không có giá trực tiếp: không thể gửi lệnh thị trường.',

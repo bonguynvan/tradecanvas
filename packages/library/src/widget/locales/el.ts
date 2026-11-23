@@ -603,6 +603,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Αύξηση: {field}',
   'ticket.placeBuy': 'Υποβολή εντολής αγοράς',
   'ticket.placeSell': 'Υποβολή εντολής πώλησης',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': 'Ο broker δεν έχει απαντήσει ακόμη. Ελέγξτε τις εντολές σας πριν στείλετε ξανά.',
   'ticket.noLivePrice': 'Χωρίς ζωντανή τιμή: ελέγξτε την τιμή πριν δώσετε την εντολή.',
   'ticket.noLiveMarket': 'Χωρίς ζωντανή τιμή: δεν μπορεί να σταλεί εντολή αγοράς.',

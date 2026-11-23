@@ -603,6 +603,7 @@ export const IT_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Aumenta {field}',
   'ticket.placeBuy': 'Invia ordine di acquisto',
   'ticket.placeSell': 'Invia ordine di vendita',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': 'Il broker non ha ancora risposto. Controlla i tuoi ordini prima di inviarlo di nuovo.',
   'ticket.noLivePrice': 'Nessun prezzo in tempo reale: controlla il prezzo prima di inserire l’ordine.',
   'ticket.noLiveMarket': 'Nessun prezzo in tempo reale: non si può inviare un ordine a mercato.',

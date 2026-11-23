@@ -738,15 +738,16 @@
 /*
  * Graphite's switch is a box that is ticked: a slider with a knob is a phone's control, and a
  * ticket full of them reads as settings, not as an order. Its role and its keys are a switch's still.
+ * Named without `:where`, to stand over the light theme's switch, which is as specific.
  */
-.tcw-root:where([data-tcw-ui='graphite']) .tcw-toggle {
+.tcw-root[data-tcw-ui='graphite'] .tcw-toggle {
   width: 16px;
   height: 16px;
   border: var(--tcw-border-w) solid var(--tcw-field-line-hover);
   border-radius: var(--tcw-radius-xs);
   background: var(--tcw-field-bg);
 }
-.tcw-root:where([data-tcw-ui='graphite']) .tcw-toggle::after {
+.tcw-root[data-tcw-ui='graphite'] .tcw-toggle::after {
   inset: 0;
   width: auto;
   height: auto;
@@ -755,24 +756,24 @@
   box-shadow: none;
   transition: none;
 }
-.tcw-root:where([data-tcw-ui='graphite']) .tcw-toggle.tcw-on {
+.tcw-root[data-tcw-ui='graphite'] .tcw-toggle.tcw-on {
   border-color: var(--tcw-accent-fill);
   background: var(--tcw-accent-fill);
 }
-.tcw-root:where([data-tcw-ui='graphite']) .tcw-toggle.tcw-on::after {
+.tcw-root[data-tcw-ui='graphite'] .tcw-toggle.tcw-on::after {
   background: var(--tcw-check-mark) center / 14px 14px no-repeat;
 }
-.tcw-root:where([data-tcw-ui='graphite']) .tcw-toggle:focus-visible {
+.tcw-root[data-tcw-ui='graphite'] .tcw-toggle:focus-visible {
   box-shadow: var(--tcw-ring);
 }
 /* The box stays 16 px; a press takes a pointer's reach of it each way, and a finger's under one. */
-.tcw-root:where([data-tcw-ui='graphite']) .tcw-toggle::before {
+.tcw-root[data-tcw-ui='graphite'] .tcw-toggle::before {
   content: '';
   position: absolute;
   inset: calc((100% - var(--tcw-hit-pointer)) / 2);
 }
 @media (pointer: coarse) {
-  .tcw-root:where([data-tcw-ui='graphite']) .tcw-toggle::before {
+  .tcw-root[data-tcw-ui='graphite'] .tcw-toggle::before {
     inset: calc((100% - var(--tcw-hit-finger)) / 2);
   }
 }

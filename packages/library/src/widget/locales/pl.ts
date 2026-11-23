@@ -603,6 +603,7 @@ export const PL_MESSAGES: WidgetMessages = {
   'ticket.stepUp': 'Zwiększ: {field}',
   'ticket.placeBuy': 'Złóż zlecenie kupna',
   'ticket.placeSell': 'Złóż zlecenie sprzedaży',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': 'Broker jeszcze nie odpowiedział. Sprawdź swoje zlecenia, zanim wyślesz ponownie.',
   'ticket.noLivePrice': 'Brak ceny na żywo: sprawdź cenę przed złożeniem zlecenia.',
   'ticket.noLiveMarket': 'Brak ceny na żywo: nie można wysłać zlecenia rynkowego.',

@@ -603,6 +603,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'ticket.stepUp': '{field} növelése',
   'ticket.placeBuy': 'Vételi megbízás leadása',
   'ticket.placeSell': 'Eladási megbízás leadása',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': 'A bróker még nem válaszolt. Ellenőrizze a megbízásait, mielőtt újra elküldi.',
   'ticket.noLivePrice': 'Nincs élő ár: a megbízás előtt ellenőrizze az árat.',
   'ticket.noLiveMarket': 'Nincs élő ár: piaci megbízás nem küldhető.',

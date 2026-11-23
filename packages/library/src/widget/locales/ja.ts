@@ -603,6 +603,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'ticket.stepUp': '{field}を上げる',
   'ticket.placeBuy': '買い注文を発注',
   'ticket.placeSell': '売り注文を発注',
+  'ticket.submit': '{side} {quantity} {symbol}',
   'ticket.noAnswer': 'ブローカーからまだ応答がありません。再送信する前に注文を確認してください。',
   'ticket.noLivePrice': 'リアルタイム価格がありません：発注前に価格を確認してください。',
   'ticket.noLiveMarket': 'リアルタイム価格がありません：成行注文は送信できません。',
