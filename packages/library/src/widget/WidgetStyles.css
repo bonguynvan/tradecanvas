@@ -4552,27 +4552,36 @@
 .tcw-root[data-tcw-ui='graphite'] {
   --tcw-buy-fill: #0a8068;
   --tcw-buy-fill-hover: #00735c;
+  --tcw-buy-fill-active: #00624e;
   --tcw-sell-fill: #d4322c;
   --tcw-sell-fill-hover: #c62f2f;
+  --tcw-sell-fill-active: #b02828;
   --tcw-fill-ink: #ffffff;
 }
 .tcw-root[data-tcw-ui='graphite'][data-tcw-theme='light'] {
   --tcw-buy-fill: #00735c;
   --tcw-buy-fill-hover: #005f4c;
+  --tcw-buy-fill-active: #004d3e;
   --tcw-sell-fill: #c0262d;
   --tcw-sell-fill-hover: #a81f26;
+  --tcw-sell-fill-active: #8f1a20;
 }
 /* Its rows and its head are 28 px, its buttons 24 with 8 between, and the panel is as tall as its rows up to its old height. */
-/* On a phone the panel is a sheet with cards in it, and keeps the sheet's own height. */
+/*
+ * The panel is one height on every tab and with any number of rows: its head, the table's head
+ * and four rows, the rest scrolled to. As tall as its rows, it moved the chart, and a button under
+ * the pointer, each time an order came. On a phone it is a sheet and keeps the sheet's height.
+ */
 .tcw-root[data-tcw-ui='graphite']:not([data-tcw-narrow]) .tcw-account {
-  height: auto;
-  max-height: 233px;
+  height: calc(32px + 5 * 28px + 6 * var(--tcw-border-w));
 }
 .tcw-root[data-tcw-ui='graphite'] .tcw-account-head { min-height: 32px; }
-/* Its rows give the panel its height: the body is as tall as they are, and scrolls past the panel's limit. */
-.tcw-root[data-tcw-ui='graphite']:not([data-tcw-narrow]) .tcw-account-body { flex: 0 1 auto; }
-.tcw-root[data-tcw-ui='graphite']:not([data-tcw-narrow]) .tcw-account-table th { height: 28px; }
-.tcw-root[data-tcw-ui='graphite']:not([data-tcw-narrow]) .tcw-account-table td { height: 28px; }
+.tcw-root[data-tcw-ui='graphite']:not([data-tcw-narrow]) .tcw-account-table :is(th, td) {
+  box-sizing: border-box;
+  height: 28px;
+  padding-block: 0;
+  line-height: 1;
+}
 .tcw-root[data-tcw-ui='graphite'] .tcw-account-actions { gap: var(--tcw-space-4); }
 .tcw-root[data-tcw-ui='graphite'] .tcw-account-pnl { font-weight: var(--tcw-weight-strong); }
 /* Picked, in the status bar and on a phone's interval, is the text's colour here too. */
