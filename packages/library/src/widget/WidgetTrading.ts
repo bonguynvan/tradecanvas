@@ -1,6 +1,6 @@
 import { WidgetAccountPanel } from './WidgetAccountPanel.js';
 import { WidgetOrderTicket, type OrderTicketStart } from './WidgetOrderTicket.js';
-import type { OrderTicketRules } from './orderTicket.js';
+import type { OrderTicketRules, PriceLimitName } from './orderTicket.js';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
 import type { WidgetQuoteButtons } from './WidgetQuoteButtons.js';
@@ -32,6 +32,8 @@ export interface TradingHost {
   readonly featureState: ChartWidget['featureState'];
   formatAlertPrice: ChartWidget['formatAlertPrice'];
   say: ChartWidget['say'];
+  /** The order the ticket shows the day's ceiling, reference and floor in (`priceLimitOrder`). */
+  readonly priceLimitOrder: readonly PriceLimitName[] | undefined;
   /** Ask before something that cannot be taken back; with confirmations off (`confirmOrders: false`) it is done at once. */
   confirm: ChartWidget['confirmTrade'];
   readonly state: ChartWidget['state'];
@@ -138,6 +140,7 @@ export class WidgetTrading {
     return {
       roundPrice: stepped ? (p) => this.host.chart.roundPrice(p) : undefined,
       limits: this.host.chart.getPriceLimits(),
+      limitOrder: this.host.priceLimitOrder,
       lot: market.volumeUnit,
       multiplier: market.contractMultiplier,
     };

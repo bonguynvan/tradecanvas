@@ -85,6 +85,47 @@ describe('a chart on a market with price bands', () => {
     expect(MARKET_HOSE.priceLimits?.referencePrice).toBeUndefined();
   });
 
+  // A stock's first day on another exchange, a special band: none of them is the exchange's percentage of the reference.
+  it('takes the day’s ceiling and floor as the broker gives them, over what the percentages make', () => {
+    chart = new Chart(host, {});
+    chart.setData(bars);
+    chart.setMarket(MARKET_HOSE);
+    chart.setPriceLimits({ ceiling: 129.6, floor: 86.4, reference: 108 });
+    expect(chart.getPriceLimits()).toEqual({ ceiling: 129.6, floor: 86.4, reference: 108 });
+    expect(MARKET_HOSE.priceLimits).not.toHaveProperty('ceiling');
+    // A reference alone is the percentages again.
+    chart.setPriceLimits(108);
+    expect(chart.getPriceLimits()).toEqual({ ceiling: 115.5, floor: 100.5, reference: 108 });
+  });
+
+  it('takes them on a market whose preset has no limits for the day', () => {
+    chart = new Chart(host, {});
+    chart.setData(bars);
+    chart.setMarket({ type: 'stock', priceLimits: { enabled: false } });
+    chart.setPriceLimits({ ceiling: 120, floor: 90, reference: 108 });
+    expect(chart.getPriceLimits()).toEqual({ ceiling: 120, floor: 90, reference: 108 });
+    chart.setMarket({ type: 'stock' });
+    chart.setPriceLimits({ ceiling: 121, floor: 91, reference: 108 });
+    expect(chart.getPriceLimits()).toEqual({ ceiling: 121, floor: 91, reference: 108 });
+    // A reference alone has no percentages to go by there.
+    chart.setMarket({ type: 'stock' });
+    chart.setPriceLimits(108);
+    expect(chart.getPriceLimits()).toBeNull();
+  });
+
+  it('takes none that are no prices: a ceiling under its floor, or no number', () => {
+    chart = new Chart(host, {});
+    chart.setData(bars);
+    chart.setMarket(MARKET_HOSE);
+    chart.setPriceLimits(108);
+    const before = chart.getPriceLimits();
+    chart.setPriceLimits({ ceiling: 90, floor: 100, reference: 95 });
+    chart.setPriceLimits({ ceiling: Number.NaN, floor: 100, reference: 95 });
+    chart.setPriceLimits({ ceiling: Number.POSITIVE_INFINITY, floor: 100, reference: 105 });
+    chart.setPriceLimits({ ceiling: 120, floor: 100, reference: 130 });
+    expect(chart.getPriceLimits()).toEqual(before);
+  });
+
   it('draws the limits as soon as the reference is given, and moves them with a new one', () => {
     chart = new Chart(host, {});
     chart.setData(bars);

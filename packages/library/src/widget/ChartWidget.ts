@@ -4039,6 +4039,7 @@ export class ChartWidget {
       formatAlertPrice: (...args) => w.formatAlertPrice(...args),
       say: (...args) => w.say(...args),
       confirm: (...args) => w.confirmTrade(...args),
+      get priceLimitOrder() { return w.options.priceLimitOrder; },
       get state() { return w.state; },
       get t() { return w.t; },
     };

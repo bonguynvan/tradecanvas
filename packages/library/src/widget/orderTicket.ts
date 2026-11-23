@@ -97,11 +97,17 @@ export type OrderTicketProblem =
   /** More than a lot, but not whole lots. */
   | 'lot';
 
+/** One of the day's three prices, as the ticket's row names them. */
+export type PriceLimitName = 'ceiling' | 'reference' | 'floor';
+
 /** A market's own rules for a ticket: its price step, the day's limits, its lot. */
 export interface OrderTicketRules {
   /** A price on the market's step; a price it changes is off the step. */
   roundPrice?: (price: number) => number;
-  limits?: { ceiling: number; floor: number } | null;
+  /** The day's ceiling and floor, and the reference they are of where it is known: the ticket shows them over the price. */
+  limits?: { ceiling: number; floor: number; reference?: number } | null;
+  /** The order the ticket shows them in. Unset: ceiling, reference, floor. */
+  limitOrder?: readonly PriceLimitName[];
   /** Shares in a lot. Fewer is an odd lot, an order of its own; more must be whole lots. */
   lot?: number;
   /** Money per point of a futures contract (VN30F: 100,000 dong): what the sums are in. */

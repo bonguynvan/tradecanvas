@@ -245,6 +245,21 @@ formatVolumeLoc(345_000_000, 'ko')           // '3.45억'`}</code></pre>
   <code>priceLimits</code> のない独自テーマは、明るい背景ではライトテーマの色、暗い背景ではダークテーマの色を使います。
 </p>
 
+<h3 id="broker-limits">ブローカーが提供する当日の値幅制限</h3>
+<p>
+  <code>setPriceLimits</code> は、基準値だけでなく、その銘柄の当日の上限、下限、基準値をそのまま受け取ります。
+  ブローカーや取引所が提供する場合はそれを渡してください。特別な値幅や、別の取引所へ移った銘柄の最初のセッションは、
+  基準値の何パーセントという形では求められず、そのとき市場のパーセンテージは他に情報がない場合の代替にすぎません。
+  チャート上の線、注文をドラッグできる価格、チケットのチェックはすべて渡された値に従います。ウィジェットの注文チケットは
+  価格欄の上にこの 3 つを表示し、押すとその価格が設定されます。<code>priceLimitOrder</code> でボードと同じ順に並べられ、
+  指定しなかったものは表示されません。
+</p>
+<pre><code>{`chart.setMarket(MARKET_HOSE)
+chart.setPriceLimits({ ceiling: 27.1, floor: 23.6, reference: 25.35 })   // as the broker gives them for the symbol
+chart.setPriceLimits(25.35)                                              // or the reference alone: the market's percentages of it
+
+new ChartWidget(host, { trading: true, priceLimitOrder: ['reference', 'ceiling', 'floor'] })   // the ticket's row, in your board's order`}</code></pre>
+
 <h3 id="comparing-symbols">シンボルの比較</h3>
 <p>
   別のシンボルの変化率を価格スケール上に表示する（<code>addCompareSymbol</code>）ほか、その価格を専用の
