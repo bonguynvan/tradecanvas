@@ -2,15 +2,17 @@ name: audit
 
 # The chart's states in a browser (scripts/audit-scenes.mjs): each scene in both
 # themes at a phone, a laptop and a wide screen, with its checks (no price axis
-# tags overlap, no errors). The screenshots are kept as the run's artifact, so a
-# pull request needs no Playwright on its author's machine to be looked at.
+# tags overlap, no errors). The screenshots are kept as the run's artifact.
+#
+# Not on every pull request: a change to the widget or the engine runs
+# `pnpm audit:scenes` on its author's machine and says so, and eight minutes
+# here found nothing those runs had not. It runs when asked for by hand (before
+# a release, on the branch to be released), and on a pull request labelled
+# `audit`: one from an author with no Playwright, to be looked at from here.
 on:
+  workflow_dispatch:
   pull_request:
-    paths:
-      - 'packages/**'
-      - 'scripts/audit/**'
-      - 'scripts/audit-scenes.mjs'
-      - '.github/workflows/audit.yml'
+    types: [labeled, opened, reopened, synchronize]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -25,6 +27,7 @@ env:
 
 jobs:
   scenes:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'audit')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

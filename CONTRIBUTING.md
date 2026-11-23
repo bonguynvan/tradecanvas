@@ -62,7 +62,7 @@ Some parts of a change take tools or languages you may not have. Say in the pull
 
 - **The widget's strings in the other 29 languages.** Add a new string to `packages/library/src/widget/locales/en.ts` only. The check that every language has every string (`locales.test.ts`) then fails, and that is expected. A maintainer adds the other languages to your branch before merging, so leave "Allow edits by maintainers" on.
 - **The docs in the other five languages** (`vi`, `zh`, `ja`, `ko`, `es`): they follow in a later pull request.
-- **Screenshots.** The `audit` workflow shows the chart's states in a browser on every pull request that touches the packages. It runs both themes at a phone, a laptop and a wide width, and keeps the screenshots as the run's artifact (*Summary → Artifacts → audit-scenes*). To look on your own machine, `pnpm audit:scenes` needs [Playwright](https://playwright.dev/) installed. A screenshot or a short clip of your own is still welcome for a state no scene shows.
+- **Screenshots.** `pnpm audit:scenes` shows the chart's states in a browser: both themes at a phone, a laptop and a wide width, with their checks. It needs [Playwright](https://playwright.dev/) installed. A change to the widget or the engine runs it, and its pull request says that it passed. With no Playwright, say so: a maintainer labels the pull request `audit`, and the `audit` workflow runs the scenes there and keeps the screenshots as the run's artifact (*Summary → Artifacts → audit-scenes*). It runs on no other pull request. A screenshot or a short clip of your own is still welcome for a state no scene shows.
 
 ## Pull requests
 

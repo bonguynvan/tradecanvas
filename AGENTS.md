@@ -173,10 +173,13 @@ These fail CI, often far from the line that caused them.
 - A visible change needs a look in a real browser at a phone width, a laptop
   width and a wide one, in both themes and the three looks, before the pull
   request. Put a screenshot or a short clip in it. Without Playwright on the
-  machine, say so: the `audit` workflow shoots the scenes on the pull request
-  and keeps them as its run's artifact, and a maintainer looks at them.
+  machine, say so: a maintainer labels the pull request `audit`, the `audit`
+  workflow then shoots the scenes on it and keeps them as its run's artifact,
+  and the maintainer looks at them. The workflow runs on no other pull
+  request; it is also run by hand before a release, on the branch released.
 - A change to the widget or the engine also runs `pnpm audit:scenes` (after
-  `pnpm build`): the chart in the states dialogs never show (the price at an
+  `pnpm build`), and its pull request says that it passed: nothing else runs
+  it. It shoots the chart in the states dialogs never show (the price at an
   order with a quote on, a linked grid under the pointer, a replay, compares,
   Renko, the day's limits, many indicators), in both themes at three widths.
   It checks that no two price axis tags overlap, that a linked grid's
