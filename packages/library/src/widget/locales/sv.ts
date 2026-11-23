@@ -626,6 +626,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': 'Priset måste följa marknadens prissteg (tickstorlek).',
   'ticket.problem.priceLimits': 'Dagens priser går från {floor} till {ceiling}.',
   'ticket.problem.lot': 'Över en handelspost lägger du hela poster om {lot}; en udda post läggs som en egen order.',
+  'ticket.problem.wholeUnits': 'Order whole shares: this market trades no part of one.',
   'toolbar.layouts': 'Layout',
   'layouts.unnamed': 'Namnlös',
   'layouts.unsavedChanges': 'osparade ändringar',

@@ -626,6 +626,7 @@ export const PL_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': 'Ceny podaje się zgodnie z krokiem notowań rynku.',
   'ticket.problem.priceLimits': 'Dzisiejsze ceny mieszczą się w przedziale od {floor} do {ceiling}.',
   'ticket.problem.lot': 'Powyżej jednego lota składaj zlecenia na pełne loty po {lot}; pozostałe akcje złóż w osobnym zleceniu.',
+  'ticket.problem.wholeUnits': 'Order whole shares: this market trades no part of one.',
   'toolbar.layouts': 'Układ',
   'layouts.unnamed': 'Bez nazwy',
   'layouts.unsavedChanges': 'niezapisane zmiany',

@@ -184,6 +184,31 @@ describe('PaperExecutionAdapter: a position keeps what its price was worth when 
     expect(closed).not.toContain(cheap.id);
   });
 
+  it('counts an order at the multiplier its intent carries, whatever was said last', async () => {
+    const { adapter } = connect({ markPrice: 26.4, balance: 100_000_000 });
+    adapter.setMultiplier(undefined);
+    await adapter.placeOrder({ side: 'buy', type: 'market', quantity: 100, price: 26.4, multiplier: 1000 });
+    expect(adapter.getPositions()[0].multiplier).toBe(1000);
+    expect(adapter.getAccount()!.marginUsed).toBe(2_640_000);
+    // An account given its own keeps it.
+    const own = connect({ markPrice: 26.4, balance: 100_000_000, multiplier: 10 });
+    await own.adapter.placeOrder({ side: 'buy', type: 'market', quantity: 100, price: 26.4, multiplier: 1000 });
+    expect(own.adapter.getAccount()!.marginUsed).toBe(26_400);
+  });
+
+  it('forgets what an order and a position were worth once they are gone', async () => {
+    const { adapter, market } = connect({ markPrice: 100, balance: 1_000_000 });
+    adapter.setMultiplier(1000);
+    for (let i = 0; i < 5; i++) {
+      await market('buy', 1);
+      await adapter.closePosition({ positionId: adapter.getPositions()[0].id });
+    }
+    await market('buy', 1);
+    const kept = adapter as unknown as { orderWorth: Map<string, number>; openedWorth: Map<string, number> };
+    expect(kept.openedWorth.size).toBe(1);
+    expect(kept.orderWorth.size).toBeLessThanOrEqual(1);
+  });
+
   it('says on what was open what it was opened at, once a chart tells it a multiplier', async () => {
     const { adapter, market } = connect({ markPrice: 100, balance: 1_000_000 });
     await market('buy', 2);

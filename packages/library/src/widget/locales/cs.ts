@@ -626,6 +626,7 @@ export const CS_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': 'Ceny se zadávají v cenových krocích trhu.',
   'ticket.problem.priceLimits': 'Dnešní ceny se pohybují od {floor} do {ceiling}.',
   'ticket.problem.lot': 'Nad jeden lot zadávejte celé loty po {lot}; zbylé kusy (neúplný lot) zadejte samostatným pokynem.',
+  'ticket.problem.wholeUnits': 'Order whole shares: this market trades no part of one.',
   'toolbar.layouts': 'Rozvržení',
   'layouts.unnamed': 'Bez názvu',
   'layouts.unsavedChanges': 'neuložené změny',

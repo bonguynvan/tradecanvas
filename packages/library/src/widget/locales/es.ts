@@ -626,6 +626,7 @@ export const ES_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': 'Los precios deben respetar la fluctuación mínima (tick) del mercado.',
   'ticket.problem.priceLimits': 'Hoy los precios van de {floor} a {ceiling}.',
   'ticket.problem.lot': 'Por encima de un lote, opera en lotes completos de {lot}; las acciones sueltas van en una orden aparte.',
+  'ticket.problem.wholeUnits': 'Opera con acciones enteras: este mercado no negocia fracciones de una.',
   'toolbar.layouts': 'Diseño',
   'layouts.unnamed': 'Sin nombre',
   'layouts.unsavedChanges': 'cambios sin guardar',

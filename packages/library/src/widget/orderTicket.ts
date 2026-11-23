@@ -97,7 +97,9 @@ export type OrderTicketProblem =
   /** A limit or stop price beyond the day's ceiling or floor. */
   | 'priceLimits'
   /** More than a lot, but not whole lots. */
-  | 'lot';
+  | 'lot'
+  /** A part of a share, on a market traded in whole ones. */
+  | 'wholeUnits';
 
 /**
  * A kind of order as an exchange names it (HOSE: LO, ATO, ATC, MP), and the kind the chart
@@ -228,8 +230,9 @@ function marketProblems(draft: OrderTicketDraft, rules: OrderTicketRules): Order
   if (roundPrice && priced.some((p) => Math.abs(roundPrice(p) - p) > PRICE_EPSILON)) problems.push('priceStep');
   // Past the day's limits a limit is no price to take, and a stop is never reached.
   if (limits && own.some((p) => p > 0 && (p > limits.ceiling + PRICE_EPSILON || p < limits.floor - PRICE_EPSILON))) problems.push('priceLimits');
-  // Whole lots above one lot, and whole shares below it: a market traded in lots sells no part of a share.
-  if (lot !== undefined && lot > 1 && ((draft.quantity > lot && draft.quantity % lot !== 0) || (draft.quantity > 0 && !Number.isInteger(draft.quantity)))) problems.push('lot');
+  // A market traded in lots sells no part of a share: that is said first, and alone.
+  if (lot !== undefined && lot > 1 && draft.quantity > 0 && !Number.isInteger(draft.quantity)) problems.push('wholeUnits');
+  else if (lot !== undefined && lot > 1 && draft.quantity > lot && draft.quantity % lot !== 0) problems.push('lot');
   return problems;
 }
 

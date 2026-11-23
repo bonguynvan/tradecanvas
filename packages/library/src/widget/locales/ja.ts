@@ -626,6 +626,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': '価格は市場の呼値の単位で入力してください。',
   'ticket.problem.priceLimits': '本日の値幅は{floor}から{ceiling}までです。',
   'ticket.problem.lot': '売買単位を超える数量は{lot}株単位で注文し、単元未満株は別の注文に分けてください。',
+  'ticket.problem.wholeUnits': '株数は整数で注文してください。この市場では 1 株未満は取引できません。',
   'toolbar.layouts': 'レイアウト',
   'layouts.unnamed': '名前なし',
   'layouts.unsavedChanges': '未保存の変更あり',

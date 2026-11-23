@@ -626,6 +626,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': 'Οι τιμές ακολουθούν τα βήματα τιμής (tick) της αγοράς.',
   'ticket.problem.priceLimits': 'Οι σημερινές τιμές κυμαίνονται από {floor} έως {ceiling}.',
   'ticket.problem.lot': 'Πάνω από μία παρτίδα, δώστε εντολή σε ολόκληρες παρτίδες των {lot}· τα υπόλοιπα τεμάχια μπαίνουν σε ξεχωριστή εντολή.',
+  'ticket.problem.wholeUnits': 'Order whole shares: this market trades no part of one.',
   'toolbar.layouts': 'Διάταξη',
   'layouts.unnamed': 'Χωρίς όνομα',
   'layouts.unsavedChanges': 'μη αποθηκευμένες αλλαγές',

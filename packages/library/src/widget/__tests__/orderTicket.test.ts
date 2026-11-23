@@ -53,7 +53,8 @@ describe('order ticket rules', () => {
     expect(orderTicketProblems(hose({ quantity: 40 }), 25.5, rules)).toEqual([]);
     expect(orderTicketProblems(hose({ quantity: 250 }), 25.5, rules)).toEqual(['lot']);
     // A market traded in lots trades whole shares: a part of one (a risk that buys 0.01) is no order.
-    expect(orderTicketProblems(hose({ quantity: 0.01 }), 25.5, rules)).toEqual(['lot']);
+    expect(orderTicketProblems(hose({ quantity: 0.01 }), 25.5, rules)).toEqual(['wholeUnits']);
+    expect(orderTicketProblems(hose({ quantity: 250.5 }), 25.5, rules)).toEqual(['wholeUnits']);
     expect(orderTicketProblems(hose({ quantity: 50 }), 25.5, rules)).toEqual([]);
     // A market order's price is the market's.
     expect(orderTicketProblems(hose({ type: 'market', price: 0 }), 25.5, rules)).toEqual([]);

@@ -633,6 +633,7 @@ export const EN_MESSAGES = {
   'ticket.problem.priceStep': 'Prices go in the market’s price steps.',
   'ticket.problem.priceLimits': 'Today’s prices run from {floor} to {ceiling}.',
   'ticket.problem.lot': 'Above one lot, order whole lots of {lot}; odd shares go in an order of their own.',
+  'ticket.problem.wholeUnits': 'Order whole shares: this market trades no part of one.',
   'toolbar.layouts': 'Layout',
   'layouts.unnamed': 'Unnamed',
   'layouts.unsavedChanges': 'unsaved changes',

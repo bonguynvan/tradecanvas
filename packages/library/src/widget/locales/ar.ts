@@ -632,6 +632,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': 'يجب أن تكون الأسعار على وحدات تغيّر السعر المعتمدة في السوق.',
   'ticket.problem.priceLimits': 'تتراوح أسعار اليوم بين {floor} و{ceiling}.',
   'ticket.problem.lot': 'فوق وحدة تداول واحدة، اطلب وحدات كاملة من {lot}؛ وتوضع الأسهم الكسرية في أمر مستقل.',
+  'ticket.problem.wholeUnits': 'Order whole shares: this market trades no part of one.',
   'toolbar.layouts': 'التخطيط',
   'layouts.unnamed': 'بدون اسم',
   'layouts.unsavedChanges': 'تغييرات غير محفوظة',

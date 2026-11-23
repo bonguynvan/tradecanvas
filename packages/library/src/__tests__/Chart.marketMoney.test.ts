@@ -89,3 +89,34 @@ describe('Chart: a position open while the chart’s market changes', () => {
     expect(adapter.getAccount()!.balance).toBeCloseTo(10_100_000, 6);
   });
 });
+
+// The chart said its multiplier and sent the order a moment later: orders sent in one turn all
+// took what was said last.
+describe('Chart: orders sent in the same turn', () => {
+  const settled = () => new Promise((r) => setTimeout(r, 0));
+
+  it('are each counted at their own chart’s market, on one account', async () => {
+    const adapter = new PaperExecutionAdapter({ markPrice: 100, balance: 1_000_000_000_000 });
+    const others = [sizedHost(800, 500), sizedHost(800, 500)].map((el) => new Chart(el, { chartType: 'candlestick', features: { trading: true } }));
+    const charts = [chart, ...others];
+    const markets = [MARKET_HOSE, MARKET_VN30F, MARKET_CRYPTO];
+    charts.forEach((c, i) => { c.setMarket(markets[i]); c.connectExecution(adapter); });
+    for (const c of charts) c.placeOrderIntent({ side: 'buy', type: 'market', price: 100, quantity: 1 });
+    await settled();
+    expect(adapter.getPositions().map((p) => p.multiplier)).toEqual([1000, 100_000, 1]);
+    adapter.setMarkPrice(101);
+    expect(adapter.getAccount()!.unrealisedPnl).toBeCloseTo(101_001, 6);
+    for (const c of others) c.destroy();
+  });
+
+  it('is counted at the market it was sent on, when the market changes right after', async () => {
+    chart.setMarket(MARKET_HOSE);
+    const adapter = new PaperExecutionAdapter({ markPrice: 26.4, balance: 10_000_000 });
+    chart.connectExecution(adapter);
+    chart.placeOrderIntent({ side: 'buy', type: 'market', price: 26.4, quantity: 100 });
+    chart.setMarket(MARKET_CRYPTO);
+    await settled();
+    expect(adapter.getPositions()[0].multiplier).toBe(1000);
+    expect(adapter.getAccount()!.marginUsed).toBe(2_640_000);
+  });
+});

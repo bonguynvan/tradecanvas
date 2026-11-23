@@ -3928,6 +3928,11 @@ export class Chart {
     this.applyTimeSpacing();
   }
 
+  /** The order with what a price is worth on this chart's market, unless it says one itself. */
+  private withWorth<T extends { multiplier?: number }>(intent: T): T {
+    return intent.multiplier === undefined ? { ...intent, multiplier: this.marketConfig?.contractMultiplier ?? 1 } : intent;
+  }
+
   /**
    * Connect an execution adapter, turning the trading overlay into a live
    * trading surface. The adapter is the source of truth: the chart routes its
@@ -3949,11 +3954,9 @@ export class Chart {
     this.executionBrackets = config.brackets ?? 'place';
     this.execTeardown = wireExecution(adapter, {
       onIntent: (type, handler) => {
-        // Charts may share one account: each says what a price is worth on its own market before the order it sends.
-        const wrapped = (e: ChartEvent) => {
-          adapter.setMultiplier?.(this.marketConfig?.contractMultiplier, this.tradedSymbol ?? undefined);
-          return handler(e.payload);
-        };
+        // An order carries what a price is worth on this chart's market, read as it leaves: it is
+        // sent a moment later, and by then this chart, or another on the same account, may say another.
+        const wrapped = (e: ChartEvent) => handler(type === 'orderPlace' ? this.withWorth(e.payload as import('@tradecanvas/commons').OrderPlaceIntent) : e.payload);
         this.eventBus.on(type, wrapped);
         return () => this.eventBus.off(type, wrapped);
       },

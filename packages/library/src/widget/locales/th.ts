@@ -626,6 +626,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': 'ราคาต้องเป็นไปตามช่วงราคา (tick) ของตลาด',
   'ticket.problem.priceLimits': 'ราคาวันนี้อยู่ระหว่าง {floor} ถึง {ceiling}',
   'ticket.problem.lot': 'หากเกินหนึ่งหน่วยการซื้อขาย ให้ส่งคำสั่งเป็นจำนวนเต็มหน่วยละ {lot} หุ้น ส่วนเศษหุ้นให้แยกเป็นอีกคำสั่ง',
+  'ticket.problem.wholeUnits': 'Order whole shares: this market trades no part of one.',
   'toolbar.layouts': 'เลย์เอาต์',
   'layouts.unnamed': 'ไม่มีชื่อ',
   'layouts.unsavedChanges': 'มีการเปลี่ยนแปลงที่ยังไม่บันทึก',

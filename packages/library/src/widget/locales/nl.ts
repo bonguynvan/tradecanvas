@@ -626,6 +626,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': 'Prijzen volgen de tickgrootte van de markt.',
   'ticket.problem.priceLimits': 'Vandaag lopen de prijzen van {floor} tot {ceiling}.',
   'ticket.problem.lot': 'Boven één lot alleen hele lots van {lot}; losse aandelen gaan in een aparte order.',
+  'ticket.problem.wholeUnits': 'Order whole shares: this market trades no part of one.',
   'toolbar.layouts': 'Lay-out',
   'layouts.unnamed': 'Naamloos',
   'layouts.unsavedChanges': 'niet-opgeslagen wijzigingen',

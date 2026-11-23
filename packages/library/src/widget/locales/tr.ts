@@ -626,6 +626,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': 'Fiyatlar piyasanın fiyat adımlarına uygun olmalıdır.',
   'ticket.problem.priceLimits': 'Bugünkü fiyatlar {floor} ile {ceiling} arasındadır.',
   'ticket.problem.lot': 'Bir lotun üzerinde {lot} adetlik tam lotlarla emir verin; küsurat hisseler ayrı bir emirle girilir.',
+  'ticket.problem.wholeUnits': 'Order whole shares: this market trades no part of one.',
   'toolbar.layouts': 'Düzen',
   'layouts.unnamed': 'Adsız',
   'layouts.unsavedChanges': 'kaydedilmemiş değişiklikler',

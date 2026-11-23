@@ -632,6 +632,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': 'המחירים חייבים להתאים למדרגות המחיר (טיק) של השוק.',
   'ticket.problem.priceLimits': 'טווח המחירים היום הוא מ-{floor} עד {ceiling}.',
   'ticket.problem.lot': 'מעל לוט אחד, יש להזמין לוטים שלמים של {lot}; מניות עודפות נשלחות בפקודה נפרדת.',
+  'ticket.problem.wholeUnits': 'Order whole shares: this market trades no part of one.',
   'toolbar.layouts': 'פריסה',
   'layouts.unnamed': 'ללא שם',
   'layouts.unsavedChanges': 'שינויים שלא נשמרו',

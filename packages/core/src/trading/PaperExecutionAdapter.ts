@@ -185,8 +185,9 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
    * chart and the panel count in. None, or one that is no multiplier, is 1. It is for the orders
    * placed from now on: an order keeps what its price was worth when it was placed, and a
    * position what it opened with (`TradingPosition.multiplier`), so a chart shown another market
-   * or another symbol revalues nothing. A chart says it again before each order it sends, so
-   * charts that share an account each place at their own market's.
+   * or another symbol revalues nothing. An order that carries its own (`OrderPlaceIntent.multiplier`,
+   * which a chart writes as the order leaves) is counted by that, so charts that share an account
+   * each place at their own market's.
    */
   setMultiplier(multiplier: number | undefined, _symbol?: string): void {
     if (this.ownMultiplier) return;
@@ -196,6 +197,12 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       this.positions = this.positions.map((p) => (p.multiplier === undefined ? { ...p, multiplier: this.multiplierOf(p) } : p));
     }
     this.multiplier = positive(multiplier) ? multiplier : 1;
+  }
+
+  /** What is kept of orders and positions that are gone is dropped: a long session keeps what is live. */
+  private forget(): void {
+    for (const id of [...this.orderWorth.keys()]) if (!this.orders.some((o) => o.id === id)) this.orderWorth.delete(id);
+    for (const id of [...this.openedWorth.keys()]) if (!this.positions.some((p) => p.id === id)) this.openedWorth.delete(id);
   }
 
   /** What a price is worth for a position: what it was when it opened. */
@@ -481,7 +488,8 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     // The exchange's own name for it, kept as given: it trades here as the kind the chart knows.
     if (intent.exchangeType !== undefined) order.exchangeType = intent.exchangeType;
     // What its price is worth is the chart's market's now: it may show another before the order fills.
-    this.orderWorth.set(order.id, this.multiplier);
+    this.forget();
+    this.orderWorth.set(order.id, !this.ownMultiplier && positive(intent.multiplier) ? intent.multiplier : this.multiplier);
     // The price of its own symbol: what it fills at now, and is sized by.
     const mark = this.markOf(order);
     // A trail is a distance: anything else asked for is not taken.
