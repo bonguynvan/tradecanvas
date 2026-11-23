@@ -46,6 +46,8 @@ export function scaleModeOf(action: string): PriceScaleMode | undefined {
 export interface ChartMenuContext {
   /** The price at the click (the price pane, the price axis, the "+"). */
   price?: number;
+  /** The day's ceiling and floor, where the market has them: past them the menu offers no order. */
+  limits?: { ceiling: number; floor: number } | null;
   /** The latest price, to tell a limit from a stop. */
   lastPrice: number | null;
   formatPrice: (price: number) => string;
@@ -107,7 +109,10 @@ export function priceEntries(ctx: ChartMenuContext, t: Translator): ContextMenuE
   if (ctx.canTrade) {
     // Below the market a buy waits as a limit and a sell as a stop; above, the other way round.
     const below = ctx.lastPrice === null || ctx.price <= ctx.lastPrice;
-    entries.push(
+    // Past the day's ceiling or floor no order may be: the ticket still opens there, and says why.
+    const { limits } = ctx;
+    const inLimits = !limits || (ctx.price <= limits.ceiling && ctx.price >= limits.floor);
+    if (inLimits) entries.push(
       below
         ? { id: 'buyLimit', label: fill(t('chartMenu.buyLimit'), { price }), icon: 'trendingUp' }
         : { id: 'buyStop', label: fill(t('chartMenu.buyStop'), { price }), icon: 'trendingUp' },

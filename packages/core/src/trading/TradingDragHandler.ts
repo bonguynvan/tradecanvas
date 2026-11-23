@@ -2,7 +2,7 @@ import type { TradingOrder, TradingPosition, ViewportState, Point } from '@trade
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
 import { stopOf, type DragState } from './OrderRenderer.js';
 import { inPlot } from './plot.js';
-import { onGrid, type PriceRounding } from '../viewport/priceGrid.js';
+import { onGrid, withinBounds, type PriceBounds, type PriceRounding } from '../viewport/priceGrid.js';
 
 export interface DragResult {
   sourceType: 'order' | 'orderStop' | 'stopLoss' | 'takeProfit' | 'level';
@@ -27,6 +27,13 @@ export class TradingDragHandler {
 
   setRound(round: PriceRounding | null): void {
     this.round = round;
+  }
+
+  /** The prices an order may be dragged to today, asked as it is dragged; none holds it nowhere. */
+  private bounds: () => PriceBounds | null = () => null;
+
+  setOrderBounds(bounds: () => PriceBounds | null): void {
+    this.bounds = bounds;
   }
 
   /** A press at `pos`: the first order line within `tolerance`, else the first stop or target, else the take-profit level nearest it. */
@@ -131,7 +138,10 @@ export class TradingDragHandler {
       this.dragging = true;
     }
 
-    this.dragState.currentPrice = onGrid(this.round, yToPrice(pos.y, viewport));
+    const price = onGrid(this.round, yToPrice(pos.y, viewport));
+    // An order's own price (and a stop-limit's stop) is one of today's: a position's stop or target need not be.
+    const ordered = this.dragState.sourceType === 'order' || this.dragState.sourceType === 'orderStop';
+    this.dragState.currentPrice = ordered ? withinBounds(this.bounds(), price) : price;
     return true;
   }
 

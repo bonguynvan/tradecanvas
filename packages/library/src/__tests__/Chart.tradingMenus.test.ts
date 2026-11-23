@@ -286,3 +286,40 @@ describe('Chart: a price set by hand is a price of the market', () => {
     expect(moved[0].newPrice).toBe(chart.roundPrice(moved[0].newPrice));
   });
 });
+
+describe('Chart: an order set by hand keeps inside the day’s limits', () => {
+  const yOf = (price: number) => {
+    const { chartRect: plot, priceRange } = state();
+    return plot.y + ((priceRange.max - price) / (priceRange.max - priceRange.min)) * plot.height;
+  };
+
+  it('an order dragged past the day’s ceiling stops at it', () => {
+    // Prices in tenths, a per cent either side of a reference of 100: from 99 to 101.
+    chart.setMarket({ type: 'stock', priceStep: 0.1, priceLimits: { enabled: true, ceilingPercent: 1, floorPercent: 1 } });
+    chart.setPriceLimits(100);
+    const limits = chart.getPriceLimits()!;
+    expect([limits.floor, limits.ceiling]).toEqual([99, 101]);
+    chart.setOrders([{ id: 'o1', side: 'sell', type: 'limit', price: 100.5, quantity: 1, draggable: true }]);
+    const moved: { newPrice: number }[] = [];
+    chart.on('orderModify', (e) => moved.push(e.payload as { newPrice: number }));
+    const x = state().chartRect.x + state().chartRect.width / 2;
+    mouse('mousemove', x, yOf(100.5));
+    mouse('mousedown', x, yOf(100.5));
+    mouse('mousemove', x, yOf(101.6));
+    mouse('mouseup', x, yOf(101.6));
+    expect(moved).toEqual([expect.objectContaining({ newPrice: 101 })]);
+  });
+
+  it('holds nothing with no limits for the day', () => {
+    chart.setMarket({ type: 'stock', priceStep: 0.1 });
+    chart.setOrders([{ id: 'o1', side: 'sell', type: 'limit', price: 100.5, quantity: 1, draggable: true }]);
+    const moved: { newPrice: number }[] = [];
+    chart.on('orderModify', (e) => moved.push(e.payload as { newPrice: number }));
+    const x = state().chartRect.x + state().chartRect.width / 2;
+    mouse('mousemove', x, yOf(100.5));
+    mouse('mousedown', x, yOf(100.5));
+    mouse('mousemove', x, yOf(101.6));
+    mouse('mouseup', x, yOf(101.6));
+    expect(moved[0].newPrice).toBeCloseTo(101.6, 5);
+  });
+});

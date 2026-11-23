@@ -647,6 +647,8 @@ export class Chart {
     this.tradingManager.setRequestRender(() => this.engine.requestRender(LayerType.Overlay));
     // A price set by hand (a line dragged, a bracket, the right-click menu) is a price of the market: on its step.
     this.tradingManager.setPriceRounding((price) => this.roundPrice(price));
+    // And an order's own is one of today's: inside the day's ceiling and floor, where the market has them.
+    this.tradingManager.setOrderPriceBounds(() => this.getPriceLimits());
     this.tradingManager.setEventCallback((event, data) => {
       this.eventBus.emit(event as ChartEventType, data);
     });

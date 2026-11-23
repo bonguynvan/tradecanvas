@@ -4,6 +4,29 @@
  */
 export type PriceRounding = (price: number) => number;
 
+/** The prices an order may be at today: the day's floor and its ceiling. */
+export interface PriceBounds {
+  floor: number;
+  ceiling: number;
+}
+
+/**
+ * `price` kept inside `bounds`: the ceiling for one over it, the floor for
+ * one under. As it is with no bounds, or with bounds that are no prices or
+ * the wrong way round.
+ */
+export function withinBounds(bounds: PriceBounds | null | undefined, price: number): number {
+  if (!bounds || !Number.isFinite(price)) return price;
+  const { floor, ceiling } = bounds;
+  if (!Number.isFinite(floor) || !Number.isFinite(ceiling) || floor > ceiling) return price;
+  return Math.min(Math.max(price, floor), ceiling);
+}
+
+/** Whether `price` is inside `bounds`, a bound itself included; true with none, or with bounds that hold nothing. */
+export function isWithinBounds(bounds: PriceBounds | null | undefined, price: number): boolean {
+  return withinBounds(bounds, price) === price;
+}
+
 /** How many times the reach is doubled to find the next step of a grid: from a billionth of the price to past any step. */
 const MAX_DOUBLINGS = 200;
 /** Where the search for the next step begins, as a part of the price. */

@@ -44,6 +44,17 @@ describe('chart menus', () => {
     expect(priceEntries(ctx({ price: undefined }), EN_TRANSLATOR)).toEqual([]);
   });
 
+  it('offers no order at a price past the day’s limits: an alert and a line may be there, and the ticket says why an order may not', () => {
+    const limits = { floor: 93, ceiling: 107 };
+    const past = ctx({ price: 110, canOrderTicket: true, limits });
+    expect(ids(priceEntries(past, EN_TRANSLATOR))).toEqual(['alert', 'orderTicket', 'horizontalLine']);
+    expect(ids(priceEntries(ctx({ price: 90, limits }), EN_TRANSLATOR))).toEqual(['alert', 'horizontalLine']);
+    // At a limit itself, and anywhere between, an order may be.
+    expect(ids(priceEntries(ctx({ price: 107, limits }), EN_TRANSLATOR))).toEqual(['alert', 'buyStop', 'sellLimit', 'horizontalLine']);
+    expect(ids(priceEntries(ctx({ price: 93, limits }), EN_TRANSLATOR))).toEqual(['alert', 'buyLimit', 'sellStop', 'horizontalLine']);
+    expect(ids(priceEntries(ctx({ price: 110, limits: null }), EN_TRANSLATOR))).toEqual(['alert', 'buyStop', 'sellLimit', 'horizontalLine']);
+  });
+
   it('builds the plot’s menu: the price, the view, the drawings and indicators, the settings', () => {
     expect(ids(chartMenuEntries('plot', ctx(), EN_TRANSLATOR))).toEqual([
       'alert', 'buyLimit', 'sellStop', 'horizontalLine', '|', 'resetView', '|', 'hideDrawings', 'removeDrawings', '|', 'settings',

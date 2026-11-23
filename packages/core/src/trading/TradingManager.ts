@@ -22,7 +22,7 @@ import { buttonAt, sameLineAction, type LineButton, type LineButtonAction } from
 import { renderFillMarks } from './fillMarks.js';
 import { drawAxisBadge, drawTags, spreadAxisBadges, tagAt, type AxisBadge, type TagBox, type TagRect } from './tradingTags.js';
 import { clampToPlot } from './plot.js';
-import { onGrid, onGridBeyond, type PriceRounding } from '../viewport/priceGrid.js';
+import { isWithinBounds, onGrid, onGridBeyond, withinBounds, type PriceBounds, type PriceRounding } from '../viewport/priceGrid.js';
 import { stopSide } from './positionStops.js';
 import { AXIS_LABEL_HEIGHT } from '../ui/axisValueLabels.js';
 
@@ -90,6 +90,25 @@ export class TradingManager {
     this.dragHandler.setRound(round);
     this.bracket.setRound(round);
     this.orderDraft.setRound(round);
+  }
+
+  /** The prices an order may be set at by hand today (see `setOrderPriceBounds`). */
+  private orderBounds: () => PriceBounds | null = () => null;
+
+  /**
+   * Keep the orders set by hand inside the day's limits: an order's line (and
+   * a stop-limit's stop) stops at the ceiling or the floor when dragged past
+   * it, a bracket's entry and a draft order start and stay inside them, and
+   * the right-click menu offers no order past them. `bounds` is asked each
+   * time (the day's limits change with the reference price); it gives null
+   * where the market has none. A position's stop, target and levels are not
+   * held: they are no orders of today's. Null takes the limits away.
+   */
+  setOrderPriceBounds(bounds: (() => PriceBounds | null) | null): void {
+    this.orderBounds = bounds ?? (() => null);
+    this.dragHandler.setOrderBounds(this.orderBounds);
+    this.bracket.setOrderBounds(this.orderBounds);
+    this.orderDraft.setOrderBounds(this.orderBounds);
   }
 
   setRequestRender(cb: () => void): void {
@@ -573,8 +592,11 @@ export class TradingManager {
       return { orderId: order.id, newPrice: order.price, previousPrice: order.price, newStopPrice: result.newPrice, previousStopPrice: result.previousPrice };
     }
     const move = { orderId: result.id, newPrice: result.newPrice, previousPrice: result.previousPrice };
-    // Taken with the order, the stop lands on the grid of where it is now: the step may change on the way, and a sum leaves dust.
-    return stop === undefined ? move : { ...move, newStopPrice: onGrid(this.round, stop + (result.newPrice - result.previousPrice)), previousStopPrice: stop };
+    if (stop === undefined) return move;
+    // Taken with the order, the stop lands on the grid of where it is now (the step may change on the way, and a sum
+    // leaves dust), and inside the day's limits as the order itself is.
+    const newStopPrice = withinBounds(this.orderBounds(), onGrid(this.round, stop + (result.newPrice - result.previousPrice)));
+    return { ...move, newStopPrice, previousStopPrice: stop };
   }
 
   /**
@@ -607,6 +629,8 @@ export class TradingManager {
     // Hidden, the orders would be placed out of sight: no menu to place them.
     if (!this.config.enabled || !this.config.contextMenu?.enabled || !this.container || this.hidden) return false;
     const price = onGrid(this.round, yToPrice(pos.y, viewport));
+    // Past the day's limits no order may be: the menu has nothing to offer there.
+    if (!isWithinBounds(this.orderBounds(), price)) return false;
     this.contextMenu.show(pos, price, this.container, this.config, (p) => priceTagText(p, viewport, this.config.pricePrecision));
     return true;
   }

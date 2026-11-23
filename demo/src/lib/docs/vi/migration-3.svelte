@@ -65,6 +65,7 @@ chart.startBracket('buy', undefined, { risk: 50 })   // khối lượng sẽ l�
   (<code>62549.71592675613</code>). Giờ chúng mang giá trên bước giá của thị trường, còn không thì theo số chữ số thập phân trục giá
   đang hiển thị: đúng giá trị <code>chart.roundPrice</code> trả về. Bracket và order nháp cũng bắt đầu trên lưới, dù được bắt đầu ở giá nào, và alert được kéo cũng rơi trên lưới. Một đường được thả đúng bước giá cũ thì không báo gì. Code tự làm tròn
   các giá này có thể bỏ phần đó.
+  Trên thị trường có giá trần và giá sàn trong ngày, giá của chính order cũng được giữ trong biên độ: kéo vượt qua thì được báo ở đúng mức trần hoặc sàn.
 </p>
 
 <h2 id="types">Các type được mở rộng</h2>
