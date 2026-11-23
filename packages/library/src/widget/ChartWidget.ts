@@ -52,6 +52,7 @@ import { chartMenuEntries, priceEntries } from './chartMenu.js';
 import { MARGIN_LEVEL_DECIMALS, WidgetAccountPanel } from './WidgetAccountPanel.js';
 import { WidgetOrderTicket } from './WidgetOrderTicket.js';
 import { WidgetNamePrompt } from './WidgetNamePrompt.js';
+import { WidgetConfirm, type ConfirmRequest } from './WidgetConfirm.js';
 import { WidgetIntervalInput } from './WidgetIntervalInput.js';
 import { IndicatorTemplateStore } from './indicatorTemplates.js';
 import { IME_KEY_CODE, inOverlay, isKeyTarget, isTyping, registerKeyRoot } from './keyTarget.js';
@@ -1390,8 +1391,8 @@ export class ChartWidget {
         now: () => this.chart.getTradingTime(),
       }, this.t);
       this.trading.accountPanel = new WidgetAccountPanel(accountHost, {
-        onClosePosition: (id) => this.chart.closePositionIntent(id),
-        onReversePosition: (id) => this.chart.reversePositionIntent(id),
+        onClosePosition: (id) => this.trading.closePosition(id),
+        onReversePosition: (id) => this.trading.reversePosition(id),
         onCancelOrder: (id) => this.chart.cancelOrderIntent(id),
         onNewOrder: () => this.trading.openOrderTicket(),
         formatPrice: (p) => this.formatAlertPrice(p),
@@ -1431,6 +1432,13 @@ export class ChartWidget {
 
     // A bracket or a draft order confirmed on the chart is held back while the feed is down, as an order in one press is.
     this.chart.setOrderGate(() => this.trading.feedUp());
+    for (const event of ['symbolChange', 'executionChange', 'replayState'] as const) this.chart.on(event, () => this.dropConfirmation());
+    this.chart.on('positionsChange', () => this.dropConfirmation('position'));
+    // A button on a position's line closes or reverses it in one press: confirmed first, as its row in the panel is.
+    this.chart.setPositionGuard((action, id, send) => {
+      if (action === 'positionClose') this.trading.closePosition(id, send);
+      else this.trading.reversePosition(id, send);
+    });
     // Bracket-order placement: floating confirm/cancel bar + event wiring.
     if (options.trading !== false) {
       this.trading.bracketBar = new WidgetBracketBar(this.chartContainer, {
@@ -1491,6 +1499,7 @@ export class ChartWidget {
       if (options.depthLadder) {
         this.trading.depthLadder = new WidgetDepthLadder(this.root, {
           onTrade: (side, price) => this.trading.placeLadderOrder(side, price),
+          quantity: () => this.trading.oneTouchQuantity(),
           formatPrice: (p) => this.formatAlertPrice(p),
           priceStep: (p) => this.chart.getPriceStep(p),
           onToggle: (open) => this.markOpen('ladder', open),
@@ -2043,6 +2052,8 @@ export class ChartWidget {
       if (this.chart.getSymbol() === '') this.chart.clearFills();
       this.chartInfoAtSwitch = this.chart.getSymbolInfo();
     }
+    // What a confirmation asked about was the last symbol's.
+    if (symbol !== this.state.symbol) this.dropConfirmation();
     this.state = { ...this.state, symbol };
     this.options.onSymbolChange?.(symbol);
     this.updateUI();
@@ -2317,6 +2328,7 @@ export class ChartWidget {
     for (const menu of this.hostMenus) menu.destroy();
     this.hostMenus.clear();
     this.templatePrompt?.destroy();
+    this.confirmDialog?.destroy();
     this.chartSettings.chartTemplatePrompt?.destroy();
     this.drawingEdit.drawingTemplatePrompt?.destroy();
     this.intervals.intervalInput?.destroy();
@@ -3853,6 +3865,36 @@ export class ChartWidget {
     });
   }
 
+  private confirmDialog: WidgetConfirm | null = null;
+  /** What the open confirmation is about: a position's is put aside when the positions change under it. */
+  private confirmAbout: 'position' | 'order' | null = null;
+
+  /**
+   * Ask before a trade that one press would make (a position closed or reversed, an order from
+   * the right-click menu or the depth ladder), then do it. With `confirmOrders: false` it is done
+   * at once: a broker's choice for traders who ask for one-click trading.
+   */
+  private confirmTrade(request: Omit<ConfirmRequest, 'onConfirm'> & { about?: 'position' }, run: () => void): void {
+    if (this.options.confirmOrders === false) {
+      run();
+      return;
+    }
+    const { about, ...asked } = request;
+    this.confirmDialog ??= new WidgetConfirm(this.root, this.t);
+    this.confirmAbout = about ?? 'order';
+    this.confirmDialog.open({ ...asked, onConfirm: run });
+  }
+
+  /**
+   * Put the open confirmation aside, undone: what it said is no longer so (another symbol shown,
+   * the broker gone, a replay begun, the positions changed under a close or a reverse). Asked
+   * again, it says what is so now.
+   */
+  private dropConfirmation(about?: 'position'): void {
+    if (about && this.confirmAbout !== about) return;
+    this.confirmDialog?.close();
+  }
+
   /** Mark `role` open or closed; the toolbar's effect shows it. */
   private markOpen(role: string, open: boolean): void {
     const now = this.openRoles.peek();
@@ -3996,6 +4038,7 @@ export class ChartWidget {
       get featureState() { return w.featureState; },
       formatAlertPrice: (...args) => w.formatAlertPrice(...args),
       say: (...args) => w.say(...args),
+      confirm: (...args) => w.confirmTrade(...args),
       get state() { return w.state; },
       get t() { return w.t; },
     };

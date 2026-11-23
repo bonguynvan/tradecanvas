@@ -6809,6 +6809,12 @@
         "kind": "number"
       },
       {
+        "name": "confirmOrders",
+        "type": "boolean",
+        "doc": "Ask before a trade that one press would make: a position closed or reversed (its row in the account panel, its buttons on the chart), an order from the right-click menu or the depth ladder. The dialog says what it is in full (side, quantity, price, symbol); Enter does it, Escape leaves it.",
+        "kind": "boolean"
+      },
+      {
         "name": "feedQuietAfter",
         "type": "number",
         "doc": "How long, seconds, the widget's feed may be connected and tell nothing before its price stops counting as live: the status bar then says so in place of \"Live\", and the ticket warns and sends no order at the market.",

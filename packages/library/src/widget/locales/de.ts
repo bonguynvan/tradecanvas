@@ -975,6 +975,10 @@ export const DE_MESSAGES: WidgetMessages = {
   'order.sellStop': 'Verkauf-Stop @ {price}',
   'order.refused': 'Der Broker hat die Order abgelehnt: {reason}',
   'order.noLivePrice': 'Kein Live-Kurs: Die Order wurde nicht gesendet',
+  'confirm.close': '{side} {quantity} {symbol} zum Marktpreis schließen?',
+  'confirm.reverse': '{side} {quantity} {symbol} zum Marktpreis umkehren? Die Position wird geschlossen und in gleicher Menge in Gegenrichtung eröffnet.',
+  'confirm.order': '{order}, Menge {quantity}, {symbol}',
+  'confirm.place': 'Order aufgeben',
   'order.partDropped': '{filled} von {quantity} ausgeführt: der Rest wurde storniert',
 
   'toast.pinned': 'Zu den Favoriten angeheftet',

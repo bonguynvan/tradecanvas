@@ -322,6 +322,17 @@ chart.setPositions([
 <pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, feedQuietAfter: 30 })   // seconds; 0: never
 chart.getFeedTime()   // when the stream last told anything, ms; null before it has`}</code></pre>
 
+<h3 id="confirmations">确认</h3>
+<p>
+  在 <code>ChartWidget</code> 中，一次点击就能完成的交易会先确认：平仓或反手（账户面板中的那一行、图表上的按钮），
+  以及来自右键菜单或盘口深度的订单。对话框会完整写明这笔交易（方向、数量、价格、品种）；按 Enter 执行，按 Escape 放弃。
+  <code>confirmOrders: false</code> 即一键交易，供有此需求的经纪商使用。下单窗口不会被询问两次：它的下单按钮就是确认。
+  在盘口深度上，点击买价单元格会在该价格挂出限价买单，与那里的买单排在一起；点击卖价单元格则挂出限价卖单。
+  每个单元格在点击前都会写明这一点以及数量。
+</p>
+<pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, confirmOrders: false })   // one-click trading
+chart.setPositionGuard((action, positionId, send) => ask(action, positionId).then((yes) => yes && send()))   // your own, on a headless Chart`}</code></pre>
+
 <h2>在图表上操作订单和持仓</h2>
 <p>
   订单线和持仓线的右端带有小按钮：<strong>×</strong> 撤销订单或平掉持仓，

@@ -252,6 +252,14 @@ export interface ChartWidgetOptions {
   searchSymbols?: (query: string, signal: AbortSignal) => Promise<SymbolInfo[]>;
   historyLimit?: number;
   /**
+   * Ask before a trade that one press would make: a position closed or reversed (its row in the
+   * account panel, its buttons on the chart), an order from the right-click menu or the depth
+   * ladder. The dialog says what it is in full (side, quantity, price, symbol); Enter does it,
+   * Escape leaves it. On unless this is `false`: one-click trading, for a broker whose traders
+   * ask for it. The order ticket is not asked about twice: its Place is the confirmation.
+   */
+  confirmOrders?: boolean;
+  /**
    * How long, seconds, the widget's feed may be connected and tell nothing before its price stops
    * counting as live: the status bar then says so in place of "Live", and the ticket warns and
    * sends no order at the market. A feed that is not connected does the same at once, and holds

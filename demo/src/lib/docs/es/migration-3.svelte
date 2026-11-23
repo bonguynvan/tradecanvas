@@ -140,6 +140,17 @@ chart.startBracket('buy', undefined, { risk: 50 })   // la cantidad que pierde 5
   conectado nunca se considera silencioso; un feed sin conexión retiene las órdenes igualmente.
 </p>
 
+<h3 id="confirmations">Las operaciones de una pulsación se confirman, y un bid de la escalera es precio de compra</h3>
+<p>
+  <code>ChartWidget</code> pregunta ahora antes de cerrar o invertir una posición (el panel de cuenta, los botones del
+  gráfico) y antes de enviar una orden del menú del botón derecho o de la escalera de profundidad: salían con una sola
+  pulsación. <code>confirmOrders: false</code> mantiene la pulsación única. En la escalera de profundidad, pulsar un
+  bid coloca ahora una orden limitada de <strong>compra</strong> a ese precio, y pulsar un ask una limitada de
+  <strong>venta</strong>, donde antes se vendía al bid y se compraba al ask: <code>orderPlace</code> lleva desde la
+  misma celda el lado contrario al de antes. Una prueba o un script que pulsaba esas celdas, o esperaba una orden al
+  instante, necesita el botón de la confirmación (<code>.tcw-confirm .tcw-done-btn</code>) o la opción.
+</p>
+
 <h2 id="types">Tipos que han crecido</h2>
 <p>
   <code>TimeInForce</code> es ahora <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. El código que trata todos

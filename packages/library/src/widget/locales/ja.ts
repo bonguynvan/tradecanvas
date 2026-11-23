@@ -975,6 +975,10 @@ export const JA_MESSAGES: WidgetMessages = {
   'order.sellStop': '逆指値売り @ {price}',
   'order.refused': 'ブローカーが注文を拒否しました: {reason}',
   'order.noLivePrice': 'リアルタイム価格がありません：注文は送信されませんでした',
+  'confirm.close': '{side} {quantity} {symbol} を成行で決済しますか？',
+  'confirm.reverse': '{side} {quantity} {symbol} を成行でドテンしますか？決済し、同じ数量を反対方向に建てます。',
+  'confirm.order': '{order}、数量 {quantity}、{symbol}',
+  'confirm.place': '発注する',
   'order.partDropped': '{quantity} のうち {filled} が約定：残りは取消されました',
 
   'toast.pinned': 'お気に入りに固定しました',

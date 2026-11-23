@@ -975,6 +975,10 @@ export const IT_MESSAGES: WidgetMessages = {
   'order.sellStop': 'Vendita stop @ {price}',
   'order.refused': 'Il broker ha rifiutato l’ordine: {reason}',
   'order.noLivePrice': 'Nessun prezzo in tempo reale: l’ordine non è stato inviato',
+  'confirm.close': 'Chiudere {side} {quantity} {symbol} a mercato?',
+  'confirm.reverse': 'Invertire {side} {quantity} {symbol} a mercato? La posizione viene chiusa e riaperta per la stessa quantità nel verso opposto.',
+  'confirm.order': '{order}, quantità {quantity}, {symbol}',
+  'confirm.place': 'Inserisci ordine',
   'order.partDropped': 'Eseguito {filled} di {quantity}: il resto è stato annullato',
 
   'toast.pinned': 'Aggiunto ai preferiti',

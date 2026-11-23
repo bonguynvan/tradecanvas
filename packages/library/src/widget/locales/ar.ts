@@ -987,6 +987,10 @@ export const AR_MESSAGES: WidgetMessages = {
   'order.sellStop': 'بيع وقف @ {price}',
   'order.refused': 'رفض الوسيط الأمر: {reason}',
   'order.noLivePrice': 'لا يوجد سعر مباشر: لم يُرسل الأمر',
+  'confirm.close': 'إغلاق {side} {quantity} {symbol} بسعر السوق؟',
+  'confirm.reverse': 'عكس {side} {quantity} {symbol} بسعر السوق؟ يُغلق المركز ويُفتح بالكمية نفسها في الاتجاه المعاكس.',
+  'confirm.order': '{order}، الكمية {quantity}، {symbol}',
+  'confirm.place': 'إرسال الأمر',
   'order.partDropped': 'تم تنفيذ {filled} من {quantity}: أُلغي الباقي',
 
   // Toasts

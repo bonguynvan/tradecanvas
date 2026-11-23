@@ -987,6 +987,10 @@ export const FA_MESSAGES: WidgetMessages = {
   'order.sellStop': 'فروش استاپ @ {price}',
   'order.refused': 'بروکر سفارش را رد کرد: {reason}',
   'order.noLivePrice': 'قیمت زنده وجود ندارد: سفارش ارسال نشد',
+  'confirm.close': '{side} {quantity} {symbol} با قیمت بازار بسته شود؟',
+  'confirm.reverse': '{side} {quantity} {symbol} با قیمت بازار معکوس شود؟ موقعیت بسته و با همان مقدار در جهت مخالف باز می‌شود.',
+  'confirm.order': '{order}، مقدار {quantity}، {symbol}',
+  'confirm.place': 'ثبت سفارش',
   'order.partDropped': '{filled} از {quantity} انجام شد: باقی‌مانده لغو شد',
 
   // Toasts

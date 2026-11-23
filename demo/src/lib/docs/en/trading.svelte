@@ -354,6 +354,19 @@ chart.setPositions([
 <pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, feedQuietAfter: 30 })   // seconds; 0: never
 chart.getFeedTime()   // when the stream last told anything, ms; null before it has`}</code></pre>
 
+<h3 id="confirmations">Confirmations</h3>
+<p>
+  A trade that one press would make is confirmed first in <code>ChartWidget</code>: a position closed or reversed
+  (its row in the account panel, its buttons on the chart), and an order from the right-click menu or the depth
+  ladder. The dialog says the trade in full (the side, the quantity, the price, the symbol); Enter does it, Escape
+  leaves it undone. <code>confirmOrders: false</code> is one-click trading, for a broker whose traders ask for it.
+  The order ticket is not asked about twice: its Place is the confirmation. On the depth ladder a press on a bid
+  places a buy limit at that price, joining the bids there, and a press on an ask a sell limit; each cell says so,
+  with the quantity, before it is pressed.
+</p>
+<pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, confirmOrders: false })   // one-click trading
+chart.setPositionGuard((action, positionId, send) => ask(action, positionId).then((yes) => yes && send()))   // your own, on a headless Chart`}</code></pre>
+
 <h2>Act on orders and positions from the chart</h2>
 <p>
   Order and position lines carry small buttons at their right end: <strong>×</strong>

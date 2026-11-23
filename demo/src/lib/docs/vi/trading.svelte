@@ -355,6 +355,18 @@ chart.setPositions([
 <pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, feedQuietAfter: 30 })   // seconds; 0: never
 chart.getFeedTime()   // when the stream last told anything, ms; null before it has`}</code></pre>
 
+<h3 id="confirmations">Xác nhận lệnh</h3>
+<p>
+  Trong <code>ChartWidget</code>, giao dịch nào thực hiện được bằng một lần nhấn đều được hỏi xác nhận trước: đóng
+  hoặc đảo chiều position (dòng của nó trong panel tài khoản, các nút của nó trên chart), và order từ menu chuột phải
+  hay depth ladder. Hộp thoại ghi đầy đủ giao dịch (side, khối lượng, giá, symbol); Enter thì thực hiện, Escape thì bỏ.
+  <code>confirmOrders: false</code> là one-click trading, dành cho broker có trader yêu cầu. Order ticket không bị hỏi
+  hai lần: nút Place của nó chính là xác nhận. Trên depth ladder, nhấn vào một ô bid sẽ đặt buy limit tại giá đó, xếp
+  cùng các bid ở đó, và nhấn vào một ô ask sẽ đặt sell limit; mỗi ô ghi rõ điều đó, kèm khối lượng, trước khi nhấn.
+</p>
+<pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, confirmOrders: false })   // one-click trading
+chart.setPositionGuard((action, positionId, send) => ask(action, positionId).then((yes) => yes && send()))   // your own, on a headless Chart`}</code></pre>
+
 <h2>Thao tác với order và position trên biểu đồ</h2>
 <p>
   Đường order và position có các nút nhỏ ở đầu bên phải: <strong>×</strong>

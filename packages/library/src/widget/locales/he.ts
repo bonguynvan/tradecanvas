@@ -987,6 +987,10 @@ export const HE_MESSAGES: WidgetMessages = {
   'order.sellStop': 'סטופ מכירה @ {price}',
   'order.refused': 'הברוקר דחה את הפקודה: {reason}',
   'order.noLivePrice': 'אין מחיר חי: ההוראה לא נשלחה',
+  'confirm.close': 'לסגור {side} {quantity} {symbol} במחיר השוק?',
+  'confirm.reverse': 'להפוך {side} {quantity} {symbol} במחיר השוק? הפוזיציה נסגרת ונפתחת באותה כמות בכיוון ההפוך.',
+  'confirm.order': '{order}, כמות {quantity}, {symbol}',
+  'confirm.place': 'שליחת הוראה',
   'order.partDropped': 'בוצעו {filled} מתוך {quantity}: היתרה בוטלה',
 
   // Toasts

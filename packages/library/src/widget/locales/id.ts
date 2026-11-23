@@ -975,6 +975,10 @@ export const ID_MESSAGES: WidgetMessages = {
   'order.sellStop': 'Jual stop @ {price}',
   'order.refused': 'Broker menolak order: {reason}',
   'order.noLivePrice': 'Tidak ada harga langsung: order tidak dikirim',
+  'confirm.close': 'Tutup {side} {quantity} {symbol} pada harga pasar?',
+  'confirm.reverse': 'Balik {side} {quantity} {symbol} pada harga pasar? Posisi ditutup dan dibuka dengan jumlah yang sama ke arah sebaliknya.',
+  'confirm.order': '{order}, jumlah {quantity}, {symbol}',
+  'confirm.place': 'Pasang order',
   'order.partDropped': 'Terisi {filled} dari {quantity}: sisanya dibatalkan',
 
   'toast.pinned': 'Disematkan ke favorit',

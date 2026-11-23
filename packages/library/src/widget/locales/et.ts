@@ -987,6 +987,10 @@ export const ET_MESSAGES: WidgetMessages = {
   'order.sellStop': 'Müügistopp @ {price}',
   'order.refused': 'Maakler lükkas orderi tagasi: {reason}',
   'order.noLivePrice': 'Reaalajas hinda pole: orderit ei saadetud',
+  'confirm.close': 'Kas sulgeda {side} {quantity} {symbol} turuhinnaga?',
+  'confirm.reverse': 'Kas pöörata {side} {quantity} {symbol} turuhinnaga ümber? Positsioon suletakse ja sama kogus avatakse vastassuunas.',
+  'confirm.order': '{order}, kogus {quantity}, {symbol}',
+  'confirm.place': 'Esita order',
   'order.partDropped': 'Täidetud {filled} / {quantity}: ülejäänu tühistati',
 
   // Toasts
