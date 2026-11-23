@@ -64,6 +64,7 @@ chart.startBracket('buy', undefined, { risk: 50 })   // the quantity that loses 
   (<code>62549.71592675613</code>). They now carry it on the market's price step, else to the decimals the price axis
   shows: what <code>chart.roundPrice</code> gives. A bracket and a draft order start on the grid too, whatever price they are started at, and an alert dragged lands on it. A line let go on the step it was on reports nothing. Code that rounded
   these itself can stop.
+  On a market with a ceiling and a floor for the day, an order's own price is kept inside them too: dragged past one, it is reported at it.
 </p>
 
 <h2 id="types">Types that grew</h2>

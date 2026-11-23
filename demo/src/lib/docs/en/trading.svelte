@@ -57,6 +57,7 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   While a line is dragged to a price, the crosshair draws no horizontal line and no price on the axis: the
   line's own tag has the price.
   A price set by hand keeps to the market's grid: an order, a stop, a target or a level dragged, a bracket's and a draft order's lines, an alert dragged, the price a right-click or the “+” by the axis gives. It is on the market's price step (<code>setMarket</code>, or the symbol's <code>minTick</code>), else to the decimals the price axis shows: <code>chart.roundPrice</code>. The crosshair writes the price under the pointer on the same grid, so what it reads is what the “+” beside it places at.
+  On a market with a ceiling and a floor for the day (<code>setPriceLimits</code>), an order's own price keeps inside them too: its line stops at the limit when dragged past it, a bracket's entry and a draft order start and stay inside, and the menu offers no order past them, nor does the depth ladder place one. A position's stop, target and levels are not held: they are no orders of today's.
 </p>
 <p>
   The positions, the orders and their fills can be hidden, and their lines locked. Hidden, none is drawn and none

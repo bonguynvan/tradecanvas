@@ -2,7 +2,7 @@ import type { TradingOrder, TradingPosition, ViewportState, Point } from '@trade
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
 import { stopOf, type DragState } from './OrderRenderer.js';
 import { inPlot } from './plot.js';
-import { onGrid, type PriceRounding } from '../viewport/priceGrid.js';
+import { boundsWithRoom, onGrid, withinBounds, type PriceBounds, type PriceRounding } from '../viewport/priceGrid.js';
 
 export interface DragResult {
   sourceType: 'order' | 'orderStop' | 'stopLoss' | 'takeProfit' | 'level';
@@ -27,6 +27,13 @@ export class TradingDragHandler {
 
   setRound(round: PriceRounding | null): void {
     this.round = round;
+  }
+
+  /** The prices an order may be dragged to today, asked as it is dragged; none holds it nowhere. */
+  private bounds: () => PriceBounds | null = () => null;
+
+  setOrderBounds(bounds: () => PriceBounds | null): void {
+    this.bounds = bounds;
   }
 
   /** A press at `pos`: the first order line within `tolerance`, else the first stop or target, else the take-profit level nearest it. */
@@ -70,7 +77,10 @@ export class TradingDragHandler {
   /** Drag `order`'s line, pressed at `y`. */
   beginOrder(order: TradingOrder, y: number): boolean {
     if (order.draggable === false) return false;
-    return this.start({ orderId: order.id, sourceType: 'order', startPrice: order.price, currentPrice: order.price }, y);
+    // A stop-limit takes its stop with it: how far apart the two are is kept, at the day's limits too.
+    const stop = stopOf(order, null);
+    const state: DragState = { orderId: order.id, sourceType: 'order', startPrice: order.price, currentPrice: order.price };
+    return this.start(stop === undefined ? state : { ...state, room: stop - order.price }, y);
   }
 
   /** Drag the stop of a stop-limit `order`, pressed at `y`: the stop alone, the order where it is. */
@@ -131,7 +141,12 @@ export class TradingDragHandler {
       this.dragging = true;
     }
 
-    this.dragState.currentPrice = onGrid(this.round, yToPrice(pos.y, viewport));
+    const price = onGrid(this.round, yToPrice(pos.y, viewport));
+    // An order's own price (and a stop-limit's stop) is one of today's: a position's stop or target need not be.
+    const ordered = this.dragState.sourceType === 'order' || this.dragState.sourceType === 'orderStop';
+    // With its stop beside it, it stops where the nearer of the two reaches the limit.
+    const bounds = ordered ? boundsWithRoom(this.bounds(), this.dragState.room ?? 0) : null;
+    this.dragState.currentPrice = withinBounds(bounds, price);
     return true;
   }
 

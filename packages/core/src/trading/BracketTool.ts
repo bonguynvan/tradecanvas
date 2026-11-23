@@ -1,7 +1,7 @@
 import type { OrderSide, Point, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceTagText, stepDecimals } from '@tradecanvas/commons';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
-import { onGrid, onGridBeyond, type PriceRounding } from '../viewport/priceGrid.js';
+import { onGrid, onGridBeyond, withinBounds, type PriceBounds, type PriceRounding } from '../viewport/priceGrid.js';
 import { inPlot, levelLine } from './plot.js';
 import { drawAxisBadge, drawTags, type AxisBadge, type TradingTag } from './tradingTags.js';
 
@@ -126,13 +126,21 @@ export class BracketTool {
     this.round = round;
   }
 
+  /** The prices its entry may be at today, asked as it is needed; none holds it nowhere. */
+  private bounds: () => PriceBounds | null = () => null;
+
+  setOrderBounds(bounds: () => PriceBounds | null): void {
+    this.bounds = bounds;
+  }
+
   constructor(defaults: BracketDefaultsOptions = {}) {
     this.defaults = defaults;
   }
 
   /** Start a bracket at `entry`, of this `size` (none: it has no quantity). */
   start(side: OrderSide, entry: number, size?: BracketSize): void {
-    this.draft = this.beyondEntry(computeBracketDefaults(side, onGrid(this.round, entry), this.defaults));
+    // Its entry is an order of today's: inside the day's limits. Its stop and its target go where they are put.
+    this.draft = this.beyondEntry(computeBracketDefaults(side, withinBounds(this.bounds(), onGrid(this.round, entry)), this.defaults));
     this.size = size ? { ...size } : undefined;
     this.dragging = null;
   }
@@ -198,9 +206,21 @@ export class BracketTool {
 
   drag(pos: Point, viewport: ViewportState): boolean {
     if (!this.draft || !this.dragging) return false;
-    const price = onGrid(this.round, yToPrice(pos.y, viewport));
+    const at = onGrid(this.round, yToPrice(pos.y, viewport));
+    const price = this.dragging === 'entry' ? withinBounds(this.bounds(), at) : at;
     this.draft = this.beyondEntry(applyHandlePrice(this.draft, this.dragging, price));
     return true;
+  }
+
+  /**
+   * Put the bracket in hand where it may be placed now: its entry inside the
+   * day's limits, which may have come, or moved, since it was started or last
+   * dragged; its stop and its target moved with it, their distances kept.
+   */
+  settle(): void {
+    if (!this.draft) return;
+    const entry = withinBounds(this.bounds(), this.draft.entry);
+    if (entry !== this.draft.entry) this.draft = this.beyondEntry(applyHandlePrice(this.draft, 'entry', entry));
   }
 
   /**

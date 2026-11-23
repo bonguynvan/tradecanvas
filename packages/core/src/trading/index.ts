@@ -12,4 +12,4 @@ export { PaperExecutionAdapter } from './PaperExecutionAdapter.js';
 export type { PaperExecutionOptions, PaperCommission } from './PaperExecutionAdapter.js';
 export { OrderDraftTool, inferOrderType } from './OrderDraftTool.js';
 export type { OrderDraft } from './OrderDraftTool.js';
-export type { PriceRounding } from '../viewport/priceGrid.js';
+export type { PriceBounds, PriceRounding } from '../viewport/priceGrid.js';

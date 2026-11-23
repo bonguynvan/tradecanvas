@@ -8,7 +8,7 @@ import type {
 } from '@tradecanvas/commons';
 import { priceTagText } from '@tradecanvas/commons';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
-import { onGrid, type PriceRounding } from '../viewport/priceGrid.js';
+import { onGrid, withinBounds, type PriceBounds, type PriceRounding } from '../viewport/priceGrid.js';
 import { inPlot, levelLine } from './plot.js';
 import { orderKindText } from './OrderRenderer.js';
 import { drawAxisBadge, drawTags, type AxisBadge, type TradingTag } from './tradingTags.js';
@@ -56,8 +56,25 @@ export class OrderDraftTool {
     this.round = round;
   }
 
+  /** The prices it may be at today, asked as it is needed; none holds it nowhere. */
+  private bounds: () => PriceBounds | null = () => null;
+
+  setOrderBounds(bounds: () => PriceBounds | null): void {
+    this.bounds = bounds;
+  }
+
+  /** A price for the order: on the market's grid, inside the day's limits. */
+  private placed(price: number): number {
+    return withinBounds(this.bounds(), onGrid(this.round, price));
+  }
+
+  /** Put the draft in hand where it may be placed now: inside the day's limits, which may have come, or moved, since. */
+  settle(): void {
+    if (this.draft) this.draft = { ...this.draft, price: withinBounds(this.bounds(), this.draft.price) };
+  }
+
   start(side: OrderSide, price: number, quantity = 1): void {
-    this.draft = { side, price: onGrid(this.round, price), quantity };
+    this.draft = { side, price: this.placed(price), quantity };
     this.dragging = false;
   }
 
@@ -122,7 +139,7 @@ export class OrderDraftTool {
 
   drag(pos: Point, viewport: ViewportState): boolean {
     if (!this.draft || !this.dragging) return false;
-    return this.setPrice(onGrid(this.round, yToPrice(pos.y, viewport)));
+    return this.setPrice(this.placed(yToPrice(pos.y, viewport)));
   }
 
   endDrag(): void {

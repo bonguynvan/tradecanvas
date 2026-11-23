@@ -246,6 +246,187 @@ describe('a price set by hand keeps to the market’s grid', () => {
   });
 });
 
+describe('an order set by hand keeps inside the day’s limits', () => {
+  /** Today's prices run from 40 to 80: y 60 down to y 20. */
+  let limits: { floor: number; ceiling: number } | null;
+
+  beforeEach(() => {
+    limits = { floor: 40, ceiling: 80 };
+    manager.setOrderPriceBounds(() => limits);
+  });
+
+  it('an order dragged past the ceiling or the floor stops there, and is reported there', () => {
+    manager.setOrders([{ id: 'o1', side: 'sell', type: 'limit', price: 75, quantity: 1 }]);
+    manager.onPointerDown({ x: X, y: 25 }, unitViewport);
+    manager.onPointerMove({ x: X, y: 8 }, unitViewport);
+    // The line at the ceiling's 80 (y 20), though the pointer is at 92.
+    expect(axis()).toContain('80.00');
+    expect(draw().lineYs).toContain(20.5);
+    manager.onPointerUp({ x: X, y: 8 });
+    expect(events).toEqual([{ event: 'orderModify', data: { orderId: 'o1', newPrice: 80, previousPrice: 75 } }]);
+    events.length = 0;
+    manager.setOrders([{ id: 'o1', side: 'buy', type: 'limit', price: 45, quantity: 1 }]);
+    drag(55, 77);
+    expect(events).toEqual([{ event: 'orderModify', data: { orderId: 'o1', newPrice: 40, previousPrice: 45 } }]);
+  });
+
+  it('a stop-limit taken to the ceiling takes its stop with it, the room kept; its stop alone stops at the ceiling too', () => {
+    manager.setOrders([{ id: 'o1', side: 'buy', type: 'stopLimit', price: 75, stopPrice: 70, quantity: 1 }]);
+    drag(25, 9); // the limit to 91: the ceiling's 80, and its stop five under
+    expect(events[0].data).toEqual({ orderId: 'o1', newPrice: 80, previousPrice: 75, newStopPrice: 75, previousStopPrice: 70 });
+    events.length = 0;
+    drag(30, 4); // the stop alone, to 96: the ceiling's 80
+    expect(events[0].data).toEqual({ orderId: 'o1', newPrice: 75, previousPrice: 75, newStopPrice: 80, previousStopPrice: 70 });
+  });
+
+  it('a stop-limit whose stop is the nearer the ceiling stops short of it: its stop at the limit, the room between them kept', () => {
+    // A buy whose limit waits under its stop, six apart.
+    manager.setOrders([{ id: 'o1', side: 'buy', type: 'stopLimit', price: 70, stopPrice: 76, quantity: 1 }]);
+    manager.onPointerDown({ x: X, y: 30 }, unitViewport);
+    manager.onPointerMove({ x: X, y: 12 }, unitViewport); // the limit to 88 by the pointer
+    // Drawn as it will be told: the order at 74 (y 26), its stop at the ceiling's 80 (y 20), nothing past it.
+    const drawn = draw().lineYs as number[];
+    expect(drawn).toEqual(expect.arrayContaining([26.5, 20.5]));
+    expect(drawn.every((y) => y >= 20)).toBe(true);
+    expect(axis()).toEqual(expect.arrayContaining(['74.00', '80.00']));
+    manager.onPointerUp({ x: X, y: 12 });
+    expect(events[0].data).toEqual({ orderId: 'o1', newPrice: 74, previousPrice: 70, newStopPrice: 80, previousStopPrice: 76 });
+    // And the same at the floor, for one whose stop is under it.
+    events.length = 0;
+    manager.setOrders([{ id: 'o2', side: 'sell', type: 'stopLimit', price: 50, stopPrice: 44, quantity: 1 }]);
+    drag(50, 71);
+    expect(events[0].data).toEqual({ orderId: 'o2', newPrice: 46, previousPrice: 50, newStopPrice: 40, previousStopPrice: 44 });
+  });
+
+  it('limits that are off the market’s grid hold an order on the grid inside them', () => {
+    limits = { floor: 40.3, ceiling: 79.8 };
+    manager.setOrders([{ id: 'o1', side: 'sell', type: 'limit', price: 75, quantity: 1 }]);
+    drag(25, 8);
+    // 79.5, the highest half not over the ceiling: not the ceiling's own 79.8, which the market has not.
+    expect((events[0].data as { newPrice: number }).newPrice).toBe(79.5);
+    events.length = 0;
+    manager.setOrders([{ id: 'o1', side: 'buy', type: 'limit', price: 45, quantity: 1 }]);
+    drag(55, 77);
+    expect((events[0].data as { newPrice: number }).newPrice).toBe(40.5);
+  });
+
+  it('an order that is past the limits already is taken to the limit by a pull, and left where it is by a press', () => {
+    // Yesterday's order, or one the broker set: at 90, over today's ceiling.
+    manager.setOrders([{ id: 'o1', side: 'sell', type: 'limit', price: 90, quantity: 1 }]);
+    manager.onPointerDown({ x: X, y: 10 }, unitViewport);
+    manager.onPointerUp({ x: X, y: 10 });
+    expect(events).toEqual([]);
+    drag(10, 5); // pulled further out: to the ceiling all the same
+    expect(events).toEqual([{ event: 'orderModify', data: { orderId: 'o1', newPrice: 80, previousPrice: 90 } }]);
+  });
+
+  it('a bracket or a draft order in hand when the limits come is put inside them as it is confirmed', () => {
+    limits = null;
+    manager.startBracket('buy', 95, { quantity: 1 });
+    expect(manager.getBracket()!.entry).toBe(95);
+    limits = { floor: 40, ceiling: 80 };
+    manager.confirmBracket();
+    const placed = events[0].data as { entry: number; stopLoss: number; takeProfit: number };
+    expect(placed.entry).toBe(80);
+    // Its stop and its target keep their own sides of where it now is.
+    expect(placed.stopLoss).toBeLessThan(80);
+    expect(placed.takeProfit).toBeGreaterThan(80);
+    events.length = 0;
+    limits = null;
+    manager.startOrderDraft('sell', 12);
+    limits = { floor: 40, ceiling: 80 };
+    manager.confirmOrderDraft();
+    expect((events[0].data as { price: number }).price).toBe(40);
+  });
+
+  it('says a right-click past the limits is still the chart’s: its menu is on, and has no order to offer there', () => {
+    manager.setConfig({ enabled: true, contextMenu: { enabled: true } });
+    manager.setContainer({} as HTMLElement);
+    expect(manager.refusesContextMenu({ x: X, y: 10 }, unitViewport)).toBe(true);
+    expect(manager.refusesContextMenu({ x: X, y: 40 }, unitViewport)).toBe(false);
+    // With its menu off it has no say: the click is the host's, or the browser's.
+    manager.setConfig({ enabled: true, contextMenu: { enabled: false } });
+    expect(manager.refusesContextMenu({ x: X, y: 10 }, unitViewport)).toBe(false);
+  });
+
+  it('leaves a position’s stop, target and levels free: they are no orders of today’s', () => {
+    // The level well under the target, so a press on it is in reach of no other line.
+    manager.setPositions([{ id: 'p1', side: 'buy', entryPrice: 50, quantity: 3, stopLoss: 45, takeProfit: 75, takeProfits: [{ price: 60, quantity: 1 }] }]);
+    drag(55, 68);  // the stop to 32, under the floor
+    drag(25, 10);  // the target to 90, over the ceiling
+    drag(40, 12);  // the level to 88
+    expect(events).toEqual([
+      { event: 'positionModify', data: { positionId: 'p1', stopLoss: 32 } },
+      { event: 'positionModify', data: { positionId: 'p1', takeProfit: 90 } },
+      { event: 'positionModify', data: { positionId: 'p1', takeProfits: [{ price: 88, quantity: 1 }] } },
+    ]);
+  });
+
+  it('a bracket’s entry: where it starts and where it is dragged; its stop and target go where they are put', () => {
+    manager.startBracket('buy', 95, { quantity: 1 });
+    expect(manager.getBracket()!.entry).toBe(80);
+    // Its entry (at y 20) pulled further up: still the ceiling.
+    manager.onPointerDown({ x: X, y: 20 }, unitViewport);
+    manager.onPointerMove({ x: X, y: 6 }, unitViewport);
+    manager.onPointerUp({ x: X, y: 6 });
+    expect(manager.getBracket()!.entry).toBe(80);
+    // Its target is no order of today's: over the ceiling it may be.
+    expect(manager.getBracket()!.takeProfit).toBeGreaterThan(80);
+    const targetY = 100 - manager.getBracket()!.takeProfit;
+    manager.onPointerDown({ x: X, y: targetY }, unitViewport);
+    manager.onPointerMove({ x: X, y: 5 }, unitViewport);
+    manager.onPointerUp({ x: X, y: 5 });
+    expect(manager.getBracket()!.takeProfit).toBe(95);
+  });
+
+  it('a draft order’s: where it starts, and where it is dragged', () => {
+    manager.startOrderDraft('sell', 12);
+    manager.confirmOrderDraft();
+    expect((events[0].data as { price: number }).price).toBe(40);
+    events.length = 0;
+    manager.startOrderDraft('buy', 60);
+    manager.onPointerDown({ x: X, y: 40 }, unitViewport);
+    manager.onPointerMove({ x: X, y: 3 }, unitViewport);
+    manager.onPointerUp({ x: X, y: 3 });
+    manager.confirmOrderDraft();
+    expect((events[0].data as { price: number }).price).toBe(80);
+  });
+
+  it('the right-click menu offers no order past them, and offers them inside', () => {
+    const show = vi.fn();
+    (manager as unknown as { contextMenu: { show: typeof show } }).contextMenu.show = show;
+    manager.setConfig({ enabled: true, contextMenu: { enabled: true } });
+    manager.setContainer({} as HTMLElement);
+    expect(manager.onContextMenu({ x: X, y: 10 }, unitViewport)).toBe(false);
+    expect(manager.onContextMenu({ x: X, y: 70 }, unitViewport)).toBe(false);
+    expect(show).not.toHaveBeenCalled();
+    expect(manager.onContextMenu({ x: X, y: 39.7 }, unitViewport)).toBe(true);
+    expect(show.mock.calls[0][1]).toBe(60.5);
+    // At a limit itself an order may be.
+    expect(manager.onContextMenu({ x: X, y: 20 }, unitViewport)).toBe(true);
+  });
+
+  it('follows the limits as they are now, and none when there are none', () => {
+    manager.setOrders([{ id: 'o1', side: 'sell', type: 'limit', price: 75, quantity: 1 }]);
+    limits = { floor: 40, ceiling: 90 };
+    drag(25, 4);
+    expect((events[0].data as { newPrice: number }).newPrice).toBe(90);
+    events.length = 0;
+    limits = null;
+    manager.setOrders([{ id: 'o1', side: 'sell', type: 'limit', price: 75, quantity: 1 }]);
+    drag(25, 4);
+    expect((events[0].data as { newPrice: number }).newPrice).toBe(96);
+    // Limits that are no prices, or the wrong way round, hold nothing.
+    for (const odd of [{ floor: Number.NaN, ceiling: 80 }, { floor: 80, ceiling: 40 }]) {
+      events.length = 0;
+      limits = odd;
+      manager.setOrders([{ id: 'o1', side: 'sell', type: 'limit', price: 75, quantity: 1 }]);
+      drag(25, 4);
+      expect((events[0].data as { newPrice: number }).newPrice).toBe(96);
+    }
+  });
+});
+
 describe('with no grid told', () => {
   it('a price is as the pointer has it, as it was', () => {
     const plain = new TradingManager();

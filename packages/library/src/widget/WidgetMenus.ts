@@ -155,7 +155,9 @@ export class WidgetMenus {
     const features = this.host.chart.getFeatures();
     return {
       price,
-      lastPrice: data.length > 0 ? data[data.length - 1].close : null,
+      limits: this.host.chart.getPriceLimits(),
+      // On the market's grid, as the price at the click is: a click at the market is a limit there, not a stop a step over it.
+      lastPrice: data.length > 0 ? this.host.chart.roundPrice(data[data.length - 1].close) : null,
       formatPrice: (p) => this.host.formatAlertPrice(p),
       canAlert: this.host.alerting.alertsPanel !== null,
       canTrade: this.host.options.trading !== false,

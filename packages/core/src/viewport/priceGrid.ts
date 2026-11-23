@@ -4,6 +4,67 @@
  */
 export type PriceRounding = (price: number) => number;
 
+/** The prices an order may be at today: the day's floor and its ceiling. */
+export interface PriceBounds {
+  floor: number;
+  ceiling: number;
+}
+
+/**
+ * `price` kept inside `bounds`: the ceiling for one over it, the floor for
+ * one under. As it is with no bounds, or with bounds that are no prices or
+ * the wrong way round.
+ */
+export function withinBounds(bounds: PriceBounds | null | undefined, price: number): number {
+  if (!bounds || !Number.isFinite(price)) return price;
+  const { floor, ceiling } = bounds;
+  if (!Number.isFinite(floor) || !Number.isFinite(ceiling) || floor > ceiling) return price;
+  return Math.min(Math.max(price, floor), ceiling);
+}
+
+/** Whether `price` is inside `bounds`, a bound itself included; true with none, or with bounds that hold nothing. */
+export function isWithinBounds(bounds: PriceBounds | null | undefined, price: number): boolean {
+  return withinBounds(bounds, price) === price;
+}
+
+/** How near two prices are, as a part of the larger, to be the one price: a sum's dust. */
+const SAME_PRICE = 1e-9;
+
+/** Whether `a` is over `b` by more than a sum's dust. */
+function over(a: number, b: number): boolean {
+  return a - b > Math.max(Math.abs(a), Math.abs(b), 1) * SAME_PRICE;
+}
+
+/**
+ * The bounds as prices of the grid, from inside: the highest step not over
+ * the ceiling, the lowest not under the floor. A day's limits are a per cent
+ * of a reference price: on a market that gave no price step they are sums no
+ * order can be at (27.1245), and a sum may be a hair off the price it stands
+ * for (1.8199999999999998). As they are with no grid, with none, or where the
+ * grid has no step between them.
+ */
+export function boundsOnGrid(round: PriceRounding | null, bounds: PriceBounds | null): PriceBounds | null {
+  if (!round || !bounds || !Number.isFinite(bounds.floor) || !Number.isFinite(bounds.ceiling)) return bounds;
+  const top = onGrid(round, bounds.ceiling);
+  const ceiling = over(top, bounds.ceiling) ? nextOnGrid(round, bounds.ceiling, -1) : top;
+  const bottom = onGrid(round, bounds.floor);
+  const floor = over(bounds.floor, bottom) ? nextOnGrid(round, bounds.floor, 1) : bottom;
+  return floor <= ceiling ? { floor, ceiling } : bounds;
+}
+
+/**
+ * The bounds for a price that takes another with it, `room` away (a
+ * stop-limit's stop, with its order): narrowed so that both stay inside,
+ * the room between them kept. As they are where the room is wider than
+ * they are.
+ */
+export function boundsWithRoom(bounds: PriceBounds | null, room: number): PriceBounds | null {
+  if (!bounds || !Number.isFinite(room) || room === 0) return bounds;
+  const floor = bounds.floor - Math.min(room, 0);
+  const ceiling = bounds.ceiling - Math.max(room, 0);
+  return floor <= ceiling ? { floor, ceiling } : bounds;
+}
+
 /** How many times the reach is doubled to find the next step of a grid: from a billionth of the price to past any step. */
 const MAX_DOUBLINGS = 200;
 /** Where the search for the next step begins, as a part of the price. */
