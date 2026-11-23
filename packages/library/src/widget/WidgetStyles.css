@@ -4087,10 +4087,14 @@
 .tcw-context-row:hover .tcw-context-remove, .tcw-context-row:focus-within .tcw-context-remove { opacity: 1; }
 .tcw-context-remove:hover { color: var(--tcw-red); background: var(--tcw-hover-bg); }
 @media (hover: none) { .tcw-context-remove { opacity: 1; } }
-/* --- Toolbar over a selected drawing --- */
+/* --- Toolbar over a selected drawing ---
+   A card over the chart, under everything that opens: the top bar and its menus (20), a tool's
+   menu (30), the panels, the tools on a phone (18) and their button (17), beside which it waits.
+   It was over them all (65): the rows of a menu under it took no press. Its own choices open
+   over everything (`.tcw-sel-pop`). */
 .tcw-sel-toolbar {
   position: absolute;
-  z-index: 65;
+  z-index: 16;
   display: flex;
   align-items: center;
   gap: 2px;
@@ -4105,10 +4109,11 @@
 }
 @keyframes tcw-sel-in { from { opacity: 0; transform: translateY(3px); } }
 
-/* The pinned drawing tools, floating over the chart where they were dragged to: a card as the selection's toolbar is. */
+/* The pinned drawing tools, floating over the chart where they were dragged to: a card as the selection's
+   toolbar is, and under it, as under every menu. */
 .tcw-favorites-bar {
   position: absolute;
-  z-index: 64;
+  z-index: 15;
   display: flex;
   align-items: center;
   gap: 2px;
@@ -4221,9 +4226,15 @@
   border-radius: 1px;
   background: currentColor;
 }
-/* A narrow widget (a phone): the bar is no wider than the chart, its buttons on a second line
-   where one has no room for them (under a finger they are 32 px each). */
-.tcw-root[data-tcw-narrow] .tcw-sel-toolbar {
+/* A toolbar wider than its chart gives up buttons until it is on one line (`FOLDS` in
+   WidgetSelectionToolbar.ts, which hides them), and then the figure beside the width's line. */
+.tcw-sel-toolbar--tight .tcw-sel-num {
+  display: none;
+}
+/* A narrow widget (a phone): no wider than the chart. A second line is the last resort, where
+   even what it never gives up has no room. Not while it is measured, on one line and as wide as
+   its buttons ask: kept to the chart's width, it never reads as too wide. */
+.tcw-root[data-tcw-narrow] .tcw-sel-toolbar:not(.tcw-sel-toolbar--fitting) {
   box-sizing: border-box;
   flex-wrap: wrap;
   max-width: calc(100% - 8px);
@@ -4756,10 +4767,11 @@
 .tcw-marker-tip strong { display: block; font-size: var(--tcw-font-size-sm); }
 
 /* === Navigation over the chart ===
- * Centred on the plot's bottom edge, shown while a mouse is over the chart. */
+ * Centred on the plot's bottom edge, shown while a mouse is over the chart; under the two cards
+ * that float over it (15, 16). */
 .tcw-nav {
   position: absolute;
-  z-index: 15;
+  z-index: 14;
   display: flex;
   gap: 2px;
   padding: 3px;

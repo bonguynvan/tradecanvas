@@ -27,6 +27,23 @@ export interface SelectionToolbarTarget {
   canText?: boolean;
   /** Its words can be typed in place, over it (a button that opens the box). */
   canType?: boolean;
+  /**
+   * The buttons whose work the "more" menu does too, by their action (the host has the menu on,
+   * and their entries in it): a toolbar wider than its chart gives those up first. Left out: none.
+   */
+  menuHolds?: readonly string[];
+  /**
+   * The drawing tools' button at the foot of the bounds, on a phone: a toolbar waiting at the
+   * foot starts after it and stands level with it. Left out, or with no reach: no button there.
+   */
+  footButton?: {
+    /** How far in from the bounds' left edge its box reaches, with the gap kept beside it (px). */
+    reach: number;
+    /** How far above the bounds' foot its middle is (px). */
+    middle: number;
+    /** How tall it is (px): a toolbar dragged into its line stays beside it. */
+    height: number;
+  };
 }
 
 export interface SelectionToolbarCallbacks {
@@ -60,6 +77,35 @@ const HOME_TOP = 32;
 const NARROW_SHARE = 0.618;
 /** Space kept between the toolbar and the edge of its bounds, px. */
 const EDGE = 4;
+/** On the toolbar while the figure beside the width's line is given up (`.tcw-sel-num`). */
+const TIGHT_CLASS = 'tcw-sel-toolbar--tight';
+/**
+ * On the toolbar while it is measured: on one line and as wide as its buttons ask. A narrow
+ * widget's stylesheet keeps it to the chart's width, its buttons on a second line, so its width
+ * as laid out never says it is too wide.
+ */
+const FITTING_CLASS = 'tcw-sel-toolbar--fitting';
+
+/** One thing a toolbar wider than its room gives up: a button, or the width's figure. */
+type Fold = { hide: string; inMenu?: true } | { tight: true };
+
+/**
+ * What a toolbar wider than its chart gives up, first to last, until it is on one line (at a
+ * finger's 32 px a button, ten of them are wider than a phone, and wrapped: the bin alone on a
+ * second line). First what the "more" menu holds too, each only while the menu has its entry
+ * (`menuHolds`); then the figure beside the width's line, which its picker shows; then the two
+ * colours the settings hold. The line's own colour, width and style, an order, the menu and the
+ * bin stay.
+ */
+const FOLDS: readonly Fold[] = [
+  { hide: 'alert', inMenu: true },
+  { hide: 'lock', inMenu: true },
+  { hide: 'text', inMenu: true },
+  { hide: 'settings', inMenu: true },
+  { tight: true },
+  { hide: 'textColor' },
+  { hide: 'fill' },
+];
 /** Swatches per row in the colour picker (arrow up and down move by a row). */
 const SWATCH_COLUMNS = 4;
 /** Widths the toolbar shows, px; a saved layout may hold anything. */
@@ -92,6 +138,8 @@ export class WidgetSelectionToolbar {
   private target: SelectionToolbarTarget | null = null;
   /** What the buttons were last built from. */
   private built = '';
+  /** The room the buttons were last fitted to. */
+  private fitted = '';
   private size: { w: number; h: number } | null = null;
   private openPop: Pop | null = null;
   /** Where the user dragged the toolbar (root px): it stays there, for every drawing, until the grip is double-clicked. */
@@ -164,12 +212,19 @@ export class WidgetSelectionToolbar {
     const key = [safeColor(s.color), safeWidth(s.lineWidth), safeLineStyle(s.lineStyle),
       target.locked, target.canDelete, target.canSettings, target.canAlert,
       target.canFill === true, target.canText === true, target.canType === true, target.canOrder === true, s.fillColor, s.textColor].join('|');
-    if (key !== this.built) {
+    const rebuilt = key !== this.built;
+    if (rebuilt) {
       this.built = key;
       this.render(target);
-      this.size = null;
     }
     this.el.hidden = false;
+    // Fitted again as the chart's width changes, or what its foot keeps clear.
+    const room = `${this.host.clientWidth}|${Math.round(target.bounds.width)}|${target.footButton?.reach ?? 0}|${(target.menuHolds ?? []).join()}`;
+    if (rebuilt || room !== this.fitted) {
+      this.fitted = room;
+      this.fit(target);
+      this.size = null;
+    }
     if (!this.size) this.size = { w: this.el.offsetWidth, h: this.el.offsetHeight };
     this.place(target);
     if (this.openPop) this.placePop();
@@ -223,8 +278,50 @@ export class WidgetSelectionToolbar {
     this.rove(current ?? buttons[0], current !== undefined);
   }
 
+  /** The buttons it shows: not those a narrow chart made it give up. */
   private buttons(): HTMLButtonElement[] {
-    return [...this.el.querySelectorAll<HTMLButtonElement>('button')];
+    return [...this.el.querySelectorAll<HTMLButtonElement>('button')].filter((b) => !b.hidden);
+  }
+
+  /**
+   * On one line in the chart: everything it has where there is room, else less (`FOLDS`). At the
+   * foot of a phone's plot it has the chart's width less the drawing tools' button to fit in.
+   * Where nothing is laid out (no width to read), everything stays.
+   */
+  private fit(target: SelectionToolbarTarget): void {
+    const focused = this.el.contains(document.activeElement) ? document.activeElement as HTMLElement : null;
+    for (const b of this.el.querySelectorAll<HTMLButtonElement>('button')) b.hidden = false;
+    this.el.classList.remove(TIGHT_CLASS);
+    const across = this.host.clientWidth - 2 * EDGE;
+    if (across <= 0) return;
+    const folds = FOLDS.filter((fold) => !('inMenu' in fold) || target.menuHolds?.includes(fold.hide) === true);
+    let next = 0;
+    const foldTo = (room: number) => {
+      while (next < folds.length && this.el.offsetWidth > room) {
+        const fold = folds[next++];
+        if ('tight' in fold) this.el.classList.add(TIGHT_CLASS);
+        else {
+          const button = this.el.querySelector<HTMLButtonElement>(`[data-action="${fold.hide}"]`);
+          if (button) button.hidden = true;
+        }
+      }
+    };
+    this.el.classList.add(FITTING_CLASS);
+    foldTo(across);
+    const clear = target.footButton?.reach ?? 0;
+    if (clear > 0 && this.waitsAtFoot(this.el.offsetWidth, target)) foldTo(across - clear);
+    this.el.classList.remove(FITTING_CLASS);
+    // A choice left open on a button given up has nothing to open from.
+    if (this.openPop && this.el.querySelector<HTMLElement>(`[data-action="${this.openPop}"]`)?.hidden) this.closePop();
+    // The one tab stop, and the focus, may have been on a button given up.
+    const shown = this.buttons();
+    if (!shown.some((b) => b.tabIndex === 0)) this.rove(shown[0], false);
+    if (focused?.hidden) this.rove(shown.find((b) => b.dataset.action === 'more') ?? shown[0], true);
+  }
+
+  /** A toolbar this wide has no room beside the legend at the top of its bounds: it waits at their foot. */
+  private waitsAtFoot(width: number, target: SelectionToolbarTarget): boolean {
+    return width > target.bounds.width * NARROW_SHARE;
   }
 
   /** Make `button` the toolbar's one tab stop, focusing it when asked. */
@@ -244,15 +341,22 @@ export class WidgetSelectionToolbar {
     const { bounds } = target;
     const { w, h } = this.size ?? { w: 0, h: 0 };
     if (this.pinned) {
-      const left = Math.max(bounds.x + EDGE, Math.min(this.pinned.left, bounds.x + bounds.width - w - EDGE));
       const top = Math.max(bounds.y + EDGE, Math.min(this.pinned.top, bounds.y + bounds.height - h - EDGE));
+      // Dragged into the line of the drawing tools' button, which is drawn over it: no further than beside it.
+      const button = target.footButton && target.footButton.reach > 0 ? target.footButton : null;
+      const buttonMiddle = bounds.y + bounds.height - (button?.middle ?? 0);
+      const inItsLine = button !== null && top < buttonMiddle + button.height / 2 && top + h > buttonMiddle - button.height / 2;
+      const least = bounds.x + EDGE + (inItsLine ? button.reach : 0);
+      const left = Math.max(least, Math.min(this.pinned.left, bounds.x + bounds.width - w - EDGE));
       this.el.style.left = `${Math.round(left)}px`;
       this.el.style.top = `${Math.round(top)}px`;
       return;
     }
-    const left = Math.max(bounds.x + EDGE, bounds.x + (bounds.width - w) / 2);
-    const narrow = w > bounds.width * NARROW_SHARE;
-    const lowest = bounds.y + bounds.height - h - EDGE;
+    const narrow = this.waitsAtFoot(w, target);
+    // At the foot, after the drawing tools' button on a phone, and level with it.
+    const beside = narrow && target.footButton && target.footButton.reach > 0 ? target.footButton : null;
+    const left = Math.max(bounds.x + EDGE + (beside?.reach ?? 0), bounds.x + (bounds.width - w) / 2);
+    const lowest = bounds.y + bounds.height - h - EDGE - Math.max(0, (beside?.middle ?? 0) - EDGE - h / 2);
     const top = Math.max(bounds.y + EDGE, narrow ? lowest : Math.min(bounds.y + HOME_TOP, lowest));
     this.el.style.left = `${Math.round(left)}px`;
     this.el.style.top = `${Math.round(top)}px`;

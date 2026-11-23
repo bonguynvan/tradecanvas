@@ -174,6 +174,9 @@ chart.addDrawing({ type: 'horizontalLine', anchors: [{ time: t, price: 100 }], i
 <p>
   Trong widget, click vào hình vẽ sẽ hiện một toolbar nhỏ ngay phía trên nó: màu, độ dày nét và kiểu nét, rồi cài đặt, cảnh báo trên đường, khoá, menu đầy đủ của hình vẽ (giống menu chuột phải) và xoá. Khi chọn nhiều hình vẽ, toolbar nằm phía trên tất cả, và thay đổi áp dụng cho từng hình. Toolbar đi theo hình vẽ khi hình vẽ được di chuyển, pan hoặc zoom, tránh sang bên khi đang bật công cụ vẽ, eraser hoặc zoom vùng, và là một điểm dừng tab, di chuyển trong đó bằng phím mũi tên.
 </p>
+<p>
+  Trên biểu đồ quá hẹp cho tất cả các nút (điện thoại), toolbar vẫn nằm trên một dòng và bỏ bớt nút: trước hết là những nút mà menu của hình vẽ cũng có (cảnh báo, khoá, chữ, cài đặt; mỗi nút chỉ khi menu còn mục đó), rồi con số bên cạnh độ dày nét, rồi các màu mà phần cài đặt cũng có. Màu, độ dày và kiểu nét của đường, menu và nút xoá luôn ở lại. Trên điện thoại, toolbar chờ ở chân plot, bên cạnh nút mở drawing tools. Menu và panel mở ra phía trên nó.
+</p>
 <pre><code>{`new ChartWidget(host, { features: { selectionToolbar: false } })  // turn it off
 widget.setFeatures({ selectionToolbar: true })
 
