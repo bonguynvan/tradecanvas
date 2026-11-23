@@ -54,6 +54,7 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   놓으면 손절을 끌 때처럼 <code>positionModify</code>가 전송되므로 연결된 실행 어댑터가 이를 적용합니다.
   <code>lineButtons: {'{'} addStops: false {'}'}</code>로 버튼을 숨길 수 있습니다.
   선을 가격으로 끄는 동안에는 십자선이 수평선을 그리지 않고 가격 축에도 가격을 적지 않습니다. 가격은 그 선의 태그에 있습니다.
+  손으로 정한 가격은 시장의 가격 눈금에 맞춰집니다. 끌어 옮긴 주문·손절·익절·익절 단계, 브래킷과 초안 주문의 선, 오른쪽 클릭이나 가격 축 옆 “+”가 주는 가격이 그렇습니다. 시장의 호가 단위(<code>setMarket</code>, 또는 종목의 <code>minTick</code>)에, 없으면 가격 축이 보여 주는 소수 자릿수에 맞춥니다: <code>chart.roundPrice</code>입니다. 십자선도 포인터 아래 가격을 같은 눈금으로 적으므로, 보이는 가격이 곧 옆의 “+”가 주문을 내는 가격입니다.
 </p>
 <p>
   포지션, 주문과 그 체결은 숨길 수 있고, 그 선은 잠글 수 있습니다. 숨기면 어느 것도 그려지지 않고 누를 수도 없지만, 그대로

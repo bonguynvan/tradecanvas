@@ -1,6 +1,7 @@
 import type { OrderSide, Point, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceTagText, stepDecimals } from '@tradecanvas/commons';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
+import { onGrid, onGridAwayFrom, type PriceRounding } from '../viewport/priceGrid.js';
 import { inPlot, levelLine } from './plot.js';
 import { drawAxisBadge, drawTags, type AxisBadge, type TradingTag } from './tradingTags.js';
 
@@ -118,6 +119,12 @@ export class BracketTool {
   private defaults: BracketDefaultsOptions;
   /** What sizes the bracket in hand. */
   private size: BracketSize | undefined;
+  /** How its prices are put on the market's grid; null leaves them as they come. */
+  private round: PriceRounding | null = null;
+
+  setRound(round: PriceRounding | null): void {
+    this.round = round;
+  }
 
   constructor(defaults: BracketDefaultsOptions = {}) {
     this.defaults = defaults;
@@ -125,7 +132,10 @@ export class BracketTool {
 
   /** Start a bracket at `entry`, of this `size` (none: it has no quantity). */
   start(side: OrderSide, entry: number, size?: BracketSize): void {
-    this.draft = computeBracketDefaults(side, entry, this.defaults);
+    const from = onGrid(this.round, entry);
+    const plain = computeBracketDefaults(side, from, this.defaults);
+    // Its stop and its target on the grid too, and not on its entry where the grid is coarser than they start away.
+    this.draft = { ...plain, stopLoss: onGridAwayFrom(this.round, from, plain.stopLoss), takeProfit: onGridAwayFrom(this.round, from, plain.takeProfit) };
     this.size = size ? { ...size } : undefined;
     this.dragging = null;
   }
@@ -191,8 +201,10 @@ export class BracketTool {
 
   drag(pos: Point, viewport: ViewportState): boolean {
     if (!this.draft || !this.dragging) return false;
-    const price = yToPrice(pos.y, viewport);
-    this.draft = applyHandlePrice(this.draft, this.dragging, price);
+    const price = onGrid(this.round, yToPrice(pos.y, viewport));
+    const moved = applyHandlePrice(this.draft, this.dragging, price);
+    // Moved whole by its entry, its stop and its target land on the grid of where they are now.
+    this.draft = this.dragging === 'entry' ? { ...moved, stopLoss: onGrid(this.round, moved.stopLoss), takeProfit: onGrid(this.round, moved.takeProfit) } : moved;
     return true;
   }
 

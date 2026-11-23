@@ -22,6 +22,7 @@ import { buttonAt, sameLineAction, type LineButton, type LineButtonAction } from
 import { renderFillMarks } from './fillMarks.js';
 import { drawAxisBadge, drawTags, spreadAxisBadges, tagAt, type AxisBadge, type TagBox, type TagRect } from './tradingTags.js';
 import { clampToPlot } from './plot.js';
+import { onGrid, onGridAwayFrom, type PriceRounding } from '../viewport/priceGrid.js';
 import { AXIS_LABEL_HEIGHT } from '../ui/axisValueLabels.js';
 
 /** Most fills kept for their marks; the oldest go first. */
@@ -71,6 +72,23 @@ export class TradingManager {
 
   setContainer(container: HTMLElement): void {
     this.container = container;
+  }
+
+  /** How a price set by hand is put on the market's grid (see `setPriceRounding`). */
+  private round: PriceRounding | null = null;
+
+  /**
+   * Put the prices set by hand on the market's grid: an order, a stop, a
+   * target or a level dragged, a bracket's and a draft order's lines (where
+   * they start too), a stop added from its button, the price the right-click
+   * menu places at. `round` gives a price on the grid (a chart's
+   * `roundPrice`); null leaves prices as the pointer has them.
+   */
+  setPriceRounding(round: PriceRounding | null): void {
+    this.round = round;
+    this.dragHandler.setRound(round);
+    this.bracket.setRound(round);
+    this.orderDraft.setRound(round);
   }
 
   setRequestRender(cb: () => void): void {
@@ -393,9 +411,12 @@ export class TradingManager {
    */
   private dragOutStop(action: Extract<LineButtonAction, { type: 'addStop' }>, pos: Point, viewport: ViewportState): boolean {
     const position = this.positions.find((p) => p.id === action.positionId);
+    if (!position) return false;
+    // Where it starts is a price of the market's too, and not the entry's own.
+    const price = onGridAwayFrom(this.round, position.entryPrice, action.price);
     // The drag is measured on the line, as a tag's is: the pointer only moves it.
-    const lineY = priceToY(action.price, viewport);
-    if (!position || !this.dragHandler.beginNewStop(position, action.which, action.price, lineY)) return false;
+    const lineY = priceToY(price, viewport);
+    if (!this.dragHandler.beginNewStop(position, action.which, price, lineY)) return false;
     this.grabOffset = lineY - pos.y;
     this.requestRender?.();
     return true;
@@ -539,7 +560,8 @@ export class TradingManager {
       return { orderId: order.id, newPrice: order.price, previousPrice: order.price, newStopPrice: result.newPrice, previousStopPrice: result.previousPrice };
     }
     const move = { orderId: result.id, newPrice: result.newPrice, previousPrice: result.previousPrice };
-    return stop === undefined ? move : { ...move, newStopPrice: stop + (result.newPrice - result.previousPrice), previousStopPrice: stop };
+    // Taken with the order, the stop lands on the grid of where it is now: the step may change on the way, and a sum leaves dust.
+    return stop === undefined ? move : { ...move, newStopPrice: onGrid(this.round, stop + (result.newPrice - result.previousPrice)), previousStopPrice: stop };
   }
 
   /**
@@ -571,7 +593,7 @@ export class TradingManager {
   onContextMenu(pos: Point, viewport: ViewportState): boolean {
     // Hidden, the orders would be placed out of sight: no menu to place them.
     if (!this.config.enabled || !this.config.contextMenu?.enabled || !this.container || this.hidden) return false;
-    const price = yToPrice(pos.y, viewport);
+    const price = onGrid(this.round, yToPrice(pos.y, viewport));
     this.contextMenu.show(pos, price, this.container, this.config, (p) => priceTagText(p, viewport, this.config.pricePrecision));
     return true;
   }

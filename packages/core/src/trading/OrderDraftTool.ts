@@ -8,6 +8,7 @@ import type {
 } from '@tradecanvas/commons';
 import { priceTagText } from '@tradecanvas/commons';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
+import { onGrid, type PriceRounding } from '../viewport/priceGrid.js';
 import { inPlot, levelLine } from './plot.js';
 import { orderKindText } from './OrderRenderer.js';
 import { drawAxisBadge, drawTags, type AxisBadge, type TradingTag } from './tradingTags.js';
@@ -48,9 +49,15 @@ export class OrderDraftTool {
   /** The draft as the drag found it, to put back if the drag is called off. */
   private dragStart: OrderDraft | null = null;
   private dragging = false;
+  /** How its price is put on the market's grid; null leaves it as it comes. */
+  private round: PriceRounding | null = null;
+
+  setRound(round: PriceRounding | null): void {
+    this.round = round;
+  }
 
   start(side: OrderSide, price: number, quantity = 1): void {
-    this.draft = { side, price, quantity };
+    this.draft = { side, price: onGrid(this.round, price), quantity };
     this.dragging = false;
   }
 
@@ -115,7 +122,7 @@ export class OrderDraftTool {
 
   drag(pos: Point, viewport: ViewportState): boolean {
     if (!this.draft || !this.dragging) return false;
-    return this.setPrice(yToPrice(pos.y, viewport));
+    return this.setPrice(onGrid(this.round, yToPrice(pos.y, viewport)));
   }
 
   endDrag(): void {

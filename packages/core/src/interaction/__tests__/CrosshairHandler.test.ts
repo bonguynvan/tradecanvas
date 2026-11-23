@@ -282,6 +282,51 @@ describe('CrosshairHandler cursor kinds', () => {
   });
 });
 
+describe('CrosshairHandler on a market with a price step', () => {
+  const priceAt = (handler: CrosshairHandler) => {
+    const { ctx, texts } = recorder();
+    handler.renderAxisLabels(ctx, viewport, theme, bars);
+    return texts[0];
+  };
+
+  it('writes the price under the pointer as the market has it: on its step', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    // 300 px for the prices from 110 down to 90: y 157 is 99.53.
+    handler.onPointerMove({ x: 204, y: 157 });
+    expect(priceAt(handler)).toBe('99.53');
+    handler.setPriceRounding((price) => Math.round(price * 2) / 2);
+    expect(priceAt(handler)).toBe('99.50');
+    handler.onPointerMove({ x: 204, y: 161 });
+    expect(priceAt(handler)).toBe('99.50');
+    handler.onPointerMove({ x: 204, y: 147 });
+    expect(priceAt(handler)).toBe('100.00');
+  });
+
+  it('writes the pointer’s own price again with no step told, or where the rounding gives none', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    handler.onPointerMove({ x: 204, y: 157 });
+    handler.setPriceRounding(() => Number.NaN);
+    expect(priceAt(handler)).toBe('99.53');
+    handler.setPriceRounding((price) => Math.round(price));
+    expect(priceAt(handler)).toBe('100.00');
+    handler.setPriceRounding(null);
+    expect(priceAt(handler)).toBe('99.53');
+  });
+
+  it('leaves its line under the pointer: only what is written keeps to the step', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    handler.setPriceRounding((price) => Math.round(price));
+    handler.onPointerMove({ x: 204, y: 157 });
+    const { ctx, lines } = recorder();
+    handler.render(ctx, viewport, theme);
+    // On the pointer's row of pixels (y 157), not on the row of the price written (100 is at y 150).
+    expect(Math.abs(lines[1][1] - 157)).toBeLessThanOrEqual(0.5);
+  });
+});
+
 describe('CrosshairHandler while a line is dragged to a price', () => {
   const at = () => {
     const handler = new CrosshairHandler();

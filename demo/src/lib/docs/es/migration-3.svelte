@@ -58,6 +58,15 @@ chart.startBracket('buy', undefined, { risk: 50 })   // la cantidad que pierde 5
   <code>'stop'</code>.
 </p>
 
+<h3 id="hand-prices">Un precio fijado a mano queda en la rejilla del mercado</h3>
+<p>
+  <code>orderModify</code>, <code>positionModify</code>, <code>bracketPlace</code>, el <code>orderPlace</code> de una orden en borrador o del
+  menú del botón derecho, <code>priceAxisAdd</code> y <code>chartContextMenu</code> llevaban el precio bajo el puntero tal como lo da un píxel
+  (<code>62549.71592675613</code>). Ahora lo llevan en el paso de precio del mercado; si no, en los decimales que muestra el eje de
+  precios: lo que da <code>chart.roundPrice</code>. Un bracket y una orden en borrador también empiezan en la rejilla. El código que
+  redondeaba estos precios puede dejar de hacerlo.
+</p>
+
 <h2 id="types">Tipos que han crecido</h2>
 <p>
   <code>TimeInForce</code> es ahora <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. El código que trata todos

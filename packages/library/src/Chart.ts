@@ -645,6 +645,8 @@ export class Chart {
     this.depthLayer.setConfig({ enabled: this.features.depth, ...options.depthOverlay });
     this.tradingManager.setContainer(container);
     this.tradingManager.setRequestRender(() => this.engine.requestRender(LayerType.Overlay));
+    // A price set by hand (a line dragged, a bracket, the right-click menu) is a price of the market: on its step.
+    this.tradingManager.setPriceRounding((price) => this.roundPrice(price));
     this.tradingManager.setEventCallback((event, data) => {
       this.eventBus.emit(event as ChartEventType, data);
     });
@@ -721,6 +723,8 @@ export class Chart {
     if (isCrosshairCursor(options.crosshair?.cursor)) this.crosshairHandler.setCursor(options.crosshair.cursor);
     // An order's line dragged to a price writes that price itself: the crosshair's would sit a few pixels from it.
     this.crosshairHandler.setPriceHeld(() => this.tradingManager.isDraggingLine());
+    // The price it writes is the market's there: what the "+" beside it, or a right-click, places at.
+    this.crosshairHandler.setPriceRounding((price) => this.roundPrice(price));
     // Crosshair callback — fired via microtask AFTER render, only when the bar
     // changes: no extra render requests, and the tooltip's one measurement
     // happens once per bar, not per mouse move.
@@ -1107,7 +1111,8 @@ export class Chart {
     });
     this.applyPriceAxisAdd();
     this.interactionManager.setPriceAxisAddButton(this.priceAxisAddButton, (pos) => {
-      const price = yToPrice(pos.y, this.viewport.getState());
+      // The price there on the market's grid: what is added at it (an order, an alert) is at a price the market has.
+      const price = this.roundPrice(yToPrice(pos.y, this.viewport.getState()));
       if (Number.isFinite(price)) this.eventBus.emit('priceAxisAdd', { price, x: pos.x, y: pos.y });
     });
     if (this.features.trading) {
@@ -2894,7 +2899,8 @@ export class Chart {
   private contextAt(area: import('@tradecanvas/commons').ChartContextArea, pos: { x: number; y: number }): import('@tradecanvas/commons').ChartContextMenuPayload {
     const vs = { ...this.viewport.getState(), data: this.getDisplayData() };
     const payload: import('@tradecanvas/commons').ChartContextMenuPayload = { area, x: pos.x, y: pos.y };
-    if (area === 'plot' || area === 'priceAxis') payload.price = yToPrice(pos.y, vs);
+    // The price on the market's grid, as the "+" by the axis gives it.
+    if (area === 'plot' || area === 'priceAxis') payload.price = this.roundPrice(yToPrice(pos.y, vs));
     if ((area === 'plot' || area === 'timeAxis') && vs.data.length > 0) payload.time = xToTime(pos.x, vs);
     if (area === 'pane') {
       const pane = this.getIndicatorPanes().find((p) => pos.y >= p.rect.y && pos.y <= p.rect.y + p.rect.height);

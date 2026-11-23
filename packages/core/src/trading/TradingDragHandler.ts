@@ -2,6 +2,7 @@ import type { TradingOrder, TradingPosition, ViewportState, Point } from '@trade
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
 import { stopOf, type DragState } from './OrderRenderer.js';
 import { inPlot } from './plot.js';
+import { onGrid, type PriceRounding } from '../viewport/priceGrid.js';
 
 export interface DragResult {
   sourceType: 'order' | 'orderStop' | 'stopLoss' | 'takeProfit' | 'level';
@@ -19,8 +20,14 @@ export class TradingDragHandler {
   private dragState: DragState | null = null;
   private startY = 0;
   private dragging = false;
+  /** How a price dragged to is put on the market's grid; null leaves it as the pointer has it. */
+  private round: PriceRounding | null = null;
 
   constructor(private dragThreshold = 3) {}
+
+  setRound(round: PriceRounding | null): void {
+    this.round = round;
+  }
 
   /** A press at `pos`: the first order line within `tolerance`, else the first stop or target, else the take-profit level nearest it. */
   onPointerDown(
@@ -124,7 +131,7 @@ export class TradingDragHandler {
       this.dragging = true;
     }
 
-    this.dragState.currentPrice = yToPrice(pos.y, viewport);
+    this.dragState.currentPrice = onGrid(this.round, yToPrice(pos.y, viewport));
     return true;
   }
 

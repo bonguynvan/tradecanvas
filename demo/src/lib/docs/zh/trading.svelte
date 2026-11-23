@@ -52,6 +52,7 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   之外 1% 开始，因此设置的那一刻都不会被触发。松开时会发出 <code>positionModify</code>，与拖动止损相同，由已连接的执行适配器应用。
   <code>lineButtons: {'{'} addStops: false {'}'}</code> 可去掉这些按钮。
   把一条线拖到某个价格时，十字光标不画水平线，也不在价格轴上写价格：这条线自己的标签已经写着价格。
+  手动设定的价格始终落在市场的价格网格上：被拖动的订单、止损、止盈或分批止盈位，括号单和草稿订单的线，以及右键点击或价格轴旁“+”给出的价格。价格取市场的最小变动价位（<code>setMarket</code>，或品种的 <code>minTick</code>），否则取价格轴显示的小数位数：即 <code>chart.roundPrice</code>。十字光标写出的指针处价格也落在同一网格上，所以它显示的就是旁边的“+”下单的价格。
 </p>
 <p>
   持仓、订单及其成交可以隐藏，它们的线也可以锁定。隐藏时，它们都不绘制、也无法点按；但仍会保留并继续跟随执行适配器，

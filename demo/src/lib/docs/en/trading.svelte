@@ -56,6 +56,7 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   <code>lineButtons: {'{'} addStops: false {'}'}</code> leaves the buttons out.
   While a line is dragged to a price, the crosshair draws no horizontal line and no price on the axis: the
   line's own tag has the price.
+  A price set by hand keeps to the market's grid: an order, a stop, a target or a level dragged, a bracket's and a draft order's lines, the price a right-click or the “+” by the axis gives. It is on the market's price step (<code>setMarket</code>, or the symbol's <code>minTick</code>), else to the decimals the price axis shows: <code>chart.roundPrice</code>. The crosshair writes the price under the pointer on the same grid, so what it reads is what the “+” beside it places at.
 </p>
 <p>
   The positions, the orders and their fills can be hidden, and their lines locked. Hidden, none is drawn and none

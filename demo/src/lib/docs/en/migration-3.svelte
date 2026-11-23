@@ -57,6 +57,15 @@ chart.startBracket('buy', undefined, { risk: 50 })   // the quantity that loses 
   stop was reached moves the price within the limit first, or places a <code>'stop'</code> order.
 </p>
 
+<h3 id="hand-prices">A price set by hand is on the market's grid</h3>
+<p>
+  <code>orderModify</code>, <code>positionModify</code>, <code>bracketPlace</code>, the <code>orderPlace</code> of a draft order or of the
+  right-click menu, <code>priceAxisAdd</code> and <code>chartContextMenu</code> carried the price under the pointer as a pixel gives it
+  (<code>62549.71592675613</code>). They now carry it on the market's price step, else to the decimals the price axis
+  shows: what <code>chart.roundPrice</code> gives. A bracket and a draft order start on the grid too. Code that rounded
+  these itself can stop.
+</p>
+
 <h2 id="types">Types that grew</h2>
 <p>
   <code>TimeInForce</code> is now <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. Code that handles every
