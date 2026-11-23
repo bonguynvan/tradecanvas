@@ -1,6 +1,6 @@
 import { WidgetAccountPanel } from './WidgetAccountPanel.js';
 import { WidgetOrderTicket, type OrderTicketStart } from './WidgetOrderTicket.js';
-import type { OrderTicketRules, PriceLimitName } from './orderTicket.js';
+import { ticketTimeInForce, type OrderTicketRules, type PriceLimitName } from './orderTicket.js';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
 import type { WidgetQuoteButtons } from './WidgetQuoteButtons.js';
@@ -11,6 +11,7 @@ import { positionLevels, type BracketSize } from '@tradecanvas/core';
 import type { ChartWidget } from './ChartWidget.js';
 import { ofSymbol } from '../model/TradingBook.js';
 import type { FeedHealth } from './feedHealth.js';
+import type { BrokerOrderRules } from './types.js';
 
 /** Prices that differ by less than this are the same price (float dust), as the order ticket has it. */
 const LIMIT_EPSILON = 1e-9;
@@ -135,7 +136,14 @@ export class WidgetTrading {
   /** A market's rules for the order ticket (`setMarket`): its step, the day's limits, its lot. */
   private orderRules(): OrderTicketRules {
     const market = this.host.chart.getMarket();
-    if (!market) return {};
+    const broker = this.brokerRules;
+    // The broker's kinds, times in force and lot stand over the market's preset.
+    const given: OrderTicketRules = broker ? {
+      ...(broker.orderKinds && broker.orderKinds.length > 0 ? { kinds: broker.orderKinds } : {}),
+      ...(broker.timesInForce ? { timesInForce: broker.timesInForce } : {}),
+      ...(broker.lot !== undefined ? { lot: broker.lot } : {}),
+    } : {};
+    if (!market) return given;
     const stepped = market.priceStep !== undefined || (market.priceSteps?.length ?? 0) > 0;
     return {
       roundPrice: stepped ? (p) => this.host.chart.roundPrice(p) : undefined,
@@ -143,7 +151,17 @@ export class WidgetTrading {
       limitOrder: this.host.priceLimitOrder,
       lot: market.volumeUnit,
       multiplier: market.contractMultiplier,
+      ...given,
     };
+  }
+
+  /** The broker's rules for the symbol now (`orderRules`, `setOrderRules`); null with none. */
+  private brokerRules: BrokerOrderRules | null = null;
+
+  /** The broker's rules for orders now: a ticket that is open takes them at once. */
+  setOrderRules(rules: BrokerOrderRules | null): void {
+    this.brokerRules = rules;
+    this.orderTicket?.setRules(this.orderRules());
   }
 
   /** The working orders the ladder marks on its rows: those of the symbol whose book it shows. */
@@ -192,8 +210,13 @@ export class WidgetTrading {
 
   /** What an order asked for in one press is for: the market's lot where it trades in lots (HOSE: 100 shares), else one. */
   private quickQuantity(): number {
-    const lot = this.host.chart.getMarket()?.volumeUnit;
+    const lot = this.lot();
     return lot !== undefined && lot > 1 ? lot : 1;
+  }
+
+  /** The lot orders are in: the broker's, else the market's. */
+  private lot(): number | undefined {
+    return this.brokerRules?.lot ?? this.host.chart.getMarket()?.volumeUnit;
   }
 
   /**
@@ -280,6 +303,17 @@ export class WidgetTrading {
     const side = kind.startsWith('buy') ? 'buy' : 'sell';
     const stop = kind.endsWith('Stop');
     const quantity = this.quickQuantity();
+    // Under a broker's rules it is one of the broker's kinds, by the exchange's name and with a time in force it takes.
+    const rules = this.orderRules();
+    const taken = rules.kinds?.find((k) => k.type === (stop ? 'stop' : 'limit'));
+    if (rules.kinds && !taken) {
+      this.host.say(this.host.t('order.kindNotTaken'), 'error');
+      return;
+    }
+    const named = {
+      ...(taken ? { exchangeType: taken.code } : {}),
+      ...(rules.kinds || rules.timesInForce ? { timeInForce: ticketTimeInForce({ type: stop ? 'stop' : 'limit', kind: taken?.code, timeInForce: 'gtc' }, rules) } : {}),
+    };
     const order = fill(this.host.t(`order.${kind}` as MessageKey), { price: this.host.formatAlertPrice(price) });
     const symbol = this.host.state.symbol;
     this.host.confirm({
@@ -289,7 +323,7 @@ export class WidgetTrading {
     }, () => {
       // Asked a moment ago: the feed may have gone since, and the price was this symbol's.
       if (this.host.state.symbol !== symbol || !this.feedUp()) return;
-      this.host.chart.placeOrderIntent(stop ? { side, type: 'stop', price, stopPrice: price, quantity } : { side, type: 'limit', price, quantity });
+      this.host.chart.placeOrderIntent(stop ? { side, type: 'stop', price, stopPrice: price, quantity, ...named } : { side, type: 'limit', price, quantity, ...named });
       this.host.say(order);
     });
   }
@@ -318,7 +352,7 @@ export class WidgetTrading {
       if (this.host.chart.startBracket(side, undefined, size)) this.bracketBar?.show(side);
       return;
     }
-    const lot = this.host.chart.getMarket()?.volumeUnit;
+    const lot = this.lot();
     const board = lot !== undefined && lot > 1 ? lot : null;
     const quantity = firstQuantity(size?.quantity, this.bracketQuantity, board);
     if (!this.host.chart.startBracket(side, undefined, { ...size, quantity })) return;

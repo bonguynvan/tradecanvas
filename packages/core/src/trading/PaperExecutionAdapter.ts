@@ -435,6 +435,8 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     };
     // The symbol it is of, where the order names one: its position and its fills are of it too.
     if (intent.symbol !== undefined) order.symbol = intent.symbol;
+    // The exchange's own name for it, kept as given: it trades here as the kind the chart knows.
+    if (intent.exchangeType !== undefined) order.exchangeType = intent.exchangeType;
     // The price of its own symbol: what it fills at now, and is sized by.
     const mark = this.markOf(order);
     // A trail is a distance: anything else asked for is not taken.

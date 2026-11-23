@@ -528,3 +528,123 @@ describe('ChartWidget: the day’s ceiling, reference and floor in the ticket', 
     expect(row()).toBeNull();
   });
 });
+
+// HOSE's ticket offered Market, Limit, Stop and Stop-limit, good till cancelled: the exchange takes LO, ATO, ATC and MP, for the day.
+describe('ChartWidget: the broker’s order rules', () => {
+  const HOSE = {
+    orderKinds: [
+      { code: 'LO', type: 'limit' as const },
+      { code: 'ATO', type: 'market' as const },
+      { code: 'ATC', type: 'market' as const },
+      { code: 'MP', label: 'MP (market)', type: 'market' as const },
+    ],
+    timesInForce: ['day' as const],
+    lot: 100,
+  };
+  const kinds = () => [...host.querySelectorAll<HTMLElement>('.tcw-order-ticket [data-ticket-field="type"] [role=radio]')];
+  const times = () => [...host.querySelectorAll<HTMLElement>('.tcw-order-ticket [data-ticket-field="timeInForce"] [role=radio]')].map((r) => r.textContent);
+  const quantity = () => host.querySelector<HTMLInputElement>('.tcw-order-ticket [data-ticket-field="quantity"]')!.value;
+  type Rules = { setOrderRules(rules: object | null): void };
+
+  it('offers the kinds the broker gives, by their own names, and the times in force it takes', () => {
+    widget = new ChartWidget(host, { symbol: 'VNM', trading: true, orderRules: HOSE });
+    trading().openOrderTicket(95);
+    expect(kinds().map((k) => k.textContent)).toEqual(['LO', 'ATO', 'ATC', 'MP (market)']);
+    // A price under the market starts as the kind that waits there.
+    expect(kinds().find((k) => k.getAttribute('aria-checked') === 'true')?.textContent).toBe('LO');
+    expect(times()).toEqual(['Day']);
+    expect(quantity()).toBe('100');
+  });
+
+  it('sends the exchange’s own name with the order, on the kind the chart knows', () => {
+    widget = new ChartWidget(host, { symbol: 'VNM', trading: true, orderRules: HOSE });
+    trading().openOrderTicket(95);
+    place().click();
+    // The first is on its way: another ticket for the next.
+    trading().openOrderTicket(95);
+    kinds().find((k) => k.textContent === 'ATO')!.click();
+    expect(host.querySelector('.tcw-order-ticket [data-ticket-field="price"]')).toBeNull();
+    place().click();
+    expect(FakeChart.last.placed.map((o) => [o.type, o.exchangeType, o.timeInForce, o.quantity])).toEqual([
+      ['limit', 'LO', 'day', 100],
+      ['market', 'ATO', undefined, 100],
+    ]);
+  });
+
+  it('starts on the first kind for an order at the market where the broker has none of that name', () => {
+    widget = new ChartWidget(host, { symbol: 'VNM', trading: true, orderRules: { orderKinds: [{ code: 'LO', type: 'limit' }, { code: 'PLO', type: 'limit', timesInForce: ['day'] }] } });
+    trading().openOrderTicket();
+    expect(kinds().find((k) => k.getAttribute('aria-checked') === 'true')?.textContent).toBe('LO');
+    // A kind's own times in force stand over the rules'.
+    kinds()[1].click();
+    expect(times()).toEqual(['Day']);
+  });
+
+  it('takes other rules while the ticket is open: another session, another list', () => {
+    widget = new ChartWidget(host, { symbol: 'VNM', trading: true, orderRules: HOSE });
+    trading().openOrderTicket(95);
+    (widget as unknown as Rules).setOrderRules({ orderKinds: [{ code: 'ATC', type: 'market' }, { code: 'LO', type: 'limit' }], timesInForce: ['day'] });
+    expect(kinds().map((k) => k.textContent)).toEqual(['ATC', 'LO']);
+    // The kind it was on is still there: it stays on it.
+    expect(kinds().find((k) => k.getAttribute('aria-checked') === 'true')?.textContent).toBe('LO');
+    (widget as unknown as Rules).setOrderRules(null);
+    expect(kinds().map((k) => k.textContent)).toEqual(['Market', 'Limit', 'Stop', 'Stop-limit']);
+  });
+
+  it('sends an order asked for in one press as one of the broker’s kinds, for its lot and a time in force it takes', () => {
+    widget = new ChartWidget(host, { symbol: 'VNM', trading: true, confirmOrders: false, orderRules: HOSE });
+    trading().placeOrderAt('buyLimit', 95);
+    trading().placeLadderOrder('sell', 105);
+    expect(FakeChart.last.placed.map((o) => [o.side, o.type, o.exchangeType, o.timeInForce, o.quantity])).toEqual([
+      ['buy', 'limit', 'LO', 'day', 100],
+      ['sell', 'limit', 'LO', 'day', 100],
+    ]);
+  });
+
+  it('sends none of a kind the broker does not take, and says so: a stop on HOSE', () => {
+    widget = new ChartWidget(host, { symbol: 'VNM', trading: true, confirmOrders: false, orderRules: HOSE });
+    trading().placeOrderAt('buyStop', 105);
+    expect(FakeChart.last.placed).toEqual([]);
+    expect(toasts().at(-1)).toContain('takes no order of this kind');
+  });
+
+  it('keeps no time in force the broker does not take: what is checked is what is sent', () => {
+    widget = new ChartWidget(host, { symbol: 'VNM', trading: true });
+    trading().openOrderTicket(95);
+    [...host.querySelectorAll<HTMLElement>('.tcw-order-ticket [data-ticket-field="timeInForce"] [role=radio]')].find((r) => r.textContent === 'IOC')!.click();
+    (widget as unknown as Rules).setOrderRules({ timesInForce: ['day'] });
+    expect(times()).toEqual(['Day']);
+    place().click();
+    expect(FakeChart.last.placed[0].timeInForce).toBe('day');
+  });
+
+  it('leaves an order on its way as it was sent, and takes the new rules once it is answered', () => {
+    widget = new ChartWidget(host, { symbol: 'VNM', trading: true, orderRules: HOSE });
+    // A broker to answer for it: the ticket waits.
+    FakeChart.last.broker = {};
+    trading().openOrderTicket(95);
+    place().click();
+    (widget as unknown as Rules).setOrderRules({ orderKinds: [{ code: 'ATC', type: 'market' }], timesInForce: ['day'] });
+    expect(kinds().map((k) => k.textContent)).toEqual(['LO', 'ATO', 'ATC', 'MP (market)']);
+    FakeChart.last.emit('executionError', { message: 'no', command: 'orderPlace', clientOrderId: FakeChart.last.placed[0].clientOrderId, cause: 'no' });
+    expect(kinds().map((k) => k.textContent)).toEqual(['ATC']);
+  });
+
+  it('starts an order at a price on a kind that has a price, and sends an auction’s order with no live price', () => {
+    widget = new ChartWidget(host, { symbol: 'VNM', trading: true, orderRules: { orderKinds: [{ code: 'ATO', type: 'market' }, { code: 'LO', type: 'limit' }] } });
+    // Over the market, where a stop would wait: the broker has none, and the price is kept.
+    trading().openOrderTicket(105, { side: 'buy' });
+    expect(kinds().find((k) => k.getAttribute('aria-checked') === 'true')?.textContent).toBe('LO');
+    trading().setFeed('quiet');
+    kinds()[0].click();
+    expect(place().disabled).toBe(false);
+  });
+
+  it('is the chart’s own four kinds and every time in force with no rules given', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    trading().openOrderTicket(95);
+    expect(kinds().map((k) => k.textContent)).toEqual(['Market', 'Limit', 'Stop', 'Stop-limit']);
+    place().click();
+    expect(FakeChart.last.placed[0]).not.toHaveProperty('exchangeType');
+  });
+});

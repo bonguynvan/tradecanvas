@@ -990,6 +990,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'order.sellStop': 'Bán stop @ {price}',
   'order.refused': 'Broker từ chối order: {reason}',
   'order.noLivePrice': 'Không có giá trực tiếp: lệnh chưa được gửi',
+  'order.kindNotTaken': 'Broker không nhận loại lệnh này ở đây',
   'confirm.close': 'Đóng {side} {quantity} {symbol} theo giá thị trường?',
   'confirm.reverse': 'Đảo chiều {side} {quantity} {symbol} theo giá thị trường? Position được đóng và mở lại cùng khối lượng theo chiều ngược lại.',
   'confirm.order': '{order}, khối lượng {quantity}, {symbol}',

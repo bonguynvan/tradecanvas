@@ -5570,6 +5570,11 @@
     min-height: var(--tcw-hit-finger);
   }
 
+  /* A choice with a short name (an exchange's LO) is as wide as a finger's press too. */
+  .tcw-segment {
+    min-width: var(--tcw-hit-finger);
+  }
+
   /* A bar full of buttons squeezes an icon's: no narrower than a finger. */
   .tcw-btn-icon,
   .tcw-tf-more,

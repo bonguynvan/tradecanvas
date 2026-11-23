@@ -990,6 +990,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'order.sellStop': 'Jual stop @ {price}',
   'order.refused': 'Broker menolak pesanan: {reason}',
   'order.noLivePrice': 'Tiada harga langsung: pesanan tidak dihantar',
+  'order.kindNotTaken': 'Broker tidak menerima jenis pesanan ini di sini',
   'confirm.close': 'Tutup {side} {quantity} {symbol} pada harga pasaran?',
   'confirm.reverse': 'Songsangkan {side} {quantity} {symbol} pada harga pasaran? Kedudukan ditutup dan dibuka dengan kuantiti yang sama ke arah bertentangan.',
   'confirm.order': '{order}, kuantiti {quantity}, {symbol}',

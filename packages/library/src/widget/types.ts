@@ -260,6 +260,11 @@ export interface ChartWidgetOptions {
    */
   confirmOrders?: boolean;
   /**
+   * The broker's rules for orders, to start with: see `BrokerOrderRules`. `widget.setOrderRules`
+   * gives others as the symbol or the session changes.
+   */
+  orderRules?: BrokerOrderRules;
+  /**
    * The order the ticket shows the day's ceiling, reference and floor in, over its price: boards
    * differ, and a trader reads them where their broker's board has them. Leave one out not to
    * show it. Default `['ceiling', 'reference', 'floor']`. The row shows on a market with limits
@@ -877,4 +882,33 @@ export interface DockPageSpec {
 export interface DockPageHandle {
   /** Take the page away, shutting it first if it is open. Its id is free again. */
   remove(): void;
+}
+
+/**
+ * A kind of order as the exchange names it, for the order ticket: `{ code: 'ATO', type: 'market' }`.
+ * `type` is the kind the chart knows it as, which decides whether the ticket asks a price for it
+ * and how it is drawn; `code` goes with the order as `exchangeType`, for the broker.
+ */
+export interface BrokerOrderKind {
+  /** The exchange's name for it: `LO`, `ATO`, `ATC`, `MP`, `MTL`… */
+  code: string;
+  /** What the ticket calls it. Unset: its code. */
+  label?: string;
+  type: 'market' | 'limit' | 'stop' | 'stopLimit';
+  /** The times in force this kind takes, over the rules' own. */
+  timesInForce?: readonly ('gtc' | 'day' | 'gtd' | 'ioc' | 'fok')[];
+}
+
+/**
+ * What a broker takes for the symbol and the session now. An exchange's preset (`setMarket`)
+ * has its price steps and its lot; these are the broker's own, they stand over it, and they
+ * change with no release of the library: `widget.setOrderRules` as the session or the board does.
+ */
+export interface BrokerOrderRules {
+  /** The kinds of order, in place of Market, Limit, Stop and Stop-limit. Unset or empty: those four. */
+  orderKinds?: readonly BrokerOrderKind[];
+  /** The times in force taken. Unset: all a kind of order has. */
+  timesInForce?: readonly ('gtc' | 'day' | 'gtd' | 'ioc' | 'fok')[];
+  /** The lot, over the market's `volumeUnit`. */
+  lot?: number;
 }

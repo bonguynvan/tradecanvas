@@ -978,6 +978,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'order.sellStop': 'Стоп-продажа @ {price}',
   'order.refused': 'Брокер отклонил ордер: {reason}',
   'order.noLivePrice': 'Нет актуальной цены: заявка не отправлена',
+  'order.kindNotTaken': 'Брокер не принимает здесь заявки этого вида',
   'confirm.close': 'Закрыть {side} {quantity} {symbol} по рынку?',
   'confirm.reverse': 'Перевернуть {side} {quantity} {symbol} по рынку? Позиция закроется и откроется на тот же объём в обратную сторону.',
   'confirm.order': '{order}, количество {quantity}, {symbol}',

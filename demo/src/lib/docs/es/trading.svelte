@@ -375,6 +375,40 @@ chart.getFeedTime()   // when the stream last told anything, ms; null before it 
 <pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, confirmOrders: false })   // one-click trading
 chart.setPositionGuard((action, positionId, send) => ask(action, positionId).then((yes) => yes && send()))   // your own, on a headless Chart`}</code></pre>
 
+<h3 id="broker-rules">Las reglas de órdenes del bróker</h3>
+<p>
+  El preset de una bolsa (<code>setMarket</code>) tiene sus pasos de precio y su lote. Lo que un bróker acepta para un
+  símbolo en una sesión es cosa del bróker, y cambia sin una nueva versión de la librería: dalo como
+  <code>orderRules</code>, y de nuevo con <code>widget.setOrderRules</code> cuando cambie el símbolo o la sesión.
+  <code>orderKinds</code> son las clases de orden que ofrece el ticket en lugar de Mercado, Límite, Stop y Stop-límite,
+  cada una con el nombre de la bolsa (<code>code</code>) y la clase que el gráfico conoce (<code>type</code>): esta
+  decide si el ticket pide un precio y cómo se dibuja, y el nombre va con la orden como <code>exchangeType</code>,
+  para el bróker. <code>timesInForce</code> son las vigencias aceptadas (una clase puede tener las suyas), y
+  <code>lot</code> prevalece sobre el del mercado. La cuenta de simulación conserva el nombre en la orden y la opera
+  según su <code>type</code>: no se simula una subasta de apertura ni de cierre. Una orden del menú del botón derecho o
+  de la escalera de profundidad sale como la clase del bróker de su tipo, con una vigencia que este acepta, o no sale si
+  el bróker no tiene ninguna (un stop en HOSE). Una orden bracket, un borrador arrastrado en el gráfico y el cierre o la
+  inversión de una posición no llevan nombre: tu adaptador les da la clase de la bolsa. Una orden a mercado nunca lleva
+  vigencia.
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  adapter, symbol: 'VNM', trading: true,
+  orderRules: {
+    orderKinds: [
+      { code: 'LO', type: 'limit' },
+      { code: 'ATO', type: 'market' },
+      { code: 'ATC', type: 'market' },
+      { code: 'MP', type: 'market' },
+    ],
+    timesInForce: ['day'],
+    lot: 100,
+  },
+})
+// Another session, another list: an open ticket takes it at once
+widget.setOrderRules({ orderKinds: [{ code: 'ATC', type: 'market' }, { code: 'LO', type: 'limit' }], timesInForce: ['day'], lot: 100 })
+
+chart.on('orderPlace', (e) => send(e.payload.exchangeType ?? e.payload.type, e.payload))   // 'ATO', and type: 'market'`}</code></pre>
+
 <h2>Actuar sobre órdenes y posiciones desde el gráfico</h2>
 <p>
   Las líneas de órdenes y de posiciones llevan pequeños botones en su extremo

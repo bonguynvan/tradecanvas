@@ -978,6 +978,7 @@ export const ES_MESSAGES: WidgetMessages = {
   'order.sellStop': 'Venta stop @ {price}',
   'order.refused': 'El bróker rechazó la orden: {reason}',
   'order.noLivePrice': 'Sin precio en vivo: la orden no se envió',
+  'order.kindNotTaken': 'El bróker no acepta aquí esta clase de orden',
   'confirm.close': '¿Cerrar {side} {quantity} {symbol} a mercado?',
   'confirm.reverse': '¿Invertir {side} {quantity} {symbol} a mercado? Se cierra y se abre la misma cantidad en sentido contrario.',
   'confirm.order': '{order}, cantidad {quantity}, {symbol}',

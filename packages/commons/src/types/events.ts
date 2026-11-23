@@ -226,6 +226,8 @@ export interface OrderPlacePayload {
   ocoGroup?: string;
   /** The symbol the order is for: the one the chart shows as it is asked for, unless the order names another. */
   symbol?: string;
+  /** The exchange's own name for the order (`ATO`, `ATC`…), where the broker's rules give kinds of their own. */
+  exchangeType?: string;
   /**
    * The id the order goes out with, its own: the chart gives one to every order asked for
    * (`placeOrderIntent`) that has none. A broker that takes it turns away a repeat of the same

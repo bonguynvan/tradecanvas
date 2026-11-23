@@ -978,6 +978,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'order.sellStop': 'Verkoopstop @ {price}',
   'order.refused': 'De broker heeft de order geweigerd: {reason}',
   'order.noLivePrice': 'Geen live koers: de order is niet verzonden',
+  'order.kindNotTaken': 'De broker neemt dit soort order hier niet aan',
   'confirm.close': '{side} {quantity} {symbol} tegen marktprijs sluiten?',
   'confirm.reverse': '{side} {quantity} {symbol} tegen marktprijs omkeren? De positie wordt gesloten en met dezelfde hoeveelheid in de andere richting geopend.',
   'confirm.order': '{order}, hoeveelheid {quantity}, {symbol}',

@@ -733,6 +733,40 @@ const SCENES = {
   },
 
   /**
+   * The order ticket under a broker's rules for HOSE: its kinds by the exchange's names, the one
+   * time in force it takes, its lot. It offered Market, Limit, Stop and Stop-limit, good till
+   * cancelled, on every market.
+   */
+  async brokerRules() {
+    const s = await widget({
+      symbol: 'VNM',
+      trading: true,
+      orderRules: {
+        orderKinds: [{ code: 'LO', type: 'limit' }, { code: 'ATO', type: 'market' }, { code: 'ATC', type: 'market' }, { code: 'MP', type: 'market' }],
+        timesInForce: ['day'],
+        lot: 100,
+      },
+    });
+    s.chart.setMarket(MARKET_HOSE);
+    const last = s.chart.roundPrice(lastClose(s.chart));
+    s.chart.setPriceLimits({ ceiling: s.chart.roundPrice(last * 1.07), floor: s.chart.roundPrice(last * 0.93), reference: last });
+    s.chart.connectExecution(new PaperExecutionAdapter({ markPrice: last }));
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    host.querySelector('.tcw-quote-buy')?.click();
+    host.querySelector('.tcw-order-ticket [data-ticket-field="type-LO"]')?.click();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const checks = () => {
+      const names = (field) => [...host.querySelectorAll(`.tcw-order-ticket [data-ticket-field="${field}"] [role=radio]`)].map((radio) => radio.textContent);
+      const problems = [];
+      if (names('type').join() !== 'LO,ATO,ATC,MP') problems.push(`the ticket offers ${names('type').join()}, not the broker's kinds`);
+      if (names('timeInForce').length !== 1) problems.push(`the ticket offers ${names('timeInForce').length} times in force where the broker takes one`);
+      if (host.querySelector('.tcw-order-ticket [data-ticket-field="quantity"]')?.value !== '100') problems.push('the quantity does not start at the broker\'s lot');
+      return problems;
+    };
+    return { ...s, checks };
+  },
+
+  /**
    * The mouse pressed and held still on the plot: the floating tooltip of the bar under it, beside
    * the pointer and inside the plot. A pointer that only moves shows none: the legend says the bar.
    */
