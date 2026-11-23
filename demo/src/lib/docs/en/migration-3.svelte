@@ -173,9 +173,14 @@ chart.startBracket('buy', undefined, { risk: 50 })   // the quantity that loses 
   points. <code>scaleMarketPrices</code> divides the multiplier by its factor, so
   <code>scaleMarketPrices(MARKET_HOSE, 1000)</code>, with prices in dong, has a multiplier of 1. If you multiplied
   by 1,000 yourself (in <code>formatAmount</code>, or in what you show beside the chart), stop. A
-  <code>PaperExecutionAdapter</code> takes its own <code>multiplier</code>: give it the market's
-  <code>contractMultiplier</code>, or its balance and its fills' profit stay a thousand times smaller than the
-  panel's. Nothing sent to a broker changes: prices and quantities are as they were.
+  <code>PaperExecutionAdapter</code> given no <code>multiplier</code> of its own now takes the market's from the
+  chart it is connected to (the chart calls the adapter's optional <code>setMultiplier</code>, when connected and
+  when the market changes), so its margin, its balance and its fills' profit are in the same money; one given a
+  <code>multiplier</code> keeps it. A Long or Short Position drawing and a bracket sized by <code>risk</code> count
+  the quantity that risk buys by the multiplier too: 5,000,000 dong at risk with the stop 1.00 away is 5,000
+  shares, where it was 5,000,000. <code>positionLevels(drawing, multiplier)</code> takes the market's as its second
+  argument. In the account panel a position of another symbol than the chart's is still counted at 1.
+  What is sent to a broker is as it was, but for a quantity worked out from a risk, as above.
 </p>
 
 <h2 id="types">Types that grew</h2>

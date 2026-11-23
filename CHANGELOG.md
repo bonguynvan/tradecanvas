@@ -22,10 +22,12 @@ The `3.0` branch. These move under the version's own heading when it is released
 - **Vietnamese shares are worth their price in dong.** `MARKET_HOSE`, `MARKET_HOSE_ETF`, `MARKET_HNX` and
   `MARKET_UPCOM` have a `contractMultiplier` of 1,000, their prices being in thousands: an order's value, a
   position's profit and the amounts on the chart's tags read a thousand times what they did (100 shares at 26.40
-  are 2,640,000). `scaleMarketPrices` divides the multiplier by its factor. A `PaperExecutionAdapter` needs the
-  market's `contractMultiplier` as its `multiplier` to agree. Stop multiplying by 1,000 yourself.
-- **The amounts on the chart's tags are counted by the market's multiplier**, as the account panel's were: a
-  futures position's tag (VN30F) reads in money, not in points.
+  are 2,640,000). `scaleMarketPrices` divides the multiplier by its factor. Stop multiplying by 1,000 yourself.
+- **Money is counted by the market's multiplier wherever the chart counts it**, as the account panel and the
+  ticket did: the amounts on the chart's tags (a VN30F position's tag reads in money, not in points), the
+  quantity a Long or Short Position drawing's risk buys, a bracket sized by `risk`, and a `PaperExecutionAdapter`
+  given no `multiplier` of its own, which takes the market's from the chart (`ExecutionAdapter.setMultiplier`,
+  optional). `positionLevels(drawing, multiplier)` takes the market's as its second argument.
 - **`TimeInForce` has three more members** (`@tradecanvas/commons`): `'gtd'`, `'ioc'` and `'fok'`. Code that handles every member needs them.
 - **`FillReason` and `ExecutionEventType` have one more member each** (`@tradecanvas/commons`): `'liquidation'` and `'marginCall'`. Code that handles every member needs them.
 

@@ -3278,7 +3278,10 @@ export class Chart {
     const data = this.series.bars();
     const price = entry ?? (data.length > 0 ? data[data.length - 1].close : null);
     if (price === null) return false;
-    this.tradingManager.startBracket(side, price, size);
+    // A risk is money: the quantity it buys is counted by what a price is worth on the market, unless the host says.
+    const multiplier = this.marketConfig?.contractMultiplier;
+    const sized = size && size.risk !== undefined && size.multiplier === undefined && multiplier !== undefined ? { ...size, multiplier } : size;
+    this.tradingManager.startBracket(side, price, sized);
     return true;
   }
 
@@ -3939,6 +3942,8 @@ export class Chart {
     // Another broker's orders are what is there, not orders placed now.
     this.activity.rebase();
     this.executionAdapter = adapter;
+    // An adapter that counts money counts it as the chart's market does.
+    adapter.setMultiplier?.(this.marketConfig?.contractMultiplier);
     this.executionBrackets = config.brackets ?? 'place';
     this.execTeardown = wireExecution(adapter, {
       onIntent: (type, handler) => {
@@ -7047,8 +7052,11 @@ export class Chart {
 
     // Apply price precision to trading, alerts, and price line
     if (config.pricePrecision !== undefined) this.applyPricePrecision(config.pricePrecision);
-    // What a price is worth on this market, for the amounts on the trading tags: none given is none kept.
+    // What a price is worth on this market, for the amounts on the trading tags, the quantity a
+    // position drawing's risk buys and the account connected: none given is none kept.
     this.tradingManager.setConfig({ amountMultiplier: config.contractMultiplier });
+    this.drawingManager.setAmountMultiplier(config.contractMultiplier);
+    this.executionAdapter?.setMultiplier?.(config.contractMultiplier);
 
     // Longer price labels may need a wider axis.
     this.updateViewportAndRender();

@@ -231,6 +231,8 @@ export interface DrawingPlugin {
    * by the array and its length, computes it again then.
    */
   setDataGetter?(getter: () => readonly OHLCBar[], revision?: () => number): void;
+  /** What a move of one in price is worth for one unit on the chart's market (its contract multiplier), for a tool that counts money; none is 1. */
+  setAmountMultiplier?(multiplier: number | undefined): void;
 }
 
 /**

@@ -167,9 +167,14 @@ chart.startBracket('buy', undefined, { risk: 50 })   // ストップで 50 を�
   <code>scaleMarketPrices</code> は乗数を係数で割るので、価格をドンで読む
   <code>scaleMarketPrices(MARKET_HOSE, 1000)</code> の乗数は 1 です。自分で 1,000 を掛けていた場合
   （<code>formatAmount</code> や、チャートの横に表示する値で）は、やめてください。
-  <code>PaperExecutionAdapter</code> は独自の <code>multiplier</code> を取ります。市場の
-  <code>contractMultiplier</code> を渡さないと、残高と約定の損益がパネルの千分の一のままになります。
-  ブローカーに送られる内容は変わりません。価格と数量は以前のままです。
+  独自の <code>multiplier</code> を渡されていない <code>PaperExecutionAdapter</code> は、接続先のチャートから
+  市場の乗数を受け取るようになりました（チャートは接続時と市場の変更時に、アダプターの任意のメソッド
+  <code>setMultiplier</code> を呼びます）。証拠金、残高、約定の損益が同じ金額の単位になります。
+  <code>multiplier</code> を渡したものはそのままです。ロング／ショートポジションの描画と、<code>risk</code> で
+  数量を決めるブラケットも、数量を乗数で計算します。リスク 5,000,000 ドンでストップが 1.00 離れていれば
+  5,000 株で、以前は 5,000,000 株でした。<code>positionLevels(drawing, multiplier)</code> は第 2 引数に市場の
+  乗数を取ります。口座パネルでは、チャートと別の銘柄のポジションは引き続き 1 で計算されます。
+  ブローカーに送られる内容は、上記のようにリスクから計算される数量を除き、以前のままです。
 </p>
 
 <h2 id="types">広がった型</h2>

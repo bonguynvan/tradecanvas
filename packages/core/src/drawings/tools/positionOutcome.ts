@@ -32,7 +32,7 @@ export interface PositionOutcome {
  * bar. `null` when no bar after the entry is in the span, and for a span that
  * ends before its entry: a trade does not run back in time.
  */
-export function positionOutcome(levels: PositionLevels, bars: ReadonlyArray<OHLCBar>, from: number, to: number): PositionOutcome | null {
+export function positionOutcome(levels: PositionLevels, bars: ReadonlyArray<OHLCBar>, from: number, to: number, multiplier = 1): PositionOutcome | null {
   const n = bars.length;
   if (n === 0) return null;
   if (!(to > from)) return null;
@@ -43,7 +43,7 @@ export function positionOutcome(levels: PositionLevels, bars: ReadonlyArray<OHLC
 
   const long = levels.side === 'buy';
   const close = (kind: PositionOutcome['kind'], exitIndex: number, exitPrice: number): PositionOutcome => ({
-    kind, entryIndex, exitIndex, exitPrice, pnl: (exitPrice - levels.entry) * levels.quantity * (long ? 1 : -1),
+    kind, entryIndex, exitIndex, exitPrice, pnl: (exitPrice - levels.entry) * levels.quantity * (long ? 1 : -1) * multiplier,
   });
   for (let i = entryIndex + 1; i <= last; i++) {
     const bar = bars[i];

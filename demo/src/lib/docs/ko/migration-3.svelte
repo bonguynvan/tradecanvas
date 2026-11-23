@@ -162,9 +162,14 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 손절가에서 50을 �
   표시됩니다. <code>scaleMarketPrices</code>는 승수를 계수로 나누므로, 가격을 동으로 읽는
   <code>scaleMarketPrices(MARKET_HOSE, 1000)</code>의 승수는 1입니다. 직접 1,000을 곱하고 있었다면
   (<code>formatAmount</code>에서, 또는 차트 옆에 표시하는 값에서) 그만두세요.
-  <code>PaperExecutionAdapter</code>는 자체 <code>multiplier</code>를 받습니다. 시장의
-  <code>contractMultiplier</code>를 주지 않으면 잔고와 체결 손익이 패널보다 천 배 작게 남습니다.
-  브로커에게 보내는 내용은 바뀌지 않습니다. 가격과 수량은 그대로입니다.
+  자체 <code>multiplier</code>를 받지 않은 <code>PaperExecutionAdapter</code>는 이제 연결된 차트에서 시장의
+  승수를 받습니다(차트는 연결할 때와 시장이 바뀔 때 어댑터의 선택적 메서드 <code>setMultiplier</code>를
+  호출합니다). 그래서 증거금, 잔고, 체결 손익이 같은 금액 단위가 됩니다. <code>multiplier</code>를 받은 것은
+  그대로 유지합니다. 롱/숏 포지션 그리기와 <code>risk</code>로 수량을 정하는 브래킷도 수량을 승수로
+  계산합니다. 위험 5,000,000동에 스톱이 1.00 떨어져 있으면 5,000주이며, 이전에는 5,000,000주였습니다.
+  <code>positionLevels(drawing, multiplier)</code>는 두 번째 인수로 시장의 승수를 받습니다. 계좌 패널에서
+  차트와 다른 종목의 포지션은 여전히 1로 계산됩니다.
+  브로커에게 보내는 내용은 위와 같이 위험에서 계산되는 수량을 빼고는 그대로입니다.
 </p>
 
 <h2 id="types">넓어진 타입</h2>

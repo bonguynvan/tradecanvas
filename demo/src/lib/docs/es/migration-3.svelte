@@ -177,10 +177,16 @@ chart.startBracket('buy', undefined, { risk: 50 })   // la cantidad que pierde 5
   <code>scaleMarketPrices</code> divide el multiplicador por su factor, así que
   <code>scaleMarketPrices(MARKET_HOSE, 1000)</code>, con precios en dong, tiene multiplicador 1. Si multiplicabas
   por 1.000 por tu cuenta (en <code>formatAmount</code>, o en lo que muestras junto al gráfico), deja de hacerlo.
-  Un <code>PaperExecutionAdapter</code> recibe su propio <code>multiplier</code>: dale el
-  <code>contractMultiplier</code> del mercado, o su saldo y el resultado de sus ejecuciones seguirán siendo mil
-  veces menores que los del panel. Nada de lo que se envía a un bróker cambia: precios y cantidades son los de
-  antes.
+  Un <code>PaperExecutionAdapter</code> sin <code>multiplier</code> propio toma ahora el del mercado del gráfico
+  al que está conectado (el gráfico llama al método opcional <code>setMultiplier</code> del adaptador, al conectar
+  y cuando cambia el mercado), así que su margen, su saldo y el resultado de sus ejecuciones están en el mismo
+  dinero; uno con <code>multiplier</code> lo conserva. Un dibujo de posición larga o corta y un bracket dimensionado
+  por <code>risk</code> cuentan también con el multiplicador la cantidad que ese riesgo compra: 5.000.000 dong de
+  riesgo con el stop a 1.00 son 5.000 acciones, donde eran 5.000.000.
+  <code>positionLevels(drawing, multiplier)</code> recibe el del mercado como segundo argumento. En el panel de la
+  cuenta, una posición de otro símbolo que el del gráfico sigue contándose con 1.
+  Lo que se envía a un bróker es lo de antes, salvo una cantidad calculada a partir de un riesgo, como
+  arriba.
 </p>
 
 <h2 id="types">Tipos que han crecido</h2>

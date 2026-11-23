@@ -148,9 +148,13 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 在止损处亏损 50 �
   乘数计算，与账户面板一致：VN30F 持仓的标签以越南盾显示，而不是点数。<code>scaleMarketPrices</code>
   会把乘数除以它的系数，因此价格以越南盾计的 <code>scaleMarketPrices(MARKET_HOSE, 1000)</code> 乘数为 1。
   如果你自己乘过 1,000（在 <code>formatAmount</code> 中，或在图表旁显示的内容中），请去掉。
-  <code>PaperExecutionAdapter</code> 有自己的 <code>multiplier</code>：请把市场的
-  <code>contractMultiplier</code> 传给它，否则它的余额和成交盈亏会比面板小一千倍。
-  发送给券商的内容没有变化：价格和数量与之前相同。
+  没有传入自己的 <code>multiplier</code> 的 <code>PaperExecutionAdapter</code> 现在会从所连接的图表取得市场的乘数
+  （图表在连接时和市场改变时调用适配器可选的 <code>setMultiplier</code>），因此它的保证金、余额和成交盈亏使用
+  同一种金额；传入了 <code>multiplier</code> 的则保持不变。多头/空头持仓画线和按 <code>risk</code> 定量的括号单
+  也按乘数计算数量：风险 5,000,000 越南盾、止损相距 1.00 时为 5,000 股，以前是 5,000,000 股。
+  <code>positionLevels(drawing, multiplier)</code> 的第二个参数接收市场的乘数。在账户面板中，
+  与图表品种不同的持仓仍按 1 计算。
+  发送给券商的内容与之前相同，只有如上所述由风险算出的数量不同。
 </p>
 
 <h2 id="types">扩充的类型</h2>

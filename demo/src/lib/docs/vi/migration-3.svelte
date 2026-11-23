@@ -172,9 +172,14 @@ chart.startBracket('buy', undefined, { risk: 50 })   // khối lượng sẽ l�
   <code>scaleMarketPrices</code> chia hệ số cho factor của nó, nên
   <code>scaleMarketPrices(MARKET_HOSE, 1000)</code>, với giá theo đồng, có hệ số 1. Nếu bạn đang tự nhân 1.000
   (trong <code>formatAmount</code>, hoặc ở chỗ bạn hiển thị cạnh chart), hãy bỏ đi.
-  <code>PaperExecutionAdapter</code> nhận <code>multiplier</code> riêng: hãy truyền
-  <code>contractMultiplier</code> của thị trường, nếu không số dư và lãi lỗ của fill sẽ nhỏ hơn bảng tài khoản một
-  nghìn lần. Không có gì gửi tới broker thay đổi: giá và khối lượng vẫn như cũ.
+  <code>PaperExecutionAdapter</code> không được truyền <code>multiplier</code> riêng giờ lấy hệ số của thị trường
+  từ chart nó kết nối (chart gọi <code>setMultiplier</code>, một method tuỳ chọn của adapter, khi kết nối và khi
+  thị trường đổi), nên margin, số dư và lãi lỗ của fill dùng cùng đơn vị tiền; adapter được truyền
+  <code>multiplier</code> thì giữ nguyên. Drawing Long/Short Position và bracket tính theo <code>risk</code> cũng
+  tính khối lượng theo hệ số: rủi ro 5.000.000 đồng với stop cách 1.00 là 5.000 cổ phiếu, trước đây là 5.000.000.
+  <code>positionLevels(drawing, multiplier)</code> nhận hệ số của thị trường ở tham số thứ hai. Trong bảng tài
+  khoản, position của mã khác với mã của chart vẫn tính với hệ số 1.
+  Những gì gửi tới broker vẫn như cũ, trừ khối lượng được tính từ rủi ro như trên.
 </p>
 
 <h2 id="types">Các type được mở rộng</h2>

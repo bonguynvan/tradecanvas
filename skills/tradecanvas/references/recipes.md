@@ -536,7 +536,7 @@ lots of 100 in the order ticket, the price board's colours. Preset prices are
 in thousands of dong, as price boards show them (bars in thousands need
 nothing more), and money is counted in dong: the presets' `contractMultiplier`
 is 1,000, which the ticket's value, the panel's profit and the chart's tags
-use (give it to a `PaperExecutionAdapter` as its `multiplier`).
+use; a `PaperExecutionAdapter` given no `multiplier` takes it from the chart.
 `scaleMarketPrices(MARKET_HOSE, 1000)` reads dong, with a multiplier of 1. The axis
 keeps its zone until `setTimeZone('exchange')`, and numbers their locale.
 

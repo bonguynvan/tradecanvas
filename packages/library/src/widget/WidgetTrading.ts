@@ -371,7 +371,7 @@ export class WidgetTrading {
 
   /** Open the order ticket from a Long/Short Position drawing, filled with its levels. */
   openOrderTicketFromDrawing(id: string): void {
-    const levels = positionLevels(this.host.chart.getDrawings().find((d) => d.id === id));
+    const levels = positionLevels(this.host.chart.getDrawings().find((d) => d.id === id), this.host.chart.getMarket()?.contractMultiplier);
     if (!levels) return;
     // The size the drawing writes: its risk unrounded, taken down to the decimals it shows.
     const decimals = Math.max(0, Math.min(8, Math.round(levels.quantityDecimals)));

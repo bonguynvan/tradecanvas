@@ -259,8 +259,8 @@ chart.modifyPositionIntent({ positionId: 'pos-1', takeProfits: null })          
   (<code>executionError</code>), and so is a reverse; a waiting order whose money has gone by the time its
   price comes is cancelled, which <code>executionError</code> says too. <code>multiplier</code> is what a move
   of one in price is worth for one unit (a futures contract's money per point, or 1,000 where a share's
-  price is in thousands, as on HOSE): give it the market's
-  <code>contractMultiplier</code>, which the widget's panel counts the positions' profit by. The account is told
+  price is in thousands, as on HOSE). Without one the account takes the market's
+  <code>contractMultiplier</code> from the chart it is connected to, which the widget's panel counts the positions' profit by. The account is told
   before the fill that changed it, so <code>chart.getAccount()</code> in an <code>executionFill</code> listener
   reads it as the fill left it. Without a <code>balance</code> there is no account, and any order is taken, as
   before.
