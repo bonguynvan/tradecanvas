@@ -692,6 +692,8 @@ export class Chart {
       }
       send();
     });
+    // The profile's figures start in the legend's corner: they are written under it, however tall it is drawn.
+    this.eventBus.on('legendResize', () => this.clearProfileOfLegend());
     // The activity log hears what the chart is told, whoever tells it: an adapter, or the app's own calls.
     this.eventBus.on('ordersChange', (e) => this.activity.orders((e.payload as { orders: TradingOrder[] }).orders, this.activityTime()));
     this.eventBus.on('executionFill', (e) => this.activity.fill(e.payload as import('@tradecanvas/commons').FillEvent));
@@ -4712,6 +4714,7 @@ export class Chart {
 
   setMarketProfileVisible(visible: boolean): void {
     this.marketProfile.setVisible(visible);
+    this.clearProfileOfLegend();
     this.engine.requestRender(LayerType.Main);
   }
 
@@ -4719,7 +4722,7 @@ export class Chart {
     return this.marketProfile.isVisible();
   }
 
-  setMarketProfileConfig(config: { buckets?: number; widthRatio?: number; opacity?: number; valueAreaPct?: number; highlightPoC?: boolean; showStats?: boolean; splitBySession?: boolean; letters?: boolean }): void {
+  setMarketProfileConfig(config: { buckets?: number; widthRatio?: number; opacity?: number; valueAreaPct?: number; highlightPoC?: boolean; showStats?: boolean; splitBySession?: boolean; letters?: boolean; color?: string | null; valueAreaColor?: string | null }): void {
     if (config.buckets !== undefined) this.marketProfile.setBuckets(config.buckets);
     if (config.widthRatio !== undefined) this.marketProfile.setWidthRatio(config.widthRatio);
     if (config.opacity !== undefined) this.marketProfile.setOpacity(config.opacity);
@@ -4728,7 +4731,15 @@ export class Chart {
     if (config.showStats !== undefined) this.marketProfile.setShowStats(config.showStats);
     if (config.splitBySession !== undefined) this.marketProfile.setSplitBySession(config.splitBySession);
     if (config.letters !== undefined) this.marketProfile.setLetters(config.letters);
+    // Colours of its own (null: the theme's again), so that candles hidden or coloured otherwise leave the profile as it is.
+    this.marketProfile.setColors({ color: config.color, valueAreaColor: config.valueAreaColor });
     this.engine.requestRender(LayerType.Main);
+  }
+
+  /** The profile's figures are written under the legend's lines, which start in the same corner. */
+  private clearProfileOfLegend(): void {
+    const top = this.viewport.getState().chartRect.y;
+    this.marketProfile.setClearTop(this.isLegendVisible() ? Math.max(0, this.getLegendBottom() - top) : 0);
   }
 
   /** How the Market Profile is drawn, as `setMarketProfileConfig` left it. */
@@ -4752,13 +4763,19 @@ export class Chart {
     return this.depthHeatmap.isVisible();
   }
 
-  setDepthHeatmapConfig(config: { opacity?: number; capacity?: number }): void {
+  /**
+   * How the liquidity heatmap is drawn. `bidColor` and `askColor` are colours of its own (null:
+   * the theme's rising and falling candles again): a chart that hides its candles, or colours
+   * them for something else, keeps its heatmap with them.
+   */
+  setDepthHeatmapConfig(config: { opacity?: number; capacity?: number; bidColor?: string | null; askColor?: string | null }): void {
     if (config.opacity !== undefined) this.depthHeatmap.setOpacity(config.opacity);
     if (config.capacity !== undefined) this.depthHeatmap.setCapacity(config.capacity);
+    this.depthHeatmap.setColors({ bidColor: config.bidColor, askColor: config.askColor });
     this.engine.requestRender(LayerType.Main);
   }
 
-  getDepthHeatmapConfig(): { opacity: number; capacity: number } {
+  getDepthHeatmapConfig(): import('@tradecanvas/core').DepthHeatmapConfig {
     return this.depthHeatmap.getConfig();
   }
 

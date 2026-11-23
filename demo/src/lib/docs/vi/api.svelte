@@ -557,6 +557,7 @@ chart.setMarketProfileConfig({
   opacity: 0.32,
   valueAreaPct: 0.7,  // fraction of TPOs in the value area
   highlightPoC: true, // dashed line at the point of control
+  valueAreaColor: '#7e57c2', color: '#90a4ae', // màu riêng; null: màu của theme (nến tăng, chữ phụ)
 })
 
 // split into one mini-profile per trading day, in the exchange's zone
