@@ -35,6 +35,8 @@ export type {
   DockPageSpec,
   DockPageHandle,
   ChartSettingsState,
+  BrokerOrderKind,
+  BrokerOrderRules,
 } from './types.js';
 export { WIDGET_FEATURES } from './widgetFeatures.js';
 export type { WidgetFeature, WidgetFeatures } from './widgetFeatures.js';

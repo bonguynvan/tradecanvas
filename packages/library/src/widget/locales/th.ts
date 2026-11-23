@@ -978,6 +978,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'order.sellStop': 'ขายแบบสต็อป @ {price}',
   'order.refused': 'โบรกเกอร์ปฏิเสธคำสั่ง: {reason}',
   'order.noLivePrice': 'ไม่มีราคาสด: ยังไม่ได้ส่งคำสั่ง',
+  'order.kindNotTaken': 'โบรกเกอร์ไม่รับคำสั่งประเภทนี้ที่นี่',
   'confirm.close': 'ปิด {side} {quantity} {symbol} ที่ราคาตลาดหรือไม่',
   'confirm.reverse': 'กลับสถานะ {side} {quantity} {symbol} ที่ราคาตลาดหรือไม่ สถานะจะถูกปิดและเปิดใหม่ด้วยจำนวนเท่าเดิมในทิศทางตรงข้าม',
   'confirm.order': '{order} จำนวน {quantity} {symbol}',

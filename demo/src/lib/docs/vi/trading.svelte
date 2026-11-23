@@ -367,6 +367,39 @@ chart.getFeedTime()   // when the stream last told anything, ms; null before it 
 <pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, confirmOrders: false })   // one-click trading
 chart.setPositionGuard((action, positionId, send) => ask(action, positionId).then((yes) => yes && send()))   // your own, on a headless Chart`}</code></pre>
 
+<h3 id="broker-rules">Luật lệnh của broker</h3>
+<p>
+  Preset của một sàn (<code>setMarket</code>) có bước giá và lô của sàn đó. Còn những gì broker nhận cho một symbol
+  trong một phiên là của riêng broker, và thay đổi mà không cần bản phát hành mới của thư viện: hãy truyền qua
+  <code>orderRules</code>, và truyền lại bằng <code>widget.setOrderRules</code> khi symbol hoặc phiên thay đổi.
+  <code>orderKinds</code> là các loại order mà ticket đưa ra thay cho Market, Limit, Stop và Stop-limit, mỗi loại gồm tên
+  của sàn (<code>code</code>) và loại mà chart hiểu (<code>type</code>): loại này quyết định ticket có hỏi giá hay
+  không và order được vẽ thế nào, còn tên thì đi cùng order dưới dạng <code>exchangeType</code>, dành cho broker.
+  <code>timesInForce</code> là các loại hiệu lực được nhận (một loại order có thể có danh sách riêng), và
+  <code>lot</code> thay cho lô của thị trường. Tài khoản paper giữ tên trên order và khớp nó theo <code>type</code>:
+  phiên khớp lệnh định kỳ mở cửa hay đóng cửa không được mô phỏng. Order từ menu chuột phải hay depth ladder được gửi
+  dưới dạng loại của broker ứng với type của nó, kèm một loại hiệu lực được nhận, hoặc không được gửi nếu broker không có
+  loại nào như vậy (stop trên HOSE). Bracket, draft order kéo trên chart, và việc đóng hay đảo chiều position thì không
+  được gắn tên: adapter của bạn gán loại của sàn cho chúng. Order thị trường không bao giờ mang loại hiệu lực.
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  adapter, symbol: 'VNM', trading: true,
+  orderRules: {
+    orderKinds: [
+      { code: 'LO', type: 'limit' },
+      { code: 'ATO', type: 'market' },
+      { code: 'ATC', type: 'market' },
+      { code: 'MP', type: 'market' },
+    ],
+    timesInForce: ['day'],
+    lot: 100,
+  },
+})
+// Another session, another list: an open ticket takes it at once
+widget.setOrderRules({ orderKinds: [{ code: 'ATC', type: 'market' }, { code: 'LO', type: 'limit' }], timesInForce: ['day'], lot: 100 })
+
+chart.on('orderPlace', (e) => send(e.payload.exchangeType ?? e.payload.type, e.payload))   // 'ATO', and type: 'market'`}</code></pre>
+
 <h2>Thao tác với order và position trên biểu đồ</h2>
 <p>
   Đường order và position có các nút nhỏ ở đầu bên phải: <strong>×</strong>

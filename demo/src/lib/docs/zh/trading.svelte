@@ -333,6 +333,36 @@ chart.getFeedTime()   // when the stream last told anything, ms; null before it 
 <pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, confirmOrders: false })   // one-click trading
 chart.setPositionGuard((action, positionId, send) => ask(action, positionId).then((yes) => yes && send()))   // your own, on a headless Chart`}</code></pre>
 
+<h3 id="broker-rules">经纪商的订单规则</h3>
+<p>
+  交易所的预设（<code>setMarket</code>）包含它的价格步长和手数。经纪商在某个交易时段对某个品种接受什么，是经纪商自己的规则，
+  而且无需发布新版本库就会变化：通过 <code>orderRules</code> 传入，并在品种或时段变化时用
+  <code>widget.setOrderRules</code> 再次传入。<code>orderKinds</code> 是下单窗口提供的订单种类，用来代替市价、限价、
+  止损和止损限价，每一种都带有交易所的名称（<code>code</code>）和图表所理解的种类（<code>type</code>）：后者决定下单窗口
+  是否询问价格以及订单如何绘制，名称则作为 <code>exchangeType</code> 随订单发给经纪商。<code>timesInForce</code>
+  是接受的有效期（某个种类可以有自己的列表），<code>lot</code> 优先于市场的手数。模拟账户会在订单上保留该名称，
+  并按其 <code>type</code> 成交：不模拟开盘或收盘集合竞价。来自右键菜单或盘口深度的订单会以经纪商对应该 type 的种类发出，
+  并带上它接受的有效期；如果经纪商没有这样的种类（如 HOSE 上的止损单），则不发出。括号单、在图表上拖出的草稿订单，
+  以及平仓或反手不会被命名：由你的适配器为它们指定交易所的种类。市价单从不带有效期。
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  adapter, symbol: 'VNM', trading: true,
+  orderRules: {
+    orderKinds: [
+      { code: 'LO', type: 'limit' },
+      { code: 'ATO', type: 'market' },
+      { code: 'ATC', type: 'market' },
+      { code: 'MP', type: 'market' },
+    ],
+    timesInForce: ['day'],
+    lot: 100,
+  },
+})
+// Another session, another list: an open ticket takes it at once
+widget.setOrderRules({ orderKinds: [{ code: 'ATC', type: 'market' }, { code: 'LO', type: 'limit' }], timesInForce: ['day'], lot: 100 })
+
+chart.on('orderPlace', (e) => send(e.payload.exchangeType ?? e.payload.type, e.payload))   // 'ATO', and type: 'market'`}</code></pre>
+
 <h2>在图表上操作订单和持仓</h2>
 <p>
   订单线和持仓线的右端带有小按钮：<strong>×</strong> 撤销订单或平掉持仓，

@@ -978,6 +978,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'order.sellStop': 'Eladási stop @ {price}',
   'order.refused': 'A bróker elutasította a megbízást: {reason}',
   'order.noLivePrice': 'Nincs élő ár: a megbízás nem lett elküldve',
+  'order.kindNotTaken': 'A bróker itt nem fogad ilyen megbízást',
   'confirm.close': 'Lezárja piaci áron: {side} {quantity} {symbol}?',
   'confirm.reverse': 'Megfordítja piaci áron: {side} {quantity} {symbol}? A pozíció lezárul, és ugyanekkora mennyiség nyílik az ellenkező irányban.',
   'confirm.order': '{order}, mennyiség {quantity}, {symbol}',

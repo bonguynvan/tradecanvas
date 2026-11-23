@@ -990,6 +990,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'order.sellStop': 'Selg stopp @ {price}',
   'order.refused': 'Megleren avviste ordren: {reason}',
   'order.noLivePrice': 'Ingen sanntidspris: ordren ble ikke sendt',
+  'order.kindNotTaken': 'Megleren tar ikke imot denne ordretypen her',
   'confirm.close': 'Lukke {side} {quantity} {symbol} til markedspris?',
   'confirm.reverse': 'Snu {side} {quantity} {symbol} til markedspris? Posisjonen lukkes, og samme antall åpnes motsatt vei.',
   'confirm.order': '{order}, antall {quantity}, {symbol}',
