@@ -187,12 +187,16 @@ export interface FeaturesConfig {
   /** Enable crosshair */
   crosshair?: boolean;
   /**
-   * Show the floating OHLCV tooltip that follows the cursor on hover.
-   * Pro trading charts usually rely on the top-left legend (`legend`) instead
-   * of a cursor-following popup — set this to `false` to match that and
-   * keep only the legend updating on hover.
+   * The floating OHLCV tooltip beside the crosshair. `true`: it follows the
+   * pointer as it hovers. `'hold'`: it shows only while a mouse press is held
+   * still on the plot (half a second, the wait of a long press), then follows
+   * the pointer until the button is let go; the chart does not pan meanwhile,
+   * and a pointer that only hovers shows none. `false`: never. Trading charts
+   * mostly keep to the top-left legend (`legend`) and ask for the popup with a
+   * press: `ChartWidget` starts on `'hold'`, `Chart` on `true`. A finger's long
+   * press pins a tooltip at its bar whatever this is, as Alt-click does.
    */
-  crosshairTooltip?: boolean;
+  crosshairTooltip?: boolean | 'hold';
   /** Enable keyboard shortcuts (arrows, +/-, Home/End, Space) */
   keyboard?: boolean;
 

@@ -117,6 +117,15 @@ chart.startBracket('buy', undefined, { risk: 50 })   // khối lượng sẽ l�
   symbol, tài khoản paper khớp và định giá từng symbol theo giá của riêng nó; được đưa giá không ghi symbol, nó
   là một thị trường, như trước. Và với các bar đặt bằng tay, chart không biết symbol cho tới khi được báo:
   <code>chart.setSymbol(symbol)</code>, việc mà <code>ChartWidget</code> tự gọi.
+<h3 id="hold-tooltip">Click giữ trên chart thì hiện popup giá</h3>
+<p>
+  Trong <code>ChartWidget</code>, giữ nút chuột yên trên vùng plot nửa giây sẽ hiện tooltip OHLCV nổi cho nến dưới con
+  trỏ, cho tới khi nhả nút: tooltip đi theo con trỏ và chart không pan trong lúc đó. Vì vậy một lần nhấn giữ lâu như thế
+  không còn là một click, cũng không bắt đầu một lần pan. Feature <code>crosshairTooltip</code> của widget giờ là
+  <code>'hold'</code>, trước là <code>false</code>: truyền
+  <code>{`chartOptions: { features: { crosshairTooltip: false } }`}</code> nếu không muốn popup, như trước, hoặc
+  <code>true</code> để popup hiện dưới con trỏ đang hover. <code>Chart</code> headless không đổi: tooltip của nó đi theo
+  con trỏ trừ khi được chỉ định khác, và nó cũng nhận <code>'hold'</code>.
 </p>
 
 <h2 id="types">Các type được mở rộng</h2>

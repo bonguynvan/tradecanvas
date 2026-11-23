@@ -762,6 +762,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>跳转到日期</td></tr>
     <tr><td><kbd>?</kbd></td><td>快捷键列表，可按功能或按键搜索</td></tr>
     <tr><td><kbd>Alt</kbd> + 点击图表</td><td>在鼠标所在K线上固定 OHLC 提示（同时显示与实时十字光标的差值）</td></tr>
+    <tr><td>在图表上按住鼠标</td><td>按住期间显示鼠标所在K线的浮动 OHLCV 提示：它跟随鼠标，图表不平移（<code>{`chartOptions: { features: { crosshairTooltip: true } }`}</code> 让它在鼠标仅悬停时也跟随，<code>false</code> 则从不显示）</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>取消固定提示 / 取消当前画线</td></tr>
     <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td><td>回放后退 / 前进一步</td></tr>
     <tr><td><kbd>Space</kbd></td><td>播放或暂停回放（在图表或进度条上；回放之外适配图表）</td></tr>

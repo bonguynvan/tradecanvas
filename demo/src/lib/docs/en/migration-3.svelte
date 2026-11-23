@@ -117,6 +117,15 @@ chart.startBracket('buy', undefined, { risk: 50 })   // the quantity that loses 
   prices that name their symbol, the paper account works and values each symbol by its own; fed prices that name
   none, it is one market, as it was. And with bars set by hand the chart knows no symbol until it is told:
   <code>chart.setSymbol(symbol)</code>, which <code>ChartWidget</code> calls itself.
+<h3 id="hold-tooltip">A press held on the chart shows the price popup</h3>
+<p>
+  In <code>ChartWidget</code>, a mouse press held still on the plot for half a second shows the floating OHLCV tooltip
+  for the bar under the pointer, until the button is let go: the tooltip follows the pointer and the chart does not pan
+  meanwhile. A press held that long is therefore no longer a click, nor the start of a pan. The widget's
+  <code>crosshairTooltip</code> feature is now <code>'hold'</code> where it was <code>false</code>: pass
+  <code>{`chartOptions: { features: { crosshairTooltip: false } }`}</code> for no popup, as before, or <code>true</code>
+  for one under a pointer that hovers. The headless <code>Chart</code> is not changed: its tooltip follows the pointer
+  unless told otherwise, and takes <code>'hold'</code> too.
 </p>
 
 <h2 id="types">Types that grew</h2>

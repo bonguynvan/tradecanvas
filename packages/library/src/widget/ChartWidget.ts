@@ -520,11 +520,12 @@ export class ChartWidget {
       volume: true,
       legend: true,
       crosshair: true,
-      // Pro trading charts have no cursor-following OHLCV popup — just the
-      // legend, which ChartWidget already renders. Off by default here
-      // (the headless Chart's own default stays `true`); opt back in via
-      // `chartOptions: { features: { crosshairTooltip: true } }`.
-      crosshairTooltip: false,
+      // Trading charts have no OHLCV popup following the pointer: the legend
+      // says it, and the popup is asked for with a press held still on the
+      // plot (the headless Chart's own default stays `true`, under a pointer
+      // that hovers). `chartOptions: { features: { crosshairTooltip: true } }`
+      // has it follow the pointer here too, `false` never shows it.
+      crosshairTooltip: 'hold',
       keyboard: true,
       screenshot: true,
       alerts: true,

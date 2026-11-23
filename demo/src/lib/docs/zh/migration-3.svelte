@@ -101,6 +101,14 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 在止损处亏损 50 �
   一起回来。<code>setMarkPrice</code> 接受品种作为第三个参数，图表在回放时会传入它：提供的价格写明了品种时，
   模拟账户按各品种自己的价格撮合和估值；提供的价格没有写明品种时，它和以前一样是一个市场。另外，K 线由手动设置时，
   图表在被告知之前不知道品种：<code>chart.setSymbol(symbol)</code>，<code>ChartWidget</code> 会自己调用它。
+<h3 id="hold-tooltip">在图表上按住鼠标显示价格弹窗</h3>
+<p>
+  在 <code>ChartWidget</code> 中，在绘图区按住鼠标不动半秒，会显示鼠标所在K线的浮动 OHLCV 提示，直到松开按钮：
+  提示跟随鼠标，期间图表不平移。因此按住这么久不再算一次点击，也不会开始平移。组件的 <code>crosshairTooltip</code>
+  功能现在是 <code>'hold'</code>，以前是 <code>false</code>：传入
+  <code>{`chartOptions: { features: { crosshairTooltip: false } }`}</code> 可像以前一样不显示弹窗，传入
+  <code>true</code> 则在鼠标悬停时显示。无界面的 <code>Chart</code> 没有改变：除非另行指定，它的提示仍跟随鼠标，
+  它同样接受 <code>'hold'</code>。
 </p>
 
 <h2 id="types">扩充的类型</h2>

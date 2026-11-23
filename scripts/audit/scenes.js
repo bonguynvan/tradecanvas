@@ -637,6 +637,41 @@ const SCENES = {
   },
 
   /**
+   * The mouse pressed and held still on the plot: the floating tooltip of the bar under it, beside
+   * the pointer and inside the plot. A pointer that only moves shows none: the legend says the bar.
+   */
+  async holdTooltip() {
+    const s = await widget();
+    const surface = host.querySelector('canvas');
+    const origin = surface.getBoundingClientRect();
+    const plot = s.chart.getPlotRect();
+    const at = { x: origin.left + plot.x + plot.width * 0.6, y: origin.top + plot.y + plot.height * 0.4 };
+    const mouse = (type, buttons) => surface.dispatchEvent(new MouseEvent(type, { clientX: at.x, clientY: at.y, button: 0, buttons, bubbles: true }));
+    const frames = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const tooltip = s.chart.crosshairTooltip.el;
+    mouse('mousemove', 0);
+    await frames();
+    const shownUnderHover = tooltip.style.display !== 'none';
+    mouse('mousedown', 1);
+    // Longer than a press is held before it counts.
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    await frames();
+    const checks = () => {
+      if (shownUnderHover) return ['the floating tooltip shows under a pointer that only moves'];
+      if (tooltip.style.display === 'none') return ['a press held still on the plot shows no tooltip'];
+      const problems = [];
+      const box = tooltip.getBoundingClientRect();
+      const left = origin.left + plot.x;
+      const top = origin.top + plot.y;
+      if (box.left < left || box.right > left + plot.width || box.top < top || box.bottom > top + plot.height) problems.push('the tooltip reaches outside the plot');
+      if (at.x >= box.left && at.x <= box.right && at.y >= box.top && at.y <= box.bottom) problems.push('the tooltip covers the pointer it sits beside');
+      if (!/\d/.test(tooltip.textContent)) problems.push('the tooltip has no figures');
+      return problems;
+    };
+    return { ...s, checks };
+  },
+
+  /**
    * A stop-limit order waiting over the market: its limit's line with the
    * order's tag, its stop's dotted line tagged STOP, both prices on the axis,
    * and its row in the account panel's orders with the two prices.

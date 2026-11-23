@@ -112,6 +112,15 @@ chart.startBracket('buy', undefined, { risk: 50 })   // ストップで 50 を�
   価格を渡されると、ペーパー口座は銘柄ごとにその銘柄の価格で処理と評価を行い、銘柄を付けない価格を渡されると、
   これまでどおり 1 つの市場として扱います。また、バーを手動で設定している場合、チャートは伝えられるまで銘柄を
   知りません。<code>chart.setSymbol(symbol)</code> で伝えます。<code>ChartWidget</code> は自分で呼び出します。
+<h3 id="hold-tooltip">チャート上の長押しで価格ポップアップを表示します</h3>
+<p>
+  <code>ChartWidget</code> では、プロット上でマウスボタンを動かさずに 0.5 秒押し続けると、カーソル位置のバーの
+  フローティング OHLCV ツールチップが、ボタンを離すまで表示されます。ツールチップはカーソルに追従し、その間チャートは
+  パンしません。そのため、これだけ長く押した操作はクリックにもパンの開始にもなりません。ウィジェットの
+  <code>crosshairTooltip</code> 機能は、<code>false</code> だったものが <code>'hold'</code> になりました。
+  これまでどおりポップアップなしにするには <code>{`chartOptions: { features: { crosshairTooltip: false } }`}</code> を、
+  ホバーで表示するには <code>true</code> を渡してください。ヘッドレスの <code>Chart</code> は変わりません。
+  指定しない限りツールチップはカーソルに追従し、<code>'hold'</code> も受け付けます。
 </p>
 
 <h2 id="types">広がった型</h2>
