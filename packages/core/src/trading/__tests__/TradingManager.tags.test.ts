@@ -211,6 +211,100 @@ describe('the tags on the trading lines', () => {
     expect(manager.isOverDraggableLine({ x: reverse.x - 10, y: 36 }, unitViewport)).toBe(false);
   });
 
+  describe('a stop-limit order', () => {
+    /** A buy that begins to work at 80 and takes no more than 85: lines at y 20 and y 15. */
+    const stopLimit = { id: 'o1', side: 'buy' as const, type: 'stopLimit' as const, price: 85, stopPrice: 80, quantity: 1, label: 'STOP LIMIT' as const };
+    const lineYs = (calls: { name: string; args: unknown[] }[]) => calls.filter((call) => call.name === 'moveTo').map((call) => call.args[1]);
+    const axis = () => {
+      const { ctx, texts } = recordingCtx();
+      manager.renderAxisBadges(ctx, unitViewport, theme);
+      return texts;
+    };
+
+    beforeEach(() => {
+      manager.setPositions([]);
+      manager.setOrders([stopLimit]);
+    });
+
+    it('shows its stop as a line and a tag of its own, beside the order’s at its limit', () => {
+      const { texts, calls } = draw();
+      expect(texts).toEqual(expect.arrayContaining(['Buy stop limit', 'STOP']));
+      expect(lineYs(calls)).toEqual(expect.arrayContaining([15.5, 20.5]));
+    });
+
+    it('puts both its prices on the axis', () => {
+      expect(axis()).toEqual(expect.arrayContaining(['85.00', '80.00']));
+    });
+
+    it('shows no stop of its own for an order that has none, or whose stop is its price', () => {
+      manager.setOrders([{ id: 'a', side: 'buy', type: 'stop', price: 80, stopPrice: 80, quantity: 1 }, { id: 'b', side: 'sell', type: 'limit', price: 90, quantity: 1 }]);
+      expect(draw().texts).not.toContain('STOP');
+      expect(axis().sort()).toEqual(['80.00', '90.00']);
+      // A stop-limit told with no stop, or one that is no price, is drawn as the one line it has.
+      manager.setOrders([{ ...stopLimit, stopPrice: undefined }]);
+      expect(draw().texts).not.toContain('STOP');
+      manager.setOrders([{ ...stopLimit, stopPrice: Number.NaN }]);
+      expect(draw().texts).not.toContain('STOP');
+      expect(axis()).toEqual(['85.00']);
+    });
+
+    it('draws no stop that is off the plot', () => {
+      manager.setOrders([{ ...stopLimit, price: 95, stopPrice: 140 }]);
+      expect(draw().texts).not.toContain('STOP');
+      expect(axis()).toEqual(['95.00']);
+    });
+
+    it('does not take a press on its stop: the order is moved by its own line', () => {
+      // A stop well away from the limit, so a press on it is in reach of no other line: at y 40.
+      manager.setOrders([{ ...stopLimit, stopPrice: 60 }]);
+      expect(draw().texts).toContain('STOP');
+      expect(manager.isOverDraggableLine({ x: 50, y: 40 }, unitViewport)).toBe(false);
+      expect(manager.onPointerDown({ x: 50, y: 40 }, unitViewport)).toBe(false);
+      expect(manager.isOverDraggableLine({ x: 50, y: 15 }, unitViewport)).toBe(true);
+    });
+
+    it('moves its stop with it while it is dragged, the room between them kept', () => {
+      const events: { event: string; data: unknown }[] = [];
+      manager.setEventCallback((event, data) => events.push({ event, data }));
+      manager.onPointerDown({ x: 50, y: 15 }, unitViewport);
+      // Down ten: the limit to 75 (y 25), the stop to 70 (y 30).
+      manager.onPointerMove({ x: 50, y: 25 }, unitViewport);
+      const { calls } = draw();
+      expect(lineYs(calls)).toEqual(expect.arrayContaining([25.5, 30.5]));
+      expect(lineYs(calls)).not.toContain(20.5);
+      expect(axis()).toEqual(expect.arrayContaining(['75.00', '70.00']));
+      manager.onPointerUp({ x: 50, y: 25 });
+      expect(events).toEqual([{ event: 'orderModify', data: { orderId: 'o1', newPrice: 75, previousPrice: 85 } }]);
+    });
+  });
+
+  describe('an order that is gone while its line is dragged', () => {
+    it('calls the drag off: letting go moves no order', () => {
+      const events: { event: string; data: unknown }[] = [];
+      manager.setEventCallback((event, data) => events.push({ event, data }));
+      manager.onPointerDown({ x: 50, y: 70 }, unitViewport);
+      manager.onPointerMove({ x: 50, y: 40 }, unitViewport);
+      expect(manager.isDraggingLine()).toBe(true);
+      // It filled, or the broker cancelled it.
+      manager.setOrders([]);
+      expect(manager.isDraggingLine()).toBe(false);
+      manager.onPointerUp({ x: 50, y: 40 });
+      expect(events).toEqual([]);
+    });
+
+    it('keeps the drag of an order that is still there, whatever else changed', () => {
+      const events: { event: string; data: unknown }[] = [];
+      manager.setEventCallback((event, data) => events.push({ event, data }));
+      manager.onPointerDown({ x: 50, y: 70 }, unitViewport);
+      manager.onPointerMove({ x: 50, y: 40 }, unitViewport);
+      // Another order came, and a part of this one filled: it is the same order, working on.
+      manager.setOrders([{ id: 'o1', side: 'buy', type: 'limit', price: 30, quantity: 1, filledQuantity: 0.5 }, { id: 'o2', side: 'sell', type: 'limit', price: 90, quantity: 1 }]);
+      expect(manager.isDraggingLine()).toBe(true);
+      manager.onPointerUp({ x: 50, y: 40 });
+      expect(events).toEqual([{ event: 'orderModify', data: { orderId: 'o1', newPrice: 60, previousPrice: 30 } }]);
+    });
+  });
+
   it('put every price on the axis: entries, orders, stops and targets', () => {
     const { ctx, texts } = recordingCtx();
     manager.renderAxisBadges(ctx, unitViewport, theme);

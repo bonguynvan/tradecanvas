@@ -497,6 +497,38 @@ const SCENES = {
   },
 
   /**
+   * A stop-limit order waiting over the market: its limit's line with the
+   * order's tag, its stop's dotted line tagged STOP, both prices on the axis,
+   * and its row in the account panel's orders with the two prices.
+   */
+  async stopLimit() {
+    const s = await widget({ trading: true });
+    const last = lastClose(s.chart);
+    const broker = new PaperExecutionAdapter({ markPrice: last });
+    s.chart.connectExecution(broker);
+    const stop = s.chart.roundPrice(last * 1.004);
+    const limit = s.chart.roundPrice(last * 1.008);
+    await broker.placeOrder({ side: 'buy', type: 'stopLimit', price: limit, stopPrice: stop, quantity: 1, stopLoss: s.chart.roundPrice(last * 0.996) });
+    s.widget.toggleAccountPanel(true);
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    // The panel's second tab is its orders, in any language.
+    host.querySelectorAll('[role=tab]')[1]?.click();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const checks = () => {
+      const problems = [];
+      const order = s.chart.getOrders()[0];
+      if (!order || order.type !== 'stopLimit' || order.stopPrice !== stop || order.price !== limit) problems.push('the chart does not hold the stop-limit order with its stop and its limit');
+      // The fourth cell of the order's row is its price: two figures for a stop-limit, the stop first.
+      const price = host.querySelector('tbody tr')?.cells[3]?.textContent ?? '';
+      const cells = [...host.querySelectorAll('tbody td')].map((cell) => cell.textContent);
+      if (!locale && !cells.some((text) => text === 'Stop-limit')) problems.push('the account panel does not name the order a stop-limit');
+      if (!/^\S+ \/ \S+$/.test(price)) problems.push(`the account panel does not write the order's two prices: "${price}"`);
+      return problems;
+    };
+    return { ...s, broker, checks };
+  },
+
+  /**
    * The volume delta of bars that say who took their trades: each bar's
    * delta as a histogram, and its running sum from each session's start.
    */

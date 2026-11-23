@@ -4,10 +4,12 @@ import { stepDecimals } from '@tradecanvas/commons';
 /** What the order ticket holds while it is filled in. */
 export interface OrderTicketDraft {
   side: OrderSide;
-  type: 'market' | 'limit' | 'stop';
+  type: 'market' | 'limit' | 'stop' | 'stopLimit';
   quantity: number;
-  /** The limit or stop price (a market order fills at the market). */
+  /** The limit or stop price (a market order fills at the market); a stop-limit's limit. */
   price: number;
+  /** Where a stop-limit begins to work: its stop. Kept while another kind is chosen, and sent with no other. */
+  stopPrice?: number;
   stopLoss: number | null;
   takeProfit: number | null;
   /** The stop-loss is to trail the price, at its distance from the entry. */
@@ -84,6 +86,8 @@ export type OrderTicketProblem =
   | 'takeProfitSide'
   | 'limitSide'
   | 'stopSide'
+  /** A stop-limit with no stop, or one that is no price. */
+  | 'stopPrice'
   /** An order good till a date with no date, or one that is not to come. */
   | 'expireTime'
   /** A price off the market's step (HOSE: 0.05 between 10 and 50 thousand dong). */
@@ -110,7 +114,8 @@ export interface OrderTicketRules {
 const PRICE_EPSILON = 1e-9;
 
 /**
- * Where the position would start: the limit or stop price, or the market for
+ * Where the position would start: the limit or stop price (a stop-limit's
+ * limit, the worst it takes and what the account sizes it at), or the market for
  * a market order (null with no market price yet). A limit that fills at once
  * or not at all starts at the market too when it is through it: its price is
  * then the worst it takes, not where it fills.
@@ -145,6 +150,12 @@ export function orderTicketProblems(draft: OrderTicketDraft, lastPrice: number |
     if (draft.type === 'limit' && waits && below !== buy && draft.price !== lastPrice) problems.push('limitSide');
     if (draft.type === 'stop' && below === buy && draft.price !== lastPrice) problems.push('stopSide');
   }
+  if (draft.type === 'stopLimit') {
+    const stop = ticketStopPrice(draft);
+    if (Number.isNaN(stop)) problems.push('stopPrice');
+    // Its stop waits where a stop order's does; its limit may stand anywhere, the worst price it takes once it works.
+    else if (lastPrice !== null && stop !== lastPrice && (stop < lastPrice) === buy) problems.push('stopSide');
+  }
   const valid = (price: number | null) => price === null || (Number.isFinite(price) && price > 0);
   if (!valid(draft.stopLoss)) problems.push('stopLoss');
   if (!valid(draft.takeProfit)) problems.push('takeProfit');
@@ -160,12 +171,13 @@ export function orderTicketProblems(draft: OrderTicketDraft, lastPrice: number |
 /** What a market's rules find: prices off its step or beyond the day's limits, broken lots. */
 function marketProblems(draft: OrderTicketDraft, rules: OrderTicketRules): OrderTicketProblem[] {
   const problems: OrderTicketProblem[] = [];
-  const limitPrice = draft.type === 'market' ? null : draft.price;
-  const priced = [limitPrice, draft.stopLoss, draft.takeProfit].filter((p): p is number => p !== null && Number.isFinite(p) && p > 0);
+  // The prices the order itself waits at: its limit or stop, and a stop-limit's stop besides.
+  const own = draft.type === 'market' ? [] : draft.type === 'stopLimit' ? [draft.price, ticketStopPrice(draft)] : [draft.price];
+  const priced = [...own, draft.stopLoss, draft.takeProfit].filter((p): p is number => p !== null && Number.isFinite(p) && p > 0);
   const { roundPrice, limits, lot } = rules;
   if (roundPrice && priced.some((p) => Math.abs(roundPrice(p) - p) > PRICE_EPSILON)) problems.push('priceStep');
-  if (limits && limitPrice !== null && limitPrice > 0
-    && (limitPrice > limits.ceiling + PRICE_EPSILON || limitPrice < limits.floor - PRICE_EPSILON)) problems.push('priceLimits');
+  // Past the day's limits a limit is no price to take, and a stop is never reached.
+  if (limits && own.some((p) => p > 0 && (p > limits.ceiling + PRICE_EPSILON || p < limits.floor - PRICE_EPSILON))) problems.push('priceLimits');
   if (lot !== undefined && lot > 1 && draft.quantity > lot && draft.quantity % lot !== 0) problems.push('lot');
   return problems;
 }
@@ -173,6 +185,12 @@ function marketProblems(draft: OrderTicketDraft, rules: OrderTicketRules): Order
 /** How long a ticket's order may work, by its type: one that waits for its stop cannot fill at once or not at all. */
 export function ticketTimesInForce(type: OrderTicketDraft['type']): readonly TimeInForce[] {
   return type === 'limit' ? ['gtc', 'day', 'gtd', 'ioc', 'fok'] : ['gtc', 'day', 'gtd'];
+}
+
+/** A stop-limit draft's stop; NaN for one with none, or one that is no price above 0. */
+export function ticketStopPrice(draft: Pick<OrderTicketDraft, 'stopPrice'>): number {
+  const stop = draft.stopPrice;
+  return typeof stop === 'number' && Number.isFinite(stop) && stop > 0 ? stop : Number.NaN;
 }
 
 /** When the draft's order ends, ms; NaN for a draft with no time, or one that is no moment. */
@@ -194,6 +212,8 @@ export function orderTicketIntent(draft: OrderTicketDraft, lastPrice: number | n
     quantity: draft.quantity,
   };
   if (draft.type === 'stop') intent.stopPrice = draft.price;
+  // A stop-limit's stop is a price of its own; no other kind sends the one a draft still holds.
+  if (draft.type === 'stopLimit' && !Number.isNaN(ticketStopPrice(draft))) intent.stopPrice = ticketStopPrice(draft);
   if (draft.type !== 'market') intent.timeInForce = ticketTimeInForce(draft);
   // Only an order good till a date carries one: a date left in the draft by an earlier choice is not sent.
   if (intent.timeInForce === 'gtd' && !Number.isNaN(ticketExpireTime(draft))) intent.expireTime = ticketExpireTime(draft);

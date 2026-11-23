@@ -72,6 +72,67 @@ describe('order ticket rules', () => {
 /** The moment the ticket's clock stands at in these tests: 23 November 2026, nine in the morning, UTC. */
 const NOW = Date.UTC(2026, 10, 23, 9, 0);
 
+describe('a stop-limit order', () => {
+  /** A buy that begins to work at 105 and takes no more than 106, over a market at 100. */
+  const stopLimit = (over: Partial<OrderTicketDraft> = {}) => draft({ type: 'stopLimit', price: 106, stopPrice: 105, ...over });
+
+  it('waits, as a stop does: good till cancelled, for the day or till a date', () => {
+    expect(ticketTimesInForce('stopLimit')).toEqual(['gtc', 'day', 'gtd']);
+    expect(orderTicketIntent(stopLimit({ timeInForce: 'ioc' }), 100).timeInForce).toBe('gtc');
+  });
+
+  it('needs a stop above 0, on the side of the market a stop waits on', () => {
+    expect(orderTicketProblems(stopLimit(), 100)).toEqual([]);
+    expect(orderTicketProblems(stopLimit({ stopPrice: undefined }), 100)).toEqual(['stopPrice']);
+    expect(orderTicketProblems(stopLimit({ stopPrice: Number.NaN }), 100)).toEqual(['stopPrice']);
+    expect(orderTicketProblems(stopLimit({ stopPrice: 0 }), 100)).toEqual(['stopPrice']);
+    // A buy's stop under the market, a sell's over it: it would begin to work at once.
+    expect(orderTicketProblems(stopLimit({ stopPrice: 95 }), 100)).toEqual(['stopSide']);
+    expect(orderTicketProblems(stopLimit({ side: 'sell' }), 100)).toEqual(['stopSide']);
+    expect(orderTicketProblems(stopLimit({ side: 'sell', stopPrice: 95, price: 94 }), 100)).toEqual([]);
+    // With no market to tell by, its side is not judged.
+    expect(orderTicketProblems(stopLimit({ stopPrice: 95 }), null)).toEqual([]);
+  });
+
+  it('needs a limit above 0, which may stand on either side of its stop and of the market', () => {
+    expect(orderTicketProblems(stopLimit({ price: Number.NaN }), 100)).toEqual(['price']);
+    expect(orderTicketProblems(stopLimit({ price: 104 }), 100)).toEqual([]);
+    expect(orderTicketProblems(stopLimit({ price: 95 }), 100)).toEqual([]);
+  });
+
+  it('keeps both its prices on the market’s step and inside the day’s limits', () => {
+    const rules = {
+      roundPrice: (p: number) => Number((Math.round(p / 0.05) * 0.05).toFixed(2)),
+      limits: { ceiling: 27.1, floor: 23.6 },
+      lot: 100,
+    };
+    const hose = (over: Partial<OrderTicketDraft>) => draft({ type: 'stopLimit', quantity: 100, price: 26, stopPrice: 25.8, ...over });
+    expect(orderTicketProblems(hose({}), 25.5, rules)).toEqual([]);
+    expect(orderTicketProblems(hose({ stopPrice: 25.82 }), 25.5, rules)).toEqual(['priceStep']);
+    expect(orderTicketProblems(hose({ price: 26.02 }), 25.5, rules)).toEqual(['priceStep']);
+    // A stop past the ceiling is never reached; a limit past it is no price to take.
+    expect(orderTicketProblems(hose({ stopPrice: 27.5, price: 27 }), 25.5, rules)).toEqual(['priceLimits']);
+    expect(orderTicketProblems(hose({ price: 27.5 }), 25.5, rules)).toEqual(['priceLimits']);
+  });
+
+  it('sends its stop and its limit, and a stop of its own with no other kind of order', () => {
+    expect(orderTicketIntent(stopLimit({ quantity: 2 }), 100)).toMatchObject({ type: 'stopLimit', price: 106, stopPrice: 105, quantity: 2, timeInForce: 'gtc' });
+    // What the draft still holds from a kind chosen before is not sent.
+    expect(orderTicketIntent(draft({ price: 95, stopPrice: 105 }), 100)).not.toHaveProperty('stopPrice');
+    expect(orderTicketIntent(draft({ type: 'market', stopPrice: 105 }), 100)).not.toHaveProperty('stopPrice');
+    expect(orderTicketIntent(draft({ type: 'stop', price: 104, stopPrice: 105 }), 100)).toMatchObject({ type: 'stop', price: 104, stopPrice: 104 });
+  });
+
+  it('is summed up at its limit, the worst price it takes: what the account sizes it at', () => {
+    const order = stopLimit({ quantity: 2, stopLoss: 100, takeProfit: 118 });
+    expect(ticketEntry(order, 100)).toBe(106);
+    expect(orderTicketSummary(order, 100)).toMatchObject({ value: 212, risk: -12, reward: 24 });
+    // A stop-loss between its stop and its limit is on the losing side of where it is taken to start.
+    expect(orderTicketProblems({ ...order, stopLoss: 105.5 }, 100)).toEqual([]);
+    expect(orderTicketProblems({ ...order, stopLoss: 107 }, 100)).toEqual(['stopLossSide']);
+  });
+});
+
 describe('a limit order that fills at once or not at all', () => {
   it('may go through the market, which is what it is for; one that waits may not', () => {
     // A buy limit over the market would fill at once: a slip for an order that waits, the point of one that does not.
@@ -204,7 +265,7 @@ describe('WidgetOrderTicket', () => {
   it('takes the type and the time in force as choices in a row, moved through with the arrows', () => {
     ticket.open({ lastPrice: 100 });
     expect(host.querySelector('[data-ticket-field="type"]')!.getAttribute('role')).toBe('radiogroup');
-    expect(radios('type').map((r) => r.dataset.value)).toEqual(['market', 'limit', 'stop']);
+    expect(radios('type').map((r) => r.dataset.value)).toEqual(['market', 'limit', 'stop', 'stopLimit']);
     expect(radios('timeInForce')).toEqual([]);
     radios('type')[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
     expect(checked('type')).toBe('limit');
@@ -316,6 +377,61 @@ describe('WidgetOrderTicket', () => {
     expect(expiry().date).not.toBeNull();
     radios('type')[0].click();
     expect(expiry().date).toBeNull();
+  });
+
+  it('takes a stop-limit: a stop price and a limit price, each named, both where the order was to start with', () => {
+    ticket.open({ price: 105, lastPrice: 100 });
+    expect(host.querySelector('[data-ticket-field="stopPrice"]')).toBeNull();
+    radios('type')[3].click();
+    expect(checked('type')).toBe('stopLimit');
+    const stop = host.querySelector<HTMLInputElement>('input[data-ticket-field="stopPrice"]')!;
+    const limit = host.querySelector<HTMLInputElement>('input[data-ticket-field="price"]')!;
+    expect([stop.value, limit.value]).toEqual(['105', '105']);
+    expect([stop.getAttribute('aria-label'), limit.getAttribute('aria-label')]).toEqual(['Stop price', 'Limit price']);
+    // The rows say which price is which, the stop first.
+    const names = [...host.querySelectorAll<HTMLElement>('.tcw-ticket-row > .tcw-settings-label')].map((label) => label.textContent);
+    expect(names.slice(names.indexOf('Stop price'), names.indexOf('Stop price') + 2)).toEqual(['Stop price', 'Limit price']);
+    expect(names).not.toContain('Price');
+    expect(radios('timeInForce').map((r) => r.dataset.value)).toEqual(['gtc', 'day', 'gtd']);
+    limit.value = '106';
+    limit.dispatchEvent(new Event('input'));
+    place().click();
+    expect(sent).toEqual([expect.objectContaining({ side: 'buy', type: 'stopLimit', price: 106, stopPrice: 105, timeInForce: 'gtc' })]);
+  });
+
+  it('steps a stop-limit’s stop by the market’s step, and says when it is on the wrong side of the market', () => {
+    ticket.open({ price: 95, lastPrice: 100, step: () => 0.5 });
+    radios('type')[3].click();
+    // A buy's stop under the market: it would begin to work at once.
+    expect(place().disabled).toBe(true);
+    expect(host.querySelector('.tcw-ticket-problems')!.textContent).toBe('A buy stop goes above the market and a sell stop below it.');
+    const stop = host.querySelector<HTMLInputElement>('input[data-ticket-field="stopPrice"]')!;
+    stop.value = '104.5';
+    stop.dispatchEvent(new Event('input'));
+    host.querySelector<HTMLButtonElement>('[data-ticket-field="stopPrice-up"]')!.click();
+    expect(stop.value).toBe('105.0');
+    expect(place().disabled).toBe(false);
+    stop.value = '';
+    stop.dispatchEvent(new Event('input'));
+    expect(place().disabled).toBe(true);
+    expect(host.querySelector('.tcw-ticket-problems')!.textContent).toBe('Enter a stop price above 0.');
+  });
+
+  it('keeps a stop-limit a stop-limit when the side changes, and its stop when another kind is tried', () => {
+    ticket.open({ price: 105, lastPrice: 100 });
+    radios('type')[3].click();
+    const field = (name: string) => host.querySelector<HTMLInputElement>(`input[data-ticket-field="${name}"]`)!;
+    field('stopPrice').value = '104';
+    field('stopPrice').dispatchEvent(new Event('input'));
+    host.querySelector<HTMLButtonElement>('[data-ticket-field="side-sell"]')!.click();
+    expect(checked('type')).toBe('stopLimit');
+    // A sell's stop over the market is on the wrong side: said, not changed for the trader.
+    expect(place().disabled).toBe(true);
+    host.querySelector<HTMLButtonElement>('[data-ticket-field="side-buy"]')!.click();
+    radios('type')[1].click();
+    expect(host.querySelector('[data-ticket-field="stopPrice"]')).toBeNull();
+    radios('type')[3].click();
+    expect(field('stopPrice').value).toBe('104');
   });
 
   it('places a limit through the market once it is one that fills at once', () => {

@@ -85,6 +85,7 @@ export class TradingManager {
 
   setOrders(orders: TradingOrder[]): void {
     this.orders = orders;
+    this.dropStaleOrderDrag();
     this.requestRender?.();
   }
 
@@ -141,6 +142,19 @@ export class TradingManager {
   /** The orders as drawn: none while hidden. */
   private shownOrders(): TradingOrder[] {
     return this.hidden ? [] : this.orders;
+  }
+
+  /**
+   * An order being dragged that is gone (it filled, or the broker cancelled
+   * it): the drag is called off, so letting go asks the broker to move no
+   * order it no longer has.
+   */
+  private dropStaleOrderDrag(): void {
+    const drag = this.dragHandler.getDragState();
+    if (!drag || drag.sourceType !== 'order' || this.orders.some((o) => o.id === drag.orderId)) return;
+    this.dragHandler.cancel();
+    this.grabOffset = 0;
+    this.lineMoved = false;
   }
 
   /**

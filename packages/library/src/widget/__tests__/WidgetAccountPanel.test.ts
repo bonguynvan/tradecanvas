@@ -72,6 +72,17 @@ describe('WidgetAccountPanel', () => {
     expect(callbacks.formatTime).toHaveBeenCalledWith(5);
   });
 
+  it('names a stop-limit order, and writes its stop before its limit', () => {
+    panel.update({ ...current, orders: [
+      { id: 'a', side: 'buy', type: 'stopLimit', price: 106, stopPrice: 105, quantity: 1 },
+      { id: 'b', side: 'sell', type: 'stop', price: 95, stopPrice: 95, quantity: 1 },
+      // Told with no stop of its own: the one price it has.
+      { id: 'c', side: 'buy', type: 'stopLimit', price: 106, quantity: 1 },
+    ] });
+    tab(/Orders/).click();
+    expect(cells().map((row) => [row[1], row[3]])).toEqual([['Stop-limit', '105.00 / 106.00'], ['Stop', '95.00'], ['Stop-limit', '106.00']]);
+  });
+
   it('names how long each order works, the kinds past good-till-cancelled and day by the market’s letters', () => {
     panel.update({ ...current, orders: (['gtd', 'ioc', 'fok'] as const).map((timeInForce, i) => ({ id: `t${i}`, side: 'buy' as const, type: 'limit' as const, price: 90, quantity: 1, timeInForce })) });
     tab(/Orders/).click();

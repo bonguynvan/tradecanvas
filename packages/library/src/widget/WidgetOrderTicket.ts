@@ -16,6 +16,7 @@ import {
   type OrderTicketRules,
   ticketEntry,
   ticketExpireTime,
+  ticketStopPrice,
   ticketTimeInForce,
   ticketTimesInForce,
   ticketTakeProfitLevels,
@@ -57,7 +58,10 @@ export interface OrderTicketStart {
   round?: (price: number) => number;
 }
 
-type PriceField = 'price' | 'stopLoss' | 'takeProfit';
+type PriceField = 'price' | 'stopPrice' | 'stopLoss' | 'takeProfit';
+
+/** The kinds of order the ticket takes, as its choices stand. */
+const ORDER_TYPES = ['market', 'limit', 'stop', 'stopLimit'] as const;
 
 /** The key code a browser gives a key an input method takes. */
 const IME_KEY_CODE = 229;
@@ -259,6 +263,15 @@ export class WidgetOrderTicket {
     return this.callbacks.now?.() ?? Date.now();
   }
 
+  /** Another kind of order. A stop-limit starts with its stop where the order's price was, its limit with it: to be set apart. */
+  private setType(type: OrderTicketDraft['type']): void {
+    const draft = this.draft;
+    if (!draft) return;
+    const starts = type === 'stopLimit' && Number.isNaN(ticketStopPrice(draft));
+    if (starts) this.typed.delete('stopPrice');
+    this.set({ type, ...(starts ? { stopPrice: draft.price > 0 ? draft.price : this.round(this.lastPrice ?? NaN) } : {}) }, true);
+  }
+
   /** What is wrong with the draft, as the market's rules and the moment now find it. */
   private problems(draft: OrderTicketDraft): OrderTicketProblem[] {
     return orderTicketProblems(draft, this.lastPrice, { ...this.rules, now: this.now() });
@@ -316,7 +329,7 @@ export class WidgetOrderTicket {
     this.modal.dataset.side = draft.side;
     this.body.replaceChildren(
       this.sideToggle(draft.side),
-      this.row('ticket.type', this.choices('type', ['market', 'limit', 'stop'] as const, draft.type, 'ticket.type', (type) => this.set({ type }, true))),
+      this.row('ticket.type', this.choices('type', ORDER_TYPES, draft.type, 'ticket.type', (type) => this.setType(type))),
       this.row('ticket.quantity', this.stepped('quantity', draft.quantity, (q) => this.quantityStep(q), () => this.lot(), String, (quantity) => this.set({ quantity }))),
     );
     if (draft.type === 'market') {
@@ -325,8 +338,12 @@ export class WidgetOrderTicket {
       market.textContent = this.marketText();
       this.body.append(this.row('ticket.price', market));
     } else {
+      // A stop-limit has two prices: where it begins to work, then the worst it takes.
+      const twoPrices = draft.type === 'stopLimit';
+      if (twoPrices) this.body.append(this.row('ticket.stopPrice', this.priceField('stopPrice', draft.stopPrice ?? NaN, (stopPrice) => this.set({ stopPrice }))));
+      const priceKey: MessageKey = twoPrices ? 'ticket.limitPrice' : 'ticket.price';
       this.body.append(
-        this.row('ticket.price', this.priceField('price', draft.price, (price) => this.set({ price }))),
+        this.row(priceKey, this.priceField('price', draft.price, (price) => this.set({ price }), priceKey)),
         this.row('ticket.timeInForce', this.choices('timeInForce', ticketTimesInForce(draft.type), ticketTimeInForce(draft), 'ticket.timeInForce', (timeInForce: TimeInForce) => this.setTimeInForce(timeInForce))),
       );
       if (ticketTimeInForce(draft) === 'gtd') this.body.append(this.expiryRow(draft));
@@ -383,7 +400,8 @@ export class WidgetOrderTicket {
    * order, or no price to tell by, keeps its type.
    */
   private typeFor(draft: OrderTicketDraft, side: OrderSide): OrderTicketDraft['type'] {
-    if (draft.type === 'market' || this.lastPrice === null) return draft.type;
+    // A stop-limit is no limit or stop the other way round: it stays what it is, and the ticket says what is wrong with its stop.
+    if (draft.type === 'market' || draft.type === 'stopLimit' || this.lastPrice === null) return draft.type;
     if (!(draft.price > 0) || draft.price === this.lastPrice) return draft.type;
     return (draft.price < this.lastPrice) === (side === 'buy') ? 'limit' : 'stop';
   }
@@ -411,10 +429,10 @@ export class WidgetOrderTicket {
     return group;
   }
 
-  /** A price field: stepped by the market's step, an empty one from the market's price. */
-  private priceField(name: PriceField, value: number, onInput: (value: number) => void): HTMLElement {
+  /** A price field: stepped by the market's step, an empty one from the market's price. Named by `label`, else by what it is. */
+  private priceField(name: PriceField, value: number, onInput: (value: number) => void, label?: MessageKey): HTMLElement {
     const fallback = () => this.lastPrice ?? this.draft?.price ?? 0;
-    return this.stepped(name, value, (p, dir) => this.priceStep(p, dir), fallback, (p) => this.writePrice(p), onInput);
+    return this.stepped(name, value, (p, dir) => this.priceStep(p, dir), fallback, (p) => this.writePrice(p), onInput, label);
   }
 
   /**
@@ -429,6 +447,7 @@ export class WidgetOrderTicket {
     fallback: () => number,
     write: (value: number) => string,
     onInput: (value: number) => void,
+    label: MessageKey = `ticket.${name}` as MessageKey,
   ): HTMLElement {
     const input = field(name, document.createElement('input'));
     input.type = 'number';
@@ -436,7 +455,7 @@ export class WidgetOrderTicket {
     input.step = 'any';
     input.min = '0';
     input.value = this.typed.get(name) ?? write(value);
-    const fieldName = this.t(`ticket.${name}` as MessageKey);
+    const fieldName = this.t(label);
     input.setAttribute('aria-label', fieldName);
     input.addEventListener('input', () => {
       this.typed.set(name, input.value);
