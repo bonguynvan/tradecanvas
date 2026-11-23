@@ -2467,6 +2467,7 @@ export class Chart {
       || (next !== null && this.legendStack !== null && next.width === this.legendStack.width && next.height === this.legendStack.height);
     if (same) return;
     this.legendStack = next;
+    this.clearProfileOfLegend();
     this.engine.requestRender();
   }
 
@@ -4736,10 +4737,14 @@ export class Chart {
     this.engine.requestRender(LayerType.Main);
   }
 
-  /** The profile's figures are written under the legend's lines, which start in the same corner. */
+  /**
+   * The profile's figures are written under the legend's lines, which start in the same corner,
+   * and under what a host stacks beneath them (`setLegendStack`: the widget's rows of indicators).
+   */
   private clearProfileOfLegend(): void {
     const top = this.viewport.getState().chartRect.y;
-    this.marketProfile.setClearTop(this.isLegendVisible() ? Math.max(0, this.getLegendBottom() - top) : 0);
+    const legend = this.isLegendVisible() ? Math.max(0, this.getLegendBottom() - top) : 0;
+    this.marketProfile.setClearTop(legend + (this.legendStack?.height ?? 0));
   }
 
   /** How the Market Profile is drawn, as `setMarketProfileConfig` left it. */

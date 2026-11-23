@@ -52,8 +52,19 @@ describe('Chart: the profile’s figures and the legend', () => {
     const top = (chart as unknown as { viewport: { getState(): { chartRect: { y: number } } } }).viewport.getState().chartRect.y;
     expect(clearTop()).toBe(Math.max(0, chart.getLegendBottom() - top));
     expect(clearTop()).toBeGreaterThan(0);
+    // The legend goes while the profile is shown: the figures follow with nothing asked of the profile.
     chart.setLegend({ visible: false });
-    chart.setMarketProfileVisible(true);
+    (chart as unknown as { eventBus: { emit(event: string, payload: unknown): void } }).eventBus.emit('legendResize', { bottom: 0 });
     expect(clearTop()).toBe(0);
+  });
+
+  it('writes them under what a host stacks beneath the legend too: the widget’s rows of indicators', () => {
+    chart.setLegend({ visible: true });
+    chart.setMarketProfileVisible(true);
+    const legendOnly = clearTop();
+    chart.setLegendStack({ width: 200, height: 44 });
+    expect(clearTop()).toBe(legendOnly + 44);
+    chart.setLegendStack(null);
+    expect(clearTop()).toBe(legendOnly);
   });
 });

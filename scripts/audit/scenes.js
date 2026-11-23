@@ -767,6 +767,28 @@ const SCENES = {
   },
 
   /**
+   * The market profile in colours of its own over candles that are hidden, with an indicator's row
+   * under the legend: its value area still shows, and its figures are written under the legend and
+   * that row. They were written over the legend, and the value area went with the candles' colour.
+   */
+  async profileFigures() {
+    const s = await widget();
+    s.chart.addIndicator('ema', { period: 20 });
+    s.chart.setMarketProfileVisible(true);
+    s.chart.setMarketProfileConfig({ valueAreaColor: '#7e57c2', color: '#90a4ae' });
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const checks = () => {
+      const problems = [];
+      const top = s.chart.getPlotRect().y;
+      const taken = s.chart.getLegendBottom() - top;
+      if (!(s.chart.marketProfile.clearTop > taken)) problems.push(`the profile's figures start ${s.chart.marketProfile.clearTop} px down, not under the legend (${taken} px) and the rows beneath it`);
+      if (s.chart.getMarketProfileConfig().valueAreaColor !== '#7e57c2') problems.push('the profile does not keep the colour it was given');
+      return problems;
+    };
+    return { ...s, checks };
+  },
+
+  /**
    * The mouse pressed and held still on the plot: the floating tooltip of the bar under it, beside
    * the pointer and inside the plot. A pointer that only moves shows none: the legend says the bar.
    */
