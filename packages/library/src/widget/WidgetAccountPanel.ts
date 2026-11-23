@@ -345,9 +345,15 @@ export class WidgetAccountPanel {
     return mark !== undefined && Number.isFinite(mark) ? mark : null;
   }
 
-  /** A position's open profit and loss at its own price. A contract's multiplier is the chart's market's: another symbol's position has none of it. */
+  /**
+   * A position's open profit and loss at its own price, by its own multiplier where the adapter
+   * says one. Without, the chart's market's for a position of the chart's symbol, and none for
+   * another symbol's.
+   */
   private pnlOf(position: TradingPosition): ReturnType<typeof positionPnl> {
-    return positionPnl(position, this.markOf(position), this.ofChart(position) ? this.multiplier() : 1);
+    const own = position.multiplier;
+    const multiplier = own !== undefined && Number.isFinite(own) && own > 0 ? own : this.ofChart(position) ? this.multiplier() : 1;
+    return positionPnl(position, this.markOf(position), multiplier);
   }
 
   /** A sum of money that is no profit or loss: its words and the figure, in no tone; a debt reads with its minus. */

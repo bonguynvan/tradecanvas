@@ -159,6 +159,14 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   private multiplier: number;
   /** Whether the host gave a multiplier of its own, which the chart's market's then leaves alone. */
   private readonly ownMultiplier: boolean;
+  /** What the chart said a price is worth, by the symbol it said it for. */
+  private readonly multipliers = new Map<string, number>();
+  /** Whether a chart has said a multiplier: positions carry theirs from then on, a 1 too. */
+  private everSaid = false;
+  /** What each position's price was worth when it opened, by its id. */
+  private readonly openedWorth = new Map<string, number>();
+  /** What a closing fill's price is worth, for its commission once its position is gone. */
+  private readonly fillWorth = new WeakMap<FillEvent, number>();
   private readonly commission: PaperCommission;
   /** The account as last told, to tell it again only when it changed. */
   private accountTold = '';
@@ -174,11 +182,32 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   /**
    * The market's multiplier of the chart the account is connected to, taken when the account was
    * given none of its own: its margin, its profit and its commission are then in the money the
-   * chart and the panel count in. None, or one that is no multiplier, is 1.
+   * chart and the panel count in. None, or one that is no multiplier, is 1. It is for the orders
+   * placed from now on, of `symbol` where one is named: a position keeps the multiplier it opened
+   * with (`TradingPosition.multiplier`), so a chart shown another market revalues nothing.
    */
-  setMultiplier(multiplier: number | undefined): void {
+  setMultiplier(multiplier: number | undefined, symbol?: string): void {
     if (this.ownMultiplier) return;
-    this.multiplier = positive(multiplier) ? multiplier : 1;
+    const worth = positive(multiplier) ? multiplier : 1;
+    this.everSaid = true;
+    this.multiplier = worth;
+    if (symbol === undefined) return;
+    for (const known of [...this.multipliers.keys()]) if (sameSymbol(known, symbol)) this.multipliers.delete(known);
+    this.multipliers.set(symbol, worth);
+  }
+
+  /** What a price is worth for an order of `symbol`: what the chart said for that symbol, else what it said last. */
+  private multiplierFor(symbol: string | undefined): number {
+    if (!this.ownMultiplier && symbol !== undefined) {
+      for (const [known, worth] of this.multipliers) if (sameSymbol(known, symbol)) return worth;
+    }
+    return this.multiplier;
+  }
+
+  /** What a price is worth for a position: what it was when it opened. */
+  private multiplierOf(position: TradingPosition): number {
+    if (positive(position.multiplier)) return position.multiplier;
+    return this.openedWorth.get(position.id) ?? this.multiplierFor(position.symbol);
   }
 
   constructor(options: PaperExecutionOptions = {}) {
@@ -202,8 +231,8 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     for (const p of this.positions) {
       const open = p.quantity - (p.closedQuantity ?? 0);
       const mark = this.markOf(p);
-      if (mark > 0) unrealisedPnl += (mark - p.entryPrice) * open * (p.side === 'buy' ? 1 : -1) * this.multiplier;
-      marginUsed += this.marginOf(open, p.entryPrice);
+      if (mark > 0) unrealisedPnl += (mark - p.entryPrice) * open * (p.side === 'buy' ? 1 : -1) * this.multiplierOf(p);
+      marginUsed += this.marginOf(open, p.entryPrice, this.multiplierOf(p));
     }
     const equity = this.balance + unrealisedPnl;
     const account: AccountSummary = { balance: this.balance, equity, unrealisedPnl, realisedPnl: this.realised, marginUsed, freeMargin: equity - marginUsed, commission: this.commissionPaid };
@@ -212,15 +241,15 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     return account;
   }
 
-  /** What a position of `quantity` at `price` holds of the account. */
-  private marginOf(quantity: number, price: number): number {
-    return (quantity * price * this.multiplier) / this.leverage;
+  /** What a position of `quantity` at `price` holds of the account, a price worth `multiplier`. */
+  private marginOf(quantity: number, price: number, multiplier: number): number {
+    return (quantity * price * multiplier) / this.leverage;
   }
 
   /** What a fill of `quantity` at `price` costs. */
-  private commissionOf(quantity: number, price: number): number {
+  private commissionOf(quantity: number, price: number, multiplier: number): number {
     const { rate, perUnit, min } = this.commission;
-    const cost = (positive(rate) ? quantity * price * this.multiplier * rate : 0) + (positive(perUnit) ? quantity * perUnit : 0);
+    const cost = (positive(rate) ? quantity * price * multiplier * rate : 0) + (positive(perUnit) ? quantity * perUnit : 0);
     return Math.max(cost, positive(min) ? min : 0);
   }
 
@@ -238,7 +267,9 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
 
   /** A fill's cost off the balance and on the fill; nothing written when it costs nothing. */
   private charge(fill: FillEvent): void {
-    const cost = this.commissionOf(fill.quantity, fill.price);
+    // A fill of a position costs by the position's multiplier; one that opened none, by its symbol's.
+    const held = fill.positionId === undefined ? undefined : this.positions.find((p) => p.id === fill.positionId);
+    const cost = this.commissionOf(fill.quantity, fill.price, this.fillWorth.get(fill) ?? (held ? this.multiplierOf(held) : this.multiplierFor(fill.symbol)));
     if (!(cost > 0)) return;
     fill.commission = cost;
     this.commissionPaid += cost;
@@ -266,9 +297,10 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       const open = held.quantity - (held.closedQuantity ?? 0);
       const closes = Math.min(open, order.quantity);
       opens = order.quantity - closes;
-      freed = this.marginOf(closes, held.entryPrice);
+      freed = this.marginOf(closes, held.entryPrice, this.multiplierOf(held));
     }
-    const needed = this.marginOf(opens, price) + this.commissionOf(order.quantity, price);
+    const worth = held ? this.multiplierOf(held) : this.multiplierFor(order.symbol);
+    const needed = this.marginOf(opens, price, worth) + this.commissionOf(order.quantity, price, worth);
     return short(needed, account.freeMargin + freed);
   }
 
@@ -543,7 +575,8 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     // Both halves or neither: the close frees the position's margin and costs a commission, as the opening does.
     const account = this.getAccount();
     if (account) {
-      const lack = short(this.marginOf(quantity, price) + 2 * this.commissionOf(quantity, price), account.freeMargin + this.marginOf(quantity, position.entryPrice));
+      const worth = this.multiplierOf(position);
+      const lack = short(this.marginOf(quantity, price, worth) + 2 * this.commissionOf(quantity, price, worth), account.freeMargin + this.marginOf(quantity, position.entryPrice, worth));
       if (lack) throw new Error(lack);
     }
     this.close(position, price, 'reverse');
@@ -660,6 +693,11 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       stopLoss: order.stopLoss,
       takeProfit: order.takeProfit,
     };
+    // What its price is worth is fixed here: the chart may show another market before it closes.
+    const worth = this.multiplierFor(order.symbol);
+    this.openedWorth.set(position.id, worth);
+    // Said on the position once a chart has said one, or where it is not 1: an account with no chart is as it was.
+    if (worth !== 1 || this.everSaid) position.multiplier = worth;
     if (order.symbol !== undefined) position.symbol = order.symbol;
     if (order.trailingStop !== undefined) position.trailingStop = order.trailingStop;
     const levels = beyondEntry(order.takeProfits, order.side, price);
@@ -688,7 +726,8 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     // Sizes built of fractions differ by a hair from their sum (0.1 + 0.2 and 0.3): as large is the same size.
     const same = Math.abs(order.quantity - open) <= QUANTITY_SLACK * Math.max(order.quantity, open);
     const closed = same ? open : Math.min(open, order.quantity);
-    fill.pnl = (price - held.entryPrice) * closed * (held.side === 'buy' ? 1 : -1) * this.multiplier;
+    this.fillWorth.set(fill, this.multiplierOf(held));
+    fill.pnl = (price - held.entryPrice) * closed * (held.side === 'buy' ? 1 : -1) * this.multiplierOf(held);
     this.realise(fill.pnl);
     fill.positionId = held.id;
     if (!same && order.quantity < open) {
@@ -745,8 +784,9 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       time: this.fillTime(),
       positionId: position.id,
       reason,
-      pnl: (price - position.entryPrice) * quantity * direction * this.multiplier,
+      pnl: (price - position.entryPrice) * quantity * direction * this.multiplierOf(position),
     };
+    this.fillWorth.set(fill, this.multiplierOf(position));
     if (position.symbol !== undefined) fill.symbol = position.symbol;
     this.realise(fill.pnl!);
     this.charge(fill);

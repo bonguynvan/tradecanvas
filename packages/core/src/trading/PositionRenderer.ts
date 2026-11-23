@@ -152,7 +152,7 @@ export class PositionRenderer {
   ): void {
     const { chartRect } = viewport;
     const colors = colorsOf(config);
-    const labelCtx = buildPositionLabelContext(pos, currentPrice, config.pricePrecision ?? 2, undefined, undefined, config.amountMultiplier);
+    const labelCtx = buildPositionLabelContext(pos, currentPrice, config.pricePrecision ?? 2, undefined, undefined, pos.multiplier ?? config.amountMultiplier);
     const top = Math.min(entryY, currentY);
     const height = Math.abs(currentY - entryY);
     ctx.fillStyle = pickPnLColor(labelCtx.pnl, config.pnlThresholds, labelCtx.pnl >= 0 ? colors.profit : colors.loss);
@@ -186,7 +186,7 @@ export class PositionRenderer {
         const stop = this.stopTag(pos, which, viewport, config, dragState, currentPrice);
         if (stop) tags.push(stop);
       }
-      tags.push(...levelTags(levelsShown(pos, dragState), pos.side, pos.entryPrice, openQuantity(pos), viewport, config, pos.id));
+      tags.push(...levelTags(levelsShown(pos, dragState), pos.side, pos.entryPrice, openQuantity(pos), viewport, config, pos.id, pos.multiplier));
     }
     return tags;
   }
@@ -207,7 +207,7 @@ export class PositionRenderer {
     } else {
       const precision = config.pricePrecision ?? 2;
       const labelCtx = buildPositionLabelContext(
-        pos, currentPrice, precision, (p) => priceTagText(p, viewport, config.pricePrecision), viewport.numberLocale, config.amountMultiplier,
+        pos, currentPrice, precision, (p) => priceTagText(p, viewport, config.pricePrecision), viewport.numberLocale, pos.multiplier ?? config.amountMultiplier,
       );
       if (config.positionLabel !== undefined) {
         cells.push({ kind: 'text', text: resolvePositionLabel(config.positionLabel, labelCtx) });
@@ -243,7 +243,7 @@ export class PositionRenderer {
     const y = price === undefined ? NaN : priceToY(price, viewport);
     if (price === undefined || !inPlot(y, viewport)) return null;
     const colors = colorsOf(config);
-    const amount = amountAt(pos.side, pos.entryPrice, openQuantity(pos), price, config.amountMultiplier);
+    const amount = amountAt(pos.side, pos.entryPrice, openQuantity(pos), price, pos.multiplier ?? config.amountMultiplier);
     // A distance, not the 0 or null a broker's own record may hold for "none".
     const trailing = typeof pos.trailingStop === 'number' && pos.trailingStop > 0;
     const cells: TagCell[] = [
@@ -321,6 +321,8 @@ export function levelTags(
   viewport: ViewportState,
   config: TradingConfig,
   positionId?: string,
+  /** What the position's own price is worth, where it says: else the chart's market's. */
+  multiplier?: number,
 ): TradingTag[] {
   const colors = colorsOf(config);
   const tags: TradingTag[] = [];
@@ -331,7 +333,7 @@ export function levelTags(
     if (!(part > 0)) return;
     const y = priceToY(level.price, viewport);
     if (!inPlot(y, viewport)) return;
-    const amount = amountAt(side, entry, part, level.price, config.amountMultiplier);
+    const amount = amountAt(side, entry, part, level.price, multiplier ?? config.amountMultiplier);
     tags.push({
       y,
       color: colors.profit,

@@ -67,3 +67,25 @@ describe('Chart: the account connected to it', () => {
     expect(started[2]).toEqual({ quantity: 200 });
   });
 });
+
+// Looking at another market revalued what was open: +100,000 dong read +100, and was booked so.
+describe('Chart: a position open while the chart’s market changes', () => {
+  it('keeps its worth, its margin and the profit it books', async () => {
+    chart.setMarket(MARKET_HOSE);
+    const adapter = new PaperExecutionAdapter({ markPrice: 26.4, balance: 10_000_000 });
+    chart.connectExecution(adapter);
+    await adapter.placeOrder({ side: 'buy', type: 'market', quantity: 100, price: 26.4 });
+    adapter.setMarkPrice(27.4);
+    expect(adapter.getAccount()!.unrealisedPnl).toBeCloseTo(100_000, 6);
+
+    chart.setMarket(MARKET_CRYPTO);
+    expect(adapter.getAccount()!.unrealisedPnl).toBeCloseTo(100_000, 6);
+    expect(adapter.getAccount()!.marginUsed).toBe(2_640_000);
+    chart.setMarket(MARKET_VN30F);
+    expect(adapter.getAccount()!.marginUsed).toBe(2_640_000);
+    expect(adapter.getPositions()[0].multiplier).toBe(1000);
+
+    await adapter.closePosition({ positionId: adapter.getPositions()[0].id });
+    expect(adapter.getAccount()!.balance).toBeCloseTo(10_100_000, 6);
+  });
+});

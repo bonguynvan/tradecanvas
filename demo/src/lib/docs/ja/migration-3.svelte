@@ -173,7 +173,12 @@ chart.startBracket('buy', undefined, { risk: 50 })   // ストップで 50 を�
   <code>multiplier</code> を渡したものはそのままです。ロング／ショートポジションの描画と、<code>risk</code> で
   数量を決めるブラケットも、数量を乗数で計算します。リスク 5,000,000 ドンでストップが 1.00 離れていれば
   5,000 株で、以前は 5,000,000 株でした。<code>positionLevels(drawing, multiplier)</code> は第 2 引数に市場の
-  乗数を取ります。口座パネルでは、チャートと別の銘柄のポジションは引き続き 1 で計算されます。
+  乗数を取ります。ポジションは建てたときの乗数を保ちます（<code>TradingPosition.multiplier</code>。ペーパー口座が設定します）。
+  チャートが別の市場や別の銘柄を表示しても、建っているポジションは再評価されず、パネルとチャートのタグは
+  ポジションごとの乗数で計算します。プリセットをスプレッドして作った市場はプリセットの乗数を保ちます。
+  ドン建ての価格用の <code>{'{'} ...MARKET_HOSE, pricePrecision: 0, priceStep: 10 {'}'}</code> は 1,000 のままで、
+  金額が千倍になります。<code>scaleMarketPrices(MARKET_HOSE, 1000)</code> を使うか、スプレッドで
+  <code>contractMultiplier: 1</code> を指定してください。
   ブローカーに送られる内容は、上記のようにリスクから計算される数量を除き、以前のままです。
 </p>
 

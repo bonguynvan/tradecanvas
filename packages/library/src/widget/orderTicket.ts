@@ -228,7 +228,8 @@ function marketProblems(draft: OrderTicketDraft, rules: OrderTicketRules): Order
   if (roundPrice && priced.some((p) => Math.abs(roundPrice(p) - p) > PRICE_EPSILON)) problems.push('priceStep');
   // Past the day's limits a limit is no price to take, and a stop is never reached.
   if (limits && own.some((p) => p > 0 && (p > limits.ceiling + PRICE_EPSILON || p < limits.floor - PRICE_EPSILON))) problems.push('priceLimits');
-  if (lot !== undefined && lot > 1 && draft.quantity > lot && draft.quantity % lot !== 0) problems.push('lot');
+  // Whole lots above one lot, and whole shares below it: a market traded in lots sells no part of a share.
+  if (lot !== undefined && lot > 1 && ((draft.quantity > lot && draft.quantity % lot !== 0) || (draft.quantity > 0 && !Number.isInteger(draft.quantity)))) problems.push('lot');
   return problems;
 }
 

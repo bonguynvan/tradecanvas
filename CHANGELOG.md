@@ -27,7 +27,9 @@ The `3.0` branch. These move under the version's own heading when it is released
   ticket did: the amounts on the chart's tags (a VN30F position's tag reads in money, not in points), the
   quantity a Long or Short Position drawing's risk buys, a bracket sized by `risk`, and a `PaperExecutionAdapter`
   given no `multiplier` of its own, which takes the market's from the chart (`ExecutionAdapter.setMultiplier`,
-  optional). `positionLevels(drawing, multiplier)` takes the market's as its second argument.
+  optional). `positionLevels(drawing, multiplier)` takes the market's as its second argument. A position
+  keeps the multiplier it opened with (`TradingPosition.multiplier`): a chart shown another market or another
+  symbol revalues nothing that is open.
 - **`TimeInForce` has three more members** (`@tradecanvas/commons`): `'gtd'`, `'ioc'` and `'fok'`. Code that handles every member needs them.
 - **`FillReason` and `ExecutionEventType` have one more member each** (`@tradecanvas/commons`): `'liquidation'` and `'marginCall'`. Code that handles every member needs them.
 

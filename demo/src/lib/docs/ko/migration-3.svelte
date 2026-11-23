@@ -167,8 +167,12 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 손절가에서 50을 �
   호출합니다). 그래서 증거금, 잔고, 체결 손익이 같은 금액 단위가 됩니다. <code>multiplier</code>를 받은 것은
   그대로 유지합니다. 롱/숏 포지션 그리기와 <code>risk</code>로 수량을 정하는 브래킷도 수량을 승수로
   계산합니다. 위험 5,000,000동에 스톱이 1.00 떨어져 있으면 5,000주이며, 이전에는 5,000,000주였습니다.
-  <code>positionLevels(drawing, multiplier)</code>는 두 번째 인수로 시장의 승수를 받습니다. 계좌 패널에서
-  차트와 다른 종목의 포지션은 여전히 1로 계산됩니다.
+  <code>positionLevels(drawing, multiplier)</code>는 두 번째 인수로 시장의 승수를 받습니다. 포지션은 열릴 때의 승수를 유지합니다(<code>TradingPosition.multiplier</code>, 모의 계좌가 설정합니다). 차트가
+  다른 시장이나 다른 종목을 보여도 열려 있는 포지션은 재평가되지 않으며, 패널과 차트의 태그는 포지션마다 자기
+  승수로 계산합니다. 프리셋을 펼쳐 만든 시장은 프리셋의 승수를 유지합니다. 동 단위 가격을 위한
+  <code>{'{'} ...MARKET_HOSE, pricePrecision: 0, priceStep: 10 {'}'}</code>는 여전히 1,000이어서 금액이 천 배가 됩니다.
+  <code>scaleMarketPrices(MARKET_HOSE, 1000)</code>를 쓰거나 펼친 객체에 <code>contractMultiplier: 1</code>을
+  지정하세요.
   브로커에게 보내는 내용은 위와 같이 위험에서 계산되는 수량을 빼고는 그대로입니다.
 </p>
 

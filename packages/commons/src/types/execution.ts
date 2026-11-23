@@ -208,9 +208,11 @@ export interface ExecutionAdapter {
   /**
    * What a move of one in price is worth for one unit on the chart's market (its
    * `contractMultiplier`; undefined for none): the chart says it when the adapter is connected and
-   * when its market changes, for an adapter that counts money itself, as the paper account does.
+   * when its market or its symbol changes, with the symbol it shows, for an adapter that counts
+   * money itself, as the paper account does. It is for orders placed from then on: what is open
+   * keeps what it opened with.
    */
-  setMultiplier?(multiplier: number | undefined): void;
+  setMultiplier?(multiplier: number | undefined, symbol?: string): void;
 
   on<T = unknown>(event: ExecutionEventType, listener: ExecutionListener<T>): void;
   off<T = unknown>(event: ExecutionEventType, listener: ExecutionListener<T>): void;

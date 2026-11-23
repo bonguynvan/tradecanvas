@@ -118,6 +118,49 @@ describe('PaperExecutionAdapter: the market’s multiplier', () => {
   });
 });
 
+// The account held one multiplier for every position, and the chart's market set it: looking at
+// another market revalued what was open, booked the wrong profit and could close it out.
+describe('PaperExecutionAdapter: a position keeps what its price was worth when it opened', () => {
+  it('books the profit of its own market after the chart’s market changes', async () => {
+    const { adapter, fills, market } = connect({ markPrice: 26.4, balance: 10_000_000 });
+    adapter.setMultiplier(1000);
+    await market('buy', 100);
+    adapter.setMarkPrice(27.4);
+    expect(adapter.getAccount()).toEqual(expect.objectContaining({ marginUsed: 2_640_000 }));
+    expect(adapter.getAccount()!.unrealisedPnl).toBeCloseTo(100_000, 6);
+    // The chart shows a market with no multiplier: the position is what it was.
+    adapter.setMultiplier(undefined);
+    expect(adapter.getAccount()!.marginUsed).toBe(2_640_000);
+    expect(adapter.getAccount()!.unrealisedPnl).toBeCloseTo(100_000, 6);
+    await adapter.closePosition({ positionId: adapter.getPositions()[0].id });
+    expect(fills[1].pnl).toBeCloseTo(100_000, 6);
+    expect(adapter.getAccount()!.balance).toBeCloseTo(10_100_000, 6);
+  });
+
+  it('is not called for margin because the chart shows a futures market', async () => {
+    const { adapter, market } = connect({ markPrice: 26.4, balance: 10_000_000, marginCallLevel: 1, stopOutLevel: 0.5 });
+    const calls: unknown[] = [];
+    adapter.on('marginCall', (e) => calls.push(e.data));
+    adapter.setMultiplier(1000);
+    await market('buy', 100);
+    adapter.setMultiplier(100_000);
+    adapter.setMarkPrice(26.41);
+    expect(calls).toEqual([]);
+    expect(adapter.getPositions()).toHaveLength(1);
+    expect(adapter.getPositions()[0].multiplier).toBe(1000);
+  });
+
+  it('counts an order by its own symbol’s multiplier, whichever the chart said last', async () => {
+    const { adapter } = connect({ markPrice: 26.4, balance: 100_000_000 });
+    adapter.setMultiplier(1000, 'HOSE:VNM');
+    adapter.setMultiplier(undefined, 'BINANCE:BTCUSDT');
+    adapter.setMarkPrice(26.4, undefined, 'VNM');
+    await adapter.placeOrder({ side: 'buy', type: 'market', quantity: 100, price: 26.4, symbol: 'VNM' });
+    expect(adapter.getPositions()[0].multiplier).toBe(1000);
+    expect(adapter.getAccount()!.marginUsed).toBe(2_640_000);
+  });
+});
+
 describe('PaperExecutionAdapter: leverage and a contract’s multiplier', () => {
   it('holds a part of a position’s value as margin: the value over the leverage', async () => {
     const { adapter, market } = connect({ balance: 1_000, leverage: 10 });

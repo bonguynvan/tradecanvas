@@ -3256,6 +3256,8 @@ export class Chart {
   private showTradingOf(symbol: string): void {
     if (symbol === this.tradedSymbol) return;
     this.tradedSymbol = symbol;
+    // The account is told what a price of this symbol is worth, as the market now set has it.
+    this.executionAdapter?.setMultiplier?.(this.marketConfig?.contractMultiplier, symbol);
     if (!this.features.trading) return;
     this.tradingManager.setOrders(ofSymbol(this.book.getOrders(), symbol));
     this.tradingManager.setPositions(ofSymbol(this.book.getPositions(), symbol));
@@ -3943,7 +3945,7 @@ export class Chart {
     this.activity.rebase();
     this.executionAdapter = adapter;
     // An adapter that counts money counts it as the chart's market does.
-    adapter.setMultiplier?.(this.marketConfig?.contractMultiplier);
+    adapter.setMultiplier?.(this.marketConfig?.contractMultiplier, this.tradedSymbol ?? undefined);
     this.executionBrackets = config.brackets ?? 'place';
     this.execTeardown = wireExecution(adapter, {
       onIntent: (type, handler) => {
@@ -7056,7 +7058,7 @@ export class Chart {
     // position drawing's risk buys and the account connected: none given is none kept.
     this.tradingManager.setConfig({ amountMultiplier: config.contractMultiplier });
     this.drawingManager.setAmountMultiplier(config.contractMultiplier);
-    this.executionAdapter?.setMultiplier?.(config.contractMultiplier);
+    this.executionAdapter?.setMultiplier?.(config.contractMultiplier, this.tradedSymbol ?? undefined);
 
     // Longer price labels may need a wider axis.
     this.updateViewportAndRender();

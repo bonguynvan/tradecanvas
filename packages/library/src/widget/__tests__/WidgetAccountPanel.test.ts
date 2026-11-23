@@ -458,5 +458,14 @@ describe('WidgetAccountPanel: an account of more than the symbol shown', () => {
     expect(head()[0]).toBe('Symbol');
     expect(cells()[0][4]).toBe('—');
   });
-});
 
+  it('counts a position by its own multiplier, the chart’s or not, and by the chart’s where it has none', () => {
+    const own = { ...current.positions[0], multiplier: 1000 };
+    // On the chart's symbol, with a market that says another: its own.
+    panel.update({ ...current, multiplier: 100_000, positions: [own] });
+    expect(cells()[0][6]).toBe('+6000.00 · +3.00%');
+    // None of its own: the chart's market's.
+    panel.update({ ...current, multiplier: 10, positions: [current.positions[0]] });
+    expect(cells()[0][6]).toBe('+60.00 · +3.00%');
+  });
+});
