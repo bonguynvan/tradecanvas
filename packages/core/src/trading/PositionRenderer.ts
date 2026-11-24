@@ -112,7 +112,8 @@ export class PositionRenderer {
     for (const pos of positions) {
       const entryY = priceToY(pos.entryPrice, viewport);
       levelLine(ctx, viewport, entryY, colors.entry, []);
-      if (currentPrice !== null) this.renderBand(ctx, pos, entryY, priceToY(currentPrice, viewport), currentPrice, viewport, config);
+      // The band reaches the chart's price, which is where it is drawn; its colour is the profit's as the tag counts it.
+      if (currentPrice !== null) this.renderBand(ctx, pos, entryY, priceToY(currentPrice, viewport), positionMark(pos) ?? currentPrice, viewport, config);
       for (const which of STOPS) {
         const price = stopPrice(pos, which, dragState);
         const y = price === undefined ? NaN : priceToY(price, viewport);
@@ -203,19 +204,20 @@ export class PositionRenderer {
     const colors = colorsOf(config);
     const side = pos.side === 'buy' ? 'Long' : 'Short';
     const cells: TagCell[] = [{ kind: 'stamp', text: String(openQuantity(pos)) }];
-    if (currentPrice === null) {
+    // At the adapter's own price for it where it gives one: the amount the account counts.
+    const valuedAt = positionMark(pos) ?? currentPrice;
+    if (valuedAt === null) {
       cells.push({ kind: 'text', text: side });
     } else {
       const precision = config.pricePrecision ?? 2;
-      // At the adapter's own price for it where it gives one: the amount the account counts.
       const labelCtx = buildPositionLabelContext(
-        pos, positionMark(pos) ?? currentPrice, precision, (p) => priceTagText(p, viewport, config.pricePrecision), viewport.numberLocale, pos.multiplier ?? config.amountMultiplier,
+        pos, valuedAt, precision, (p) => priceTagText(p, viewport, config.pricePrecision), viewport.numberLocale, pos.multiplier ?? config.amountMultiplier,
       );
       if (config.positionLabel !== undefined) {
         cells.push({ kind: 'text', text: resolvePositionLabel(config.positionLabel, labelCtx) });
       } else {
         const color = pickPnLColor(labelCtx.pnl, config.pnlThresholds, labelCtx.pnl >= 0 ? colors.profit : colors.loss);
-        cells.push({ kind: 'text', text: side }, { kind: 'text', text: formatAmount(labelCtx.pnl, amountDecimals(labelCtx.pnl, currentPrice, config.pricePrecision), viewport.numberLocale), color });
+        cells.push({ kind: 'text', text: side }, { kind: 'text', text: formatAmount(labelCtx.pnl, amountDecimals(labelCtx.pnl, valuedAt, config.pricePrecision), viewport.numberLocale), color });
       }
     }
     const show = config.lineButtons ?? {};

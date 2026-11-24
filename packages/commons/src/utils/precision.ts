@@ -195,10 +195,11 @@ export function orderQuantityText(order: { quantity: number; filledQuantity?: nu
 }
 
 /**
- * The price the adapter values a position at (`TradingPosition.markPrice`), where it gives one
- * that is a price; null where it gives none, and the chart's latest is what there is.
+ * The price the adapter values a position at (`TradingPosition.markPrice`), where it gives one;
+ * null where it gives none. A price under zero is one (a spread, a contract in a glut); 0 is
+ * taken for none, as it is what an adapter that has no price yet often says.
  */
 export function positionMark(position: { markPrice?: number }): number | null {
   const mark = position.markPrice;
-  return mark !== undefined && Number.isFinite(mark) && mark > 0 ? mark : null;
+  return mark !== undefined && Number.isFinite(mark) && mark !== 0 ? mark : null;
 }

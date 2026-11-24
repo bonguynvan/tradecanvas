@@ -424,11 +424,22 @@ describe('WidgetAccountPanel: an account of more than the symbol shown', () => {
     panel.openPanel();
     expect([cells()[0][3], cells()[0][6]]).toEqual(['105.00', '+10.00 · +5.00%']);
     expect(totals()).toContain('Open P&L: +10.00');
-    // A price that is none leaves the chart's.
-    for (const bad of [Number.NaN, 0, -1]) {
+    // A price that is none (0 is what an adapter that has none yet often says) leaves the chart's.
+    for (const bad of [Number.NaN, 0]) {
       panel.update({ ...current, price: 103, positions: [{ ...current.positions[0], markPrice: bad }], fills: [], account });
       expect(cells()[0][3], String(bad)).toBe('103.00');
     }
+    // A price under zero is one: a spread, a contract in a glut.
+    panel.update({ ...current, price: 103, positions: [{ ...current.positions[0], entryPrice: -2, markPrice: -5 }], fills: [], account });
+    expect(cells()[0][3]).toBe('-5.00');
+  });
+
+  it('counts a short, a part closed and a multiplier of its own at the adapter’s price', () => {
+    const short = { id: 'p2', side: 'sell' as const, entryPrice: 100, quantity: 5, closedQuantity: 2, multiplier: 10, markPrice: 98 };
+    panel.update({ ...current, price: 103, positions: [short], fills: [] });
+    panel.openPanel();
+    // Three open, down 2 a unit, 10 a point: +60, where the chart's 103 would read -90.
+    expect([cells()[0][3], cells()[0][6]]).toEqual(['98.00', '+60.00 · +2.00%']);
   });
 
   it('works its profit out from the adapter’s own price for it, where it gives one', () => {

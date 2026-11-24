@@ -64,7 +64,7 @@ export interface AccountSummary {
   /**
    * The open positions' profit or loss at the price now: the account's own count, shown as the
    * panel's Open P&L. Where it is counted at another price than the chart's last trade, give each
-   * position its `markPrice`, so the rows add up to it.
+   * position its `markPrice`: the rows are then counted at the prices it is.
    */
   unrealisedPnl: number;
   /** What closed trades made or lost. */
