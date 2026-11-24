@@ -352,6 +352,11 @@ describe('Graphite’s rules', () => {
     expect(tokens).not.toMatch(/--tcw-accent:\s/);
     // A picked tab has no line of the accent under it.
     expect(css).toContain(".tcw-root[data-tcw-ui='graphite']:not([data-tcw-active='underline']) .tcw-account-tab[aria-selected='true']:not(:focus-visible),");
+    // A tick on the light theme's box, now near black, is white; and a ticked box's ring stands off it.
+    const sheet = readFileSync(fileURLToPath(new URL('../WidgetControls.css', import.meta.url)), 'utf8');
+    const light = sheet.slice(sheet.indexOf(".tcw-root[data-tcw-ui='graphite'][data-tcw-theme='light'] {"));
+    expect(light.slice(0, light.indexOf('}'))).toContain("stroke='%23ffffff'");
+    expect(sheet).toContain(".tcw-root[data-tcw-ui='graphite'] .tcw-toggle.tcw-on:focus-visible,");
     // A filled button's ring stands off its fill: in the fill's colour against it, it was not seen.
     expect(css).toContain(".tcw-root[data-tcw-ui='graphite'] :is(.tcw-done-btn, .tcw-alerts-add, .tcw-style-savebtn, .tcw-replay-btn.tcw-replay-play):focus-visible {");
   });
