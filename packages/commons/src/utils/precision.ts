@@ -193,3 +193,12 @@ export function orderQuantityText(order: { quantity: number; filledQuantity?: nu
     ? `${quantityText(filled)}${between}${quantityText(order.quantity)}`
     : String(order.quantity);
 }
+
+/**
+ * The price the adapter values a position at (`TradingPosition.markPrice`), where it gives one
+ * that is a price; null where it gives none, and the chart's latest is what there is.
+ */
+export function positionMark(position: { markPrice?: number }): number | null {
+  const mark = position.markPrice;
+  return mark !== undefined && Number.isFinite(mark) && mark > 0 ? mark : null;
+}

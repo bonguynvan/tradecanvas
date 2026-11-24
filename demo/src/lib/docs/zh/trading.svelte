@@ -292,6 +292,11 @@ chart.on('marginCall', (e) => warn(e.payload))   // { marginLevel: 0.9, level: 1
   盘口深度只标出它所显示的那个品种的订单。
 </p>
 <p>
+  经纪商按标记价格为持仓估值，它不一定是图表显示的最新成交价。适配器给持仓提供 <code>markPrice</code> 时，面板中的行
+  和图表上的标签都按该价格计算盈亏，图表自身品种的持仓也是如此，因此各行与账户的未实现盈亏一致。标记价格变动时请再次
+  发送持仓。没有该价格时，图表品种的持仓按图表的最新价格计算。
+</p>
+<p>
   使用数据流（<code>connect</code>、<code>switchStream</code>）时，图表知道自己的品种。K 线由你自己设置时，
   请在更换它们时告诉图表；<code>ChartWidget</code> 在选择品种时会自己这样做。
 </p>

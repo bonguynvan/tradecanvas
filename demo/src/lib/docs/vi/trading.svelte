@@ -320,6 +320,12 @@ chart.on('marginCall', (e) => warn(e.payload))   // { marginLevel: 0.9, level: 1
   hiển thị sổ lệnh.
 </p>
 <p>
+  Broker định giá position theo giá mark, không phải lúc nào cũng là giá khớp cuối mà chart hiển thị. Khi adapter
+  đưa <code>markPrice</code> cho position, dòng trong panel và tag trên chart tính lãi lỗ theo giá đó, kể cả với
+  position của chính symbol trên chart, nên các dòng khớp với Open P&amp;L của tài khoản. Hãy gửi lại positions
+  khi giá mark thay đổi. Không có giá này, position của symbol trên chart được tính theo giá mới nhất của chart.
+</p>
+<p>
   Khi có stream (<code>connect</code>, <code>switchStream</code>) chart biết symbol của mình. Với các bar do bạn tự
   đặt, hãy báo symbol khi bạn đổi chúng; <code>ChartWidget</code> tự làm việc đó khi symbol của nó được chọn.
 </p>

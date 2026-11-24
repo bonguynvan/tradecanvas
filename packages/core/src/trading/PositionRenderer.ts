@@ -9,6 +9,7 @@ import {
   pickPnLColor,
   resolvePositionLabel,
 } from './positionFormat.js';
+import { positionMark } from '@tradecanvas/commons';
 import type { LineButton } from './lineButtons.js';
 import type { DragState } from './OrderRenderer.js';
 import { inPlot, levelLine } from './plot.js';
@@ -206,8 +207,9 @@ export class PositionRenderer {
       cells.push({ kind: 'text', text: side });
     } else {
       const precision = config.pricePrecision ?? 2;
+      // At the adapter's own price for it where it gives one: the amount the account counts.
       const labelCtx = buildPositionLabelContext(
-        pos, currentPrice, precision, (p) => priceTagText(p, viewport, config.pricePrecision), viewport.numberLocale, pos.multiplier ?? config.amountMultiplier,
+        pos, positionMark(pos) ?? currentPrice, precision, (p) => priceTagText(p, viewport, config.pricePrecision), viewport.numberLocale, pos.multiplier ?? config.amountMultiplier,
       );
       if (config.positionLabel !== undefined) {
         cells.push({ kind: 'text', text: resolvePositionLabel(config.positionLabel, labelCtx) });

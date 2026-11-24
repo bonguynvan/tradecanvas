@@ -28,6 +28,18 @@ describe('PositionRenderer', () => {
   });
 });
 
+describe('PositionRenderer: what a position is worth', () => {
+  const amount = (pos: TradingPosition) => new PositionRenderer().tags([pos], 70, unitViewport, {})
+    .flatMap((tag) => tag.cells).filter((cell): cell is { kind: 'text'; text: string } => cell.kind === 'text').map((cell) => cell.text);
+  const long: TradingPosition = { id: 'p1', side: 'buy', entryPrice: 60, quantity: 2 };
+
+  it('is counted on its tag at the adapter’s own price for it, where it gives one, as the account counts it', () => {
+    expect(amount(long)).toEqual(['Long', '+20.00']);
+    expect(amount({ ...long, markPrice: 75 })).toEqual(['Long', '+30.00']);
+    for (const bad of [Number.NaN, 0, -1]) expect(amount({ ...long, markPrice: bad }), String(bad)).toEqual(['Long', '+20.00']);
+  });
+});
+
 describe('TradingManager and the plot', () => {
   it('draws everything clipped to the plot', () => {
     const manager = new TradingManager();

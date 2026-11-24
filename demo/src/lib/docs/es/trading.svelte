@@ -325,6 +325,13 @@ chart.on('marginCall', (e) => warn(e.payload))   // { marginLevel: 0.9, level: 1
   del símbolo cuyo libro muestra.
 </p>
 <p>
+  Un bróker valora una posición a su precio de marca, que no siempre es la última operación que muestra el
+  gráfico. Cuando el adaptador da a una posición su <code>markPrice</code>, la fila del panel y la etiqueta del
+  gráfico cuentan el resultado a ese precio, también para una posición del símbolo del gráfico, de modo que las
+  filas coinciden con el P&amp;L abierto de la cuenta. Envía las posiciones de nuevo cuando la marca se mueva. Sin
+  él, una posición del símbolo del gráfico se cuenta al último precio del gráfico.
+</p>
+<p>
   Con un stream (<code>connect</code>, <code>switchStream</code>) el gráfico conoce su símbolo. Con barras que pones
   tú, dilo al cambiarlas; <code>ChartWidget</code> lo hace cuando se elige su símbolo.
 </p>
