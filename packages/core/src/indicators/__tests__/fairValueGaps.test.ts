@@ -52,6 +52,48 @@ describe('detectFairValueGaps', () => {
   });
 });
 
+describe('fair value gaps on a long history', () => {
+  /** A climb where every three bars leave a gap and none is filled: the open gaps grow with the series. */
+  const climb = (n: number): OHLCBar[] => bars(Array.from({ length: n }, (_, i) => [100 + i * 3 + 1, 100 + i * 3] as [number, number]));
+
+  it('finds the gaps of 50,000 climbing bars, all left open, in well under a second', () => {
+    const data = climb(50_000);
+    const started = performance.now();
+    const gaps = detectFairValueGaps(data);
+    const took = performance.now() - started;
+    expect(gaps).toHaveLength(49_998);
+    expect(gaps.every((g) => g.filledAt === null)).toBe(true);
+    expect(took).toBeLessThan(1000);
+  });
+
+  it('fills the open gaps a fall passes, the nearest first, each at the bar that reached it', () => {
+    // Five gaps up, then bars coming down through them one at a time.
+    const data = bars([[101, 100], [104, 103], [107, 106], [110, 109], [113, 112], [116, 115], [119, 118], [118, 114], [117, 108], [116, 100]]);
+    const gaps = detectFairValueGaps(data).filter((g) => g.direction === 'up');
+    expect(gaps.map((g) => [g.bottom, g.filledAt])).toEqual([[101, 9], [104, 9], [107, 9], [110, 8], [113, 8]]);
+  });
+
+  it('goes on from a tick to the same gaps a whole reckoning gives, also when the tick un-fills one', () => {
+    const fvg = new FairValueGapsIndicator();
+    const config = { id: 'fvg', params: { showFilled: 1 } } as never;
+    const data = bars([[102, 100], [108, 101], [110, 104], [109, 103], [106, 102], [107, 105], [112, 106], [118, 111]]);
+    const whole = (series: OHLCBar[]) => { const out = fvg.calculate(series, config); return { gaps: out.meta!.gaps, series: out.series, values: [...out.values].sort((a, b) => a[0] - b[0]) }; };
+    let out = fvg.calculate(data.slice(0, 5), config);
+    // Bars arrive one at a time, then the last bar moves, then bar 4 is corrected so that it no longer fills the first gap.
+    const steps: [OHLCBar[], number][] = [
+      [data.slice(0, 6), 5], [data.slice(0, 7), 6], [data, 7],
+      [[...data.slice(0, 7), { ...data[7], low: 108, high: 119 }], 7],
+      [[...data.slice(0, 4), { ...data[4], low: 103 }, ...data.slice(5)], 4],
+    ];
+    for (const [series, from] of steps) {
+      const next = fvg.update!(series, config, out, from);
+      expect(next).not.toBeNull();
+      out = next!;
+      expect({ gaps: out.meta!.gaps, series: out.series, values: [...out.values].sort((a, b) => a[0] - b[0]) }).toEqual(whole(series));
+    }
+  });
+});
+
 describe('the Fair Value Gaps indicator', () => {
   const data = bars([[102, 100], [108, 101], [110, 104], [109, 103], [106, 102], [107, 105]]);
 

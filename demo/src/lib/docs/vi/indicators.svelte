@@ -205,7 +205,7 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 
 <h2 id="fair-value-gaps">Fair value gap</h2>
 <p>
-  Ba bar tạo ra một fair value gap khi đáy của bar thứ ba nằm trên đỉnh của bar thứ nhất (hoặc, theo chiều giảm, đỉnh của nó nằm dưới đáy của bar thứ nhất): giữa hai mức đó chỉ có bar ở giữa giao dịch. Biểu đồ vẽ một hộp phủ vùng giá ấy, từ bar ở giữa đến mép phải khi gap còn mở, bằng màu tăng với gap đi lên và màu giảm với gap đi xuống. Một gap được lấp bởi bar đầu tiên về sau giao dịch qua hết vùng đó, và khi ấy không còn vẽ nữa trừ khi <code>showFilled</code> là 1. <code>detectFairValueGaps</code> trả về tất cả mà không cần biểu đồ, kèm bar đã lấp từng gap.
+  Ba bar tạo ra một fair value gap khi đáy của bar thứ ba nằm trên đỉnh của bar thứ nhất (hoặc, theo chiều giảm, đỉnh của nó nằm dưới đáy của bar thứ nhất): giữa hai mức đó chỉ có bar ở giữa giao dịch. Biểu đồ vẽ một hộp phủ vùng giá ấy, từ bar ở giữa đến mép phải khi gap còn mở, màu xanh ngọc với gap đi lên và màu hồng với gap đi xuống (màu của các dấu mẫu hình nến, tách khỏi xanh và đỏ của nến; đổi được trong style của chỉ báo). Một gap được lấp bởi bar đầu tiên về sau giao dịch qua hết vùng đó, và khi ấy không còn vẽ nữa trừ khi <code>showFilled</code> là 1. <code>detectFairValueGaps</code> trả về tất cả mà không cần biểu đồ, kèm bar đã lấp từng gap.
 </p>
 <pre><code>{`chart.addIndicator('fvg')                              // một hộp trên mỗi gap còn mở
 chart.addIndicator('fvg', { minPercent: 0.1 })         // bỏ các gap nhỏ hơn 0,1% giá
