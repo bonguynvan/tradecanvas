@@ -272,3 +272,21 @@ describe('readIndicatorPlotStyles', () => {
     expect(readPlotStyles({ up: { size: 500 }, down: { size: 0.5 } })).toEqual({ up: { size: 40 }, down: { size: 2 } });
   });
 });
+
+// A look says how its chart's value tags are drawn; what the host sets is over it.
+describe('a theme’s own value tags', () => {
+  it('are outlined in Graphite, filled in the other themes, and as the override says where there is one', async () => {
+    const { GRAPHITE_DARK_THEME, GRAPHITE_LIGHT_THEME, MODERN_DARK_THEME, LIGHT_THEME } = await import('@tradecanvas/commons');
+    for (const theme of [GRAPHITE_DARK_THEME, GRAPHITE_LIGHT_THEME]) {
+      expect(chartStyleValue(theme, {}, 'axis.price.valueTagsOutlined'), theme.name).toBe(true);
+      expect(chartStyleValue(theme, { 'axis.price.valueTagsOutlined': false }, 'axis.price.valueTagsOutlined')).toBe(false);
+    }
+    for (const theme of [DARK_THEME, LIGHT_THEME, MODERN_DARK_THEME]) expect(chartStyleValue(theme, {}, 'axis.price.valueTagsOutlined')).toBe(false);
+  });
+
+  it('are in 12 px type in Graphite, where the chrome’s figures are, and 11 in the others', async () => {
+    const { GRAPHITE_DARK_THEME, GRAPHITE_LIGHT_THEME, MODERN_DARK_THEME, LIGHT_THEME } = await import('@tradecanvas/commons');
+    expect([GRAPHITE_DARK_THEME, GRAPHITE_LIGHT_THEME].map((t) => [t.font.sizeSmall, t.font.sizeMedium, t.font.sizeLarge])).toEqual([[12, 13, 15], [12, 13, 15]]);
+    expect([DARK_THEME, LIGHT_THEME, MODERN_DARK_THEME].map((t) => t.font.sizeSmall)).toEqual([11, 11, 11]);
+  });
+});

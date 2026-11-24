@@ -221,6 +221,19 @@ none of these, it is taken out.
 - The widget loads no font. IBM Plex Sans is used when the page has it; the system's sans
   otherwise.
 
+## The chart
+
+The chart is the page; everything above is its frame. On it:
+
+- **The last price is the one block of colour on the price axis.** An indicator's value there is an
+  outlined tag in its line's colour, and the countdown sits under the last price in its colour.
+- **A price reads on its own tag.** The ink on a filled tag is the dark or the light one by contrast
+  with the fill, never white by habit: dark ink on the candles' green and red in the dark theme.
+- The chart's figures (axes, tags, the legend's prices) are the chrome's small size, 12 px, in
+  the same face with digits of one width. A figure on the chart and one beside it are the same size.
+- The grid is the quietest thing drawn; an indicator's line is 1.5 px in a colour that is neither up
+  nor down's.
+
 ## Layout
 
 - Heights come from one list: **20, 24, 28, 36, 40 px**. A small control is 24, a control and a

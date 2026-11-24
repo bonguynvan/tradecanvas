@@ -2229,7 +2229,10 @@ export class ChartWidget {
    * block and the prices line up in columns.
    */
   private applyLegendFont(): void {
-    this.chart.setLegend({ fontFamily: this.ui.font.mono, fontSize: typeSize(Math.round(this.ui.font.size * this.uiScale), -1) });
+    // The look's small size where it has one, as the indicators' rows under the prices are in.
+    const small = this.ui.font.smallSize;
+    const fontSize = small === undefined ? typeSize(Math.round(this.ui.font.size * this.uiScale), -1) : Math.round(small * this.uiScale);
+    this.chart.setLegend({ fontFamily: this.ui.font.mono, fontSize });
   }
 
   /**

@@ -27,6 +27,9 @@ export const FIGURES_FONT_FAMILY = "'Segoe UI', Roboto, 'Helvetica Neue', Arial,
  */
 export const SANS_FONT_FAMILY = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
+/** Graphite's: its small size is the chrome's small size, 12, so a figure on the chart is the size of one beside it. */
+const GRAPHITE_FONT = { family: FIGURES_FONT_FAMILY, sizeSmall: 12, sizeMedium: 13, sizeLarge: 15 };
+
 /** Three sizes a third of φ apart (11, 13, 15), as the widget's type scale climbs. */
 const DEFAULT_FONT = {
   family: FIGURES_FONT_FAMILY,
@@ -261,7 +264,8 @@ export const GRAPHITE_DARK_THEME: Theme = {
   axisLine: '#2a2c31',
   axisLabel: '#90939b',
   axisLabelBackground: '#2b2d33',
-  font: DEFAULT_FONT,
+  font: GRAPHITE_FONT,
+  valueTagsOutlined: true,
   priceLimits: DARK_PRICE_LIMITS,
 };
 
@@ -285,7 +289,8 @@ export const GRAPHITE_LIGHT_THEME: Theme = {
   axisLine: '#dfe1e5',
   axisLabel: '#5f6570',
   axisLabelBackground: '#eceef1',
-  font: DEFAULT_FONT,
+  font: GRAPHITE_FONT,
+  valueTagsOutlined: true,
   priceLimits: LIGHT_PRICE_LIMITS,
 };
 

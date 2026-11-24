@@ -120,9 +120,17 @@ beforeAll(preloadDialogs);
 
 describe('ChartWidget OHLCV legend font', () => {
   it('draws the legend in the look’s figures face, at the size of the indicator rows', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, ui: 'print' });
     const print = resolveWidgetUI('print').font;
     expect(FakeChart.last.legend.at(-1)).toMatchObject({ fontFamily: print.mono, fontSize: typeSize(print.size, -1) });
+  });
+
+  // The indicators' rows under it are in the look's small size: the prices over them were a pixel smaller.
+  it('is in the look’s own small size where it has one: Graphite’s 12', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    expect(FakeChart.last.legend.at(-1)).toMatchObject({ fontSize: 12 });
+    widget.setUI({ font: { smallSize: 14 } });
+    expect(FakeChart.last.legend.at(-1)).toMatchObject({ fontSize: 14 });
   });
 
   it('follows the look when it changes', () => {

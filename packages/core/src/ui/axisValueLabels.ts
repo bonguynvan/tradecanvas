@@ -44,13 +44,36 @@ export function spreadLabels(ys: readonly number[], top: number, bottom: number,
   return out;
 }
 
-/** Dark text on a light tag, light text on a dark one. */
+const TAG_INK_DARK = '#10131a';
+const TAG_INK_LIGHT = '#ffffff';
+/**
+ * How much more contrast the dark ink must have to be chosen: near a tie the light one is, as dark
+ * ink on a deep, full colour reads muddier than its ratio says.
+ */
+const DARK_INK_LEAD = 1.25;
+
+/** A colour's relative luminance, as WCAG counts contrast by. */
+function relativeLuminance([r, g, b]: [number, number, number]): number {
+  const linear = (c: number): number => {
+    const v = c / 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+}
+
+/**
+ * The ink a tag's text is written in: the dark or the light one, whichever has the more contrast
+ * on the tag's fill (the dark one by a clear lead, `DARK_INK_LEAD`). White on a candle's green or red is under 3:1, so the middle colours a chart
+ * is drawn in take the dark ink; only a deep fill takes the light one.
+ */
 export function labelTextColor(background: string): string {
   const rgb = parseColor(background);
-  if (!rgb) return '#ffffff';
-  const [r, g, b] = rgb;
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.62 ? '#10131a' : '#ffffff';
+  if (!rgb) return TAG_INK_LIGHT;
+  const fill = relativeLuminance(rgb);
+  const dark = relativeLuminance([0x10, 0x13, 0x1a]);
+  const onDark = (fill + 0.05) / (dark + 0.05);
+  const onLight = 1.05 / (fill + 0.05);
+  return onDark >= onLight * DARK_INK_LEAD ? TAG_INK_DARK : TAG_INK_LIGHT;
 }
 
 /** How far apart two colours' lightness has to be, of 1, for one to be read as text on the other. */
