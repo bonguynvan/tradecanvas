@@ -138,6 +138,12 @@ components:
     typography: "{typography.body-strong}"
     rounded: "{rounded.all}"
     height: 40px
+  button-primary:
+    backgroundColor: "{colors.dark.text}"
+    textColor: "{colors.dark.ground}"
+    typography: "{typography.body-strong}"
+    rounded: "{rounded.all}"
+    height: 28px
   button-neutral:
     backgroundColor: "{colors.dark.picked}"
     textColor: "{colors.dark.text}"
@@ -202,7 +208,8 @@ none of these, it is taken out.
   deeper, never lighter.
 - **The accent** is the brand's amber. In Graphite it marks what is the user's own on the chart
   (a selected drawing, an alert, the crosshair's tag) and a link. It does not mark "picked" in
-  the chrome: a picked interval, tab or tool is the `picked` ground with `text` on it.
+  the chrome: a picked interval, tab or tool is the `picked` ground with `text` on it. It fills no
+  button: the button that sends is `primary`, the text's colour, and so are a tick and a slider's thumb.
 - A Vietnamese board has five price colours (ceiling, floor, reference, up, down); those come
   from the market's settings, not from this palette.
 
@@ -227,8 +234,8 @@ The chart is the page; everything above is its frame. On it:
 
 - **An indicator's value is never a block of colour on the price axis.** It is an outlined tag, its
   figure in its line's colour, deepened where it must be to read at 4.5:1. The last price is filled,
-  the countdown under it in its colour. (The bid's, the ask's, the high's and the low's tags
-  are outlined with it; an order's and a position's are still filled: work to come.)
+  the countdown under it in its colour. The bid's, the ask's, the high's and the low's tags, and an
+  order's and a position's, are outlined with it: the last price is the one block on the axis.
 - **A price reads on its own tag.** The ink on a filled tag is the dark or the light one by contrast
   with the fill, never white by habit: dark ink on the candles' green and red in the dark theme.
   Where neither ink reads at 4.5:1 (the light theme's candles), the tag is a shade deeper than its
@@ -296,7 +303,8 @@ just changes.
 ## Components
 
 - **Filled button** (Buy, Sell, the button that sends, a picked side): its ground is its edge.
-  **No border.** White or dark ink at 4.5:1 or more. One filled button a view; the other choice
+  **No border.** White or dark ink at 4.5:1 or more. The button that sends where nothing is traded
+  (OK, Go to, Add alert) is `button-primary`: the text's colour, the ground's for its ink. One filled button a view; the other choice
   beside it (Cancel, the side not picked) is `button-neutral`, also with no border.
 - **Quiet button** (a toolbar's control, a tool, a row's action): no ground and no border at
   rest, the `hover` ground under the pointer, the `picked` ground when it is on. An outline

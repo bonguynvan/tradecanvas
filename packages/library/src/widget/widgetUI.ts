@@ -306,8 +306,8 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
    * with hairlines between. Its tokens are few on purpose: controls are 20, 24, 28, 36 or 40 px
    * tall and nothing between, every corner is 3 px, floating layers cast one shadow and nothing
    * else casts any. What is picked (a tool, an interval, a tab) shows on a lighter ground in the
-   * text's own colour, so amber is left for what you act on: the button that places, a link, the
-   * logo. Its dark and light colours are in the stylesheet, scoped to it.
+   * text's own colour, and the button that sends is that colour too, so amber is left for what is
+   * the user's own on the chart, a link and the logo. Its dark and light colours are in the stylesheet, scoped to it.
    */
   graphite: {
     radius: { xs: GRAPHITE_RADIUS, sm: GRAPHITE_RADIUS, md: GRAPHITE_RADIUS, lg: GRAPHITE_RADIUS, xl: GRAPHITE_RADIUS },

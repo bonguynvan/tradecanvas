@@ -1,8 +1,8 @@
 import type { IconDef, Theme, ViewportState } from '@tradecanvas/commons';
 import { PRICE_AXIS_WIDTH } from '@tradecanvas/commons';
 import { drawIcon } from '../ui/drawIcon.js';
-import { AXIS_TAG_TEXT_INSET, fillTag, tagPath } from '../ui/shapes.js';
-import { AXIS_LABEL_HEIGHT, labelTextColor, spreadLabels } from '../ui/axisValueLabels.js';
+import { AXIS_TAG_TEXT_INSET, fillTag, outlineTag, tagPath } from '../ui/shapes.js';
+import { AXIS_LABEL_HEIGHT, labelTextColor, outlinedTagText, spreadLabels, tagFill } from '../ui/axisValueLabels.js';
 import type { LineButton, LineButtonAction } from './lineButtons.js';
 import type { BracketHandle } from './BracketTool.js';
 
@@ -243,15 +243,27 @@ export function spreadAxisBadges<T extends { y: number }>(badges: readonly T[], 
 }
 
 /**
- * A price on the price axis, the axis's width in its line's `color`, its
- * text in the ink that reads on it. Drawn after the axis, over its labels.
+ * A price on the price axis, the axis's width: filled in its line's `color`
+ * with its text in the ink that reads on it, or, where the theme outlines the
+ * values on its axis, outlined in that colour. Drawn after the axis, over its labels.
  */
 export function drawAxisBadge(ctx: CanvasRenderingContext2D, y: number, text: string, color: string, viewport: ViewportState, theme: Theme): void {
   const { chartRect } = viewport;
   const x = chartRect.x + chartRect.width + 1;
-  ctx.fillStyle = color;
-  fillTag(ctx, x, Math.round(y) - AXIS_LABEL_HEIGHT / 2, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2, AXIS_LABEL_HEIGHT, theme);
-  ctx.fillStyle = labelTextColor(color);
+  const top = Math.round(y) - AXIS_LABEL_HEIGHT / 2;
+  const width = (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2;
+  if (theme.style?.axis.price.valueTagsOutlined === true) {
+    // As an indicator's value and a quote are there: the chart's ground inside an edge of the line's colour,
+    // so that the last price is the one block of colour on the axis.
+    outlineTag(ctx, x, top, width, AXIS_LABEL_HEIGHT, theme, color, theme.background);
+    ctx.fillStyle = outlinedTagText(color, theme.background);
+  } else {
+    // Filled a shade deeper where no ink would read on the line's colour.
+    const fill = tagFill(color);
+    ctx.fillStyle = fill;
+    fillTag(ctx, x, top, width, AXIS_LABEL_HEIGHT, theme);
+    ctx.fillStyle = labelTextColor(fill);
+  }
   ctx.font = `${theme.font.sizeSmall}px ${theme.font.family}`;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';

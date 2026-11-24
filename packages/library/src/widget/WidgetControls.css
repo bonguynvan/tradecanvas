@@ -825,3 +825,16 @@
   background: var(--tcw-text);
   color: var(--tcw-bg-elevated);
 }
+
+/*
+ * Graphite: a tick is the ground's colour on a box in the text's, in both themes. The light theme's was
+ * drawn for a box in the accent, near black: on the text's near black it was not seen.
+ */
+.tcw-root[data-tcw-ui='graphite'][data-tcw-theme='light'] {
+  --tcw-check-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.25l2.6 2.6L12 5.5' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+/* A ticked box's ring stands off its fill, as a filled button's does: in the fill's colour against it, the box only grew. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-toggle.tcw-on:focus-visible,
+.tcw-root[data-tcw-ui='graphite'] input:is([type='checkbox'], [type='radio']):checked:focus-visible {
+  box-shadow: 0 0 0 2px var(--tcw-bg-elevated), 0 0 0 4px var(--tcw-text);
+}
