@@ -109,7 +109,6 @@ export function positionPnl(position: TradingPosition, price: number | null, mul
   return { pnl, pct };
 }
 
-/** A figure that reads left to right in any widget: its sign stays before it. */
 /** What stands between a total's name and its figure: a colon of any script, and the room about it. */
 const TOTAL_SEP = /[\s\u00a0]*[:\uFF1A\uFE55]?[\s\u00a0]*$/;
 
@@ -135,6 +134,7 @@ function writeTotal(el: HTMLElement, words: string, at: number, slot: number, fi
   if (after !== '') el.append(part('name', after));
 }
 
+/** A figure that reads left to right in any widget: its sign stays before it. */
 function ltr(text: string): HTMLSpanElement {
   const span = document.createElement('span');
   span.dir = 'ltr';

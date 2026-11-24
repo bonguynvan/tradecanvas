@@ -314,6 +314,22 @@ describe('Graphite’s rules', () => {
     expect(rule).toContain('outline: none');
   });
 
+  it('keeps a mark of the keys’ focus where it takes the ring away: one choice, the stepper in forced colours, a wrong figure’s red', () => {
+    const controls = read('WidgetControls.css');
+    // One choice read as text is still reached by the keys: its ring is the segment's own.
+    expect(body(controls, ".tcw-root[data-tcw-ui='graphite'] .tcw-segmented > .tcw-segment:only-child")).not.toContain('box-shadow');
+    const forced = controls.slice(controls.lastIndexOf('@media (forced-colors: active)', controls.indexOf('One choice is nothing to choose')));
+    expect(forced.slice(0, forced.indexOf('\n}'))).toContain(".tcw-root[data-tcw-ui='graphite'] .tcw-stepper:focus-within");
+    expect(controls).toContain(".tcw-root[data-tcw-ui='graphite'] .tcw-bracket-quantity[data-invalid] .tcw-stepper:focus-within { border-color: var(--tcw-red); }");
+    // Every field's line in focus, by the one token the fields share.
+    expect(controls.match(/--tcw-field-line-focus: var\(--tcw-text-muted\);/g)).toHaveLength(2);
+  });
+
+  it('rings what the keys reach in the text’s colour, not the accent’s', () => {
+    const rule = body(css, ".tcw-root[data-tcw-ui='graphite'] :is(.tcw-ind-legend-name, .tcw-ind-legend-act, .tcw-ind-legend-toggle, .tcw-level-remove, .tcw-status-host-btn):focus-visible");
+    expect(rule).toContain('outline-color: var(--tcw-text)');
+  });
+
   it('puts no border on a filled or a neutral button: New order, like Cancel', () => {
     const rule = body(css, ".tcw-root[data-tcw-ui='graphite'] .tcw-account-new");
     expect(rule).toContain('border: 0');

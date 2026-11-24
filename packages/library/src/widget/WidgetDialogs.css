@@ -1943,10 +1943,8 @@ img.tcw-ss-badge {
   border-top-style: solid;
   border-top-color: var(--tcw-divider);
 }
-.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-limits {
-  margin-top: var(--tcw-space-3);
-  margin-bottom: calc(-1 * var(--tcw-space-3));
-}
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-limits { margin-top: var(--tcw-space-3); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-limits + .tcw-ticket-row { padding-top: var(--tcw-space-1); }
 
 /*
  * Graphite's buttons that buy and sell. A side's colour on the chart (a candle, a figure) is too

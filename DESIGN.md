@@ -88,8 +88,8 @@ spacing:
   "3": 6px
   "4": 8px
   "5": 12px
-  "6": 16px
-  "7": 24px
+  "6": 20px
+  "7": 32px
 motion:
   fast:
     duration: 120ms
@@ -210,8 +210,8 @@ none of these, it is taken out.
 
 - Two sizes do almost all the work: **13 px** for controls and names, **12 px** for figures in a
   table, a field's name, a segment and the bars under the chart. **15 px** is for a dialog's
-  title, the symbol and an order's value. **10 px** is for a count in a tab and nothing a trader
-  must read to act.
+  title, the symbol and an order's value. **10 px** is left to a unit or a mark beside a figure, and to nothing a trader must
+  read to act.
 - **Weight 600 means "first" or "picked"**: the last price, a profit, a picked tab or interval,
   the button that sends, a title. Everything else is 400. A heading of a column is not strong:
   its place says what it is.
@@ -225,8 +225,9 @@ none of these, it is taken out.
 
 - Heights come from one list: **20, 24, 28, 36, 40 px**. A small control is 24, a control and a
   row of a table 28, a field and a side of the ticket 36, the toolbar and the button that sends
-  40. A new part takes one of these.
-- Space is on the list above (2 to 24 px). Related things are 4 to 8 apart, groups 12 to 16.
+  40. A new part takes one of these. Two parts are off the list for now and stay as they
+  are until they are reworked: the account panel's head (32) and the tools' rail (42 wide).
+- Space is on the list above (2 to 32 px). Related things are 4 to 8 apart, groups 12 to 20.
 - **Groups are told by room first, a rule second.** The toolbar has a rule only between its
   groups. Rows of a form have none. A table has one hairline under each row, as figures are read
   across.
@@ -244,15 +245,16 @@ chrome itself casts a shadow, and nothing glows.
 
 ## Shapes
 
-One corner: **3 px**, on every control, field, menu, dialog and tag. No pills, no circles but a
-radio button and a status dot. A filled button and the field next to it have the same corner, so
+One corner: **3 px**, on every control, field, menu, dialog and tag. In the chrome's controls there are no pills,
+and no circles but a radio button and a status dot (a scrollbar's thumb and a slider's track
+are round, as the system's are). A filled button and the field next to it have the same corner, so
 they line up.
 
 ## Motion & Micro-interaction
 
-One duration, **120 ms**, and one curve, for a ground or a colour changing under the pointer and
-for a menu coming in. Nothing moves to be noticed: no bounce, no slide of a whole panel, no
-pulse on a price. With `prefers-reduced-motion` everything is immediate. A price that changes
+A ground or a colour changing under the pointer takes **120 ms**, on one curve. What comes
+in over the chart (a menu, a dialog) takes 110 to 260 ms and does not move far. Nothing moves to be noticed: no bounce, no pulse on a price, and
+no new kind of movement. With `prefers-reduced-motion` everything is immediate. A price that changes
 just changes.
 
 ## Voice & Content Strategy
@@ -278,7 +280,7 @@ just changes.
   `border-strong`, as the line says "type here". **On focus the line takes the muted text's
   colour; no outline and no glow is added around it.** A field in focus must still be told
   from one at rest: the focused line is 3:1 or more against the line at rest and against the
-  field's ground (3.4:1 and 5.2:1 in the dark theme, 3.4:1 and 5.8:1 in the light one). An error turns the line `down` and says why under
+  field's ground (3.4:1 and 5.2:1 in the dark theme, 3.5:1 and 5.8:1 in the light one). An error turns the line `down` and says why under
   the field.
 - **Picked item** (a tab, an interval, a row of a menu, a tool): the `picked` ground and `text`,
   strong. **No bar of the accent on its left or under it**, and no accent fill.

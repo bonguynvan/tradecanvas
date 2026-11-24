@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { WidgetAccountPanel, positionPnl, type AccountPanelCallbacks } from '../WidgetAccountPanel.js';
-import { EN_TRANSLATOR } from '../i18n.js';
+import { EN_TRANSLATOR, createTranslator, fill } from '../i18n.js';
+import { WIDGET_LANGUAGES } from '../locales/index.js';
 
 let host: HTMLDivElement;
 let panel: WidgetAccountPanel;
@@ -476,5 +477,30 @@ describe('WidgetAccountPanel: an account of more than the symbol shown', () => {
     // None of its own: the chart's market's.
     panel.update({ ...current, multiplier: 10, positions: [current.positions[0]] });
     expect(cells()[0][6]).toBe('+60.00 · +3.00%');
+  });
+});
+
+// A total is split into its name, what stands between and its figure: in every language it must
+// still read as its words were written, with a name to mute and the figure last.
+describe('WidgetAccountPanel: a total’s parts, in every language', () => {
+  it.each(WIDGET_LANGUAGES.map((language) => [language.code, language] as const))('%s', (_code, language) => {
+    panel.destroy();
+    panel = new WidgetAccountPanel(host, callbacks as unknown as AccountPanelCallbacks, createTranslator(language.messages));
+    const account = { balance: 1000, equity: 1006, marginUsed: 200, freeMargin: 806, unrealisedPnl: 6, marginLevel: 5.03 };
+    panel.update({ ...current, account });
+    panel.openPanel();
+    const totals = [...host.querySelectorAll('.tcw-account-total')];
+    expect(totals).toHaveLength(6);
+    const written = (key: 'account.balance' | 'account.openPnl', slot: string, figure: string) => fill(language.messages[key], { [slot]: figure });
+    expect(totals.map((el) => el.textContent)).toContain(written('account.balance', 'amount', '1000.00'));
+    expect(totals.map((el) => el.textContent)).toContain(written('account.openPnl', 'pnl', '+6.00'));
+    for (const total of totals) {
+      const parts = [...total.children].map((part) => part.className);
+      expect(parts[0], total.textContent!).toBe('tcw-account-total-name');
+      expect(parts.at(-1), total.textContent!).toBe('tcw-account-total-figure');
+      expect(total.querySelector('.tcw-account-total-name')!.textContent!.trim()).not.toBe('');
+      // Nothing of a name is lost to what stands between, and no colon is left on it.
+      expect(total.querySelector('.tcw-account-total-name')!.textContent).not.toMatch(/[:\uFF1A\s]$/);
+    }
   });
 });
