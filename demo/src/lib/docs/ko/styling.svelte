@@ -336,6 +336,7 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>크로스헤어 선에도 같은 네 가지(기본은 가는 실선).</td></tr>
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>축과 패널 눈금의 가격·시간 라벨.</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>각 축의 선과 라벨(패널 눈금은 가격 축을 따름).</td></tr>
+    <tr><td><code>lastPrice.limitColors</code></td><td><code>true</code>면 가격이 그날의 제한가에 있는 동안 현재가의 선과 태그를 그 제한가의 색으로 그림: 상한가 이상이면 상한가 색, 하한가 이하이면 하한가 색, 기준가와 같으면 기준가 색. 그 사이에서는, 그리고 제한가가 없을 때는 그날의 상승/하락 색을 유지함. 가격제한폭이 있고 시세판이 그에 따라 색을 입히는 시장을 위한 것; 기본은 꺼짐.</td></tr>
     <tr><td><code>crosshair.labelChange</code></td><td><code>true</code>면 가격 축에서 크로스헤어가 가리키는 가격 아래에, 그 가격이 현재가에서 얼마나 떨어져 있는지를 퍼센트로 적음(<code>+1.25%</code>, 차트의 로케일로). 현재가가 없거나 눈금이 이미 퍼센트나 지수일 때는 적지 않음. 축은 그만큼의 너비를 확보함. Graphite 테마에서는 기본으로 켜져 있고(테마 자체의 <code>crosshairChange</code>), 다른 테마에서는 꺼져 있음.</td></tr>
     <tr><td><code>axis.price.valueTagsOutlined</code></td><td><code>true</code>면 가격 축에 있는 지표의 값 태그를 선의 색으로 채우는 대신 윤곽선으로 그림(선 색의 테두리 안에 차트 배경 또는 패널 자체의 배경, 글자는 선의 색): 가격 패널, 지표 패널, 왼쪽 눈금에서. 배경과 너무 비슷해 그 위에서 읽을 수 없는 선은 값을 그 색을 더 짙게 한 색으로 적음(4.5:1로 읽힐 때까지). Graphite 테마는 이 키가 <code>false</code>가 아니면 윤곽선으로 그림. 매수호가, 매도호가와 고가, 저가의 태그도 함께 윤곽선으로 그려짐.</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>범례의 값과 라벨(O, H, L, Vol).</td></tr>

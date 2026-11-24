@@ -278,6 +278,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'Etikettbakgrund',
   'settings.labelText': 'Etikettext',
   'settings.labelChange': 'Förändring från senaste pris',
+  'settings.limitColors': 'Gränsfärger vid dagens gränser',
   'settings.sessionBreaks': 'Sessionsgränser',
   'settings.section.orders': 'Order och positioner',
   'settings.profit': 'Vinst',

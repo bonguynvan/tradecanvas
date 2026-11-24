@@ -1,4 +1,4 @@
-import { chartFont } from '../ui/chartType.js';
+import { chartFont, chartTypeSize } from '../ui/chartType.js';
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceTagText, smallValueDecimals } from '@tradecanvas/commons';
 import { computeMarketProfile, computeSessionProfiles, assignSessionLetters, tpoLetter } from './marketProfile.js';
@@ -296,7 +296,8 @@ export class MarketProfileRenderer {
     ctx.globalAlpha = 1;
     ctx.font = chartFont(theme, 1, '600');
     ctx.textBaseline = 'middle';
-    const lineH = 14;
+    // A row as tall as its type and the room 10 px type had in 14.
+    const lineH = chartTypeSize(theme, 1) + 4;
     const padX = 6;
     const labelW = 26;
     let maxValW = 0;

@@ -278,6 +278,7 @@ export const SK_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'Pozadie popisku',
   'settings.labelText': 'Text popisku',
   'settings.labelChange': 'Zmena oproti poslednej cene',
+  'settings.limitColors': 'Farby limitov na denných limitoch',
   'settings.sessionBreaks': 'Hranice seáns',
   'settings.section.orders': 'Príkazy a pozície',
   'settings.profit': 'Zisk',

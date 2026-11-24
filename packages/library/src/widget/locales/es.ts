@@ -278,6 +278,7 @@ export const ES_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'Fondo de la etiqueta',
   'settings.labelText': 'Texto de la etiqueta',
   'settings.labelChange': 'Variación respecto al último precio',
+  'settings.limitColors': 'Colores de límite en los límites del día',
   'settings.sessionBreaks': 'Cortes de sesión',
   'settings.section.orders': 'Órdenes y posiciones',
   'settings.profit': 'Beneficio',

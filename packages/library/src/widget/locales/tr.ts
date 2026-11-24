@@ -278,6 +278,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'Etiket arka planı',
   'settings.labelText': 'Etiket metni',
   'settings.labelChange': 'Son fiyata göre değişim',
+  'settings.limitColors': 'Günlük limitlerde limit renkleri',
   'settings.sessionBreaks': 'Seans ayırıcıları',
   'settings.section.orders': 'Emirler ve pozisyonlar',
   'settings.profit': 'Kâr',

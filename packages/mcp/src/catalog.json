@@ -6330,6 +6330,7 @@
     "lastPrice.width": "width",
     "lastPrice.labelBackground": "color",
     "lastPrice.labelTextColor": "color",
+    "lastPrice.limitColors": "boolean",
     "volume.upColor": "color",
     "volume.downColor": "color",
     "sessionBreaks.color": "color",

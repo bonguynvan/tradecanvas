@@ -322,6 +322,7 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>十字光标线的同样四项（默认为细实线）。</td></tr>
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>坐标轴以及面板刻度上的价格、时间标签。</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>每个坐标轴的轴线和标签（面板刻度沿用价格轴的）。</td></tr>
+    <tr><td><code>lastPrice.limitColors</code></td><td><code>true</code> 时，价格位于当日某个限价上时，最新价的线和标签用该限价的颜色绘制：达到或超过涨停价用涨停色，达到或低于跌停价用跌停色，等于参考价用参考价颜色。在它们之间，或没有限价时，保持当日涨跌的颜色。适用于有涨跌停、行情板按其着色的市场；默认关闭。</td></tr>
     <tr><td><code>crosshair.labelChange</code></td><td><code>true</code> 时，在价格轴上十字线所指价格的下方，写出该价格相对最新价的百分比距离（<code>+1.25%</code>），按图表的区域设置书写。没有最新价时，或刻度本身已是百分比或指数时，不写。价格轴会为它留出宽度。Graphite 主题默认开启（主题自己的 <code>crosshairChange</code>），其他主题关闭。</td></tr>
     <tr><td><code>axis.price.valueTagsOutlined</code></td><td><code>true</code> 让价格轴上指标的数值标签画成描边样式（内部为图表的背景色，或面板自己的背景色，边框为线条的颜色，文字也用该颜色），而不是用线条的颜色填充：在价格面板、指标面板和左侧刻度上都是如此。线条颜色与背景太接近、在背景上看不清时，其数值用该颜色更深的一档书写，直到对比度达到 4.5:1。 Graphite 主题默认画成描边样式，除非此项为 <code>false</code>。 买价、卖价以及最高、最低价的标签也随之画成描边样式。</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>图例中的数值，以及它的标签（O、H、L、Vol）。</td></tr>

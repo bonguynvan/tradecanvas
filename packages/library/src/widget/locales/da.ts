@@ -285,6 +285,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'Etiketbaggrund',
   'settings.labelText': 'Etikettekst',
   'settings.labelChange': 'Ændring fra seneste pris',
+  'settings.limitColors': 'Grænsefarver ved dagens grænser',
   'settings.sessionBreaks': 'Sessionsskift',
   'settings.section.orders': 'Ordrer og positioner',
   'settings.profit': 'Gevinst',

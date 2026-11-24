@@ -278,6 +278,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'Φόντο ετικέτας',
   'settings.labelText': 'Κείμενο ετικέτας',
   'settings.labelChange': 'Μεταβολή από την τελευταία τιμή',
+  'settings.limitColors': 'Χρώματα ορίων στα όρια της ημέρας',
   'settings.sessionBreaks': 'Όρια συνεδριάσεων',
   'settings.section.orders': 'Εντολές και θέσεις',
   'settings.profit': 'Κέρδος',

@@ -285,6 +285,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'خلفية التسمية',
   'settings.labelText': 'نص التسمية',
   'settings.labelChange': 'التغير عن آخر سعر',
+  'settings.limitColors': 'ألوان الحدود عند حدود اليوم',
   'settings.sessionBreaks': 'فواصل الجلسات',
   'settings.section.orders': 'الأوامر والمراكز',
   'settings.profit': 'ربح',

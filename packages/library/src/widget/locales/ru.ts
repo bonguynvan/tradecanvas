@@ -278,6 +278,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'Фон метки',
   'settings.labelText': 'Текст метки',
   'settings.labelChange': 'Изменение к последней цене',
+  'settings.limitColors': 'Цвета лимитов на дневных лимитах',
   'settings.sessionBreaks': 'Границы сессий',
   'settings.section.orders': 'Ордера и позиции',
   'settings.profit': 'Прибыль',

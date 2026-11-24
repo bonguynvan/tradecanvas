@@ -2,11 +2,11 @@ import { chartFont } from '../ui/chartType.js';
 import { LayerType } from '@tradecanvas/commons';
 import type { Size, ViewportState, Theme, DataSeries, Rect, PaneStyle } from '@tradecanvas/commons';
 import { priceToY, yToPrice, xToBarIndex, barIndexToX } from '../viewport/ScaleMapping.js';
-import { DARK_PRICE_LIMITS, LIGHT_PRICE_LIMITS, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, inkOn, lineDash, priceTagText, readableOn } from '@tradecanvas/commons';
+import { DARK_PRICE_LIMITS, LIGHT_PRICE_LIMITS, PRICE_AXIS_WIDTH, autoPricePrecision, contrastRatio, formatPrice, inkOn, lineDash, priceTagText, readableOn } from '@tradecanvas/commons';
 import { priceScaleText, stepTicks } from '../axis/PriceAxis.js';
 import { MIN_PANE_PLOT_HEIGHT, panelScale, panelTagText } from '../axis/panelAxisTexts.js';
 import { LayerManager } from './LayerManager.js';
-import { AXIS_LABEL_HEIGHT, labelTextColor, darkInkReads, renderAxisValueLabels, layoutAxisValueLabels, drawAxisValueLabels, type AxisValueLabel, type FixedAxisTag } from '../ui/axisValueLabels.js';
+import { AXIS_LABEL_HEIGHT, labelTextColor, tagFill, darkInkReads, renderAxisValueLabels, layoutAxisValueLabels, drawAxisValueLabels, type AxisValueLabel, type FixedAxisTag } from '../ui/axisValueLabels.js';
 import { RenderLoop } from './RenderLoop.js';
 import { DPRManager } from './DPRManager.js';
 import type { CanvasLayer } from './CanvasLayer.js';
@@ -44,8 +44,10 @@ import type { PriceLineKind } from '../ui/PriceLines.js';
 const PANEL_HEADER_HEIGHT = 20;
 /** The bar across a pane's top, CSS px. */
 const PANE_DIVIDER_HEIGHT = 3;
-/** Height of a price limit's tag on the axis. */
-const LIMIT_TAG_HEIGHT = 14;
+/** The contrast a theme's own ink has on a limit's tag to be written there. */
+const LIMIT_INK_CONTRAST = 4.5;
+/** Height of a price limit's tag on the axis: a quote's and an indicator's value's. */
+const LIMIT_TAG_HEIGHT = 16;
 /** Half the last price's tag (`CurrentPriceLine`) and of a high/low or bid/ask tag (`PriceLines`). */
 const LAST_TAG_HALF = 10;
 const QUOTE_TAG_HALF = 8;
@@ -299,7 +301,9 @@ export class FrameRenderer {
     // The price lines (high, low, bid, ask, the last price) under the orders and positions,
     // whose labels sit on them when the price is near.
     ctx.priceLines?.render(c, viewport, theme, data);
-    ctx.currentPriceLine?.renderLine(c, viewport, theme);
+    // The day's limits as drawn, for a last price that takes their colour at them (`lastPrice.limitColors`).
+    const limitsDrawn = ctx.priceLimits && theme.style?.lastPrice.limitColors ? limitLines(ctx.priceLimits, theme) : undefined;
+    ctx.currentPriceLine?.renderLine(c, viewport, theme, limitsDrawn);
     ctx.depthOverlay?.render(c, viewport, theme);
     ctx.tradingRenderer?.render(c, viewport, theme);
     ctx.signalMarkerManager?.render(c, viewport, theme);
@@ -322,7 +326,7 @@ export class FrameRenderer {
     // so position entry prices and order trigger prices are always visible.
     ctx.tradingRenderer?.renderAxisBadges(c, viewport, theme, axisTags.trading);
     ctx.priceLines?.renderAxisTags(c, viewport, theme, data, axisTags.quote);
-    ctx.currentPriceLine?.renderTag(c, viewport, theme);
+    ctx.currentPriceLine?.renderTag(c, viewport, theme, limitsDrawn);
     ctx.timeAxis?.render(c, viewport, theme, data, ctx.timeAxisY);
     this.renderPanelAxes(c, ctx);
     this.renderDrawingSpans(c, ctx);
@@ -808,7 +812,7 @@ export class FrameRenderer {
 
     const boldFont = chartFont(theme, 2, 'bold');
     // The tag's figure stays inside the tag, which the axis's other tags are placed around at its height.
-    const normalFont = chartFont(theme, 1, '', LIMIT_TAG_HEIGHT);
+    const normalFont = chartFont(theme, 0, '', LIMIT_TAG_HEIGHT);
 
     limitLines(limits, theme).forEach(({ price, color, label }, i) => {
       const y = priceToY(price, viewport);
@@ -834,10 +838,14 @@ export class FrameRenderer {
       // Pushed off the plot by the other tags: the line and its name stay, the tag is left out.
       if (Number.isNaN(tagY)) return;
       const axisX = chartRect.x + chartRect.width + 1;
-      ctx.fillStyle = color;
+      // As every filled tag on the axis: a shade deeper where no ink would read on the colour given.
+      const fill = tagFill(color);
+      ctx.fillStyle = fill;
       fillTag(ctx, axisX, tagY - LIMIT_TAG_HEIGHT / 2, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2, LIMIT_TAG_HEIGHT, theme);
-      // The theme's own two inks (a paper look's are not black and white), picked as every filled tag's ink is: the dark one on the bright fills.
-      ctx.fillStyle = theme.background && theme.text ? themeInkOn(color, theme.background, theme.text) : labelTextColor(color);
+      // The theme's own two inks (a paper look's are not black and white), picked as every filled tag's ink is: the
+      // dark one on the bright fills. Where the theme's would not read on the fill, the tag's own ink.
+      const own = theme.background && theme.text ? themeInkOn(fill, theme.background, theme.text) : null;
+      ctx.fillStyle = own !== null && (contrastRatio(own, fill) ?? 0) >= LIMIT_INK_CONTRAST ? own : labelTextColor(fill);
       ctx.font = normalFont;
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'left';

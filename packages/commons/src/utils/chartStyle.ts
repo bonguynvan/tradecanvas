@@ -229,6 +229,7 @@ export function resolveChartTheme(base: Theme, chartType: ChartType, overrides: 
       width: (o('lastPrice.width') as number | undefined) ?? 1,
       labelBackground: (o('lastPrice.labelBackground') as string | undefined) ?? null,
       labelText: (o('lastPrice.labelTextColor') as string | undefined) ?? null,
+      limitColors: (o('lastPrice.limitColors') as boolean | undefined) ?? false,
     },
     sessionBreaks: {
       color: (o('sessionBreaks.color') as string | undefined) ?? null,
@@ -300,6 +301,7 @@ const READ_BACK: { [K in ChartStyleKey]?: (t: Theme, s: ResolvedChartStyle) => u
   'lastPrice.width': (_t, s) => s.lastPrice.width,
   'lastPrice.labelBackground': (_t, s) => s.lastPrice.labelBackground,
   'lastPrice.labelTextColor': (_t, s) => s.lastPrice.labelText,
+  'lastPrice.limitColors': (_t, s) => s.lastPrice.limitColors,
   'axis.price.valueTagsOutlined': (_t, s) => s.axis.price.valueTagsOutlined,
   'grid.vertical.periodsOnly': (_t, s) => s.grid.verticalAtPeriods,
   // As drawn: a theme that sets only candle colours gets volume in those colours.

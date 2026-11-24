@@ -285,6 +285,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'Sildi taust',
   'settings.labelText': 'Sildi tekst',
   'settings.labelChange': 'Muutus viimasest hinnast',
+  'settings.limitColors': 'Piirivärvid päeva piiridel',
   'settings.sessionBreaks': 'Seansside piirid',
   'settings.section.orders': 'Orderid ja positsioonid',
   'settings.profit': 'Kasum',

@@ -278,6 +278,7 @@ export const CS_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'Pozadí popisku',
   'settings.labelText': 'Text popisku',
   'settings.labelChange': 'Změna oproti poslední ceně',
+  'settings.limitColors': 'Barvy limitů na denních limitech',
   'settings.sessionBreaks': 'Hranice seancí',
   'settings.section.orders': 'Příkazy a pozice',
   'settings.profit': 'Zisk',

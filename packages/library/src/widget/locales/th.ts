@@ -278,6 +278,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'พื้นหลังป้าย',
   'settings.labelText': 'ข้อความป้าย',
   'settings.labelChange': 'การเปลี่ยนแปลงจากราคาล่าสุด',
+  'settings.limitColors': 'สีขีดจำกัดเมื่อถึงขีดจำกัดของวัน',
   'settings.sessionBreaks': 'เส้นแบ่งเซสชัน',
   'settings.section.orders': 'คำสั่งและสถานะ',
   'settings.profit': 'กำไร',
