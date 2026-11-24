@@ -193,3 +193,13 @@ export function orderQuantityText(order: { quantity: number; filledQuantity?: nu
     ? `${quantityText(filled)}${between}${quantityText(order.quantity)}`
     : String(order.quantity);
 }
+
+/**
+ * The price the adapter values a position at (`TradingPosition.markPrice`), where it gives one;
+ * null where it gives none. A price under zero is one (a spread, a contract in a glut); 0 is
+ * taken for none, as it is what an adapter that has no price yet often says.
+ */
+export function positionMark(position: { markPrice?: number }): number | null {
+  const mark = position.markPrice;
+  return mark !== undefined && Number.isFinite(mark) && mark !== 0 ? mark : null;
+}

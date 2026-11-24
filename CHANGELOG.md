@@ -36,6 +36,15 @@ The `3.0` branch. These move under the version's own heading when it is released
 
 ### Chart
 
+- **A position is counted at the adapter's own price for it.** Where an adapter gives a position its
+  `markPrice`, the account panel's row (its Price and its P&L) and the chart's tag on the position count at it,
+  for a position of the chart's own symbol too: a row was counted at the chart's last price under a total the
+  broker had counted at its mark, and the two disagreed (+120.00 in the row, +300.00 as Open P&L). An adapter
+  that gave a position of the chart's symbol a `markPrice` and did not keep it current now shows that price:
+  say the positions again as the mark moves, or leave it out. With none, as before, the chart's latest price.
+  The band from a position's entry still reaches the chart's price, in the colour of the profit as the tag
+  counts it, and a `positionLabel` of your own is given the mark as its price. A `markPrice` of 0 is taken for
+  none; one under zero is a price. `positionMark(position)` (`@tradecanvas/commons`) is the price read that way.
 - **Graphite's chrome in two type sizes and fewer rules.** Figures in the account panel's table, a field's
   name, a segment, the quote buttons and the bars under the chart are 12 px, where they were 11 and 10; a look's
   small size is its own now (`ui.font.smallSize`, 10 to 20; left out, the step under `size` as before, so the other

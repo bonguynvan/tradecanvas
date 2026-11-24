@@ -186,6 +186,15 @@ chart.startBracket('buy', undefined, { risk: 50 })   // khối lượng sẽ l�
   Những gì gửi tới broker vẫn như cũ, trừ khối lượng được tính từ rủi ro như trên.
 </p>
 
+<h3 id="mark"><code>markPrice</code> của position là giá dùng để định giá nó</h3>
+<p>
+  Nếu execution adapter của bạn đưa <code>markPrice</code> cho position, dòng trong panel tài khoản và tag trên
+  chart giờ định giá position theo giá đó, kể cả position của chính symbol trên chart; trước đây giá này chỉ được
+  đọc cho position của symbol khác, còn lại tính theo giá mới nhất của chart. Vì vậy hãy giữ nó luôn mới: gửi lại
+  positions khi giá mark thay đổi. Adapter chỉ gắn giá một lần sẽ có một dòng đứng yên. Bỏ field này đi để dùng giá
+  mới nhất của chart như trước. <code>markPrice</code> bằng 0 được coi là không có.
+</p>
+
 <h2 id="types">Các type được mở rộng</h2>
 <p>
   <code>TimeInForce</code> nay là <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. Code xử lý mọi giá trị

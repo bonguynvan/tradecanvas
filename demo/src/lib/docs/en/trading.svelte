@@ -320,6 +320,12 @@ chart.on('marginCall', (e) => warn(e.payload))   // { marginLevel: 0.9, level: 1
   own. The depth ladder marks the orders of the symbol whose book it shows.
 </p>
 <p>
+  A broker counts a position at its mark, which is not always the last trade the chart shows. Where the adapter
+  gives a position its <code>markPrice</code>, the panel's row and the chart's tag count the profit at it, for a
+  position of the chart's own symbol too, so the rows agree with the account's Open P&amp;L. Send the positions
+  again as the mark moves. Without one, a position of the chart's symbol is counted at the chart's latest price.
+</p>
+<p>
   With a stream (<code>connect</code>, <code>switchStream</code>) the chart knows its symbol. With bars you set
   yourself, say it as you change them; <code>ChartWidget</code> does when its symbol is picked.
 </p>
