@@ -769,6 +769,9 @@ export class Chart {
     this.crosshairHandler.setPriceHeld(() => this.tradingManager.isDraggingLine());
     // The price it writes is the market's there: what the "+" beside it, or a right-click, places at.
     this.crosshairHandler.setPriceRounding((price) => this.roundPrice(price));
+    // Where the theme says so, the price under the pointer says how far it is from the last.
+    // Not with the last price hidden: the change would be from a price the chart does not show.
+    this.crosshairHandler.setChangeBase(() => (this.currentPriceLine.isVisible() ? this.currentPriceLine.getPrice() : null));
     // Crosshair callback — fired via microtask AFTER render, only when the bar
     // changes: no extra render requests, and the tooltip's one measurement
     // happens once per bar, not per mouse move.
@@ -7536,6 +7539,7 @@ export class Chart {
       format: this.priceFormatter,
       scaleLabel: (price) => this.priceAxis.labelText(price, this.viewport.getState()),
       ...this.paneAxisTexts(),
+      crosshairChange: theme.style?.crosshair.labelChange ?? false,
       fontFamily: theme.font.family,
       fontSizeSmall: theme.font.sizeSmall,
       measure: (text, font) => this.measureText(text, font),

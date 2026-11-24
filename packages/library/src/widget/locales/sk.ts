@@ -277,6 +277,7 @@ export const SK_MESSAGES: WidgetMessages = {
   'settings.watermark': 'Vodoznak',
   'settings.labelBackground': 'Pozadie popisku',
   'settings.labelText': 'Text popisku',
+  'settings.labelChange': 'Zmena oproti poslednej cene',
   'settings.sessionBreaks': 'Hranice seáns',
   'settings.section.orders': 'Príkazy a pozície',
   'settings.profit': 'Zisk',

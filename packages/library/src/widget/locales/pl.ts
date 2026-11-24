@@ -277,6 +277,7 @@ export const PL_MESSAGES: WidgetMessages = {
   'settings.watermark': 'Znak wodny',
   'settings.labelBackground': 'Tło etykiety',
   'settings.labelText': 'Tekst etykiety',
+  'settings.labelChange': 'Zmiana względem ostatniej ceny',
   'settings.sessionBreaks': 'Granice sesji',
   'settings.section.orders': 'Zlecenia i pozycje',
   'settings.profit': 'Zysk',

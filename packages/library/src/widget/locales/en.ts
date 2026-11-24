@@ -285,6 +285,7 @@ export const EN_MESSAGES = {
   'settings.watermark': 'Watermark',
   'settings.labelBackground': 'Label background',
   'settings.labelText': 'Label text',
+  'settings.labelChange': 'Change from last price',
   'settings.sessionBreaks': 'Session breaks',
   'settings.section.orders': 'Orders and positions',
   'settings.profit': 'Profit',

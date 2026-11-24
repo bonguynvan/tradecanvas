@@ -2,7 +2,7 @@
 
 # Style keys
 
-126 keys, each one part of the chart's look apart from its theme:
+127 keys, each one part of the chart's look apart from its theme:
 `chart.applyOverrides({ 'grid.vertical.visible': false })`, `overrides` in the chart's options, or the
 React/Vue/Svelte `overrides` prop. A value sets a key and `null` takes it away. `CHART_STYLE_KEYS`, exported
 from `@tradecanvas/chart`, holds them with their kinds; `chart.getStyleValue(key)` is what one resolves to now.
@@ -56,6 +56,7 @@ from `@tradecanvas/chart`, holds them with their kinds; `chart.getStyleValue(key
 | `crosshair.vertical.width` | width |
 | `crosshair.labelBackground` | color |
 | `crosshair.labelTextColor` | color |
+| `crosshair.labelChange` | boolean |
 
 ## axis
 

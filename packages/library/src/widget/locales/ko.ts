@@ -277,6 +277,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'settings.watermark': '워터마크',
   'settings.labelBackground': '라벨 배경',
   'settings.labelText': '라벨 글자',
+  'settings.labelChange': '현재가 대비 등락률',
   'settings.sessionBreaks': '세션 구분선',
   'settings.section.orders': '주문과 포지션',
   'settings.profit': '이익',

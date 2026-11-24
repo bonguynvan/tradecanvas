@@ -277,6 +277,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'settings.watermark': 'ウォーターマーク',
   'settings.labelBackground': 'ラベルの背景',
   'settings.labelText': 'ラベルの文字',
+  'settings.labelChange': '現在値からの変化率',
   'settings.sessionBreaks': 'セッションの区切り',
   'settings.section.orders': '注文とポジション',
   'settings.profit': '利益',

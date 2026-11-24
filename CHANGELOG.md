@@ -36,6 +36,18 @@ The `3.0` branch. These move under the version's own heading when it is released
 
 ### Chart
 
+- **The crosshair says how far its price is from the last, and the chart's cards are set as the chart is.** Under
+  the price the crosshair names on the price axis, Graphite writes that price's distance from the last one in
+  percent (`+1.25%`, in the chart's locale): the `crosshair.labelChange` style key, with its switch in Chart
+  Settings, on in the Graphite themes (a theme's own `crosshairChange`) and off in the others. None is written
+  with no last price, with the last price hidden, or on a percent or indexed scale; the tag stays on the plot by
+  its top and bottom, and the price axis is given room for a change of two figures (a wider one is cut at the tag). The card
+  beside the crosshair and a pinned bar's card are in the theme's small size and face throughout: the first had
+  five sizes from 10 to 11.5 px in every theme, the second a system face of its own at 11 and 9 px, its
+  "pinned" in small capitals and its rule in the move's colour (now "Pinned", and the chart's own line). In Graphite
+  both are a menu's: the raised ground, the one corner and shadow, nothing seen through, the change a plain
+  figure in its colour. A widget's look sets these through `--tcw-chart-card-*`; a chart with no widget keeps
+  the theme's.
 - **A price reads on its own tag, and the last price is the one block of colour on Graphite's axis.** The
   ink on a filled tag (the last price, the countdown, an indicator's value, a mark) is now the dark or the light
   one by which has the more contrast on the fill, in every theme: white on a candle's green was 2.3:1 and on its

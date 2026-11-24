@@ -8,5 +8,5 @@ export function crosshairLooks(theme: Theme): ResolvedChartStyle['crosshair'] {
   if (theme.style) return theme.style.crosshair;
   const line = (): ResolvedLineLook => ({ visible: true, color: theme.crosshair, style: 'solid', width: 1 });
   const tag = crosshairTagLook(theme.background, theme.text);
-  return { horizontal: line(), vertical: line(), labelBackground: tag.background, labelText: tag.text };
+  return { horizontal: line(), vertical: line(), labelBackground: tag.background, labelText: tag.text, labelChange: theme.crosshairChange ?? false };
 }

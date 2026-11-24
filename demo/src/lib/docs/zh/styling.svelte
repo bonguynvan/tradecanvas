@@ -322,6 +322,7 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>十字光标线的同样四项（默认为细实线）。</td></tr>
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>坐标轴以及面板刻度上的价格、时间标签。</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>每个坐标轴的轴线和标签（面板刻度沿用价格轴的）。</td></tr>
+    <tr><td><code>crosshair.labelChange</code></td><td><code>true</code> 时，在价格轴上十字线所指价格的下方，写出该价格相对最新价的百分比距离（<code>+1.25%</code>），按图表的区域设置书写。没有最新价时，或刻度本身已是百分比或指数时，不写。价格轴会为它留出宽度。Graphite 主题默认开启（主题自己的 <code>crosshairChange</code>），其他主题关闭。</td></tr>
     <tr><td><code>axis.price.valueTagsOutlined</code></td><td><code>true</code> 让价格轴上指标的数值标签画成描边样式（内部为图表的背景色，或面板自己的背景色，边框为线条的颜色，文字也用该颜色），而不是用线条的颜色填充：在价格面板、指标面板和左侧刻度上都是如此。线条颜色与背景太接近、在背景上看不清时，其数值用刻度的文字颜色书写。 Graphite 主题默认画成描边样式，除非此项为 <code>false</code>。</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>图例中的数值，以及它的标签（O、H、L、Vol）。</td></tr>
     <tr><td><code>legend.upColor</code>, <code>.downColor</code></td><td>读取 K 线数值之处的上涨和下跌颜色：图例中的收盘价和涨跌、十字光标和固定的提示框、测量工具。未设置时跟随主序列的颜色，所以隐藏了自身 K 线的图表（由叠加层绘制自己的 K 线）设置这两项，就能保留它们。</td></tr>

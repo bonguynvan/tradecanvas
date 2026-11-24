@@ -277,6 +277,7 @@ export const PT_MESSAGES: WidgetMessages = {
   'settings.watermark': 'Marca d’água',
   'settings.labelBackground': 'Fundo do rótulo',
   'settings.labelText': 'Texto do rótulo',
+  'settings.labelChange': 'Variação face ao último preço',
   'settings.sessionBreaks': 'Quebras de sessão',
   'settings.section.orders': 'Ordens e posições',
   'settings.profit': 'Lucro',

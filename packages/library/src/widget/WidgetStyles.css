@@ -4566,6 +4566,20 @@
   --tcw-sell-fill-hover: #a81f26;
   --tcw-sell-fill-active: #8f1a20;
 }
+/*
+ * The cards the chart floats over itself (a bar's values beside the crosshair, a bar pinned) are a
+ * menu's here: the raised ground, the one corner, the one shadow, nothing seen through. The change
+ * is a figure in its colour with no ground of its own, and the card has no tick of colour at its head.
+ */
+.tcw-root[data-tcw-ui='graphite'] {
+  --tcw-chart-card-bg: var(--tcw-bg-elevated);
+  --tcw-chart-card-border: transparent;
+  --tcw-chart-card-shadow: var(--tcw-tooltip-shadow);
+  --tcw-chart-card-blur: none;
+  --tcw-chart-card-chip-bg: transparent;
+  --tcw-chart-card-chip-pad: 0;
+  --tcw-chart-card-tick: none;
+}
 /* Its rows and its head are 28 px, its buttons 24 with 8 between, and the panel is as tall as its rows up to its old height. */
 /*
  * The panel is one height on every tab and with any number of rows: its head, the table's head

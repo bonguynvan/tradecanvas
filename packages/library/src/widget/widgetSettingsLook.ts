@@ -116,6 +116,7 @@ export const APPEARANCE_SECTIONS: readonly LookSection[] = [
       row('drawingSettings.lineWidth', 'crosshair.horizontal.width', 'crosshair.vertical.width'),
       row('settings.labelBackground', 'crosshair.labelBackground'),
       row('settings.labelText', 'crosshair.labelTextColor'),
+      row('settings.labelChange', 'crosshair.labelChange'),
     ],
   },
   {

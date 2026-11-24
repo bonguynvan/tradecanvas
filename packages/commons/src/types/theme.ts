@@ -63,6 +63,11 @@ export interface Theme {
    */
   valueTagsOutlined?: boolean;
   /**
+   * The price the crosshair names on the axis has, under it, how far it is from the last price, in
+   * percent. The `crosshair.labelChange` style key is over it.
+   */
+  crosshairChange?: boolean;
+  /**
    * The finer looks the chart worked out from its overrides
    * (`chart.applyOverrides`). Set by the chart on the theme it draws with;
    * yours needn't have one.

@@ -266,6 +266,7 @@ export const GRAPHITE_DARK_THEME: Theme = {
   axisLabelBackground: '#2b2d33',
   font: GRAPHITE_FONT,
   valueTagsOutlined: true,
+  crosshairChange: true,
   priceLimits: DARK_PRICE_LIMITS,
 };
 
@@ -291,6 +292,7 @@ export const GRAPHITE_LIGHT_THEME: Theme = {
   axisLabelBackground: '#eceef1',
   font: GRAPHITE_FONT,
   valueTagsOutlined: true,
+  crosshairChange: true,
   priceLimits: LIGHT_PRICE_LIMITS,
 };
 

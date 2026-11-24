@@ -6312,6 +6312,7 @@
     "crosshair.vertical.width": "width",
     "crosshair.labelBackground": "color",
     "crosshair.labelTextColor": "color",
+    "crosshair.labelChange": "boolean",
     "axis.price.lineColor": "color",
     "axis.price.textColor": "color",
     "axis.price.valueTagsOutlined": "boolean",

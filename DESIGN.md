@@ -233,6 +233,11 @@ The chart is the page; everything above is its frame. On it:
   with the fill, never white by habit: dark ink on the candles' green and red in the dark theme.
 - The chart's figures (axes, tags, the legend's prices) are the chrome's small size, 12 px, in
   the same face with digits of one width. A figure on the chart and one beside it are the same size.
+- **The crosshair's price says how far it is from the last.** Under the price on the axis, the
+  distance in percent, in the same ink at a plainer weight: the question a pointer on a chart asks.
+- **A card over the chart is a menu.** A bar's values beside the crosshair, and a bar pinned: the
+  raised ground, the one corner, the one shadow, nothing seen through, all of it in the small size.
+  The change is a figure in its colour, with no pill behind it and no tick of colour at the card's head.
 - The grid is the quietest thing drawn.
 
 ## Layout
