@@ -1935,6 +1935,18 @@ img.tcw-ss-badge {
 .tcw-root[data-tcw-ui='graphite'] .tcw-ticket-limit { padding-inline: var(--tcw-space-3); border: 0; }
 .tcw-root[data-tcw-ui='graphite'] .tcw-ticket-side-btn[aria-pressed='false'] { font-weight: var(--tcw-weight); }
 .tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-footer-end { flex: 1; }
+/*
+ * By DESIGN.md: the one line of the ticket, over the order's value, is solid like every other;
+ * and the day's limits stand by the price they set, not by the quantity over them.
+ */
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-summary:not(:empty) {
+  border-top-style: solid;
+  border-top-color: var(--tcw-divider);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-limits {
+  margin-top: var(--tcw-space-3);
+  margin-bottom: calc(-1 * var(--tcw-space-3));
+}
 
 /*
  * Graphite's buttons that buy and sell. A side's colour on the chart (a candle, a figure) is too

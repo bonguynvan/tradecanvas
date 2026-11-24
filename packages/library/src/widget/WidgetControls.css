@@ -777,3 +777,34 @@
     inset: calc((100% - var(--tcw-hit-finger)) / 2);
   }
 }
+
+/*
+ * Graphite's fields, by DESIGN.md: a field says it is in focus on its own line, which takes the
+ * muted text's colour. No ring and no glow is drawn around it.
+ */
+.tcw-root[data-tcw-ui='graphite'] :is(.tcw-indi-input, .tcw-settings-select, .tcw-tf-custom-input, .tcw-watchlist-input, .tcw-style-name, .tcw-tree-rename):is(:focus, :focus-visible),
+.tcw-root[data-tcw-ui='graphite'] .tcw-alerts-form :is(input, select):focus,
+.tcw-root[data-tcw-ui='graphite'] .tcw-stepper:focus-within {
+  border-color: var(--tcw-text-muted);
+  box-shadow: none;
+  outline: none;
+}
+@media (forced-colors: active) {
+  .tcw-root[data-tcw-ui='graphite'] :is(.tcw-indi-input, .tcw-settings-select, .tcw-tf-custom-input, .tcw-watchlist-input, .tcw-style-name, .tcw-tree-rename):is(:focus, :focus-visible),
+  .tcw-root[data-tcw-ui='graphite'] .tcw-alerts-form :is(input, select):focus {
+    outline: 2px solid Highlight;
+  }
+}
+/* One choice is nothing to choose: it reads as text, not as a button in a trough. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-segmented:has(> .tcw-segment:only-child) {
+  padding: 0;
+  background: none;
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-segmented > .tcw-segment:only-child {
+  padding-inline: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--tcw-text);
+  font-weight: var(--tcw-weight);
+  cursor: default;
+}

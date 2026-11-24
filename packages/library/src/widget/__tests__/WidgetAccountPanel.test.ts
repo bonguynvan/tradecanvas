@@ -120,6 +120,12 @@ describe('WidgetAccountPanel', () => {
     panel.openPanel();
     const totals = () => [...host.querySelectorAll('.tcw-account-total')].map((el) => el.textContent);
     expect(totals()).toEqual(['Open P&L: +6.00', 'Realised P&L: +4.00']);
+    // A total is its name, what stands between, and its figure, each a part a look can set apart.
+    const parts = (el: Element) => [...el.children].map((part) => [part.className, part.textContent]);
+    const [open, realised] = [...host.querySelectorAll('.tcw-account-total')];
+    expect(parts(open)).toEqual([['tcw-account-total-name', 'Open P&L'], ['tcw-account-total-sep', ': '], ['tcw-account-total-figure', '+6.00']]);
+    expect(open.classList.contains('tcw-account-open')).toBe(true);
+    expect(realised.classList.contains('tcw-account-open')).toBe(false);
     tab(/Orders/).click();
     expect(totals()).toEqual(['Open P&L: +6.00', 'Realised P&L: +4.00']);
     panel.update({ ...snapshotOf(), price: 104 });
@@ -150,7 +156,7 @@ describe('WidgetAccountPanel', () => {
     panel.openPanel();
     expect(cells()[0][6]).toBe('0.00 · 0.00%');
     expect(host.querySelector('tbody tr')!.querySelectorAll('td')[6].firstElementChild!.className).toBe('tcw-account-pnl');
-    expect(host.querySelector('.tcw-account-total')!.className).toBe('tcw-account-total');
+    expect(host.querySelector('.tcw-account-total')!.className).toBe('tcw-account-total tcw-account-open');
   });
 
   it('shows the realised P&L only once something is realised', () => {

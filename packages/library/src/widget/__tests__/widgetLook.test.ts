@@ -294,3 +294,42 @@ describe('Graphite’s dividers', () => {
     expect(ruleBody(".tcw-root[data-tcw-ui='graphite'] .tcw-sidebar-divider--section")).toContain('display: none');
   });
 });
+
+// DESIGN.md's rules for Graphite, held where a stylesheet can be read.
+describe('Graphite’s rules', () => {
+  const read = (name: string) => readFileSync(fileURLToPath(new URL(`../${name}`, import.meta.url)), 'utf8').replace(/\r\n/g, '\n');
+  const body = (sheet: string, selector: string) => {
+    const at = sheet.indexOf(`\n${selector} {`);
+    if (at < 0) throw new Error(`no rule ${selector}`);
+    return sheet.slice(sheet.indexOf('{', at) + 1, sheet.indexOf('}', at));
+  };
+
+  it('says a field’s focus on its own line, with no ring and no glow around it', () => {
+    const controls = read('WidgetControls.css');
+    const at = controls.indexOf(".tcw-root[data-tcw-ui='graphite'] :is(.tcw-indi-input, .tcw-settings-select, .tcw-tf-custom-input, .tcw-watchlist-input, .tcw-style-name, .tcw-tree-rename):is(:focus, :focus-visible)");
+    expect(at).toBeGreaterThan(0);
+    const rule = controls.slice(at, controls.indexOf('}', at));
+    expect(rule).toContain('border-color: var(--tcw-text-muted)');
+    expect(rule).toContain('box-shadow: none');
+    expect(rule).toContain('outline: none');
+  });
+
+  it('puts no border on a filled or a neutral button: New order, like Cancel', () => {
+    const rule = body(css, ".tcw-root[data-tcw-ui='graphite'] .tcw-account-new");
+    expect(rule).toContain('border: 0');
+    expect(rule).toContain('background: var(--tcw-active-bg)');
+  });
+
+  it('writes a tab’s count as a plain number, and a total as a muted name and its figure', () => {
+    expect(body(css, ".tcw-root[data-tcw-ui='graphite'] .tcw-account-count")).toContain('background: none');
+    expect(body(css, ".tcw-root[data-tcw-ui='graphite'] .tcw-account-total-sep")).toContain('display: none');
+    expect(body(css, ".tcw-root[data-tcw-ui='graphite'] .tcw-account-total-name")).toContain('color: var(--tcw-text-muted)');
+    expect(body(css, ".tcw-root[data-tcw-ui='graphite'] .tcw-account-open")).toContain('order: -1');
+  });
+
+  it('draws the ticket’s one line solid, and a single choice as text', () => {
+    const dialogs = read('WidgetDialogs.css');
+    expect(body(dialogs, ".tcw-root[data-tcw-ui='graphite'] .tcw-ticket-summary:not(:empty)")).toContain('border-top-style: solid');
+    expect(body(read('WidgetControls.css'), ".tcw-root[data-tcw-ui='graphite'] .tcw-segmented:has(> .tcw-segment:only-child)")).toContain('background: none');
+  });
+});
