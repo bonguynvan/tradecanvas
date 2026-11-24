@@ -875,7 +875,7 @@
   border-radius: var(--tcw-tag-radius);
   background: color-mix(in srgb, var(--tcw-ss-kind) 16%, transparent);
   color: var(--tcw-ss-kind);
-  font-size: var(--tcw-font-size-xs);
+  font-size: var(--tcw-font-size-glyph);
   font-weight: var(--tcw-weight-strong);
   line-height: 1;
 }
@@ -1396,7 +1396,7 @@ img.tcw-ss-badge {
   background: var(--tcw-bg);
   color: var(--tcw-text-dim);
   font-family: var(--tcw-font-mono);
-  font-size: var(--tcw-font-size-xs);
+  font-size: var(--tcw-font-size-glyph);
   line-height: 1.6;
   text-align: center;
   white-space: nowrap;
@@ -2032,10 +2032,6 @@ img.tcw-ss-badge {
 .tcw-root[data-tcw-ui='graphite'] .tcw-modal-header h3 {
   font-size: var(--tcw-font-size-lg);
   letter-spacing: 0;
-}
-/* Nothing a trader reads to act is 10 px: a group's name, a short name, a kind, an exchange, a hint, a colour's code. */
-.tcw-root[data-tcw-ui='graphite'] :is(.tcw-ip-heading, .tcw-ip-kind, .tcw-ip-short, .tcw-ip-count, .tcw-ss-head, .tcw-ss-heading, .tcw-ss-kind, .tcw-ss-exchange, .tcw-ss-chg, .tcw-ss-foot, .tcw-ss-more, .tcw-color-hex, .tcw-color-auto-btn, .tcw-settings-hint, .tcw-style-subhead, .tcw-style-width, .tcw-style-dash) {
-  font-size: var(--tcw-font-size-sm);
 }
 /* A heading of a column or of a group is not strong: its place says what it is. */
 .tcw-root[data-tcw-ui='graphite'] :is(.tcw-ip-heading, .tcw-ss-head, .tcw-ss-heading) { font-weight: var(--tcw-weight); }

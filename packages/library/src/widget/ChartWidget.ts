@@ -133,7 +133,7 @@ const SCALE_DEAD_BAND = 24;
 /** The tokens a bigger scale changes: bars, buttons, icons, menu rows, type and the lines it sits on. */
 const SCALED_TOKENS = [
   '--tcw-toolbar-h', '--tcw-control-h', '--tcw-control-h-sm', '--tcw-icon', '--tcw-sidebar-w', '--tcw-tool-h', '--tcw-tool-icon', '--tcw-menu-item-h',
-  '--tcw-font-size', '--tcw-font-size-sm', '--tcw-font-size-xs', '--tcw-font-size-lg', '--tcw-font-size-xl', '--tcw-font-size-display',
+  '--tcw-font-size', '--tcw-font-size-sm', '--tcw-font-size-xs', '--tcw-font-size-glyph', '--tcw-font-size-lg', '--tcw-font-size-xl', '--tcw-font-size-display',
   '--tcw-line-height', '--tcw-line-xs', '--tcw-label-size',
 ] as const;
 

@@ -200,7 +200,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
   font: {
     family: "'Manrope', system-ui, sans-serif",
     mono: "'JetBrains Mono', monospace",
-    size: 13, smallSize: 12,                          // body; figures in tables, field names
+    size: 13, smallSize: 12,                          // body; figures in tables, field names (set, nothing to read is smaller)
     weight: 500, strongWeight: 600,
     labelCase: 'uppercase', labelTracking: 0.06,      // small labels
   },

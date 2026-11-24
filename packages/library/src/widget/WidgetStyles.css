@@ -157,7 +157,7 @@
   --tcw-legend-line: 20px;
   --tcw-legend-line-pane: 16px;
   /* A line of the smallest type, an even height too. */
-  --tcw-line-xs: 14px;
+  --tcw-line-xs: 16px;
   /* The bars' text buttons: as wide as their text, rounded up to a whole pixel. */
   --tcw-text-w: calc-size(max-content, round(up, size, 1px));
 
@@ -194,7 +194,9 @@
   --tcw-font: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --tcw-font-size: 13px;
   --tcw-font-size-sm: 12px;
-  --tcw-font-size-xs: 10px;
+  --tcw-font-size-xs: 12px;
+  /* A character inside a set shape: a badge's letter, a keycap. */
+  --tcw-font-size-glyph: 10px;
   --tcw-font-size-lg: 15px;
   --tcw-font-size-xl: 18px;
   --tcw-font-size-display: 21px;
@@ -4580,6 +4582,14 @@
   --tcw-chart-card-chip-pad: 0;
   --tcw-chart-card-tick: none;
 }
+/*
+ * The symbol on the chart, in the watchlist, is a picked row: a neutral ground, with no bar of the
+ * accent down its left and no accent tint. A row the keyboard is on has its bar in the text's colour.
+ */
+/* A ground deeper than the picked one: beside a row under the pointer, the picked ground alone was not told from it. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-watchlist-row.tcw-watchlist-active { background: var(--tcw-border-strong); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-watchlist-row.tcw-watchlist-active::before { background: transparent; }
+.tcw-root[data-tcw-ui='graphite'] .tcw-watchlist-row:focus-visible::before { background: var(--tcw-text); }
 /* A count beside a toolbar's button (the indicators on the chart) is a plain number, not a badge in the accent. */
 .tcw-root[data-tcw-ui='graphite'] .tcw-badge-count {
   padding: 0;

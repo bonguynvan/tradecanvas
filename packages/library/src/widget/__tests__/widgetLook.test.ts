@@ -203,8 +203,11 @@ describe('the stylesheet’s look', () => {
   });
 
   it('uses every token the look sets', () => {
+    // In any of the widget's stylesheets: a token may be used in the dialogs' or the panels' alone.
+    const dir = fileURLToPath(new URL('..', import.meta.url));
+    const sheets = readdirSync(dir).filter((f) => f.endsWith('.css')).map((f) => readFileSync(`${dir}/${f}`, 'utf8')).join(' ');
     const unused = Object.keys(widgetUIVariables(resolveWidgetUI())).filter(
-      (name) => !css.includes(`var(${name})`) && !css.includes(`var(${name},`),
+      (name) => !sheets.includes(`var(${name})`) && !sheets.includes(`var(${name},`),
     );
     expect(unused).toEqual([]);
   });
