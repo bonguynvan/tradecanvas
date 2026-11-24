@@ -277,6 +277,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'settings.watermark': 'Tanda air',
   'settings.labelBackground': 'Latar label',
   'settings.labelText': 'Teks label',
+  'settings.labelChange': 'Perubahan dari harga terakhir',
   'settings.sessionBreaks': 'Batas sesi',
   'settings.section.orders': 'Order dan posisi',
   'settings.profit': 'Untung',

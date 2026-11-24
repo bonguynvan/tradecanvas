@@ -284,6 +284,18 @@ describe('a theme’s own value tags', () => {
     for (const theme of [DARK_THEME, LIGHT_THEME, MODERN_DARK_THEME]) expect(chartStyleValue(theme, {}, 'axis.price.valueTagsOutlined')).toBe(false);
   });
 
+  it('the crosshair’s price says how far it is from the last in Graphite, not in the other themes, and as the override says', async () => {
+    const { GRAPHITE_DARK_THEME, GRAPHITE_LIGHT_THEME, MODERN_DARK_THEME, LIGHT_THEME } = await import('@tradecanvas/commons');
+    for (const theme of [GRAPHITE_DARK_THEME, GRAPHITE_LIGHT_THEME]) {
+      expect(chartStyleValue(theme, {}, 'crosshair.labelChange'), theme.name).toBe(true);
+      expect(resolveChartTheme(theme, 'candlestick', { 'crosshair.labelChange': false }).style!.crosshair.labelChange).toBe(false);
+    }
+    for (const theme of [DARK_THEME, LIGHT_THEME, MODERN_DARK_THEME]) {
+      expect(chartStyleValue(theme, {}, 'crosshair.labelChange'), theme.name).toBe(false);
+      expect(resolveChartTheme(theme, 'candlestick', { 'crosshair.labelChange': true }).style!.crosshair.labelChange).toBe(true);
+    }
+  });
+
   it('are in 12 px type in Graphite, where the chrome’s figures are, and 11 in the others', async () => {
     const { GRAPHITE_DARK_THEME, GRAPHITE_LIGHT_THEME, MODERN_DARK_THEME, LIGHT_THEME } = await import('@tradecanvas/commons');
     expect([GRAPHITE_DARK_THEME, GRAPHITE_LIGHT_THEME].map((t) => [t.font.sizeSmall, t.font.sizeMedium, t.font.sizeLarge])).toEqual([[12, 13, 15], [12, 13, 15]]);

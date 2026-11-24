@@ -277,6 +277,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'settings.watermark': 'Filigran',
   'settings.labelBackground': 'Fundalul etichetei',
   'settings.labelText': 'Textul etichetei',
+  'settings.labelChange': 'Variație față de ultimul preț',
   'settings.sessionBreaks': 'Separatoare de sesiune',
   'settings.section.orders': 'Ordine și poziții',
   'settings.profit': 'Profit',

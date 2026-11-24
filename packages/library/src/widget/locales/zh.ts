@@ -277,6 +277,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'settings.watermark': '水印',
   'settings.labelBackground': '标签背景',
   'settings.labelText': '标签文字',
+  'settings.labelChange': '相对最新价的涨跌幅',
   'settings.sessionBreaks': '交易时段分隔线',
   'settings.section.orders': '订单和持仓',
   'settings.profit': '盈利',

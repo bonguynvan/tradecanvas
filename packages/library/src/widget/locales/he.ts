@@ -284,6 +284,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'settings.watermark': 'סימן מים',
   'settings.labelBackground': 'רקע תווית',
   'settings.labelText': 'טקסט תווית',
+  'settings.labelChange': 'שינוי מהמחיר האחרון',
   'settings.sessionBreaks': 'מעברי סשן',
   'settings.section.orders': 'פקודות ופוזיציות',
   'settings.profit': 'רווח',

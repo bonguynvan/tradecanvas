@@ -42,6 +42,8 @@ export class PinnedTooltip {
   private priceFormatter: ((price: number) => string) | null = null;
   private pricePrecision: number | null = null;
   private locale = 'en-US';
+  /** The face last written: a browser gives it back in other words, so it is kept as it was set. */
+  private fontFamily: string | null = null;
 
   /** The time zone the bar's time is shown in; null for the browser's. */
   setTimezone(tz: TimeZoneSetting): void {
@@ -81,9 +83,8 @@ export class PinnedTooltip {
       display: 'none',
       padding: '6px 10px',
       borderRadius: 'var(--tcw-tooltip-radius, 4px)',
-      fontSize: '11px',
-      fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif',
       lineHeight: '1.5',
+      fontVariantNumeric: 'tabular-nums',
       pointerEvents: 'auto',
       cursor: 'pointer',
       zIndex: '99',
@@ -98,9 +99,8 @@ export class PinnedTooltip {
     this.deltaEl = document.createElement('div');
     this.deltaEl.style.marginTop = '4px';
     this.deltaEl.style.paddingTop = '4px';
-    this.deltaEl.style.borderTop = '1px solid currentColor';
+    this.deltaEl.style.borderTop = '1px solid transparent';
     this.deltaEl.style.opacity = '0.85';
-    this.deltaEl.style.fontVariantNumeric = 'tabular-nums';
 
     this.el.appendChild(this.timeEl);
     this.el.appendChild(this.ohlcEl);
@@ -109,15 +109,12 @@ export class PinnedTooltip {
     // Small "pin" badge so the user knows what they're looking at.
     const pinBadge = document.createElement('div');
     // The pin of the icon set, then the word: no emoji, which draws differently on every system.
-    pinBadge.innerHTML = `${iconSvg(UI_ICONS.pin, 10)}<span>pinned</span>`;
+    pinBadge.innerHTML = `${iconSvg(UI_ICONS.pin, 12)}<span>Pinned</span>`;
     pinBadge.style.display = 'flex';
     pinBadge.style.alignItems = 'center';
     pinBadge.style.gap = '3px';
-    pinBadge.style.fontSize = '9px';
     pinBadge.style.opacity = '0.6';
     pinBadge.style.marginBottom = '2px';
-    pinBadge.style.letterSpacing = '0.04em';
-    pinBadge.style.textTransform = 'uppercase';
     this.el.insertBefore(pinBadge, this.timeEl);
 
     container.appendChild(this.el);
@@ -143,6 +140,8 @@ export class PinnedTooltip {
     const date = writtenDate(this.locale, d.year, d.month, d.day, daily);
     this.timeEl.textContent = daily ? date : `${date} ${pad(d.hours)}:${pad(d.minutes)}`;
     this.timeEl.style.color = theme.textSecondary;
+    // The rule over the move is the chart's own line: in the move's colour it read as part of the figure.
+    if (this.deltaEl) this.deltaEl.style.borderTopColor = theme.axisLine;
 
     // Built as nodes: the colours are set as style values, never parsed as markup.
     const parts: Node[] = [];
@@ -158,15 +157,28 @@ export class PinnedTooltip {
     this.ohlcEl.replaceChildren(...parts);
 
     const isDark = isDarkColor(theme.background);
-    this.el.style.background = withAlpha(theme.background, isDark ? 0.96 : 0.97);
-    this.el.style.border = `1px solid ${color}`;
-    this.el.style.boxShadow = isDark
+    // As the card beside the crosshair: the widget's look may give its ground, edge and shadow.
+    this.el.style.background = `var(--tcw-chart-card-bg, ${withAlpha(theme.background, isDark ? 0.96 : 0.97)})`;
+    this.el.style.border = `1px solid var(--tcw-chart-card-border, ${color})`;
+    this.el.style.boxShadow = `var(--tcw-chart-card-shadow, ${isDark
       ? '0 4px 12px rgba(0,0,0,0.55)'
-      : '0 4px 12px rgba(0,0,0,0.18)';
+      : '0 4px 12px rgba(0,0,0,0.18)'})`;
     this.el.style.color = theme.text;
-    this.el.style.backdropFilter = 'blur(8px)';
+    this.applyFont(theme);
+    this.el.style.backdropFilter = 'var(--tcw-chart-card-blur, blur(8px))';
 
     this.el.style.display = 'block';
+  }
+
+  /** In the chart's own face and small size: it was a face of its own, at 11 px in every theme. */
+  private applyFont(theme: Theme): void {
+    if (!this.el) return;
+    const size = `${theme.font.sizeSmall}px`;
+    if (this.el.style.fontSize !== size) this.el.style.fontSize = size;
+    if (this.fontFamily !== theme.font.family) {
+      this.fontFamily = theme.font.family;
+      this.el.style.fontFamily = theme.font.family;
+    }
   }
 
   unpin(): void {
@@ -190,6 +202,8 @@ export class PinnedTooltip {
    */
   reposition(viewport: ViewportState, hoverBar: OHLCBar | null, hoverIndex: number | null, theme: Theme): void {
     if (!this.el || !this.pinnedBar) return;
+    // The type follows the theme while the bar stays pinned: a size set since is taken here.
+    this.applyFont(theme);
 
     const x = barIndexToX(this.pinnedIndex, viewport);
     const y = priceToY(this.pinnedBar.close, viewport);

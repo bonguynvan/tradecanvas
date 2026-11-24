@@ -12,6 +12,24 @@ describe('PinnedTooltip', () => {
     expect((host.firstElementChild as HTMLElement).style.fontFeatureSettings).toBe('normal');
   });
 
+  it('is set in the theme’s small size and face, its figures of one width', () => {
+    const host = document.createElement('div');
+    const tooltip = new PinnedTooltip();
+    tooltip.create(host);
+    const theme = { ...DARK_THEME, font: { ...DARK_THEME.font, family: 'Figures, sans-serif', sizeSmall: 12 } };
+    tooltip.pin({ time: Date.UTC(2026, 2, 4, 23, 30), open: 1, high: 2, low: 0.5, close: 1.5 }, 0, theme);
+    const card = host.firstElementChild as HTMLElement;
+    expect(card.style.fontSize).toBe('12px');
+    expect(card.style.fontFamily).toContain('Figures');
+    expect(card.style.fontVariantNumeric).toBe('tabular-nums');
+    const own = [...card.querySelectorAll<HTMLElement>('*')].map((el) => el.style.fontSize).filter(Boolean);
+    expect(own).toEqual([]);
+    // A size set while the bar is pinned (a widget grown for a wide screen) is taken when the card is next placed.
+    const grown = { ...theme, font: { ...theme.font, sizeSmall: 14 } };
+    tooltip.reposition(unitViewport, null, null, grown);
+    expect(card.style.fontSize).toBe('14px');
+  });
+
   it('shows the bar time in the chart’s time zone', () => {
     const host = document.createElement('div');
     const tooltip = new PinnedTooltip();

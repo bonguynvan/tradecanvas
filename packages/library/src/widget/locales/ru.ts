@@ -277,6 +277,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'settings.watermark': 'Водяной знак',
   'settings.labelBackground': 'Фон метки',
   'settings.labelText': 'Текст метки',
+  'settings.labelChange': 'Изменение к последней цене',
   'settings.sessionBreaks': 'Границы сессий',
   'settings.section.orders': 'Ордера и позиции',
   'settings.profit': 'Прибыль',

@@ -22,6 +22,9 @@ export type StyleValueKind = 'color' | 'lineStyle' | 'width' | 'boolean';
  *   whatever the day's direction, and `lastPrice.labelTextColor` colours its
  *   text. Unset, the tag is the up or the down colour and its text the one
  *   that reads on it. The line keeps `upColor` and `downColor` either way.
+ * - `crosshair.labelChange` writes, under the price the crosshair names on
+ *   the axis, how far that price is from the last one, in percent (none on a
+ *   scale that is in percent already). The Graphite themes have it on.
  * - `axis.price.valueTagsOutlined` draws an indicator's value tags on the
  *   price axis (in the price pane and in the indicator panes) outlined:
  *   the chart's background (a pane's own where it has one), with an edge
@@ -64,6 +67,7 @@ export const CHART_STYLE_KEYS = {
   'crosshair.vertical.width': 'width',
   'crosshair.labelBackground': 'color',
   'crosshair.labelTextColor': 'color',
+  'crosshair.labelChange': 'boolean',
 
   'axis.price.lineColor': 'color',
   'axis.price.textColor': 'color',
@@ -237,6 +241,8 @@ export interface ResolvedChartStyle {
     vertical: ResolvedLineLook;
     labelBackground: string;
     labelText: string;
+    /** The price on the axis has, under it, how far it is from the last price, in percent. */
+    labelChange: boolean;
   };
   /** `valueTagsOutlined`: an indicator's value tags on the price axis drawn outlined, not filled. */
   axis: { price: { line: string; text: string; valueTagsOutlined: boolean }; time: { line: string; text: string } };

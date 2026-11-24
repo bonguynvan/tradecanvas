@@ -277,6 +277,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'settings.watermark': 'ลายน้ำ',
   'settings.labelBackground': 'พื้นหลังป้าย',
   'settings.labelText': 'ข้อความป้าย',
+  'settings.labelChange': 'การเปลี่ยนแปลงจากราคาล่าสุด',
   'settings.sessionBreaks': 'เส้นแบ่งเซสชัน',
   'settings.section.orders': 'คำสั่งและสถานะ',
   'settings.profit': 'กำไร',

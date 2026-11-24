@@ -284,6 +284,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'settings.watermark': 'العلامة المائية',
   'settings.labelBackground': 'خلفية التسمية',
   'settings.labelText': 'نص التسمية',
+  'settings.labelChange': 'التغير عن آخر سعر',
   'settings.sessionBreaks': 'فواصل الجلسات',
   'settings.section.orders': 'الأوامر والمراكز',
   'settings.profit': 'ربح',

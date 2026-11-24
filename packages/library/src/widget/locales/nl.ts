@@ -277,6 +277,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'settings.watermark': 'Watermerk',
   'settings.labelBackground': 'Labelachtergrond',
   'settings.labelText': 'Labeltekst',
+  'settings.labelChange': 'Verandering t.o.v. laatste prijs',
   'settings.sessionBreaks': 'Sessiescheidingen',
   'settings.section.orders': 'Orders en posities',
   'settings.profit': 'Winst',

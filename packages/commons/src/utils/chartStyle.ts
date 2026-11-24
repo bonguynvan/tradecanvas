@@ -203,6 +203,7 @@ export function resolveChartTheme(base: Theme, chartType: ChartType, overrides: 
       vertical: lineLook(o, 'crosshair.vertical', { visible: true, color: plain.crosshair, style: 'solid', width: 1 }),
       labelBackground: str('crosshair.labelBackground', crosshairTagLook(background, plain.text).background),
       labelText: str('crosshair.labelTextColor', crosshairTagLook(background, plain.text).text),
+      labelChange: (o('crosshair.labelChange') as boolean | undefined) ?? plain.crosshairChange ?? false,
     },
     axis: {
       price: {
@@ -282,6 +283,7 @@ const READ_BACK: { [K in ChartStyleKey]?: (t: Theme, s: ResolvedChartStyle) => u
   'panes.titleColor': (_t, s) => s.panes.title,
   'crosshair.labelBackground': (_t, s) => s.crosshair.labelBackground,
   'crosshair.labelTextColor': (_t, s) => s.crosshair.labelText,
+  'crosshair.labelChange': (_t, s) => s.crosshair.labelChange,
   'axis.price.lineColor': (_t, s) => s.axis.price.line,
   'axis.price.textColor': (_t, s) => s.axis.price.text,
   'axis.time.lineColor': (_t, s) => s.axis.time.line,

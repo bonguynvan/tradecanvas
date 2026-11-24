@@ -277,6 +277,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'settings.watermark': 'Wasserzeichen',
   'settings.labelBackground': 'Beschriftungshintergrund',
   'settings.labelText': 'Beschriftungstext',
+  'settings.labelChange': 'Änderung zum letzten Kurs',
   'settings.sessionBreaks': 'Sitzungswechsel',
   'settings.section.orders': 'Orders und Positionen',
   'settings.profit': 'Gewinn',

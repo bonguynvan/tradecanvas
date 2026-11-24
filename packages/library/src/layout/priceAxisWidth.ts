@@ -6,6 +6,8 @@ const LABEL_CHROME = 14;
 const PRICE_TAG_CHROME = 14;
 /** Crosshair tag: its figures start 8px in; the rest is margin on the right, as it had with its notch. */
 const CROSSHAIR_PILL_CHROME = 22;
+/** The widest percentage the crosshair's tag is given room for. */
+const CHANGE_SAMPLE = '+00.00%';
 /** Widths snap to this grid so a one-pixel label change doesn't relayout. */
 const WIDTH_GRANULARITY = 4;
 /** Shrinking waits until this much room is spare, so panning doesn't make the axis twitch. */
@@ -29,6 +31,8 @@ export interface PriceAxisWidthInput {
    */
   paneLabels?: readonly string[];
   paneTags?: readonly string[];
+  /** The crosshair's tag has a percentage under its price (`crosshair.labelChange`): room for that line too. */
+  crosshairChange?: boolean;
   fontFamily: string;
   fontSizeSmall: number;
   measure: (text: string, font: string) => number;
@@ -58,6 +62,8 @@ export function requiredPriceAxisWidth(input: PriceAxisWidthInput): number {
     );
   }
   const labelFont = `500 ${fontSizeSmall}px ${fontFamily}`;
+  // A change of two figures before the point: a wider one, rare under a pointer, is cut at the axis's edge.
+  if (input.crosshairChange) need = Math.max(need, measure(CHANGE_SAMPLE, labelFont) + PRICE_TAG_CHROME);
   for (const label of input.paneLabels ?? []) need = Math.max(need, measure(label, labelFont) + LABEL_CHROME);
   // A pane's tag is drawn in the theme's small size, bold: as wide as the last price's, measured at the wider of the two.
   for (const tag of input.paneTags ?? []) {

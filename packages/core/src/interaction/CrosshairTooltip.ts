@@ -119,7 +119,6 @@ export class CrosshairTooltip {
       minWidth: '168px',
       padding: '8px 10px 9px',
       borderRadius: 'var(--tcw-tooltip-radius, 8px)',
-      fontSize: '11.5px',
       lineHeight: '1.45',
       fontVariantNumeric: 'tabular-nums',
       pointerEvents: 'none',
@@ -127,22 +126,24 @@ export class CrosshairTooltip {
       whiteSpace: 'nowrap',
       willChange: 'transform',
       contain: 'layout paint',
-      backdropFilter: 'blur(10px)',
+      backdropFilter: 'var(--tcw-chart-card-blur, blur(10px))',
     } satisfies Partial<CSSStyleDeclaration>);
     // In the chart's font, so without the features the page turns on for its own.
     isolateFontFeatures(el);
 
     // Header: direction tick, time, change pill.
     const header = div({ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '6px' });
-    this.dirEl = div({ width: '3px', height: '12px', borderRadius: '2px', flex: 'none' });
-    this.timeEl = div({ flex: '1', fontSize: '11px', letterSpacing: '0.01em' });
-    this.changeEl = div({ padding: '1px 6px', borderRadius: '999px', fontSize: '10.5px', fontWeight: '600' });
+    // A look says, in the widget's variables, where the card has no tick and its change no ground: the
+    // card is in the chart's small size throughout, as the legend and the axes are.
+    this.dirEl = div({ display: 'var(--tcw-chart-card-tick, block)', width: '3px', height: '12px', borderRadius: '2px', flex: 'none' });
+    this.timeEl = div({ flex: '1' });
+    this.changeEl = div({ padding: 'var(--tcw-chart-card-chip-pad, 1px 6px)', borderRadius: '999px', fontWeight: '600' });
     header.append(this.dirEl, this.timeEl, this.changeEl);
 
     // O / H / L / C grid, labels muted, values aligned.
     const grid = div({ display: 'grid', gridTemplateColumns: 'auto 1fr auto 1fr', columnGap: '8px', rowGap: '1px', alignItems: 'baseline' });
     const cell = (label: string): HTMLElement => {
-      const l = div({ fontSize: '10px', letterSpacing: '0.04em' });
+      const l = div({});
       l.textContent = label;
       this.labelEls.push(l);
       const v = div({ textAlign: 'right', fontWeight: '500' });
@@ -156,7 +157,7 @@ export class CrosshairTooltip {
 
     this.dividerEl = div({ height: '1px', margin: '6px 0 5px' });
     const footer = div({ display: 'flex', justifyContent: 'space-between', gap: '12px' });
-    const volLabel = div({ fontSize: '10px', letterSpacing: '0.04em' });
+    const volLabel = div({});
     volLabel.textContent = 'VOL';
     this.labelEls.push(volLabel);
     const volume = div({ fontWeight: '500' });
@@ -226,7 +227,7 @@ export class CrosshairTooltip {
       : formatTooltipTime(bar.time, this.tz, context.barStepMs, this.locale, context.timeUnit, this.exchangeZone);
     this.changeEl.textContent = `${sign}${formatPrice(Math.abs(pct), 2, this.locale)}%`;
     this.changeEl.style.color = tone;
-    this.changeEl.style.background = withAlpha(tone, 0.14);
+    this.changeEl.style.background = `var(--tcw-chart-card-chip-bg, ${withAlpha(tone, 0.14)})`;
     this.dirEl.style.background = bar.close >= bar.open ? readout.up : readout.down;
 
     this.valueEls.open.textContent = fmt(bar.open);
@@ -286,13 +287,16 @@ export class CrosshairTooltip {
   private applyTheme(theme: Theme): void {
     const el = this.el!;
     const dark = isDarkColor(theme.background);
-    el.style.background = withAlpha(theme.background, dark ? 0.9 : 0.94);
-    el.style.border = `1px solid ${theme.axisLine}`;
-    el.style.boxShadow = dark
+    // The widget's look may give the card its ground, its edge and its shadow (`--tcw-chart-card-*`); a chart
+    // with no widget, or a look that names none, has the theme's.
+    el.style.background = `var(--tcw-chart-card-bg, ${withAlpha(theme.background, dark ? 0.9 : 0.94)})`;
+    el.style.border = `1px solid var(--tcw-chart-card-border, ${theme.axisLine})`;
+    el.style.boxShadow = `var(--tcw-chart-card-shadow, ${dark
       ? '0 12px 32px -8px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.35)'
-      : '0 12px 32px -10px rgba(15, 19, 26, 0.22), 0 2px 6px rgba(15, 19, 26, 0.08)';
+      : '0 12px 32px -10px rgba(15, 19, 26, 0.22), 0 2px 6px rgba(15, 19, 26, 0.08)'})`;
     el.style.color = theme.text;
     el.style.fontFamily = theme.font.family;
+    el.style.fontSize = `${theme.font.sizeSmall}px`;
     this.timeEl.style.color = theme.textSecondary;
     for (const label of this.labelEls) label.style.color = theme.textSecondary;
     this.dividerEl.style.background = theme.axisLine;

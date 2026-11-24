@@ -622,6 +622,7 @@ export class PriceFrame {
       format: this.priceFormatter,
       scaleLabel: (price) => this.priceAxis.labelText(price, this.viewport.getState()),
       ...this.paneAxisTexts(),
+      crosshairChange: theme.style?.crosshair.labelChange ?? false,
       fontFamily: theme.font.family,
       fontSizeSmall: theme.font.sizeSmall,
       measure: this.measure,

@@ -277,6 +277,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'settings.watermark': 'Filigran',
   'settings.labelBackground': 'Etiket arka planı',
   'settings.labelText': 'Etiket metni',
+  'settings.labelChange': 'Son fiyata göre değişim',
   'settings.sessionBreaks': 'Seans ayırıcıları',
   'settings.section.orders': 'Emirler ve pozisyonlar',
   'settings.profit': 'Kâr',

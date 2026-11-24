@@ -284,6 +284,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'settings.watermark': 'Vandmærke',
   'settings.labelBackground': 'Etiketbaggrund',
   'settings.labelText': 'Etikettekst',
+  'settings.labelChange': 'Ændring fra seneste pris',
   'settings.sessionBreaks': 'Sessionsskift',
   'settings.section.orders': 'Ordrer og positioner',
   'settings.profit': 'Gevinst',

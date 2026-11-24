@@ -22,6 +22,15 @@ describe('requiredPriceAxisWidth', () => {
     expect(requiredPriceAxisWidth({ ...base, min: 123_456_000, max: 123_456_789, tagPrecision: 0 })).toBe(88);
   });
 
+  it('makes room for the crosshair’s percentage where it writes one', () => {
+    // Prices of three figures: "9.5" at most. The percentage is the wider line: "+00.00%" is 7 chars, and 14 px of chrome.
+    const narrow = { ...base, min: 1, max: 9.5, tagPrecision: 1, measure: (text: string) => text.length * 6 + 20 };
+    const plain = requiredPriceAxisWidth(narrow);
+    const withChange = requiredPriceAxisWidth({ ...narrow, crosshairChange: true });
+    expect(withChange).toBeGreaterThan(plain);
+    expect(withChange).toBeGreaterThanOrEqual(7 * 6 + 20 + 14);
+  });
+
   it('measures the scale’s labels as the axis writes them, in percent too', () => {
     const w = requiredPriceAxisWidth({ ...base, min: 25_000, max: 26_000, tagPrecision: 0, scaleLabel: () => '+1,234.56%' });
     // "+1,234.56%" = 10 chars → 60px + 14px label chrome = 74 → 76.

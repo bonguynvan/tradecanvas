@@ -277,6 +277,7 @@ export const CS_MESSAGES: WidgetMessages = {
   'settings.watermark': 'Vodoznak',
   'settings.labelBackground': 'Pozadí popisku',
   'settings.labelText': 'Text popisku',
+  'settings.labelChange': 'Změna oproti poslední ceně',
   'settings.sessionBreaks': 'Hranice seancí',
   'settings.section.orders': 'Příkazy a pozice',
   'settings.profit': 'Zisk',

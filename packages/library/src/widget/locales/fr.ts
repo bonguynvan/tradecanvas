@@ -277,6 +277,7 @@ export const FR_MESSAGES: WidgetMessages = {
   'settings.watermark': 'Filigrane',
   'settings.labelBackground': 'Fond de l’étiquette',
   'settings.labelText': 'Texte de l’étiquette',
+  'settings.labelChange': 'Variation par rapport au dernier prix',
   'settings.sessionBreaks': 'Séparations de séance',
   'settings.section.orders': 'Ordres et positions',
   'settings.profit': 'Gain',

@@ -284,6 +284,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'settings.watermark': 'Vesimärk',
   'settings.labelBackground': 'Sildi taust',
   'settings.labelText': 'Sildi tekst',
+  'settings.labelChange': 'Muutus viimasest hinnast',
   'settings.sessionBreaks': 'Seansside piirid',
   'settings.section.orders': 'Orderid ja positsioonid',
   'settings.profit': 'Kasum',

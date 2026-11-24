@@ -277,6 +277,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'settings.watermark': 'Vattenmärke',
   'settings.labelBackground': 'Etikettbakgrund',
   'settings.labelText': 'Etikettext',
+  'settings.labelChange': 'Förändring från senaste pris',
   'settings.sessionBreaks': 'Sessionsgränser',
   'settings.section.orders': 'Order och positioner',
   'settings.profit': 'Vinst',

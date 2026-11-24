@@ -277,6 +277,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'settings.watermark': 'Vízjel',
   'settings.labelBackground': 'Címke háttere',
   'settings.labelText': 'Címke szövege',
+  'settings.labelChange': 'Változás az utolsó árhoz képest',
   'settings.sessionBreaks': 'Kereskedési szakaszok határai',
   'settings.section.orders': 'Megbízások és pozíciók',
   'settings.profit': 'Nyereség',

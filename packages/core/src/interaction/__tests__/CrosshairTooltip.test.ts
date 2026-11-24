@@ -42,6 +42,18 @@ describe('CrosshairTooltip', () => {
     expect(card().style.fontVariantNumeric).toBe('tabular-nums');
   });
 
+  it('is set in the theme’s small size and face: its figures, its labels, its time and its change', () => {
+    for (const size of [11, 12, 14]) {
+      const theme = { ...DARK_THEME, font: { ...DARK_THEME.font, family: 'Figures, sans-serif', sizeSmall: size } };
+      tip.show({ x: 100, y: 100 }, bar(), theme, box);
+      expect(card().style.fontSize, String(size)).toBe(`${size}px`);
+      expect(card().style.fontFamily).toContain('Figures');
+      // Nothing in the card is set in a size of its own.
+      const own = [...card().querySelectorAll<HTMLElement>('*')].map((el) => el.style.fontSize).filter(Boolean);
+      expect(own, String(size)).toEqual([]);
+    }
+  });
+
   it('shows O/H/L/C, the change from the previous close and the volume', () => {
     tip.show({ x: 100, y: 100 }, bar(), DARK_THEME, box, { prevClose: 102, priceRange: { min: 90, max: 110 } });
     expect(text()).toContain('100.00');

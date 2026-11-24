@@ -284,6 +284,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'settings.watermark': 'واترمارک',
   'settings.labelBackground': 'پس‌زمینه برچسب',
   'settings.labelText': 'متن برچسب',
+  'settings.labelChange': 'تغییر نسبت به آخرین قیمت',
   'settings.sessionBreaks': 'جداکننده‌های جلسه',
   'settings.section.orders': 'سفارش‌ها و پوزیشن‌ها',
   'settings.profit': 'سود',

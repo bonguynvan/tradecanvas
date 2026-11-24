@@ -284,6 +284,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'settings.watermark': 'Watermark',
   'settings.labelBackground': 'Nền nhãn',
   'settings.labelText': 'Chữ nhãn',
+  'settings.labelChange': 'Thay đổi so với giá cuối',
   'settings.sessionBreaks': 'Vạch ngăn phiên',
   'settings.section.orders': 'Order và position',
   'settings.profit': 'Lãi',
