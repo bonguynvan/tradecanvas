@@ -1395,7 +1395,8 @@ describe('ChartWidget on a wide screen', () => {
     let look: keyof typeof own = 'graphite';
     const proto = FakeChart.prototype as unknown as Record<string, unknown>;
     const sizesWritten = () => (FakeChart.last?.fonts as (Record<string, unknown> | null)[] ?? []).reduce<Record<string, unknown>>((font, next) => (next === null ? {} : { ...font, ...next }), {});
-    proto.getTheme = () => ({ font: { family: 'x', ...own[look] } });
+    // As the chart does: what `setFont` wrote is on the theme it gives back, over the theme's own sizes.
+    proto.getTheme = () => ({ font: { family: 'x', ...own[look], ...sizesWritten() } });
     proto.getFont = () => ({ family: 'x', ...own[look], ...sizesWritten() });
     wide(2600);
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
@@ -1405,9 +1406,15 @@ describe('ChartWidget on a wide screen', () => {
     look = 'modern';
     widget.setUI('modern');
     expect(last()).toEqual([Math.round(11 * scale), Math.round(13 * scale), Math.round(15 * scale)]);
-    look = 'graphite';
-    widget.setUI('graphite');
-    expect(last()).toEqual([Math.round(12 * scale), Math.round(13 * scale), Math.round(15 * scale)]);
+    // And however often: sizes written were once taken for the theme's own, and grew at every change.
+    for (let i = 0; i < 4; i++) {
+      look = 'graphite';
+      widget.setUI('graphite');
+      expect(last(), `graphite, turn ${i}`).toEqual([Math.round(12 * scale), Math.round(13 * scale), Math.round(15 * scale)]);
+      look = 'modern';
+      widget.setUI('modern');
+      expect(last(), `modern, turn ${i}`).toEqual([Math.round(11 * scale), Math.round(13 * scale), Math.round(15 * scale)]);
+    }
     delete proto.getTheme;
   });
 

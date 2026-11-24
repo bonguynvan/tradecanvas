@@ -2272,8 +2272,9 @@ export class ChartWidget {
     const current = { sizeSmall: now.sizeSmall, sizeMedium: now.sizeMedium, sizeLarge: now.sizeLarge };
     const written = this.drawingEdit.chartFontWritten;
     const same = (a: typeof current, b: { sizeSmall: number; sizeMedium: number; sizeLarge: number }) => a.sizeSmall === b.sizeSmall && a.sizeMedium === b.sizeMedium && a.sizeLarge === b.sizeLarge;
-    // The sizes of the theme the chart is drawn in now: a look has its own (Graphite's small is 12).
-    const themes = this.chart.getTheme?.()?.font;
+    // The sizes of the theme the chart is drawn in now: a look has its own (Graphite's small is 12). From the
+    // theme the widget gave the chart, not from the chart: what `setFont` wrote is on the theme the chart gives back.
+    const themes = this.look.get().theme?.font;
     const own = themes ? { sizeSmall: themes.sizeSmall, sizeMedium: themes.sizeMedium, sizeLarge: themes.sizeLarge } : null;
     const changedByHost = !written || !same(written, current);
     if (changedByHost) {

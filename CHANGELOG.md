@@ -43,7 +43,8 @@ The `3.0` branch. These move under the version's own heading when it is released
   tags on the price axis are outlined, not filled (a theme's own `valueTagsOutlined`, which the
   `axis.price.valueTagsOutlined` style key and its switch in Chart Settings are over; a theme object of yours
   that sets none keeps them filled), so the last price is not
-  one of five blocks. Graphite's chart is set in the chrome's small size: its axes, tags and the prices in the
+  one of five blocks; a value's figure is its line's colour, deepened toward the chart's text where it would
+  not read at 4.5:1 on the ground (it was written in the scale's grey, or left pale). Graphite's chart is set in the chrome's small size: its axes, tags and the prices in the
   legend are 12 px, where they were 11 beside 12 px rows of indicators (`GRAPHITE_DARK_THEME` and
   `GRAPHITE_LIGHT_THEME` have `font.sizeSmall: 12`; the legend takes the look's `font.smallSize`). The other
   themes keep their sizes and their filled tags.

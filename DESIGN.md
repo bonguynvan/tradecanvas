@@ -225,8 +225,10 @@ none of these, it is taken out.
 
 The chart is the page; everything above is its frame. On it:
 
-- **The last price is the one block of colour on the price axis.** An indicator's value there is an
-  outlined tag in its line's colour, and the countdown sits under the last price in its colour.
+- **An indicator's value is never a block of colour on the price axis.** It is an outlined tag, its
+  figure in its line's colour, deepened where it must be to read at 4.5:1. The last price is filled,
+  the countdown under it in its colour. (An order's, a position's and the bid's and ask's tags are
+  still filled: making the last price the only block is work to come.)
 - **A price reads on its own tag.** The ink on a filled tag is the dark or the light one by contrast
   with the fill, never white by habit: dark ink on the candles' green and red in the dark theme.
 - The chart's figures (axes, tags, the legend's prices) are the chrome's small size, 12 px, in

@@ -1,5 +1,5 @@
 import type { Theme } from '@tradecanvas/commons';
-import { contrastRatio } from '@tradecanvas/commons';
+import { contrastRatio, inkOn, readableOn } from '@tradecanvas/commons';
 import { AXIS_TAG_TEXT_INSET, fillTag, outlineTag } from './shapes.js';
 
 /** A coloured tag on a value axis: an indicator line's latest value. */
@@ -72,27 +72,8 @@ export function darkInkReads(background: string): boolean {
   return onDark >= onLight * DARK_INK_LEAD;
 }
 
-/** How far apart two colours' lightness has to be, of 1, for one to be read as text on the other. */
-const READABLE_LIGHTNESS_GAP = 0.25;
-
-/** Whether text in `color` reads on `ground`. A colour that cannot be read as numbers is taken to. */
-function readsOn(color: string, ground: string): boolean {
-  const text = parseColor(color);
-  const under = parseColor(ground);
-  if (!text || !under) return true;
-  const lightness = ([r, g, b]: [number, number, number]): number => (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return Math.abs(lightness(text) - lightness(under)) >= READABLE_LIGHTNESS_GAP;
-}
-
-function parseColor(color: string): [number, number, number] | null {
-  const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(color.trim());
-  if (hex) {
-    const h = hex[1].length === 3 ? hex[1].replace(/./g, (c) => c + c) : hex[1];
-    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
-  }
-  const rgb = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/i.exec(color.trim());
-  return rgb ? [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])] : null;
-}
+/** The contrast a value written on an outlined tag has on its ground, at the least. */
+const OUTLINED_TEXT_CONTRAST = 4.5;
 
 /** A tag already on the axis that value tags keep clear of: its centre and half its height. */
 export interface FixedAxisTag {
@@ -157,14 +138,16 @@ export function drawAxisValueLabels(
   const half = AXIS_LABEL_HEIGHT / 2;
   // Outlined: the chart's ground under an edge and a text in the line's colour, where a look wants no blocks of colour.
   const outlined = theme.style?.axis.price.valueTagsOutlined === true;
-  // A line's colour that would not read on the ground writes its value in the scale's own text colour.
-  const scaleText = theme.style?.axis.price.text ?? theme.axisLabel;
+  // A line's colour that would not read on the ground is taken toward the ink that reads there (dark on a light
+  // ground, light on a dark one) until it does: its hue is kept.
+  // A theme with no ground to say (a stand-in) leaves the line's colour as it is.
+  const ink = typeof ground === 'string' ? inkOn(ground, TAG_INK_DARK, TAG_INK_LIGHT) : null;
   for (const label of labels) {
     const top = Math.round(label.y - half);
     // The axis's width, as an order's tag and the last price's are.
     if (outlined) {
       outlineTag(ctx, axisX + 1, top, axisWidth - 2, AXIS_LABEL_HEIGHT, theme, label.color, ground);
-      ctx.fillStyle = readsOn(label.color, ground) ? label.color : scaleText;
+      ctx.fillStyle = ink === null ? label.color : readableOn(label.color, ground, ink, OUTLINED_TEXT_CONTRAST);
     } else {
       ctx.fillStyle = label.color;
       fillTag(ctx, axisX + 1, top, axisWidth - 2, AXIS_LABEL_HEIGHT, theme);
