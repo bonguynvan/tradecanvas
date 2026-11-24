@@ -409,3 +409,31 @@ describe('the look on a wide screen', () => {
     expect(resolveWidgetUI({ scale: 9 as never }).scale).toBe('auto');
   });
 });
+
+// Figures in a table and a field's name at 11 px read as small print beside 13 px body text.
+describe('a look’s small type', () => {
+  it('is 12 px in Graphite, and the scale’s step under the body in the other looks', () => {
+    const graphite = widgetUIVariables(resolveWidgetUI('graphite'));
+    expect(graphite['--tcw-font-size-sm']).toBe('12px');
+    expect(graphite['--tcw-label-size']).toBe('12px');
+    // The smallest size stays, for a short label (a count, a unit).
+    expect(graphite['--tcw-font-size-xs']).toBe('10px');
+    for (const preset of ['modern', 'print', 'studio', 'capsule'] as const) {
+      expect(widgetUIVariables(resolveWidgetUI(preset))['--tcw-font-size-sm'], preset).toBe('11px');
+    }
+  });
+
+  it('is a theme’s own where it sets one, and left where that is no size', () => {
+    expect(widgetUIVariables(resolveWidgetUI({ preset: 'print', font: { smallSize: 12 } }))['--tcw-font-size-sm']).toBe('12px');
+    for (const bad of [9, 21, Number.NaN, '12']) {
+      expect(widgetUIVariables(resolveWidgetUI({ preset: 'print', font: { smallSize: bad as never } }))['--tcw-font-size-sm'], String(bad)).toBe('11px');
+    }
+    // Labels in capitals keep the smallest size, whatever the small one is.
+    expect(widgetUIVariables(resolveWidgetUI({ preset: 'terminal', font: { smallSize: 12 } }))['--tcw-label-size']).toBe('10px');
+  });
+
+  it('grows with the look', () => {
+    expect(scaledWidgetUI(resolveWidgetUI('graphite'), 1.5).font.smallSize).toBe(18);
+    expect(scaledWidgetUI(resolveWidgetUI('print'), 1.5).font.smallSize).toBeUndefined();
+  });
+});

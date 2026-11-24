@@ -162,3 +162,18 @@ describe('the Trade menu', () => {
     expect(role('trade')).toBeNull();
   });
 });
+
+// Which dividers stand between two groups, and which inside one: a look may leave the second kind out.
+describe('the toolbar’s dividers', () => {
+  it('marks the ones inside a group', () => {
+    make();
+    const seps = [...root.querySelectorAll('.tcw-toolbar-sep')];
+    const minor = seps.filter((el) => el.classList.contains('tcw-toolbar-sep--minor'));
+    expect(seps.length - minor.length).toBe(3);
+    expect(minor).toHaveLength(3);
+    // After the symbol: a group's end.
+    expect(seps[0].classList.contains('tcw-toolbar-sep--minor')).toBe(false);
+    // Before what undoes: the same group as what adds to the chart.
+    expect(role('undo')!.previousElementSibling!.classList.contains('tcw-toolbar-sep--minor')).toBe(true);
+  });
+});

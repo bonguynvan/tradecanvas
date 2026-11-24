@@ -36,6 +36,17 @@ The `3.0` branch. These move under the version's own heading when it is released
 
 ### Chart
 
+- **Graphite's chrome in two type sizes and fewer rules.** Figures in the account panel's table, a field's
+  name, a segment, the quote buttons and the bars under the chart are 12 px, where they were 11 and 10; a look's
+  small size is its own now (`ui.font.smallSize`, 10 to 20; left out, the step under `size` as before, so the other
+  looks are unchanged). The strong weight is kept for what is read first and what is picked: a column's
+  heading, a side in a row, the quote buttons' names, the range buttons and the ticket's side that is not
+  picked are in the plain weight. The order ticket has no rules between its rows, its day's limits are
+  figures to press with no box around each, and its button that sends is as wide as the ticket leaves it. The
+  toolbar draws a rule only between its groups (three, where there were six), the drawing tools stand at one
+  pitch with no divider between their sections, and a tool group's corner mark shows under the pointer, on focus
+  and while its menu is open (always under a finger). The other looks are as they were; their dividers inside
+  a group carry `tcw-toolbar-sep--minor` and `tcw-sidebar-divider--section` for CSS of your own.
 - **Graphite's ticket and account panel, on its sizes and with fills of their own.** The ticket's title is the
   size of the order's value, its sides and fields are 36 px, its segments 28 and its buttons 40; it opens with
   the quantity focused. Buy and Sell are deeper fills with white type (4.5:1 or more) and no border, as are the

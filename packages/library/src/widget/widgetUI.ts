@@ -93,7 +93,7 @@ export function scaledWidgetUI(ui: ResolvedWidgetUI, factor: number): ResolvedWi
   return {
     ...ui,
     sizes: { toolbar: at(s.toolbar), control: at(s.control), controlSmall: at(s.controlSmall), icon: at(s.icon), sidebar: at(s.sidebar), menuItem: at(s.menuItem) },
-    font: { ...ui.font, size: Math.round(ui.font.size * factor) },
+    font: { ...ui.font, size: Math.round(ui.font.size * factor), ...(ui.font.smallSize === undefined ? {} : { smallSize: Math.round(ui.font.smallSize * factor) }) },
   };
 }
 
@@ -155,6 +155,11 @@ export interface WidgetUIFont {
   mono: string;
   /** Body size, px; the small sizes follow it. */
   size: number;
+  /**
+   * The small size, px, 10 to 20: figures in a table, a field's name, a segment. Left out, it is
+   * the step under `size` on the look's scale (11 for 13).
+   */
+  smallSize?: number;
   weight: number;
   strongWeight: number;
   /** Small labels (section titles, field names): as written or in capitals. */
@@ -310,7 +315,7 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
       compact: { toolbar: 36, control: 24, controlSmall: 20, icon: 16, sidebar: 36, menuItem: 24 },
       spacious: { toolbar: 48, control: 36, controlSmall: 28, icon: 20, sidebar: 46, menuItem: 36 },
     },
-    font: { family: GRAPHITE_SANS, mono: PRINT_FIGURES, size: 13, weight: 400, strongWeight: 600, labelCase: 'none', labelTracking: 0 },
+    font: { family: GRAPHITE_SANS, mono: PRINT_FIGURES, size: 13, smallSize: 12, weight: 400, strongWeight: 600, labelCase: 'none', labelTracking: 0 },
     borders: { width: 1, separators: true },
     // One shadow, for what floats: a menu, a dialog and a tooltip alike.
     shadows: { menu: GRAPHITE_SHADOW, dialog: GRAPHITE_SHADOW, tooltip: GRAPHITE_SHADOW },
@@ -582,9 +587,10 @@ export function resolveWidgetUI(theme?: WidgetUIPreset | WidgetUITheme): Resolve
   const radius = pick(base.radius, t.radius, (_, v) => px(v, 0, 999));
   const density = oneOf(t.density, ['compact', 'classic', 'comfortable', 'spacious', 'airy'] as const) ? t.density : 'comfortable';
   const sizes = pick(densitySizes(base, density), t.sizes, (key, v) => (key === 'icon' ? px(v, 10, 32) : px(v, 16, 80)));
-  const picked = pick(base.font, t.font, (key, v) => {
+  const picked = pick({ ...base.font, smallSize: base.font.smallSize }, t.font, (key, v) => {
     if (key === 'family' || key === 'mono') return cssValue(v);
     if (key === 'size') return px(v, 11, 20);
+    if (key === 'smallSize') return px(v, MIN_TYPE_SIZE, 20);
     if (key === 'weight' || key === 'strongWeight') return px(v, 100, 900);
     if (key === 'labelCase') return v === 'none' || v === 'uppercase';
     return px(v, 0, 0.5);
@@ -625,6 +631,7 @@ export function widgetUIVariables(ui: ResolvedWidgetUI): Record<string, string> 
   const compact = ui.density === 'compact';
   const even = isEvenDensity(ui.density);
   const tool = compact ? 1 : TOOL_STEP;
+  const small = f.smallSize ?? typeSize(f.size, -1);
   // A half step over the other buttons (an even size, so the icon centres on whole pixels),
   // but never so wide the column keeps less than its room a side.
   const toolStep = even ? evenPx(s.control * TOOL_STEP) : Math.round(s.control * TOOL_STEP);
@@ -676,7 +683,7 @@ export function widgetUIVariables(ui: ResolvedWidgetUI): Record<string, string> 
     '--tcw-font': f.family,
     '--tcw-font-mono': f.mono,
     '--tcw-font-size': p(f.size),
-    '--tcw-font-size-sm': p(typeSize(f.size, -1)),
+    '--tcw-font-size-sm': p(small),
     '--tcw-font-size-xs': p(typeSize(f.size, -2)),
     '--tcw-font-size-lg': p(typeSize(f.size, 1)),
     '--tcw-font-size-xl': p(typeSize(f.size, 2)),
@@ -686,7 +693,7 @@ export function widgetUIVariables(ui: ResolvedWidgetUI): Record<string, string> 
     '--tcw-label-case': f.labelCase,
     '--tcw-label-tracking': `${f.labelTracking}em`,
     // Labels in capitals read at the smallest size; labels as written need the next.
-    '--tcw-label-size': p(typeSize(f.size, f.labelCase === 'uppercase' ? -2 : -1)),
+    '--tcw-label-size': p(f.labelCase === 'uppercase' ? typeSize(f.size, -2) : small),
     '--tcw-border-w': p(ui.borders.width),
     '--tcw-sep-w': ui.borders.separators ? p(Math.max(1, ui.borders.width)) : '0px',
     '--tcw-menu-shadow': ui.shadows.menu,

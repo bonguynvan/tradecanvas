@@ -318,7 +318,7 @@ export class WidgetToolbar {
       el.classList.add('tcw-toolbar--tf-menu');
       this.buildTimeframeMenu();
     }
-    el.appendChild(this.sep());
+    el.appendChild(this.sep(true));
 
     // Chart type dropdown
     const ctWrap = document.createElement('div');
@@ -367,7 +367,7 @@ export class WidgetToolbar {
 
     // History: what the chart can undo and redo (drawings, indicators, settings).
     if (callbacks.onUndo && callbacks.onRedo) {
-      el.appendChild(this.sep());
+      el.appendChild(this.sep(true));
       this.undoBtn = this.iconBtn('undo', this.t('drawing.undo'), callbacks.onUndo);
       this.undoBtn.dataset.role = 'undo';
       markPart(this.undoBtn, 'toolbar.undo', 'sidebar.undo');
@@ -398,7 +398,7 @@ export class WidgetToolbar {
 
     this.hostRight = this.hostGroup();
     el.appendChild(this.hostRight);
-    el.appendChild(this.sep());
+    el.appendChild(this.sep(true));
 
     if (callbacks.onToggleReplay) {
       const replayBtn = this.iconBtn('play', this.t('toolbar.replay'), callbacks.onToggleReplay);
@@ -819,9 +819,10 @@ export class WidgetToolbar {
     this.scheduleFit();
   }
 
-  private sep(): HTMLSpanElement {
+  /** A divider: between two groups, or `minor`, inside one, which a look may leave as room alone. */
+  private sep(minor = false): HTMLSpanElement {
     const s = document.createElement('span');
-    s.className = 'tcw-toolbar-sep';
+    s.className = minor ? 'tcw-toolbar-sep tcw-toolbar-sep--minor' : 'tcw-toolbar-sep';
     return s;
   }
 
