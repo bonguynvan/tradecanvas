@@ -193,7 +193,7 @@
   --tcw-icon-stroke: 1.5px;
   --tcw-font: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --tcw-font-size: 13px;
-  --tcw-font-size-sm: 11px;
+  --tcw-font-size-sm: 12px;
   --tcw-font-size-xs: 10px;
   --tcw-font-size-lg: 15px;
   --tcw-font-size-xl: 18px;
@@ -202,7 +202,7 @@
   --tcw-weight-strong: 600;
   --tcw-label-case: none;
   --tcw-label-tracking: 0em;
-  --tcw-label-size: 11px;
+  --tcw-label-size: 12px;
   --tcw-border-w: 1px;
   --tcw-sep-w: 1px;
   --tcw-menu-shadow: 0 0 0 1px var(--tcw-border-strong), var(--tcw-shadow-md);
@@ -4599,6 +4599,52 @@
 }
 @media (pointer: coarse) {
   .tcw-root[data-tcw-ui='graphite'] .tcw-modal-close { --tcw-close-box: var(--tcw-hit-finger); }
+}
+/*
+ * Graphite's chrome is set in two sizes: the body's 13 and the small 12 (`font.smallSize`), for
+ * figures in a table, a field's name and the bars under the chart. The smallest, 10, is left to a
+ * count and a unit. The strong weight is kept for what is read first and what is picked: the last
+ * price, a profit, a picked tab, the button that sends, a title. A side is told by its colour and
+ * a column's heading by its place.
+ */
+.tcw-root[data-tcw-ui='graphite']:not([data-tcw-narrow]) .tcw-statusbar { font-size: var(--tcw-font-size-sm); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-account-table th { font-size: var(--tcw-font-size-sm); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-account-table th,
+.tcw-root[data-tcw-ui='graphite'] .tcw-account-side,
+.tcw-root[data-tcw-ui='graphite'] .tcw-quote-name,
+.tcw-root[data-tcw-ui='graphite'] .tcw-range-btn {
+  font-weight: var(--tcw-weight);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-range-btn { letter-spacing: 0; }
+/*
+ * Graphite groups by room: a divider inside a group of the toolbar keeps its room and draws no
+ * rule, and the drawing tools stand at one pitch down the rail, with no divider between their
+ * sections.
+ */
+.tcw-root[data-tcw-ui='graphite'] .tcw-toolbar-sep--minor { background: transparent; }
+.tcw-root[data-tcw-ui='graphite'] .tcw-sidebar-divider--section { display: none; }
+/*
+ * A tool group's corner mark shows where the pointer or the keys are, and while its menu is open:
+ * a column of marks is not read. Where there is a finger at all (a phone, a tablet, a laptop with
+ * a touch screen), which is never "over" a button, it always shows.
+ */
+@media (hover: hover) and (pointer: fine) {
+  .tcw-root[data-tcw-ui='graphite'] .tcw-multi-dot,
+  .tcw-root[data-tcw-ui='graphite'] .tcw-sidebar-menu-btn::after {
+    opacity: 0;
+    transition: opacity var(--tcw-dur-fast) var(--tcw-ease);
+  }
+  .tcw-root[data-tcw-ui='graphite'] .tcw-sidebar-btn:is(:hover, :focus-visible, [aria-expanded='true']) > .tcw-multi-dot,
+  .tcw-root[data-tcw-ui='graphite'] .tcw-sidebar-split:is(:hover, :has(> :focus-visible), :has(> [aria-expanded='true'])) .tcw-sidebar-menu-btn::after {
+    opacity: 0.8;
+  }
+  .tcw-root[data-tcw-ui='graphite'] .tcw-sidebar-split:is(:hover, :has(> :focus-visible), :has(> [aria-expanded='true'])) .tcw-sidebar-menu-btn:hover::after { opacity: 1; }
+}
+@media (any-pointer: coarse) {
+  .tcw-root[data-tcw-ui='graphite'] .tcw-multi-dot,
+  .tcw-root[data-tcw-ui='graphite'] .tcw-sidebar-split .tcw-sidebar-menu-btn.tcw-sidebar-menu-btn::after {
+    opacity: 0.8;
+  }
 }
 .tcw-account-empty {
   margin: 0;

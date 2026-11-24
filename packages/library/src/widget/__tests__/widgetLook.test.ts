@@ -283,3 +283,14 @@ describe('the symbol search on a phone', () => {
     expect(controls).not.toContain(".tcw-root:where([data-tcw-ui='graphite']) .tcw-toggle");
   });
 });
+
+// Graphite groups by room, not by rules: a divider inside a group is left as its room alone.
+describe('Graphite’s dividers', () => {
+  it('draws no rule for a divider inside a group of the toolbar, or between the drawing tools’ sections', () => {
+    expect(ruleBody(".tcw-root[data-tcw-ui='graphite'] .tcw-toolbar-sep--minor")).toContain('background: transparent');
+    // A split button's corner mark stays while its menu is open, the pointer gone from it.
+    expect(css).toContain(":has(> [aria-expanded='true'])) .tcw-sidebar-menu-btn::after");
+    // The tools stand at one pitch: the divider between two sections takes no room either.
+    expect(ruleBody(".tcw-root[data-tcw-ui='graphite'] .tcw-sidebar-divider--section")).toContain('display: none');
+  });
+});

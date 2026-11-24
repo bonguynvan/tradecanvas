@@ -1862,6 +1862,9 @@ img.tcw-ss-badge {
   .tcw-ticket-place { border: 1px solid ButtonText; }
   .tcw-ticket-side-btn:focus-visible,
   .tcw-ticket-place:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
+  /* A limit has no box in Graphite: here it has one again, and an outline on focus. */
+  .tcw-root .tcw-order-ticket .tcw-ticket-limit.tcw-ticket-limit { border: 1px solid ButtonText; }
+  .tcw-ticket-limit:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
 }
 
 /* What a confirmation asks: one sentence, the trade in full. */
@@ -1921,6 +1924,17 @@ img.tcw-ss-badge {
 .tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-segment { height: 28px; }
 .tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-modal-footer button { height: 40px; }
 .tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-modal-footer .tcw-ticket-place { flex: 1; }
+/*
+ * Its rows have no rules between them: their room tells them apart, and the one line left is the
+ * one over the order's value. The day's limits are figures to press, with no box until the
+ * pointer is over one. The side not picked is in the plain weight. The button that sends is as
+ * wide as the ticket leaves it, Cancel beside it.
+ */
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-settings-row + .tcw-settings-row { border-top: 0; }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-limits { gap: var(--tcw-space-3); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-limit { padding-inline: var(--tcw-space-3); border: 0; }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-side-btn[aria-pressed='false'] { font-weight: var(--tcw-weight); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-footer-end { flex: 1; }
 
 /*
  * Graphite's buttons that buy and sell. A side's colour on the chart (a candle, a figure) is too

@@ -118,6 +118,9 @@ function ltr(text: string): HTMLSpanElement {
 }
 
 /** A signed figure's colour: a gain up, a loss down, what reads as nothing neither. */
+/** On a profit's figure, a position's or a fill's: a look may set it strong. */
+const PNL_CLASS = 'tcw-account-pnl';
+
 function toneClass(figure: string): string {
   const tone = toneOf(figure);
   return tone ? `tcw-account-${tone}` : '';
@@ -424,12 +427,12 @@ export class WidgetAccountPanel {
 
   private writePnl(span: HTMLSpanElement, result: { pnl: number; pct: number } | null): void {
     if (result === null) {
-      span.className = '';
+      span.className = PNL_CLASS;
       span.textContent = NONE;
       return;
     }
     const amount = this.amount(result.pnl);
-    span.className = toneClass(amount);
+    span.className = `${PNL_CLASS} ${toneClass(amount)}`.trim();
     span.textContent = `${amount} · ${this.percent(result.pct)}`;
   }
 
@@ -622,7 +625,7 @@ export class WidgetAccountPanel {
       const pnl = ltr('');
       if (f.pnl !== undefined) {
         pnl.textContent = this.amount(f.pnl);
-        pnl.className = toneClass(pnl.textContent);
+        pnl.className = `${PNL_CLASS} ${toneClass(pnl.textContent)}`.trim();
       } else {
         pnl.textContent = NONE;
       }

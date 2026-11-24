@@ -2167,6 +2167,9 @@ export class ChartWidget {
     this.applyChartShapes();
     this.applyLegendFont();
     this.applyChartLook();
+    // A look may leave some dividers out: which stand at an end or beside another is asked again.
+    this.toolbar?.tidy();
+    this.sidebar?.tidy();
   }
 
   /** The scale the look is drawn at: its own, or by the widget's width when `'auto'` (1 before it is laid out). */

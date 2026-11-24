@@ -1194,6 +1194,16 @@ describe('ChartWidget look', () => {
     expect(portal.dataset.tcwToolbar).toBe('floating');
   });
 
+  it('tidies the toolbar’s and the rail’s dividers again for the new look, which may draw others', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const parts = widget as unknown as { toolbar: { tidy(): void }; sidebar: { tidy(): void } };
+    const toolbar = vi.spyOn(parts.toolbar, 'tidy');
+    const sidebar = vi.spyOn(parts.sidebar, 'tidy');
+    widget.setUI('modern');
+    expect(toolbar).toHaveBeenCalled();
+    expect(sidebar).toHaveBeenCalled();
+  });
+
   it('keeps the look across a theme switch, on the root and the dialogs alike', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
     widget.setTheme('light');

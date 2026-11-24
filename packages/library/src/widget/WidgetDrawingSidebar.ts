@@ -236,7 +236,7 @@ export class WidgetDrawingSidebar {
     config.drawingToolGroups.forEach((group, idx) => {
       if (!group.tools[0]) return;
       if (group.section !== undefined && lastSection !== undefined && group.section !== lastSection) {
-        this.appendDivider();
+        this.appendDivider(true);
       }
       lastSection = group.section;
       const wrap = document.createElement('div');
@@ -977,9 +977,12 @@ export class WidgetDrawingSidebar {
   }
 
   /** A divider, unless the sidebar already ends in one: never two in a row. */
-  private appendDivider(): void {
+  private appendDivider(section = false): void {
     if (this.el.lastElementChild?.classList.contains('tcw-sidebar-divider')) return;
-    this.el.appendChild(this.divider());
+    const divider = this.divider();
+    // Between two sections of the drawing tools: a look may leave it as room alone.
+    if (section) divider.classList.add('tcw-sidebar-divider--section');
+    this.el.appendChild(divider);
   }
 
   private divider(): HTMLDivElement {
