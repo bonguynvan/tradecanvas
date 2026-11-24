@@ -4635,10 +4635,10 @@
     transition: opacity var(--tcw-dur-fast) var(--tcw-ease);
   }
   .tcw-root[data-tcw-ui='graphite'] .tcw-sidebar-btn:is(:hover, :focus-visible, [aria-expanded='true']) > .tcw-multi-dot,
-  .tcw-root[data-tcw-ui='graphite'] .tcw-sidebar-split:is(:hover, :has(> :focus-visible)) .tcw-sidebar-menu-btn::after {
+  .tcw-root[data-tcw-ui='graphite'] .tcw-sidebar-split:is(:hover, :has(> :focus-visible), :has(> [aria-expanded='true'])) .tcw-sidebar-menu-btn::after {
     opacity: 0.8;
   }
-  .tcw-root[data-tcw-ui='graphite'] .tcw-sidebar-split:is(:hover, :has(> :focus-visible)) .tcw-sidebar-menu-btn:hover::after { opacity: 1; }
+  .tcw-root[data-tcw-ui='graphite'] .tcw-sidebar-split:is(:hover, :has(> :focus-visible), :has(> [aria-expanded='true'])) .tcw-sidebar-menu-btn:hover::after { opacity: 1; }
 }
 @media (any-pointer: coarse) {
   .tcw-root[data-tcw-ui='graphite'] .tcw-multi-dot,

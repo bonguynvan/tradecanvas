@@ -101,6 +101,9 @@ describe('WidgetAccountPanel', () => {
     expect(tabs).toEqual([['Positions', '1'], ['Orders', '1'], ['History', '2'], ['Log', '0']]);
     // Its figures stand together, its profit last, its buttons right after it.
     expect(cells()[0].slice(0, 7)).toEqual(['Long', '2', '100.00', '103.00', '95.00', '—', '+6.00 · +3.00%']);
+    // A profit is marked as one, for a look that sets it strong: the row's, and after a price moves it.
+    const profit = () => host.querySelector('tbody tr')!.querySelectorAll('td')[6].querySelector('span')!;
+    expect([...profit().classList]).toEqual(['tcw-account-pnl', 'tcw-account-up']);
     expect(callbacks.onToggle).toHaveBeenCalledWith(true);
   });
 
@@ -146,7 +149,7 @@ describe('WidgetAccountPanel', () => {
     panel.update({ ...snapshotOf(), price: 100.001 });
     panel.openPanel();
     expect(cells()[0][6]).toBe('0.00 · 0.00%');
-    expect(host.querySelector('tbody tr')!.querySelectorAll('td')[6].firstElementChild!.className).toBe('');
+    expect(host.querySelector('tbody tr')!.querySelectorAll('td')[6].firstElementChild!.className).toBe('tcw-account-pnl');
     expect(host.querySelector('.tcw-account-total')!.className).toBe('tcw-account-total');
   });
 
