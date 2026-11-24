@@ -603,6 +603,30 @@
 .tcw-ticket-docked > :is(.tcw-modal-body, .tcw-ticket-summary, .tcw-ticket-problems, .tcw-modal-footer) {
   padding-inline: var(--tcw-space-5);
 }
+/*
+ * A stop-loss or a take-profit in the dock's narrow column: its switch, its name and how far it is on one
+ * line, its field the column's width under them, as the other fields are. Beside the field, the name's
+ * column was a few characters wide, and the money at risk broke in the middle of its figure.
+ */
+.tcw-ticket-docked .tcw-ticket-optional {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+.tcw-ticket-docked .tcw-ticket-optional > :nth-child(n + 3) {
+  grid-column: 1 / -1;
+}
+.tcw-ticket-docked .tcw-ticket-optional-name {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  column-gap: var(--tcw-space-4);
+}
+/* A figure is whole or on the next line: never broken inside. */
+.tcw-ticket-docked .tcw-ticket-away {
+  align-self: auto;
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
 /* Its close is the page's, inside the head: a dialog's is hung out over its corner. */
 .tcw-ticket-docked > .tcw-modal-header .tcw-modal-close { margin: 0; }
 /* Its foot stays in reach under a long form. */
