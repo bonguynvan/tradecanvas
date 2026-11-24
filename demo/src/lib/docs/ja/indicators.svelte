@@ -198,6 +198,19 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 </p>
 <pre><code>{`import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core/patterns'`}</code></pre>
 
+<h2 id="fair-value-gaps">フェアバリューギャップ</h2>
+<p>
+  3 本のバーのうち、3 本目の安値が 1 本目の高値より上にある（下落では 3 本目の高値が 1 本目の安値より下にある）とき、フェアバリューギャップが残ります。その間の価格では中央のバーだけが取引されています。チャートはその価格帯にボックスを描きます。ギャップが開いている間は中央のバーから右端まで、上昇のギャップは上昇色、下落のギャップは下落色です。その後、最初に全体を通過したバーがギャップを埋め、<code>showFilled</code> が 1 でない限りチャートから消えます。<code>detectFairValueGaps</code> はチャートなしですべてを返し、それぞれを埋めたバーも分かります。
+</p>
+<pre><code>{`chart.addIndicator('fvg')                              // 開いているギャップごとにボックス
+chart.addIndicator('fvg', { minPercent: 0.1 })         // 価格の 0.1% 未満のギャップを除く
+chart.addIndicator('fvg', { showFilled: 1 })           // 埋まったギャップも薄く残し、埋めたバーまで描く
+
+import { detectFairValueGaps } from '@tradecanvas/chart'
+
+detectFairValueGaps(bars, { minPercent: 0.1 })
+// [{ index, formed, direction: 'up' | 'down', top, bottom, filledAt }]`}</code></pre>
+
 <h2>独自のインジケーター</h2>
 <p>
   手短な方法は <code>defineIndicator</code> です：入力と、バーから線を返す 1 つの関数を渡し、

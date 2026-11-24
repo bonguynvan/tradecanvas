@@ -2,7 +2,7 @@
 import type { NumberParam } from './indicator.js';
 
 /**
- * The 134 built-in indicators, by id: the inputs
+ * The 135 built-in indicators, by id: the inputs
  * `chart.addIndicator(id, params)` takes, each optional (its default in its
  * note), and the keys of the lines it draws, as
  * `chart.getIndicatorOutput(instanceId)` and `indicatorSource(instanceId, key)`
@@ -1329,5 +1329,15 @@ export interface BuiltInIndicators {
       indecision?: NumberParam;
     };
     lines: 'bull' | 'bear' | 'neutral';
+  };
+  /** Fair Value Gaps, on the price pane. Lines: `bull` (Bullish top), `bullLow` (Bullish bottom), `bear` (Bearish top), `bearLow` (Bearish bottom). */
+  fvg: {
+    params: {
+      /** At least 0, in steps of 0.05. Default 0. */
+      minPercent?: NumberParam;
+      /** A whole number, at least 0, at most 1. Default 0. */
+      showFilled?: NumberParam;
+    };
+    lines: 'bull' | 'bullLow' | 'bear' | 'bearLow';
   };
 }

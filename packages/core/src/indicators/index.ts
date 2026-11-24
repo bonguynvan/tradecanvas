@@ -142,3 +142,5 @@ export { VolatilityOHLCIndicator, VolatilityZeroTrendIndicator } from './panel/V
 export { SymbolSeriesStore } from './symbols/SymbolSeriesStore.js';
 export { CompareSymbolIndicator, CompareSymbolPaneIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SYMBOL_INDICATOR_IDS } from './symbols/symbolIndicators.js';
 export { detectCandlePatterns, CANDLE_PATTERNS } from './candles/detect.js';
+export { detectFairValueGaps } from './overlay/detectFairValueGaps.js';
+export type { FairValueGap, FairValueGapOptions } from './overlay/detectFairValueGaps.js';

@@ -4723,5 +4723,51 @@
         "kind": "dots"
       }
     ]
+  },
+  {
+    "id": "fvg",
+    "name": "Fair Value Gaps",
+    "shortName": "FVG",
+    "placement": "overlay",
+    "category": "patterns",
+    "params": {
+      "minPercent": 0,
+      "showFilled": 0
+    },
+    "inputs": {
+      "minPercent": {
+        "kind": "number",
+        "min": 0,
+        "step": 0.05
+      },
+      "showFilled": {
+        "kind": "int",
+        "min": 0,
+        "max": 1,
+        "step": 1
+      }
+    },
+    "plots": [
+      {
+        "key": "bull",
+        "title": "Bullish top",
+        "kind": "line"
+      },
+      {
+        "key": "bullLow",
+        "title": "Bullish bottom",
+        "kind": "line"
+      },
+      {
+        "key": "bear",
+        "title": "Bearish top",
+        "kind": "line"
+      },
+      {
+        "key": "bearLow",
+        "title": "Bearish bottom",
+        "kind": "line"
+      }
+    ]
   }
 ]
