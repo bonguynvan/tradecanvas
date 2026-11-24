@@ -36,6 +36,15 @@ The `3.0` branch. These move under the version's own heading when it is released
 
 ### Chart
 
+- **Graphite's chart dialogs are drawn by the design file.** Every dialog's title is 15 px, where it was 21, and its
+  Cancel a neutral button with no border. In Indicators, Symbol search, Chart Settings and an indicator's or a
+  drawing's settings: nothing is 10 px (a group's name, an
+  indicator's short name and kind, a symbol's type and exchange, a day's change, a hint, a field's error, a colour's code are 12); a heading of a
+  group or a column is not strong; how many of an indicator are on the chart, in the dialog and beside the
+  toolbar's Indicators button, is a plain number, where it was a badge in the accent; the symbol on the chart is
+  marked by a tick in the text's colour, its name no longer in the accent; Template and the button that gives a
+  colour back to its part have no outline; on a phone the dialogs' tabs are not outlined; a colour's code is in the
+  figures' face. The other looks are as they were.
 - **A limit's price is written once where the last price sits on it in its colour.** With `lastPrice.limitColors` on
   and the last price at a limit, the limit's own tag on the price axis gives way to the last price's: they were two
   blocks of one colour with one figure, three with the countdown. The limit's line and its name stay, and so does

@@ -4580,6 +4580,14 @@
   --tcw-chart-card-chip-pad: 0;
   --tcw-chart-card-tick: none;
 }
+/* A count beside a toolbar's button (the indicators on the chart) is a plain number, not a badge in the accent. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-badge-count {
+  padding: 0;
+  background: none;
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-sm);
+  font-weight: var(--tcw-weight);
+}
 /* Its rows and its head are 28 px, its buttons 24 with 8 between, and the panel is as tall as its rows up to its old height. */
 /*
  * The panel is one height on every tab and with any number of rows: its head, the table's head

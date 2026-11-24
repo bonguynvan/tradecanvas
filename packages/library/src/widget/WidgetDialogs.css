@@ -2023,3 +2023,67 @@ img.tcw-ss-badge {
     border: var(--tcw-border-w) solid ButtonText;
   }
 }
+
+/*
+ * Graphite: the chart's dialogs (Indicators, Symbol search, Chart Settings, an indicator's and a
+ * drawing's settings) by DESIGN.md.
+ */
+/* A dialog's title is 15 px: at 21 it was the largest thing on the screen, over the chart it is about. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-modal-header h3 {
+  font-size: var(--tcw-font-size-lg);
+  letter-spacing: 0;
+}
+/* Nothing a trader reads to act is 10 px: a group's name, a short name, a kind, an exchange, a hint, a colour's code. */
+.tcw-root[data-tcw-ui='graphite'] :is(.tcw-ip-heading, .tcw-ip-kind, .tcw-ip-short, .tcw-ip-count, .tcw-ss-head, .tcw-ss-heading, .tcw-ss-kind, .tcw-ss-exchange, .tcw-ss-chg, .tcw-ss-foot, .tcw-ss-more, .tcw-color-hex, .tcw-color-auto-btn, .tcw-settings-hint, .tcw-style-subhead, .tcw-style-width, .tcw-style-dash) {
+  font-size: var(--tcw-font-size-sm);
+}
+/* A heading of a column or of a group is not strong: its place says what it is. */
+.tcw-root[data-tcw-ui='graphite'] :is(.tcw-ip-heading, .tcw-ss-head, .tcw-ss-heading) { font-weight: var(--tcw-weight); }
+/* A colour's code is a figure, in the figures' face (its digits of one width), not a line of code. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-color-hex {
+  font-family: var(--tcw-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+/* How many of an indicator are on the chart is a plain number, not a badge in the accent. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-ip-count {
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  margin-inline-start: var(--tcw-space-3);
+  background: none;
+  /* The text's own colour: beside the kind, in the muted one, it read as part of it. */
+  color: var(--tcw-text);
+  font-family: var(--tcw-font-mono);
+}
+/* The symbol on the chart is marked as a picked thing is: its row's ground and a tick, in the text's colour. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-ss-row.tcw-current .tcw-ss-symbol,
+.tcw-root[data-tcw-ui='graphite'] .tcw-ss-check { color: var(--tcw-text); }
+/* The other choice beside the filled button is neutral, with no border; a menu's button is quiet. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-footer-cancel {
+  border: none;
+  background: var(--tcw-active-bg);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-footer-cancel:hover { background: var(--tcw-border-strong); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-footer-cancel:active { background: color-mix(in srgb, var(--tcw-border-strong) 78%, var(--tcw-text)); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-footer-menu { border-color: transparent; }
+.tcw-root[data-tcw-ui='graphite'] .tcw-footer-menu[aria-expanded='true'] { background: var(--tcw-active-bg); }
+/* On a phone the tabs run in a row: quiet buttons there too, the picked one on its ground, none outlined. */
+.tcw-root[data-tcw-ui='graphite'] :is(.tcw-ip-tab, .tcw-set-tab) { border-color: transparent; }
+/* The button that gives a colour back to the part is neutral too: no outline, and no accent on it under the pointer. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-color-auto-btn {
+  border-color: transparent;
+  background: var(--tcw-active-bg);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-color-auto-btn:is(:hover, :focus-visible) {
+  border-color: transparent;
+  background: var(--tcw-border-strong);
+  color: var(--tcw-text);
+}
+/* A colour left to the part itself is the swatch faded: a dashed edge said nothing more. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-color-auto input[type='color'] { border-style: solid; }
+@media (forced-colors: active) {
+  .tcw-root[data-tcw-ui='graphite'] .tcw-footer-cancel,
+  .tcw-root[data-tcw-ui='graphite'] .tcw-footer-menu,
+  .tcw-root[data-tcw-ui='graphite'] .tcw-color-auto-btn { border: var(--tcw-border-w) solid ButtonText; }
+}
