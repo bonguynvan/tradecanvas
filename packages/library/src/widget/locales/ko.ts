@@ -278,6 +278,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'settings.labelBackground': '라벨 배경',
   'settings.labelText': '라벨 글자',
   'settings.labelChange': '현재가 대비 등락률',
+  'settings.limitColors': '상·하한가에서 해당 한도 색상 사용',
   'settings.sessionBreaks': '세션 구분선',
   'settings.section.orders': '주문과 포지션',
   'settings.profit': '이익',

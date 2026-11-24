@@ -22,6 +22,13 @@ export type StyleValueKind = 'color' | 'lineStyle' | 'width' | 'boolean';
  *   whatever the day's direction, and `lastPrice.labelTextColor` colours its
  *   text. Unset, the tag is the up or the down colour and its text the one
  *   that reads on it. The line keeps `upColor` and `downColor` either way.
+ * - `lastPrice.limitColors` draws the last price's line and tag in a day's
+ *   limit's colour while the price is at that limit: the ceiling's at or
+ *   over the ceiling, the floor's at or under the floor, the reference's at
+ *   the reference price, over a look's own `lastPrice.labelBackground`.
+ *   The tag is a shade deeper where its figure would not read. For a market
+ *   that has a day's limits and a board that colours prices by them; off
+ *   unless you set it. The legend and the crosshair keep the day's colours.
  * - `crosshair.labelChange` writes, under the price the crosshair names on
  *   the axis, how far that price is from the last one, in percent (none on a
  *   scale that is in percent already). The Graphite themes have it on.
@@ -90,6 +97,7 @@ export const CHART_STYLE_KEYS = {
   'lastPrice.width': 'width',
   'lastPrice.labelBackground': 'color',
   'lastPrice.labelTextColor': 'color',
+  'lastPrice.limitColors': 'boolean',
 
   'volume.upColor': 'color',
   'volume.downColor': 'color',
@@ -251,8 +259,11 @@ export interface ResolvedChartStyle {
   legend: { text: string; label: string; up: string; down: string };
   /** Null: the watermark's own colour, or the theme's. */
   watermark: { color: string | null };
-  /** `labelBackground` and `labelText`, null: the tag is the up or the down colour, its text the one that reads on it. */
-  lastPrice: { visible: boolean; up: string; down: string; style: LineStyle; width: number; labelBackground: string | null; labelText: string | null };
+  /**
+   * `labelBackground` and `labelText`, null: the tag is the up or the down colour, its text the one that reads on it.
+   * `limitColors`: at a day's limit or its reference price, the line and the tag are that limit's colour.
+   */
+  lastPrice: { visible: boolean; up: string; down: string; style: LineStyle; width: number; labelBackground: string | null; labelText: string | null; limitColors: boolean };
   /** Null: the session breaks' own settings, or the theme's. */
   sessionBreaks: { color: string | null; style: LineStyle | null; width: number | null };
   /** Null: the high and low lines' own colour. */

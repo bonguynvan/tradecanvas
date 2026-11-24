@@ -285,6 +285,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'پس‌زمینه برچسب',
   'settings.labelText': 'متن برچسب',
   'settings.labelChange': 'تغییر نسبت به آخرین قیمت',
+  'settings.limitColors': 'رنگ‌های حد در حدهای روز',
   'settings.sessionBreaks': 'جداکننده‌های جلسه',
   'settings.section.orders': 'سفارش‌ها و پوزیشن‌ها',
   'settings.profit': 'سود',

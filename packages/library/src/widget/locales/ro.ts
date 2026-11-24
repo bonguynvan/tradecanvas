@@ -278,6 +278,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'Fundalul etichetei',
   'settings.labelText': 'Textul etichetei',
   'settings.labelChange': 'Variație față de ultimul preț',
+  'settings.limitColors': 'Culorile limitelor la limitele zilei',
   'settings.sessionBreaks': 'Separatoare de sesiune',
   'settings.section.orders': 'Ordine și poziții',
   'settings.profit': 'Profit',

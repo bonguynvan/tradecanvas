@@ -285,6 +285,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'רקע תווית',
   'settings.labelText': 'טקסט תווית',
   'settings.labelChange': 'שינוי מהמחיר האחרון',
+  'settings.limitColors': 'צבעי גבול בגבולות היום',
   'settings.sessionBreaks': 'מעברי סשן',
   'settings.section.orders': 'פקודות ופוזיציות',
   'settings.profit': 'רווח',

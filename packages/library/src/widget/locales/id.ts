@@ -278,6 +278,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'Latar label',
   'settings.labelText': 'Teks label',
   'settings.labelChange': 'Perubahan dari harga terakhir',
+  'settings.limitColors': 'Warna batas pada batas harian',
   'settings.sessionBreaks': 'Batas sesi',
   'settings.section.orders': 'Order dan posisi',
   'settings.profit': 'Untung',

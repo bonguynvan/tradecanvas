@@ -285,6 +285,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'Etikettbakgrunn',
   'settings.labelText': 'Etikettekst',
   'settings.labelChange': 'Endring fra siste pris',
+  'settings.limitColors': 'Grensefarger ved dagens grenser',
   'settings.sessionBreaks': 'Øktskiller',
   'settings.section.orders': 'Ordrer og posisjoner',
   'settings.profit': 'Gevinst',

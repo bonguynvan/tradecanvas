@@ -278,6 +278,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'settings.labelBackground': '標籤背景',
   'settings.labelText': '標籤文字',
   'settings.labelChange': '相對最新價的漲跌幅',
+  'settings.limitColors': '觸及漲停/跌停價時使用其顏色',
   'settings.sessionBreaks': '交易時段分隔線',
   'settings.section.orders': '訂單與持倉',
   'settings.profit': '獲利',

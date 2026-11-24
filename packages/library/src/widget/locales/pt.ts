@@ -278,6 +278,7 @@ export const PT_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'Fundo do rótulo',
   'settings.labelText': 'Texto do rótulo',
   'settings.labelChange': 'Variação face ao último preço',
+  'settings.limitColors': 'Cores de limite nos limites do dia',
   'settings.sessionBreaks': 'Quebras de sessão',
   'settings.section.orders': 'Ordens e posições',
   'settings.profit': 'Lucro',

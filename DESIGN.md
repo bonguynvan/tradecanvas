@@ -234,7 +234,9 @@ The chart is the page; everything above is its frame. On it:
   Where neither ink reads at 4.5:1 (the light theme's candles), the tag is a shade deeper than its
   candle. A coloured figure on a card is taken toward the text the same way.
 - The chart has three sizes of type and no others: the small size (12), and one and two under it
-  for a name beside a line and a marker's word.
+  for a name beside a line and a marker's word. Nothing is under 10 px.
+- A market's own conventions are a switch, never the default: the last price takes a day's limit's
+  colour only where `lastPrice.limitColors` is set.
 - The chart's figures (axes, tags, the legend's prices) are the chrome's small size, 12 px, in
   the same face with digits of one width. A figure on the chart and one beside it are the same size.
 - **The crosshair's price says how far it is from the last.** Under the price on the axis, the

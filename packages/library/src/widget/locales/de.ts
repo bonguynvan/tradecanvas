@@ -278,6 +278,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'Beschriftungshintergrund',
   'settings.labelText': 'Beschriftungstext',
   'settings.labelChange': 'Änderung zum letzten Kurs',
+  'settings.limitColors': 'Limitfarben an den Tageslimits',
   'settings.sessionBreaks': 'Sitzungswechsel',
   'settings.section.orders': 'Orders und Positionen',
   'settings.profit': 'Gewinn',

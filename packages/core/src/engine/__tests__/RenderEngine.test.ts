@@ -905,6 +905,44 @@ describe('RenderEngine — the price limits’ colours', () => {
     }
   });
 
+  /** Each limit's axis tag as drawn: what it was filled with, the ink and the font of its figure. */
+  function limitTags(theme: Theme, colors?: { ceiling: string; floor: string; reference: string }): { text: string; fill: string; ink: string; font: string }[] {
+    const { ctx } = makeContext();
+    ctx.theme = theme;
+    ctx.priceLimits = { ceiling: 99_800, floor: 98_100, reference: 98_937, colors };
+    ctx.viewport = { ...ctx.viewport, priceRange: { min: 98_000, max: 100_000 } };
+    engine.setRenderContext(ctx);
+    engine.start();
+    engine.requestRender(LayerType.Main);
+    const layer = engine.layerManager.getLayer(LayerType.Main)!.ctx;
+    const tags: { text: string; fill: string; ink: string; font: string }[] = [];
+    let filled = '';
+    layer.fillRect = () => { filled = String(layer.fillStyle); };
+    layer.fill = () => { filled = String(layer.fillStyle); };
+    layer.fillText = (text: string) => { if (!/^[A-Z]/.test(text)) tags.push({ text, fill: filled, ink: String(layer.fillStyle), font: layer.font }); };
+    runFrame();
+    return tags.filter((tag) => /^9[89],/.test(tag.text) && /937|800|100/.test(tag.text));
+  }
+
+  it('fills a limit’s tag a shade deeper where no ink reads on the colour a host gave, as every filled tag on the axis is', () => {
+    // Colours of a middle lightness: white is about 4:1 on each, dark ink no better.
+    const host = { ceiling: '#d93f45', floor: '#0b8f6f', reference: '#d93f45' };
+    for (const theme of [LIGHT_THEME, DARK_THEME]) {
+      const tags = limitTags(theme, host);
+      expect(tags).toHaveLength(3);
+      for (const tag of tags) expect(contrast(tag.ink, tag.fill), `${theme.name} ${tag.text}`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('writes a limit’s figure in the theme’s small size, as the tags beside it are', async () => {
+    const { GRAPHITE_DARK_THEME } = await import('@tradecanvas/commons');
+    for (const theme of [DARK_THEME, GRAPHITE_DARK_THEME]) {
+      const tags = limitTags(theme);
+      expect(tags).toHaveLength(3);
+      for (const tag of tags) expect(tag.font, theme.name).toContain(`${theme.font.sizeSmall}px`);
+    }
+  });
+
   it('takes the light colours for a light theme of its own that gives none', () => {
     const { priceLimits: _none, ...plain } = LIGHT_THEME;
     const inks = limitInks({ ...plain, background: '#fbfaf7' } as Theme);

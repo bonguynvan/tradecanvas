@@ -285,6 +285,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'Nền nhãn',
   'settings.labelText': 'Chữ nhãn',
   'settings.labelChange': 'Thay đổi so với giá cuối',
+  'settings.limitColors': 'Màu giới hạn khi giá chạm trần/sàn',
   'settings.sessionBreaks': 'Vạch ngăn phiên',
   'settings.section.orders': 'Order và position',
   'settings.profit': 'Lãi',

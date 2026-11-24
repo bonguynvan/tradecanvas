@@ -278,6 +278,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'Labelachtergrond',
   'settings.labelText': 'Labeltekst',
   'settings.labelChange': 'Verandering t.o.v. laatste prijs',
+  'settings.limitColors': 'Limietkleuren bij de daglimieten',
   'settings.sessionBreaks': 'Sessiescheidingen',
   'settings.section.orders': 'Orders en posities',
   'settings.profit': 'Winst',

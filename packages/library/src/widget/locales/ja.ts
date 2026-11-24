@@ -278,6 +278,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'ラベルの背景',
   'settings.labelText': 'ラベルの文字',
   'settings.labelChange': '現在値からの変化率',
+  'settings.limitColors': '制限値幅に達したら制限の色を使う',
   'settings.sessionBreaks': 'セッションの区切り',
   'settings.section.orders': '注文とポジション',
   'settings.profit': '利益',

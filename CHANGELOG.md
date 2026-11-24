@@ -36,6 +36,16 @@ The `3.0` branch. These move under the version's own heading when it is released
 
 ### Chart
 
+- **A day's limit tags are tags as the axis's others are, and the last price can take a limit's colour.** A limit's
+  tag on the price axis is 16 px tall with its figure in the theme's small size, where it was 14 px with a figure a
+  size under, and is filled a shade deeper where no ink would read on a colour a host gave (the rule the last
+  price's, a quote's and an indicator's value's tags have); the theme's own ink is kept wherever it reads. A new
+  style key, `lastPrice.limitColors`, off unless you set it, with a switch in Chart Settings: the last price's line
+  and tag are the ceiling's colour at or over the ceiling, the floor's at or under the floor and the reference's at
+  the reference price, for a market whose boards colour prices so. The chart writes nothing under 10 px (a limit's
+  name, a signal's word and a trade zone's label were 9 px where the theme's small size is 11), the market
+  profile's rows grow with their type, and the time zone at the time axis's corner is the theme's quieter text at
+  full strength, where it was faded to under 4:1.
 - **The last price, a quote and an indicator's value read on their tags, the quotes are outlined in Graphite, and the
   chart's small type follows the theme.** A tag's fill is deepened, its hue kept, where the ink it takes would not read on it at 4.5:1: a
   light chart's last price was white on its candle's green at 4.06:1 (the candle keeps its colour, the tag and the

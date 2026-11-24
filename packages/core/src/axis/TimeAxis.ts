@@ -264,7 +264,7 @@ export class TimeAxis {
     // ─── Timezone indicator (bottom-right), and the date tag (bottom-left) in its style ───
     ctx.font = tzFont;
     ctx.textBaseline = 'top';
-    ctx.globalAlpha = 0.75;
+    // The theme's quieter text at full strength: faded to three quarters it was under 4:1 on both grounds.
     ctx.fillStyle = theme.textSecondary;
     ctx.textAlign = 'right';
     ctx.fillText(tzText, tzRight, axisY + 7);

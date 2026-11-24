@@ -20,6 +20,30 @@ export interface LastPriceTag {
 /** Height (px) of the last-price tag. */
 const TAG_HEIGHT = 20;
 
+/** A day's limit as the chart draws it: its price and its colour. In the order ceiling, floor, reference. */
+export interface LimitLine {
+  price: number;
+  color: string;
+}
+
+/** How near a price is to a limit to be at it, of the limit's size: a float's error, not a tick. */
+const AT_LIMIT = 1e-9;
+
+/**
+ * The colour of the limit `price` is at: the ceiling's at or over it, the
+ * floor's at or under it, the reference's at the reference price. Null
+ * between them, or with no limits known.
+ */
+function limitColorAt(price: number, limits?: readonly LimitLine[]): string | null {
+  if (!limits || limits.length < 3) return null;
+  const [ceiling, floor, reference] = limits;
+  const near = (limit: number) => Math.abs(limit) * AT_LIMIT;
+  if (Number.isFinite(ceiling.price) && price >= ceiling.price - near(ceiling.price)) return ceiling.color;
+  if (Number.isFinite(floor.price) && price <= floor.price + near(floor.price)) return floor.color;
+  if (Number.isFinite(reference.price) && Math.abs(price - reference.price) <= near(reference.price)) return reference.color;
+  return null;
+}
+
 /**
  * Renders the current (last) price as a horizontal line with a badge.
  * Updates at high frequency without triggering full chart redraws.
@@ -76,28 +100,31 @@ export class CurrentPriceLine {
   }
 
   /** The line and its axis tag together. */
-  render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
-    this.renderLine(ctx, viewport, theme);
-    this.renderTag(ctx, viewport, theme);
+  render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, limits?: readonly LimitLine[]): void {
+    this.renderLine(ctx, viewport, theme, limits);
+    this.renderTag(ctx, viewport, theme, limits);
   }
 
   /** Where the line is drawn and in what colour; null when it isn't drawn. */
-  private placed(viewport: ViewportState, theme: Theme): { y: number; color: string } | null {
+  private placed(viewport: ViewportState, theme: Theme, limits?: readonly LimitLine[]): { y: number; color: string; atLimit: boolean } | null {
     const look = theme.style?.lastPrice;
     if (!this.visible || this.price === null || look?.visible === false) return null;
     const y = priceToY(this.price, viewport);
     const { chartRect } = viewport;
     if (y < chartRect.y || y > chartRect.y + chartRect.height) return null;
+    // At a day's limit, where the style says so, the limit's colour: a board's way of saying the price can go no further.
+    const atLimit = look?.limitColors ? limitColorAt(this.price, limits) : null;
+    if (atLimit !== null) return { y, color: atLimit, atLimit: true };
     const isUp = this.previousClose !== null ? this.price >= this.previousClose : true;
-    return { y, color: isUp ? (look?.up ?? theme.candleUp ?? '#1fa874') : (look?.down ?? theme.candleDown ?? '#e8505b') };
+    return { y, color: isUp ? (look?.up ?? theme.candleUp ?? '#1fa874') : (look?.down ?? theme.candleDown ?? '#e8505b'), atLimit: false };
   }
 
   /**
    * The line across the plot. Drawn under the chart's objects, so the labels of
    * orders and positions near the last price stay readable over it.
    */
-  renderLine(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
-    const at = this.placed(viewport, theme);
+  renderLine(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, limits?: readonly LimitLine[]): void {
+    const at = this.placed(viewport, theme, limits);
     if (!at) return;
     const { y, color } = at;
     const { chartRect } = viewport;
@@ -118,9 +145,9 @@ export class CurrentPriceLine {
   }
 
   /** The price's tag on the axis, over the axis and its other tags. */
-  renderTag(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
+  renderTag(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, limits?: readonly LimitLine[]): void {
     this.tag = null;
-    const at = this.placed(viewport, theme);
+    const at = this.placed(viewport, theme, limits);
     if (!at || this.price === null) return;
     const { y, color } = at;
     const { chartRect } = viewport;
@@ -137,8 +164,9 @@ export class CurrentPriceLine {
     // The tag in a colour of its own where the look sets one (the line keeps the day's); its text the same way.
     const look = theme.style?.lastPrice;
     // The day's colour, a shade deeper where its ink would not read on it; a look's own colour is the look's to choose.
-    const fill = look?.labelBackground ?? tagFill(color);
-    const textColor = look?.labelText ?? labelTextColor(fill);
+    // At a limit the limit's colour is the tag's, over a look's own: the key is there to say the price is at it.
+    const fill = at.atLimit ? tagFill(color) : look?.labelBackground ?? tagFill(color);
+    const textColor = at.atLimit ? labelTextColor(fill) : look?.labelText ?? labelTextColor(fill);
     ctx.fillStyle = fill;
     fillTag(ctx, axisX, y - TAG_HEIGHT / 2, badgeWidth, TAG_HEIGHT, theme);
     this.tag = { x: axisX, y: y - TAG_HEIGHT / 2, width: badgeWidth, height: TAG_HEIGHT, color: fill, textColor };

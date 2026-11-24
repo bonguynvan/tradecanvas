@@ -285,6 +285,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'settings.labelBackground': 'Latar label',
   'settings.labelText': 'Teks label',
   'settings.labelChange': 'Perubahan daripada harga terakhir',
+  'settings.limitColors': 'Warna had pada had harian',
   'settings.sessionBreaks': 'Pemisah sesi',
   'settings.section.orders': 'Pesanan dan posisi',
   'settings.profit': 'Untung',

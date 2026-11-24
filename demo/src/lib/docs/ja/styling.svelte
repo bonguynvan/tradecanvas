@@ -336,6 +336,7 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>クロスヘアの線にも同じ 4 つ（既定は細い実線）。</td></tr>
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>軸とペインの目盛り上の価格・時刻ラベル。</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>各軸の線とラベル（ペインの目盛りは価格軸に従う）。</td></tr>
+    <tr><td><code>lastPrice.limitColors</code></td><td><code>true</code> で、価格がその日の制限値にある間、現在値の線とタグをその制限の色で描く：上限以上なら上限の色、下限以下なら下限の色、基準値ちょうどなら基準値の色。その間、または制限がないときは、その日の上げ下げの色のまま。値幅制限があり、気配板がそれで色分けされる市場向け。既定ではオフ。</td></tr>
     <tr><td><code>crosshair.labelChange</code></td><td><code>true</code> で、価格軸上でクロスヘアが示す価格の下に、その価格が現在値からどれだけ離れているかをパーセントで書く（<code>+1.25%</code>、チャートのロケールで）。現在値がないとき、またはスケールがすでにパーセントや指数のときは書かない。軸はその分の幅を確保する。Graphite テーマでは既定でオン（テーマ自身の <code>crosshairChange</code>）、ほかのテーマではオフ。</td></tr>
     <tr><td><code>axis.price.valueTagsOutlined</code></td><td><code>true</code> で、価格軸上のインジケーターの値タグを、線の色で塗りつぶす代わりに枠線で描く（線の色の縁の内側はチャートの背景、またはペイン独自の背景で、文字はその線の色）：価格ペイン、インジケーターのペイン、左側のスケールで。背景に近すぎてその上では読めない線は、値がその色を濃くした色で書かれる（4.5:1 で読めるところまで）。 Graphite のテーマでは、これが <code>false</code> でない限り枠線で描く。 買い気配・売り気配と高値・安値のタグも、同じく枠線で描かれる。</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>凡例の値と、そのラベル（O、H、L、Vol）。</td></tr>
