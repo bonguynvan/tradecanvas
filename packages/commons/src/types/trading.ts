@@ -68,6 +68,13 @@ export interface TradingPosition {
    * with none, it shows none (the chart's price is not that symbol's).
    */
   markPrice?: number;
+  /**
+   * What a move of one in price is worth for one unit of this position (its market's contract
+   * multiplier), where the adapter says: the paper account fixes it when the position opens. The
+   * chart's tags and the widget's account panel count the position's profit by it; without one
+   * they use the chart's market's.
+   */
+  multiplier?: number;
   side: OrderSide;
   entryPrice: number;
   quantity: number;

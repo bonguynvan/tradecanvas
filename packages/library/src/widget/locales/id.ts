@@ -626,6 +626,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': 'Harga harus mengikuti fraksi harga pasar.',
   'ticket.problem.priceLimits': 'Harga hari ini berkisar dari {floor} hingga {ceiling}.',
   'ticket.problem.lot': 'Di atas satu lot, gunakan lot penuh berisi {lot}; sisa saham (odd lot) masuk ke order tersendiri.',
+  'ticket.problem.wholeUnits': 'Order whole shares: this market trades no part of one.',
   'toolbar.layouts': 'Tata letak',
   'layouts.unnamed': 'Tanpa nama',
   'layouts.unsavedChanges': 'perubahan belum disimpan',

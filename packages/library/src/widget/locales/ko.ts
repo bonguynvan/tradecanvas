@@ -626,6 +626,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': '가격은 시장의 호가 단위에 맞춰 입력하세요.',
   'ticket.problem.priceLimits': '오늘 가격은 {floor}에서 {ceiling}까지입니다.',
   'ticket.problem.lot': '매매 단위를 넘는 수량은 {lot}주 단위로 주문하고, 단주는 별도 주문으로 넣으세요.',
+  'ticket.problem.wholeUnits': '주식 수는 정수로 주문하세요. 이 시장에서는 1주 미만을 거래할 수 없습니다.',
   'toolbar.layouts': '레이아웃',
   'layouts.unnamed': '이름 없음',
   'layouts.unsavedChanges': '저장되지 않은 변경 사항',

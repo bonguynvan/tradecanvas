@@ -632,6 +632,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': 'قیمت‌ها باید مطابق پله‌های قیمت (تیک) بازار باشند.',
   'ticket.problem.priceLimits': 'دامنه قیمت امروز از {floor} تا {ceiling} است.',
   'ticket.problem.lot': 'برای بیش از یک لات، مضربی از {lot} سفارش دهید؛ سهام باقی‌مانده را در سفارشی جداگانه ثبت کنید.',
+  'ticket.problem.wholeUnits': 'Order whole shares: this market trades no part of one.',
   'toolbar.layouts': 'چیدمان',
   'layouts.unnamed': 'بی‌نام',
   'layouts.unsavedChanges': 'تغییرات ذخیره‌نشده',

@@ -183,8 +183,12 @@ chart.startBracket('buy', undefined, { risk: 50 })   // la cantidad que pierde 5
   dinero; uno con <code>multiplier</code> lo conserva. Un dibujo de posición larga o corta y un bracket dimensionado
   por <code>risk</code> cuentan también con el multiplicador la cantidad que ese riesgo compra: 5.000.000 dong de
   riesgo con el stop a 1.00 son 5.000 acciones, donde eran 5.000.000.
-  <code>positionLevels(drawing, multiplier)</code> recibe el del mercado como segundo argumento. En el panel de la
-  cuenta, una posición de otro símbolo que el del gráfico sigue contándose con 1.
+  <code>positionLevels(drawing, multiplier)</code> recibe el del mercado como segundo argumento. Una posición conserva el multiplicador con el que se abrió (<code>TradingPosition.multiplier</code>, que fija
+  la cuenta de papel): un gráfico que muestra otro mercado, u otro símbolo, no revalúa nada de lo abierto, y el
+  panel y las etiquetas del gráfico cuentan cada posición con el suyo. Un mercado hecho extendiendo un preset
+  conserva su multiplicador: <code>{'{'} ...MARKET_HOSE, pricePrecision: 0, priceStep: 10 {'}'}</code>, para precios en
+  dong, sigue teniendo 1.000 y muestra mil veces de más. Usa <code>scaleMarketPrices(MARKET_HOSE, 1000)</code>, o
+  pon <code>contractMultiplier: 1</code> en la extensión.
   Lo que se envía a un bróker es lo de antes, salvo una cantidad calculada a partir de un riesgo, como
   arriba.
 </p>

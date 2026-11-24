@@ -626,6 +626,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': '價格須符合市場的升降單位。',
   'ticket.problem.priceLimits': '今日價格區間為 {floor} 至 {ceiling}。',
   'ticket.problem.lot': '超過一張時須以整張（每張 {lot} 股）下單；零股請另以單獨委託送出。',
+  'ticket.problem.wholeUnits': 'Order whole shares: this market trades no part of one.',
   'toolbar.layouts': '版面配置',
   'layouts.unnamed': '未命名',
   'layouts.unsavedChanges': '有未儲存的變更',

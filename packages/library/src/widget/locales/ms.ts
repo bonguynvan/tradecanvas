@@ -632,6 +632,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': 'Harga mesti mengikut saiz bida pasaran.',
   'ticket.problem.priceLimits': 'Harga hari ini adalah dari {floor} hingga {ceiling}.',
   'ticket.problem.lot': 'Melebihi satu lot, buat pesanan dalam lot penuh {lot}; lot ganjil dimasukkan dalam pesanan berasingan.',
+  'ticket.problem.wholeUnits': 'Order whole shares: this market trades no part of one.',
   'toolbar.layouts': 'Susun atur',
   'layouts.unnamed': 'Tanpa nama',
   'layouts.unsavedChanges': 'perubahan belum disimpan',

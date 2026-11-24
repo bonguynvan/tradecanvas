@@ -632,6 +632,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': 'Hinnad peavad vastama turu hinnasammule.',
   'ticket.problem.priceLimits': 'Tänased hinnad jäävad vahemikku {floor} kuni {ceiling}.',
   'ticket.problem.lot': 'Üle ühe loti esita terveid lotte suurusega {lot}; ülejäävad aktsiad pane eraldi orderisse.',
+  'ticket.problem.wholeUnits': 'Order whole shares: this market trades no part of one.',
   'toolbar.layouts': 'Paigutus',
   'layouts.unnamed': 'Nimetu',
   'layouts.unsavedChanges': 'salvestamata muudatused',

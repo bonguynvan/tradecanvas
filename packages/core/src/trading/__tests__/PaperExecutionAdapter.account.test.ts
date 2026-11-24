@@ -118,6 +118,107 @@ describe('PaperExecutionAdapter: the market’s multiplier', () => {
   });
 });
 
+// The account held one multiplier for every position, and the chart's market set it: looking at
+// another market revalued what was open, booked the wrong profit and could close it out.
+describe('PaperExecutionAdapter: a position keeps what its price was worth when it opened', () => {
+  it('books the profit of its own market after the chart’s market changes', async () => {
+    const { adapter, fills, market } = connect({ markPrice: 26.4, balance: 10_000_000 });
+    adapter.setMultiplier(1000);
+    await market('buy', 100);
+    adapter.setMarkPrice(27.4);
+    expect(adapter.getAccount()).toEqual(expect.objectContaining({ marginUsed: 2_640_000 }));
+    expect(adapter.getAccount()!.unrealisedPnl).toBeCloseTo(100_000, 6);
+    // The chart shows a market with no multiplier: the position is what it was.
+    adapter.setMultiplier(undefined);
+    expect(adapter.getAccount()!.marginUsed).toBe(2_640_000);
+    expect(adapter.getAccount()!.unrealisedPnl).toBeCloseTo(100_000, 6);
+    await adapter.closePosition({ positionId: adapter.getPositions()[0].id });
+    expect(fills[1].pnl).toBeCloseTo(100_000, 6);
+    expect(adapter.getAccount()!.balance).toBeCloseTo(10_100_000, 6);
+  });
+
+  it('is not called for margin because the chart shows a futures market', async () => {
+    const { adapter, market } = connect({ markPrice: 26.4, balance: 10_000_000, marginCallLevel: 1, stopOutLevel: 0.5 });
+    const calls: unknown[] = [];
+    adapter.on('marginCall', (e) => calls.push(e.data));
+    adapter.setMultiplier(1000);
+    await market('buy', 100);
+    adapter.setMultiplier(100_000);
+    adapter.setMarkPrice(26.41);
+    expect(calls).toEqual([]);
+    expect(adapter.getPositions()).toHaveLength(1);
+    expect(adapter.getPositions()[0].multiplier).toBe(1000);
+  });
+
+  it('keeps for a waiting order what its price was worth when it was placed', async () => {
+    const { adapter } = connect({ markPrice: 26.4, balance: 100_000_000 });
+    adapter.setMultiplier(1000);
+    await adapter.placeOrder({ side: 'buy', type: 'limit', quantity: 100, price: 26 });
+    // The chart shows another market before the price comes.
+    adapter.setMultiplier(undefined);
+    adapter.setMarkPrice(26);
+    expect(adapter.getPositions()[0].multiplier).toBe(1000);
+    expect(adapter.getAccount()!.marginUsed).toBe(2_600_000);
+  });
+
+  it('turns a position into one of the same market, whatever the chart shows', async () => {
+    const { adapter, market } = connect({ markPrice: 26.4, balance: 100_000_000 });
+    adapter.setMultiplier(1000);
+    await market('buy', 100);
+    adapter.setMultiplier(undefined);
+    await adapter.reversePosition({ positionId: adapter.getPositions()[0].id });
+    expect(adapter.getPositions()).toHaveLength(1);
+    expect(adapter.getPositions()[0]).toEqual(expect.objectContaining({ side: 'sell', multiplier: 1000 }));
+  });
+
+  it('stops out the position that loses the most money, not the most points', async () => {
+    const { adapter, market } = connect({ markPrice: 100, balance: 1_500_000, stopOutLevel: 0.9 });
+    const closed: string[] = [];
+    adapter.on<FillEvent>('fill', (e) => { if (e.data.reason === 'liquidation') closed.push(e.data.positionId!); });
+    await market('buy', 1000); // a price worth 1: down 5 a share is 5,000
+    adapter.setMultiplier(1000);
+    await market('buy', 10); // a price worth 1,000: down 5 is 50,000
+    const [cheap, dear] = adapter.getPositions();
+    adapter.setMarkPrice(40);
+    expect(closed[0]).toBe(dear.id);
+    expect(closed).not.toContain(cheap.id);
+  });
+
+  it('counts an order at the multiplier given beside it, whatever was said last', async () => {
+    const { adapter } = connect({ markPrice: 26.4, balance: 100_000_000 });
+    adapter.setMultiplier(undefined);
+    await adapter.placeOrder({ side: 'buy', type: 'market', quantity: 100, price: 26.4 }, { multiplier: 1000 });
+    expect(adapter.getPositions()[0].multiplier).toBe(1000);
+    expect(adapter.getAccount()!.marginUsed).toBe(2_640_000);
+    // An account given its own keeps it.
+    const own = connect({ markPrice: 26.4, balance: 100_000_000, multiplier: 10 });
+    await own.adapter.placeOrder({ side: 'buy', type: 'market', quantity: 100, price: 26.4 }, { multiplier: 1000 });
+    expect(own.adapter.getAccount()!.marginUsed).toBe(26_400);
+  });
+
+  it('forgets what an order and a position were worth once they are gone', async () => {
+    const { adapter, market } = connect({ markPrice: 100, balance: 1_000_000 });
+    adapter.setMultiplier(1000);
+    for (let i = 0; i < 5; i++) {
+      await market('buy', 1);
+      await adapter.closePosition({ positionId: adapter.getPositions()[0].id });
+    }
+    await market('buy', 1);
+    const kept = adapter as unknown as { orderWorth: Map<string, number>; openedWorth: Map<string, number> };
+    expect(kept.openedWorth.size).toBe(1);
+    expect(kept.orderWorth.size).toBeLessThanOrEqual(1);
+  });
+
+  it('says on what was open what it was opened at, once a chart tells it a multiplier', async () => {
+    const { adapter, market } = connect({ markPrice: 100, balance: 1_000_000 });
+    await market('buy', 2);
+    expect(adapter.getPositions()[0].multiplier).toBeUndefined();
+    adapter.setMultiplier(1000);
+    expect(adapter.getPositions()[0].multiplier).toBe(1);
+    expect(adapter.getAccount()!.marginUsed).toBe(200);
+  });
+});
+
 describe('PaperExecutionAdapter: leverage and a contract’s multiplier', () => {
   it('holds a part of a position’s value as margin: the value over the leverage', async () => {
     const { adapter, market } = connect({ balance: 1_000, leverage: 10 });

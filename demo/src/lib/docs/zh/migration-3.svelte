@@ -152,8 +152,10 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 在止损处亏损 50 �
   （图表在连接时和市场改变时调用适配器可选的 <code>setMultiplier</code>），因此它的保证金、余额和成交盈亏使用
   同一种金额；传入了 <code>multiplier</code> 的则保持不变。多头/空头持仓画线和按 <code>risk</code> 定量的括号单
   也按乘数计算数量：风险 5,000,000 越南盾、止损相距 1.00 时为 5,000 股，以前是 5,000,000 股。
-  <code>positionLevels(drawing, multiplier)</code> 的第二个参数接收市场的乘数。在账户面板中，
-  与图表品种不同的持仓仍按 1 计算。
+  <code>positionLevels(drawing, multiplier)</code> 的第二个参数接收市场的乘数。持仓保留开仓时的乘数（<code>TradingPosition.multiplier</code>，由模拟账户设置）：图表切换到其他市场或其他品种时，
+  不会重新估值已开的持仓，面板和图表标签按每个持仓自己的乘数计算。通过展开预设得到的市场会保留预设的乘数：
+  用于越南盾价格的 <code>{'{'} ...MARKET_HOSE, pricePrecision: 0, priceStep: 10 {'}'}</code> 仍是 1,000，金额会大一千倍。
+  请使用 <code>scaleMarketPrices(MARKET_HOSE, 1000)</code>，或在展开中设置 <code>contractMultiplier: 1</code>。
   发送给券商的内容与之前相同，只有如上所述由风险算出的数量不同。
 </p>
 

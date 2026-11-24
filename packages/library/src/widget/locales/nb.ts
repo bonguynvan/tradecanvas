@@ -632,6 +632,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': 'Kursen må følge markedets kurssteg (tick-størrelse).',
   'ticket.problem.priceLimits': 'Dagens kurser går fra {floor} til {ceiling}.',
   'ticket.problem.lot': 'Over én lot handles hele lots på {lot}; overskytende aksjer legges i en egen ordre.',
+  'ticket.problem.wholeUnits': 'Order whole shares: this market trades no part of one.',
   'toolbar.layouts': 'Oppsett',
   'layouts.unnamed': 'Uten navn',
   'layouts.unsavedChanges': 'ulagrede endringer',

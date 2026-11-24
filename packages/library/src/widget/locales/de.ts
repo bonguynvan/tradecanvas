@@ -626,6 +626,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': 'Preise müssen der Tick-Größe des Marktes entsprechen.',
   'ticket.problem.priceLimits': 'Heute sind Preise von {floor} bis {ceiling} zulässig.',
   'ticket.problem.lot': 'Über einem Lot ordern Sie ganze Lots zu {lot}; überzählige Stücke gehören in eine eigene Order.',
+  'ticket.problem.wholeUnits': 'Order whole shares: this market trades no part of one.',
   'toolbar.layouts': 'Layout',
   'layouts.unnamed': 'Unbenannt',
   'layouts.unsavedChanges': 'ungespeicherte Änderungen',

@@ -177,8 +177,12 @@ chart.startBracket('buy', undefined, { risk: 50 })   // khối lượng sẽ l�
   thị trường đổi), nên margin, số dư và lãi lỗ của fill dùng cùng đơn vị tiền; adapter được truyền
   <code>multiplier</code> thì giữ nguyên. Drawing Long/Short Position và bracket tính theo <code>risk</code> cũng
   tính khối lượng theo hệ số: rủi ro 5.000.000 đồng với stop cách 1.00 là 5.000 cổ phiếu, trước đây là 5.000.000.
-  <code>positionLevels(drawing, multiplier)</code> nhận hệ số của thị trường ở tham số thứ hai. Trong bảng tài
-  khoản, position của mã khác với mã của chart vẫn tính với hệ số 1.
+  <code>positionLevels(drawing, multiplier)</code> nhận hệ số của thị trường ở tham số thứ hai. Position giữ hệ số nó có lúc mở (<code>TradingPosition.multiplier</code>, do tài khoản paper đặt): chart
+  chuyển sang thị trường khác hoặc mã khác không định giá lại thứ đang mở, và bảng tài khoản cùng tag trên chart
+  tính mỗi position theo hệ số của chính nó. Thị trường tạo bằng cách spread một preset vẫn giữ hệ số của preset:
+  <code>{'{'} ...MARKET_HOSE, pricePrecision: 0, priceStep: 10 {'}'}</code> cho giá theo đồng vẫn có hệ số 1.000 và
+  hiện số tiền lớn gấp một nghìn lần. Hãy dùng <code>scaleMarketPrices(MARKET_HOSE, 1000)</code>, hoặc đặt
+  <code>contractMultiplier: 1</code> trong spread.
   Những gì gửi tới broker vẫn như cũ, trừ khối lượng được tính từ rủi ro như trên.
 </p>
 

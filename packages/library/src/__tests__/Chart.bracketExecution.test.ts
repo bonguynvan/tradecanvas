@@ -282,6 +282,7 @@ describe('Chart: a bracket started at the market, on a market with a price step'
     expect(chart.getBracket()).toMatchObject({ entry: 100.5 });
     chart.confirmBracket();
     await flush();
-    expect(placed).toHaveBeenCalledWith(expect.objectContaining({ side: 'buy', type: 'limit', price: 100.5, quantity: 1 }));
+    // The order, and beside it what a price is worth on the chart's market.
+    expect(placed).toHaveBeenCalledWith(expect.objectContaining({ side: 'buy', type: 'limit', price: 100.5, quantity: 1 }), expect.objectContaining({ multiplier: expect.any(Number) }));
   });
 });

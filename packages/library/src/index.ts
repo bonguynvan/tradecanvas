@@ -105,6 +105,7 @@ export type {
   FillReason,
   MarginCall,
   ExecutionAdapter,
+  OrderContext,
   ExecutionConfig,
   ExecutionEvent,
   ExecutionEventType,

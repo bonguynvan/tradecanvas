@@ -626,6 +626,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': 'Цены указываются с шагом цены рынка.',
   'ticket.problem.priceLimits': 'Сегодня цены ограничены диапазоном от {floor} до {ceiling}.',
   'ticket.problem.lot': 'Больше одного лота — только целыми лотами по {lot}; неполный лот выставляйте отдельным ордером.',
+  'ticket.problem.wholeUnits': 'Order whole shares: this market trades no part of one.',
   'toolbar.layouts': 'Макет',
   'layouts.unnamed': 'Без названия',
   'layouts.unsavedChanges': 'несохранённые изменения',

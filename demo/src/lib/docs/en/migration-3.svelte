@@ -179,7 +179,12 @@ chart.startBracket('buy', undefined, { risk: 50 })   // the quantity that loses 
   <code>multiplier</code> keeps it. A Long or Short Position drawing and a bracket sized by <code>risk</code> count
   the quantity that risk buys by the multiplier too: 5,000,000 dong at risk with the stop 1.00 away is 5,000
   shares, where it was 5,000,000. <code>positionLevels(drawing, multiplier)</code> takes the market's as its second
-  argument. In the account panel a position of another symbol than the chart's is still counted at 1.
+  argument. A position keeps the multiplier it opened with (<code>TradingPosition.multiplier</code>, which the paper account
+  sets): a chart shown another market, or another symbol, revalues nothing that is open, and the panel and the
+  chart's tags count each position by its own. A market made by spreading a preset keeps the preset's
+  multiplier: <code>{'{'} ...MARKET_HOSE, pricePrecision: 0, priceStep: 10 {'}'}</code> for prices in dong still has
+  1,000, and reads a thousand times too much. Use <code>scaleMarketPrices(MARKET_HOSE, 1000)</code>, or set
+  <code>contractMultiplier: 1</code> in the spread.
   What is sent to a broker is as it was, but for a quantity worked out from a risk, as above.
 </p>
 

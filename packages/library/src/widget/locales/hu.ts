@@ -626,6 +626,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': 'Az árakat a piac árlépésközében kell megadni.',
   'ticket.problem.priceLimits': 'A mai árak {floor} és {ceiling} között mozoghatnak.',
   'ticket.problem.lot': 'Egy lot fölött {lot} egész többszörösét adja meg; a maradék darabokat külön megbízásban adja le.',
+  'ticket.problem.wholeUnits': 'Order whole shares: this market trades no part of one.',
   'toolbar.layouts': 'Elrendezés',
   'layouts.unnamed': 'Névtelen',
   'layouts.unsavedChanges': 'nem mentett módosítások',

@@ -154,6 +154,20 @@ export interface ExecutionEvent<T = unknown> {
 export type ExecutionListener<T = unknown> = (event: ExecutionEvent<T>) => void;
 
 /**
+ * What the chart knows of an order beside the order itself, handed to `placeOrder` as its second
+ * argument. It is not part of the order: an adapter that sends the order on as it came sends
+ * none of this.
+ */
+export interface OrderContext {
+  /**
+   * What a move of one in price is worth for one unit on the market of the chart the order comes
+   * from (its `contractMultiplier`; 1 with none), read as the order left the chart. The paper
+   * account counts the order, and the position it opens, by it.
+   */
+  multiplier?: number;
+}
+
+/**
  * Execution adapter interface. Reuses the existing `*Intent` types verbatim so
  * a chart that already emits `orderPlace` / `positionModify` events plugs in
  * with no new vocabulary.
@@ -180,7 +194,7 @@ export interface ExecutionAdapter {
    * that takes one, and answer a repeat of it with the order already made, so that a press sent
    * twice is one order.
    */
-  placeOrder(intent: OrderPlaceIntent): Promise<TradingOrder>;
+  placeOrder(intent: OrderPlaceIntent, context?: OrderContext): Promise<TradingOrder>;
   /** Re-price a pending order. */
   modifyOrder(intent: OrderModifyIntent): Promise<void>;
   /** Cancel a pending order. */
@@ -208,9 +222,11 @@ export interface ExecutionAdapter {
   /**
    * What a move of one in price is worth for one unit on the chart's market (its
    * `contractMultiplier`; undefined for none): the chart says it when the adapter is connected and
-   * when its market changes, for an adapter that counts money itself, as the paper account does.
+   * when its market or its symbol changes, with the symbol it shows, for an adapter that counts
+   * money itself, as the paper account does. It is for orders placed from then on: what is open
+   * keeps what it opened with.
    */
-  setMultiplier?(multiplier: number | undefined): void;
+  setMultiplier?(multiplier: number | undefined, symbol?: string): void;
 
   on<T = unknown>(event: ExecutionEventType, listener: ExecutionListener<T>): void;
   off<T = unknown>(event: ExecutionEventType, listener: ExecutionListener<T>): void;

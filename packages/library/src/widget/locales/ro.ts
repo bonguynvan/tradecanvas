@@ -626,6 +626,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': 'Prețurile trebuie să respecte pasul de cotare al pieței.',
   'ticket.problem.priceLimits': 'Astăzi prețurile sunt între {floor} și {ceiling}.',
   'ticket.problem.lot': 'Peste un lot, introduceți loturi întregi de {lot}; acțiunile rămase merg într-un ordin separat.',
+  'ticket.problem.wholeUnits': 'Order whole shares: this market trades no part of one.',
   'toolbar.layouts': 'Aspect',
   'layouts.unnamed': 'Fără nume',
   'layouts.unsavedChanges': 'modificări nesalvate',

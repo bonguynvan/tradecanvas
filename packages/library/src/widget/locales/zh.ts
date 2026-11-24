@@ -626,6 +626,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': '价格须符合市场的最小变动价位。',
   'ticket.problem.priceLimits': '今日价格范围为 {floor} 至 {ceiling}。',
   'ticket.problem.lot': '超过一手时须按整手（每手 {lot} 股）委托；零股请单独委托。',
+  'ticket.problem.wholeUnits': '请按整股委托：该市场不交易不足一股的数量。',
   'toolbar.layouts': '布局',
   'layouts.unnamed': '未命名',
   'layouts.unsavedChanges': '有未保存的更改',

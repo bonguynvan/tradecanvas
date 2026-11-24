@@ -632,6 +632,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': 'Giá phải theo bước giá của thị trường.',
   'ticket.problem.priceLimits': 'Giá hôm nay từ {floor} đến {ceiling}.',
   'ticket.problem.lot': 'Trên một lô, đặt theo lô chẵn {lot}; cổ phiếu lẻ đặt thành lệnh riêng.',
+  'ticket.problem.wholeUnits': 'Hãy đặt số cổ phiếu nguyên: thị trường này không giao dịch phần lẻ của một cổ phiếu.',
   'toolbar.layouts': 'Layout',
   'layouts.unnamed': 'Chưa đặt tên',
   'layouts.unsavedChanges': 'có thay đổi chưa lưu',

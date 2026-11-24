@@ -632,6 +632,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'ticket.problem.priceStep': 'Kursen skal følge markedets kurstrin (tick-størrelse).',
   'ticket.problem.priceLimits': 'Dagens kurser går fra {floor} til {ceiling}.',
   'ticket.problem.lot': 'Over én lot handles hele lots på {lot}; overskydende aktier lægges i en ordre for sig.',
+  'ticket.problem.wholeUnits': 'Order whole shares: this market trades no part of one.',
   'toolbar.layouts': 'Layout',
   'layouts.unnamed': 'Unavngivet',
   'layouts.unsavedChanges': 'ikke-gemte ændringer',

@@ -1,4 +1,5 @@
 import type {
+  OrderContext,
   AccountSummary,
   ExecutionAdapter,
   ExecutionEvent,
@@ -40,6 +41,12 @@ export interface WireExecutionOptions {
  * the helper knowing anything about chart internals — which keeps it pure and
  * unit-testable.
  */
+/** What the chart knows beside an order as it leaves: what a price is worth on its market. */
+function orderContext(host: ExecutionHost): OrderContext | undefined {
+  const multiplier = host.multiplier?.();
+  return multiplier === undefined ? undefined : { multiplier };
+}
+
 export interface ExecutionHost {
   /** Subscribe to an emitted intent; returns an unsubscribe function. */
   onIntent(type: HostIntentType, handler: (payload: unknown) => void): () => void;
@@ -55,6 +62,8 @@ export interface ExecutionHost {
   newClientOrderId?(): string;
   /** The symbol the chart shows, which a confirmed bracket's order is for; undefined with none shown. */
   symbol?(): string | undefined;
+  /** What a move of one in price is worth for one unit on the chart's market now: its contract multiplier, 1 with none. */
+  multiplier?(): number;
   /** An order filled or a position closed (the adapter's `fill`). */
   onFill?(fill: FillEvent): void;
   /** The positions on the chart, until the adapter reports its own. */
@@ -232,9 +241,11 @@ export function wireExecution(adapter: ExecutionAdapter, host: ExecutionHost, op
   // that is never answered waits for good.
   teardowns.push(host.onIntent('orderPlace', (payload) => {
     const intent = payload as OrderPlaceIntent;
+    // Read now: the order goes out a moment later, and the chart, or another on the same account, may show another market by then.
+    const beside = orderContext(host);
     // An adapter that throws at once is reported as one that refuses.
     Promise.resolve()
-      .then(() => adapter.placeOrder(intent))
+      .then(() => adapter.placeOrder(intent, beside))
       .then((order) => host.onOrderPlaced?.(intent, order))
       .catch((cause) => {
         const named = intent.clientOrderId === undefined ? {} : { clientOrderId: intent.clientOrderId };
@@ -258,9 +269,10 @@ export function wireExecution(adapter: ExecutionAdapter, host: ExecutionHost, op
         ...context.orderId(),
         ...(symbol === undefined ? {} : { symbol }),
       };
+      const beside = orderContext(host);
       // An adapter that throws at once is reported as one that refuses.
       Promise.resolve()
-        .then(() => adapter.placeOrder(intent))
+        .then(() => adapter.placeOrder(intent, beside))
         .then((order) => {
           if (connected) host.onBracketOrder?.(order, bracket);
         })
