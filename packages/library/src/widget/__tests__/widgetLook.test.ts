@@ -339,6 +339,19 @@ describe('Graphite’s rules', () => {
     expect(rule).toContain('background: var(--tcw-active-bg)');
   });
 
+  it('marks what is picked without the accent: the dark picked ground, the calendar’s day and the alerts panel’s open button', () => {
+    // The dark theme's picked ground: a muted figure on it reads at 4.5:1 (it was #2b2d33, at 4.48).
+    expect(css).toContain('--tcw-active-bg: #2a2c32;');
+    const controls = readFileSync(fileURLToPath(new URL('../WidgetControls.css', import.meta.url)), 'utf8').replace(/\r\n/g, '\n');
+    const day = body(controls, ".tcw-root[data-tcw-ui='graphite'] .tcw-calendar-day[aria-selected='true']");
+    expect(day).toContain('background: var(--tcw-text)');
+    expect(day).not.toContain('accent');
+    expect(body(controls, ".tcw-root[data-tcw-ui='graphite'] .tcw-calendar-day.tcw-today")).toContain('color: var(--tcw-text)');
+    const open = body(css, ".tcw-root[data-tcw-ui='graphite'] .tcw-alerts-header .tcw-alerts-new[aria-expanded='true']");
+    expect(open).toContain('background: var(--tcw-active-bg)');
+    expect(open).toContain('color: var(--tcw-text)');
+  });
+
   it('writes a tab’s count as a plain number, and a total as a muted name and its figure', () => {
     expect(body(css, ".tcw-root[data-tcw-ui='graphite'] .tcw-account-count")).toContain('background: none');
     // On the picked tab's ground the muted text is under 4.5:1.

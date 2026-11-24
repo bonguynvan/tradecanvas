@@ -814,3 +814,14 @@
   font-weight: var(--tcw-weight);
   cursor: default;
 }
+
+/*
+ * Graphite: the day picked in the calendar is the value chosen: a block in the text's colour with the
+ * ground's colour for its figure, not a block of the accent. The picked ground is too near a day under
+ * the pointer to tell the two apart. Today is told by its line and its weight, not by the accent.
+ */
+.tcw-root[data-tcw-ui='graphite'] .tcw-calendar-day.tcw-today { color: var(--tcw-text); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-calendar-day[aria-selected='true'] {
+  background: var(--tcw-text);
+  color: var(--tcw-bg-elevated);
+}

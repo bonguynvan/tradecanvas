@@ -332,7 +332,7 @@
   --tcw-kind-2: #7aa2ff;
 
   --tcw-hover-bg: rgba(232, 233, 235, 0.07);
-  --tcw-active-bg: #2b2d33;
+  --tcw-active-bg: #2a2c32;
   --tcw-divider: #2a2c31;
 }
 
@@ -4595,6 +4595,12 @@
 .tcw-root[data-tcw-ui='graphite'] .tcw-watchlist-active .tcw-watchlist-symbol { font-weight: var(--tcw-weight-strong); }
 .tcw-root[data-tcw-ui='graphite'] .tcw-watchlist-row.tcw-watchlist-active::before { background: transparent; }
 .tcw-root[data-tcw-ui='graphite'] .tcw-watchlist-row:focus-visible::before { background: var(--tcw-text); }
+/* The alerts panel's button for a new alert, its form open, is on as any button is: the picked ground, not the accent. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-alerts-header .tcw-alerts-new[aria-expanded='true'] {
+  background: var(--tcw-active-bg);
+  color: var(--tcw-text);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-alerts-header .tcw-alerts-new[aria-expanded='true']:hover { background: var(--tcw-border-strong); }
 /* A count beside a toolbar's button (the indicators on the chart) is a plain number, not a badge in the accent. */
 .tcw-root[data-tcw-ui='graphite'] .tcw-badge-count {
   padding: 0;
