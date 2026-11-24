@@ -621,6 +621,10 @@
   justify-content: space-between;
   column-gap: var(--tcw-space-4);
 }
+/* The field keeps the width the other fields' steppers have: stretched to the column, it showed an empty box after its +. */
+.tcw-ticket-docked .tcw-ticket-optional > .tcw-stepper {
+  justify-self: start;
+}
 /* A figure is whole or on the next line: never broken inside. */
 .tcw-ticket-docked .tcw-ticket-away {
   align-self: auto;
