@@ -36,6 +36,15 @@ The `3.0` branch. These move under the version's own heading when it is released
 
 ### Chart
 
+- **Graphite by a design file.** `DESIGN.md` at the repository's root says how the default look is drawn and
+  why, in the [DESIGN.md format](https://github.com/google-labs-code/design.md): its tokens, its components and
+  what not to do. Brought to it in this change: a field in focus says so on its own line, with no ring or glow
+  around it (number and text fields, selects, the stepper); the account panel's totals are a muted name and its
+  figure with no colon between, the open profit first and strong; a tab's count is a plain number; New order is
+  a neutral button with no border; the ticket's line over the order's value is solid; the day's limits stand by
+  the price they set; and a time in force or an order type with one choice reads as text. In every look a
+  total is now three parts for CSS of your own (`tcw-account-total-name`, `-sep`, `-figure`), reading as before,
+  and the open profit carries `tcw-account-open`. The other looks are drawn as they were.
 - **Graphite's chrome in two type sizes and fewer rules.** Figures in the account panel's table, a field's
   name, a segment, the quote buttons and the bars under the chart are 12 px, where they were 11 and 10; a look's
   small size is its own now (`ui.font.smallSize`, 10 to 20; left out, the step under `size` as before, so the other

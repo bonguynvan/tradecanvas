@@ -276,7 +276,9 @@ just changes.
   around a button is not used: a button is filled, neutral or quiet.
 - **Field** (a number, a text, a select): the one part that keeps a 1 px line at rest, in
   `border-strong`, as the line says "type here". **On focus the line takes the muted text's
-  colour; no outline and no glow is added around it.** An error turns the line `down` and says why under
+  colour; no outline and no glow is added around it.** A field in focus must still be told
+  from one at rest: the focused line is 3:1 or more against the line at rest and against the
+  field's ground (3.4:1 and 5.2:1 in the dark theme, 3.4:1 and 5.8:1 in the light one). An error turns the line `down` and says why under
   the field.
 - **Picked item** (a tab, an interval, a row of a menu, a tool): the `picked` ground and `text`,
   strong. **No bar of the accent on its left or under it**, and no accent fill.
