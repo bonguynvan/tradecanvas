@@ -423,6 +423,32 @@ describe('WidgetAccountPanel: an account of more than the symbol shown', () => {
     expect(totals()).toEqual(['Open P&L: +2.00']);
   });
 
+  // A broker values a position at its mark, which is not always the chart's last trade: the row
+  // read +6.00 at the chart's price under a total of +10.00 from the broker.
+  it('values a position of the chart’s own symbol at the adapter’s price for it too, so the row agrees with the account’s total', () => {
+    const account = { balance: 1000, equity: 1010, marginUsed: 200, freeMargin: 810, unrealisedPnl: 10 };
+    panel.update({ ...current, price: 103, positions: [{ ...current.positions[0], markPrice: 105 }], fills: [], account });
+    panel.openPanel();
+    expect([cells()[0][3], cells()[0][6]]).toEqual(['105.00', '+10.00 · +5.00%']);
+    expect(totals()).toContain('Open P&L: +10.00');
+    // A price that is none (0 is what an adapter that has none yet often says) leaves the chart's.
+    for (const bad of [Number.NaN, 0]) {
+      panel.update({ ...current, price: 103, positions: [{ ...current.positions[0], markPrice: bad }], fills: [], account });
+      expect(cells()[0][3], String(bad)).toBe('103.00');
+    }
+    // A price under zero is one: a spread, a contract in a glut.
+    panel.update({ ...current, price: 103, positions: [{ ...current.positions[0], entryPrice: -2, markPrice: -5 }], fills: [], account });
+    expect(cells()[0][3]).toBe('-5.00');
+  });
+
+  it('counts a short, a part closed and a multiplier of its own at the adapter’s price', () => {
+    const short = { id: 'p2', side: 'sell' as const, entryPrice: 100, quantity: 5, closedQuantity: 2, multiplier: 10, markPrice: 98 };
+    panel.update({ ...current, price: 103, positions: [short], fills: [] });
+    panel.openPanel();
+    // Three open, down 2 a unit, 10 a point: +60, where the chart's 103 would read -90.
+    expect([cells()[0][3], cells()[0][6]]).toEqual(['98.00', '+60.00 · +2.00%']);
+  });
+
   it('works its profit out from the adapter’s own price for it, where it gives one', () => {
     panel.update({ ...current, symbol: 'ETHUSDT', price: 48, positions: [{ ...BTC_LONG, markPrice: 104 }, ETH_SHORT], fills: [] });
     expect([cells()[0][3], cells()[0][4], cells()[0][7]]).toEqual(['100.00', '104.00', '+8.00 · +4.00%']);

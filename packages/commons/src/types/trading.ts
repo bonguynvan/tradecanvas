@@ -64,8 +64,11 @@ export interface TradingPosition {
   symbol?: string;
   /**
    * The price the account values the position at, where the adapter says. The widget's account
-   * panel works out from it the profit and loss of a position of another symbol than the chart's;
-   * with none, it shows none (the chart's price is not that symbol's).
+   * panel and the chart's tag on the position count its profit and loss at it, so a row agrees
+   * with the account's own total (`AccountSummary.unrealisedPnl`) where the broker's mark is not
+   * the chart's last trade: say the positions again as it moves. With none, a position of the
+   * symbol the chart shows is counted at the chart's latest price, and one of another symbol
+   * shows no profit (the chart's price is not that symbol's).
    */
   markPrice?: number;
   /**

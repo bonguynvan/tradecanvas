@@ -188,6 +188,15 @@ chart.startBracket('buy', undefined, { risk: 50 })   // the quantity that loses 
   What is sent to a broker is as it was, but for a quantity worked out from a risk, as above.
 </p>
 
+<h3 id="mark">A position's <code>markPrice</code> is what it is counted at</h3>
+<p>
+  If your execution adapter gives a position a <code>markPrice</code>, the account panel's row and the chart's tag
+  now count the position at it, for a position of the chart's own symbol too; before, the price was read only for
+  a position of another symbol, and the chart's latest price counted the rest. So keep it current: say the
+  positions again as the mark moves. An adapter that stamps it once shows a row that stands still. Leave the field
+  out to have the chart's latest price as before. A <code>markPrice</code> of 0 is taken for none.
+</p>
+
 <h2 id="types">Types that grew</h2>
 <p>
   <code>TimeInForce</code> is now <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. Code that handles every

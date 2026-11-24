@@ -193,6 +193,16 @@ chart.startBracket('buy', undefined, { risk: 50 })   // la cantidad que pierde 5
   arriba.
 </p>
 
+<h3 id="mark">El <code>markPrice</code> de una posición es el precio al que se cuenta</h3>
+<p>
+  Si tu adaptador de ejecución da a una posición un <code>markPrice</code>, la fila del panel de cuenta y la
+  etiqueta del gráfico cuentan ahora la posición a ese precio, también para una posición del símbolo del gráfico;
+  antes solo se leía para una posición de otro símbolo, y el resto se contaba al último precio del gráfico. Así que
+  mantenlo al día: envía las posiciones de nuevo cuando la marca se mueva. Un adaptador que lo fija una sola vez
+  muestra una fila inmóvil. Omite el campo para tener el último precio del gráfico como antes. Un
+  <code>markPrice</code> de 0 se toma como ninguno.
+</p>
+
 <h2 id="types">Tipos que han crecido</h2>
 <p>
   <code>TimeInForce</code> es ahora <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. El código que trata todos

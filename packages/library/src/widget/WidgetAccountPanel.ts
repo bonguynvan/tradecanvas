@@ -1,6 +1,6 @@
 import type { ActivityEntry } from '../model/ActivityLog.js';
 import type { AccountSummary, FillEvent, TradingOrder, TradingPosition } from '@tradecanvas/commons';
-import { orderQuantityText, sameSymbol, tickerOf } from '@tradecanvas/commons';
+import { orderQuantityText, positionMark, sameSymbol, tickerOf } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, type MessageKey, type Translator } from './i18n.js';
 import { markPart } from './widgetFeatures.js';
@@ -369,13 +369,14 @@ export class WidgetAccountPanel {
   }
 
   /**
-   * The price a position is valued at: the chart's latest for one of the symbol it shows; for
-   * one of another, the adapter's own price for it, or none (the chart's price is not its own).
+   * The price a position is valued at: the adapter's own price for it where it gives one, which
+   * is what the account's total is counted at; without, the chart's latest for a position of the
+   * symbol it shows, and none for one of another (the chart's price is not its own).
    */
   private markOf(position: TradingPosition): number | null {
-    if (this.ofChart(position)) return this.snapshot.price;
-    const mark = position.markPrice;
-    return mark !== undefined && Number.isFinite(mark) ? mark : null;
+    const mark = positionMark(position);
+    if (mark !== null) return mark;
+    return this.ofChart(position) ? this.snapshot.price : null;
   }
 
   /**

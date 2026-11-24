@@ -159,6 +159,14 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 在止损处亏损 50 �
   发送给券商的内容与之前相同，只有如上所述由风险算出的数量不同。
 </p>
 
+<h3 id="mark">持仓的 <code>markPrice</code> 就是它的估值价格</h3>
+<p>
+  如果你的执行适配器给持仓提供 <code>markPrice</code>，账户面板中的行和图表上的标签现在按该价格为持仓估值，
+  图表自身品种的持仓也是如此；此前只有其他品种的持仓读取该价格，其余按图表的最新价格计算。因此请保持它是最新的：
+  标记价格变动时再次发送持仓。只设置一次的适配器会得到静止不动的一行。不提供该字段则仍按图表的最新价格计算。
+  <code>markPrice</code> 为 0 时视为没有。
+</p>
+
 <h2 id="types">扩充的类型</h2>
 <p>
   <code>TimeInForce</code> 现在是 <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>。处理全部成员的代码
