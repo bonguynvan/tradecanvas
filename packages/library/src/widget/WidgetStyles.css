@@ -4595,6 +4595,112 @@
 .tcw-root[data-tcw-ui='graphite'] .tcw-watchlist-active .tcw-watchlist-symbol { font-weight: var(--tcw-weight-strong); }
 .tcw-root[data-tcw-ui='graphite'] .tcw-watchlist-row.tcw-watchlist-active::before { background: transparent; }
 .tcw-root[data-tcw-ui='graphite'] .tcw-watchlist-row:focus-visible::before { background: var(--tcw-text); }
+/*
+ * The accent is the user's own on the chart, and a link: it fills no button and marks nothing picked.
+ * What the accent's fill, its ink and its tint were for in the chrome (the button that sends, a tick,
+ * a slider's thumb, the ground of what is on) is the text's colour and the picked ground here. One
+ * place says so, for both themes: the rules that read these tokens follow.
+ */
+.tcw-root[data-tcw-ui='graphite'] {
+  --tcw-accent-fill: var(--tcw-text);
+  --tcw-accent-hover: color-mix(in srgb, var(--tcw-text) 86%, var(--tcw-bg));
+  --tcw-accent-ink: var(--tcw-bg);
+  --tcw-accent-soft: var(--tcw-active-bg);
+  --tcw-accent-glow: var(--tcw-active-bg);
+}
+/* What is on is the text's colour on the picked ground, where it was the accent's on its tint. */
+.tcw-root[data-tcw-ui='graphite'] :is(
+  .tcw-dropdown-item.tcw-active,
+  .tcw-flyout-item.tcw-active,
+  .tcw-favorites-tool.tcw-active,
+  .tcw-sel-btn.tcw-sel-on,
+  .tcw-sel-option.tcw-sel-on,
+  .tcw-tree-btn.tcw-tree-on,
+  .tcw-btn.tcw-grid-sync.tcw-active,
+  .tcw-style-width.tcw-on,
+  .tcw-style-dash.tcw-on,
+  .tcw-flyout-pin[aria-pressed='true'],
+  .tcw-range-btn:active,
+  .tcw-cp-check,
+  .tcw-cp-row.tcw-on .tcw-cp-label,
+  .tcw-layouts-check,
+  .tcw-layouts-open[aria-current='true'] .tcw-layouts-name,
+  .tcw-dock-page .tcw-tape-more.tcw-active
+) {
+  color: var(--tcw-text);
+}
+.tcw-root[data-tcw-ui='graphite'] :is(.tcw-style-width.tcw-on, .tcw-style-dash.tcw-on) { border-color: var(--tcw-text); }
+/*
+ * A picked tab has no line of the accent under it: its ground and its weight say so. Not where the look is
+ * told to underline what is on (`ui.active: 'underline'`): that line is asked for. The keyboard's ring stays.
+ */
+.tcw-root[data-tcw-ui='graphite']:not([data-tcw-active='underline']) .tcw-account-tab[aria-selected='true'],
+.tcw-root[data-tcw-ui='graphite']:not([data-tcw-active='underline']) .tcw-ss-type[aria-pressed='true'] {
+  background: var(--tcw-active-bg);
+  color: var(--tcw-text);
+}
+.tcw-root[data-tcw-ui='graphite']:not([data-tcw-active='underline']) .tcw-account-tab[aria-selected='true']:not(:focus-visible),
+.tcw-root[data-tcw-ui='graphite']:not([data-tcw-active='underline']) .tcw-ss-type[aria-pressed='true']:not(:focus-visible) {
+  box-shadow: none;
+}
+.tcw-root[data-tcw-ui='graphite']:not([data-tcw-active='underline']) .tcw-modal-tab.tcw-active { border-bottom-color: var(--tcw-text); }
+/* The keyboard's ring is the text's colour, and a field in focus has its line in the muted text's. */
+.tcw-root[data-tcw-ui='graphite'] :is(
+  .tcw-indi-remove,
+  .tcw-ind-legend-toggle,
+  .tcw-level-remove,
+  .tcw-range-btn,
+  .tcw-statusbar,
+  .tcw-status-host-btn,
+  .tcw-status-scale-btn,
+  .tcw-status-clock,
+  .tcw-tf-custom-add,
+  .tcw-tf-remove,
+  .tcw-tf-star
+):focus-visible {
+  outline-color: var(--tcw-text);
+}
+.tcw-root[data-tcw-ui='graphite'] :is(.tcw-flyout-item, .tcw-calendar-day, .tcw-calendar-nav):focus-visible {
+  box-shadow: inset 0 0 0 1px var(--tcw-text);
+}
+/* On the picked day, a block in the text's colour, the ring is the ground's: the text's would not be seen on it. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-calendar-day[aria-selected='true']:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--tcw-text), inset 0 0 0 3px var(--tcw-bg-elevated);
+}
+/*
+ * A filled button's ring stands off its fill by the ground's width: in the fill's own colour and against it,
+ * the button only looked larger. The same for a slider's thumb.
+ */
+.tcw-root[data-tcw-ui='graphite'] :is(.tcw-done-btn, .tcw-alerts-add, .tcw-style-savebtn, .tcw-replay-btn.tcw-replay-play):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--tcw-bg-elevated), 0 0 0 4px var(--tcw-text);
+}
+.tcw-root[data-tcw-ui='graphite'] input[type='range']:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--tcw-bg-elevated), 0 0 0 4px var(--tcw-text); }
+.tcw-root[data-tcw-ui='graphite'] input[type='range']:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 2px var(--tcw-bg-elevated), 0 0 0 4px var(--tcw-text); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-tf-custom-add:hover { border-color: var(--tcw-text-muted); color: var(--tcw-text); }
+/* On a phone the tools' button, on, is a block in the text's colour: its edge too. */
+.tcw-root[data-tcw-ui='graphite'][data-tcw-narrow] > .tcw-body > .tcw-sidebar-fab.tcw-active { border-color: var(--tcw-text); }
+/* A tick's box has no halo of the tint around it. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-toggle.tcw-on:not(:focus-visible) { box-shadow: none; }
+/*
+ * An alert that fired is the user's own: its row keeps the accent's tint, which the picked ground would
+ * have made a row like any picked one.
+ */
+.tcw-root[data-tcw-ui='graphite'] .tcw-alerts-triggered { background: color-mix(in srgb, var(--tcw-accent) 12%, transparent); }
+.tcw-root[data-tcw-ui='graphite'] :is(.tcw-indi-input, .tcw-tf-custom-input, .tcw-style-name, .tcw-alerts-form select):focus,
+.tcw-root[data-tcw-ui='graphite'] .tcw-settings-select:focus-visible {
+  border-color: var(--tcw-text-muted);
+  box-shadow: none;
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-tree-rename:focus { box-shadow: none; }
+.tcw-root[data-tcw-ui='graphite'] :is(.tcw-style-swatch.tcw-on) { outline-color: var(--tcw-text); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-sel-swatch.tcw-sel-on { box-shadow: 0 0 0 2px var(--tcw-bg-elevated), 0 0 0 4px var(--tcw-text); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-grid-cell-active::after { border-color: var(--tcw-text-muted); }
+/* A tick and a radio are the text's colour, and a slider's thumb: `accent-color` is the browser's own control. */
+.tcw-root[data-tcw-ui='graphite'] input[type='checkbox']:checked,
+.tcw-root[data-tcw-ui='graphite'] input[type='radio']:checked { border-color: var(--tcw-text); }
+.tcw-root[data-tcw-ui='graphite'] input[type='radio']:checked { background-image: radial-gradient(circle, var(--tcw-text) 0 3.5px, transparent 4px); }
+.tcw-root[data-tcw-ui='graphite'] :is(.tcw-level-row input[type='checkbox'], .tcw-settings-range input[type='range']) { accent-color: var(--tcw-text); }
 /* The alerts panel's button for a new alert, its form open, is on as any button is: the picked ground, not the accent. */
 .tcw-root[data-tcw-ui='graphite'] .tcw-alerts-header .tcw-alerts-new[aria-expanded='true'] {
   background: var(--tcw-active-bg);

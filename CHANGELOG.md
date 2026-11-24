@@ -36,6 +36,18 @@ The `3.0` branch. These move under the version's own heading when it is released
 
 ### Chart
 
+- **In Graphite the accent fills no button and marks nothing picked, and the last price is the one block on the price
+  axis.** The button that sends in a dialog or a panel (OK, Go to, Add alert, Save), a tick box, a radio, a slider's
+  thumb and a replay's play button are the text's colour with the ground's for their ink, where they were the
+  accent's fill; what is on (a menu's row, a tool, a tab of the account panel, a layout, a command) is the text's
+  colour on the picked ground, with no line of the accent under a tab; the keyboard's ring is the text's colour
+  (off its fill by the ground's width on a filled button and a slider's thumb), and a field in focus has its
+  line in the muted text's. A look set to underline what is on (`ui.active: 'underline'`) keeps its line, and an
+  alert that fired keeps the accent's tint on its row. The accent is left to what is the
+  user's own on the chart and to a link. On the price axis an order's and a position's tags are outlined where a
+  theme outlines the values on its axis (`valueTagsOutlined`, the Graphite themes), as an indicator's value and a
+  quote are; filled, in every look, they are a shade deeper where no ink would read on their colour. The other looks'
+  chrome is as it was.
 - **Graphite's picked ground lets a muted figure read on it, and two more picked things lose the accent.** The dark
   theme's picked ground is `#2a2c32`, where it was `#2b2d33`: the watchlist's picked row had its muted and
   falling figures at 4.48:1, and has them at 4.54:1. The day picked in the calendar is a block in the text's colour,

@@ -339,6 +339,23 @@ describe('Graphite’s rules', () => {
     expect(rule).toContain('background: var(--tcw-active-bg)');
   });
 
+  it('fills no button with the accent: its fill, its ink and its tint are the text’s colour, the ground’s and the picked ground', () => {
+    // The look has several rules of this selector: the one that holds the accent's tokens.
+    const at = css.indexOf('--tcw-accent-fill: var(--tcw-text)');
+    expect(at).toBeGreaterThan(0);
+    const tokens = css.slice(css.lastIndexOf('{', at), css.indexOf('}', at));
+    expect(css.slice(css.lastIndexOf('}', at), at)).toContain(".tcw-root[data-tcw-ui='graphite'] {");
+    expect(tokens).toContain('--tcw-accent-fill: var(--tcw-text)');
+    expect(tokens).toContain('--tcw-accent-ink: var(--tcw-bg)');
+    expect(tokens).toContain('--tcw-accent-soft: var(--tcw-active-bg)');
+    // The accent itself stays: a link, and what is the user's own on the chart.
+    expect(tokens).not.toMatch(/--tcw-accent:\s/);
+    // A picked tab has no line of the accent under it.
+    expect(css).toContain(".tcw-root[data-tcw-ui='graphite']:not([data-tcw-active='underline']) .tcw-account-tab[aria-selected='true']:not(:focus-visible),");
+    // A filled button's ring stands off its fill: in the fill's colour against it, it was not seen.
+    expect(css).toContain(".tcw-root[data-tcw-ui='graphite'] :is(.tcw-done-btn, .tcw-alerts-add, .tcw-style-savebtn, .tcw-replay-btn.tcw-replay-play):focus-visible {");
+  });
+
   it('marks what is picked without the accent: the dark picked ground, the calendar’s day and the alerts panel’s open button', () => {
     // The dark theme's picked ground: a muted figure on it reads at 4.5:1 (it was #2b2d33, at 4.48).
     expect(css).toContain('--tcw-active-bg: #2a2c32;');

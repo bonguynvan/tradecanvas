@@ -38,7 +38,8 @@ export type StyleValueKind = 'color' | 'lineStyle' | 'width' | 'boolean';
  *   and its text in the line's colour, instead of filled with the line's
  *   colour. A line too close to the background to be read on it has its
  *   value written in a deeper shade of its colour. The bid's, the ask's,
- *   the high's and the low's tags are outlined with them.
+ *   the high's and the low's tags, and an order's and a position's, are
+ *   outlined with them.
  * - `grid.vertical.periodsOnly` rules the vertical grid where a period
  *   begins, not at the time axis's labels: at each day's first bar on an
  *   intraday chart, each month's on a chart of days, each year's on a chart
