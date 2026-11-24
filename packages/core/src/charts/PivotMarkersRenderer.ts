@@ -1,3 +1,4 @@
+import { chartFont } from '../ui/chartType.js';
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import { MAX_PRICE_DECIMALS, priceTagText } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
@@ -54,7 +55,7 @@ export class PivotMarkersRenderer {
     const { from, to } = viewport.visibleRange;
     const size = 5;
     ctx.save();
-    ctx.font = `10px ${theme.font.family}`;
+    ctx.font = chartFont(theme, 1);
     ctx.textAlign = 'center';
 
     for (const p of pivots) {

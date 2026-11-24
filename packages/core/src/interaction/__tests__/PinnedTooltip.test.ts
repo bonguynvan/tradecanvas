@@ -30,6 +30,39 @@ describe('PinnedTooltip', () => {
     expect(card.style.fontSize).toBe('14px');
   });
 
+  it('writes its figures and its move at 4.5:1 on the chart’s ground, at full strength', async () => {
+    const { GRAPHITE_LIGHT_THEME, contrastRatio } = await import('@tradecanvas/commons');
+    const host = document.createElement('div');
+    const tooltip = new PinnedTooltip();
+    tooltip.create(host);
+    const pinned = { time: Date.UTC(2026, 2, 4), open: 2, high: 2, low: 1, close: 1 };
+    tooltip.pin(pinned, 0, GRAPHITE_LIGHT_THEME);
+    for (const hover of [3, 0.5]) {
+      tooltip.reposition(unitViewport, { ...pinned, close: hover }, 2, GRAPHITE_LIGHT_THEME);
+      const card = host.firstElementChild as HTMLElement;
+      const coloured = [...card.querySelectorAll<HTMLElement>('*')].filter((el) => el.style.color && el.textContent && /\d/.test(el.textContent));
+      expect(coloured.length).toBeGreaterThan(4);
+      for (const el of coloured) expect(contrastRatio(el.style.color, GRAPHITE_LIGHT_THEME.background)!, el.textContent!).toBeGreaterThanOrEqual(4.5);
+      // Nothing that carries a figure is faded.
+      for (const el of card.querySelectorAll<HTMLElement>('*')) if (/\d/.test(el.textContent ?? '')) expect(el.style.opacity || '1', el.textContent!).toBe('1');
+    }
+  });
+
+  it('takes the ground and the edge of the theme it is placed in, not of the one it was pinned in', async () => {
+    const { LIGHT_THEME } = await import('@tradecanvas/commons');
+    const host = document.createElement('div');
+    const tooltip = new PinnedTooltip();
+    tooltip.create(host);
+    tooltip.pin({ time: Date.UTC(2026, 2, 4), open: 1, high: 2, low: 0.5, close: 1.5 }, 0, DARK_THEME);
+    const card = host.firstElementChild as HTMLElement;
+    const night = { color: card.style.color, time: (card.children[1] as HTMLElement).style.color, figure: card.querySelector<HTMLElement>('[data-figure]')!.style.color, name: card.querySelector<HTMLElement>('[data-name]')!.style.color };
+    tooltip.reposition(unitViewport, null, null, LIGHT_THEME);
+    const day = { color: card.style.color, time: (card.children[1] as HTMLElement).style.color, figure: card.querySelector<HTMLElement>('[data-figure]')!.style.color, name: card.querySelector<HTMLElement>('[data-name]')!.style.color };
+    for (const key of ['color', 'time', 'figure', 'name'] as const) expect(day[key], key).not.toBe(night[key]);
+    // A price's name is the theme's quieter text, not the text faded.
+    expect(card.querySelector<HTMLElement>('[data-name]')!.style.opacity).toBe('');
+  });
+
   it('shows the bar time in the chart’s time zone', () => {
     const host = document.createElement('div');
     const tooltip = new PinnedTooltip();
@@ -94,7 +127,7 @@ describe('PinnedTooltip', () => {
     expect(host.textContent).toContain('Δ +1.250,0 (+1,25%) · +5 bars');
   });
 
-  it('fades the move’s percentage without a style attribute in markup, which a strict style-src refuses', () => {
+  it('writes the move’s percentage at full strength, with no style attribute in markup, which a strict style-src refuses', () => {
     const host = document.createElement('div');
     const tooltip = new PinnedTooltip();
     tooltip.create(host);
@@ -111,7 +144,7 @@ describe('PinnedTooltip', () => {
     }
     expect(markup.filter((html) => /style\s*=/i.test(html))).toEqual([]);
     const percent = [...host.querySelectorAll('span')].find((span) => span.textContent === '(+1.00%)');
-    expect(percent?.style.opacity).toBe('0.7');
+    expect(percent?.style.opacity ?? '').toBe('');
     expect(host.textContent).toContain('Δ +1.00 (+1.00%) · +2 bars');
   });
 

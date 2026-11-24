@@ -498,6 +498,13 @@ describe('CrosshairHandler: how far the pointer’s price is from the last', () 
     expect(written(handler)).toEqual(['101.00']);
   });
 
+  it('writes none with the last price switched off in the chart’s style', () => {
+    const handler = at(135);
+    handler.setChangeBase(() => 100);
+    const hidden = resolveChartTheme(DARK_THEME, 'candlestick', { 'crosshair.labelChange': true, 'lastPrice.visible': false }) as Theme;
+    expect(written(handler, viewport, hidden)).toEqual(['101.00']);
+  });
+
   it('writes none on a scale that is in percent or indexed already', () => {
     const handler = at(135);
     handler.setChangeBase(() => 100);

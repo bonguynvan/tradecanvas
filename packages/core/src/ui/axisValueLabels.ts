@@ -72,8 +72,34 @@ export function darkInkReads(background: string): boolean {
   return onDark >= onLight * DARK_INK_LEAD;
 }
 
+/** The contrast a filled tag's ink has on its fill, at the least. */
+const TAG_CONTRAST = 4.5;
+
+/**
+ * The colour a tag is filled with: `fill`, or, where the ink it takes
+ * (`labelTextColor`) would not read on it at 4.5:1, the nearest shade of it
+ * that the ink does read on, its hue kept. A light chart's candles are of a
+ * middle lightness on which white is 4:1 and dark ink no better: the candle
+ * keeps its colour, its tag is a shade deeper. A colour that cannot be read
+ * is left as it is.
+ */
+export function tagFill(fill: string): string {
+  const ink = labelTextColor(fill);
+  return readableOn(fill, ink, ink === TAG_INK_LIGHT ? TAG_INK_DARK : TAG_INK_LIGHT, TAG_CONTRAST);
+}
+
 /** The contrast a value written on an outlined tag has on its ground, at the least. */
 const OUTLINED_TEXT_CONTRAST = 4.5;
+
+/**
+ * The colour of the figure on an outlined tag: its line's, taken toward the ink that reads on the
+ * ground (dark on a light one, light on a dark one) until it reads there at 4.5:1, its hue kept.
+ * A ground that is no colour (a stand-in theme's) leaves the line's colour as it is.
+ */
+export function outlinedTagText(color: string, ground: string): string {
+  if (typeof ground !== 'string') return color;
+  return readableOn(color, ground, inkOn(ground, TAG_INK_DARK, TAG_INK_LIGHT), OUTLINED_TEXT_CONTRAST);
+}
 
 /** A tag already on the axis that value tags keep clear of: its centre and half its height. */
 export interface FixedAxisTag {
@@ -138,20 +164,17 @@ export function drawAxisValueLabels(
   const half = AXIS_LABEL_HEIGHT / 2;
   // Outlined: the chart's ground under an edge and a text in the line's colour, where a look wants no blocks of colour.
   const outlined = theme.style?.axis.price.valueTagsOutlined === true;
-  // A line's colour that would not read on the ground is taken toward the ink that reads there (dark on a light
-  // ground, light on a dark one) until it does: its hue is kept.
-  // A theme with no ground to say (a stand-in) leaves the line's colour as it is.
-  const ink = typeof ground === 'string' ? inkOn(ground, TAG_INK_DARK, TAG_INK_LIGHT) : null;
   for (const label of labels) {
     const top = Math.round(label.y - half);
     // The axis's width, as an order's tag and the last price's are.
     if (outlined) {
       outlineTag(ctx, axisX + 1, top, axisWidth - 2, AXIS_LABEL_HEIGHT, theme, label.color, ground);
-      ctx.fillStyle = ink === null ? label.color : readableOn(label.color, ground, ink, OUTLINED_TEXT_CONTRAST);
+      ctx.fillStyle = outlinedTagText(label.color, ground);
     } else {
-      ctx.fillStyle = label.color;
+      const fill = tagFill(label.color);
+      ctx.fillStyle = fill;
       fillTag(ctx, axisX + 1, top, axisWidth - 2, AXIS_LABEL_HEIGHT, theme);
-      ctx.fillStyle = labelTextColor(label.color);
+      ctx.fillStyle = labelTextColor(fill);
     }
     ctx.fillText(label.text, axisX + 1 + AXIS_TAG_TEXT_INSET, Math.round(label.y));
   }

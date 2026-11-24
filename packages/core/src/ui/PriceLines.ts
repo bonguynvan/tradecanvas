@@ -1,8 +1,8 @@
 import type { DataSeries, Theme, ViewportState } from '@tradecanvas/commons';
 import { PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
-import { AXIS_TAG_TEXT_INSET, fillTag } from './shapes.js';
-import { labelTextColor } from './axisValueLabels.js';
+import { AXIS_TAG_TEXT_INSET, fillTag, outlineTag } from './shapes.js';
+import { labelTextColor, outlinedTagText, tagFill } from './axisValueLabels.js';
 import { hLine } from '../charts/pixelGrid.js';
 
 export type PriceLineKind = 'high' | 'low' | 'bid' | 'ask';
@@ -110,17 +110,27 @@ export class PriceLines {
     ctx.font = `${theme.font.sizeSmall}px ${theme.font.family}`;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
+    // Where a theme outlines the values on its axis, a quote's and the high's and low's are outlined too:
+    // the last price is then the one block of colour among them.
+    const outlined = theme.style?.axis.price.valueTagsOutlined === true;
     for (const level of this.levels(data, viewport)) {
       const y = priceToY(level.price, viewport);
       if (y < chartRect.y || y > chartRect.y + chartRect.height) continue;
       const tagY = at?.get(level.kind) ?? y;
       // Pushed off the plot by the axis's other tags: left out.
       if (Number.isNaN(tagY)) continue;
-      const fill = colorOf(level.kind, theme);
-      ctx.fillStyle = fill;
-      fillTag(ctx, axisX, tagY - TAG_HEIGHT / 2, width, TAG_HEIGHT, theme);
-      // The ink every filled tag of the axis is written in: the one that reads on the fill.
-      ctx.fillStyle = labelTextColor(fill);
+      const color = colorOf(level.kind, theme);
+      if (outlined) {
+        // As an indicator's value is there: the chart's ground inside an edge of the line's colour.
+        outlineTag(ctx, axisX, tagY - TAG_HEIGHT / 2, width, TAG_HEIGHT, theme, color, theme.background);
+        ctx.fillStyle = outlinedTagText(color, theme.background);
+      } else {
+        const fill = tagFill(color);
+        ctx.fillStyle = fill;
+        fillTag(ctx, axisX, tagY - TAG_HEIGHT / 2, width, TAG_HEIGHT, theme);
+        // The ink every filled tag of the axis is written in: the one that reads on the fill.
+        ctx.fillStyle = labelTextColor(fill);
+      }
       const text = viewport.formatPrice?.(level.price) ?? this.priceText?.(level.price) ?? formatPrice(level.price, precision);
       ctx.fillText(text, axisX + AXIS_TAG_TEXT_INSET, tagY);
     }

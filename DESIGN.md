@@ -227,10 +227,14 @@ The chart is the page; everything above is its frame. On it:
 
 - **An indicator's value is never a block of colour on the price axis.** It is an outlined tag, its
   figure in its line's colour, deepened where it must be to read at 4.5:1. The last price is filled,
-  the countdown under it in its colour. (An order's, a position's and the bid's and ask's tags are
-  still filled: making the last price the only block is work to come.)
+  the countdown under it in its colour. (The bid's, the ask's, the high's and the low's tags
+  are outlined with it; an order's and a position's are still filled: work to come.)
 - **A price reads on its own tag.** The ink on a filled tag is the dark or the light one by contrast
   with the fill, never white by habit: dark ink on the candles' green and red in the dark theme.
+  Where neither ink reads at 4.5:1 (the light theme's candles), the tag is a shade deeper than its
+  candle. A coloured figure on a card is taken toward the text the same way.
+- The chart has three sizes of type and no others: the small size (12), and one and two under it
+  for a name beside a line and a marker's word.
 - The chart's figures (axes, tags, the legend's prices) are the chrome's small size, 12 px, in
   the same face with digits of one width. A figure on the chart and one beside it are the same size.
 - **The crosshair's price says how far it is from the last.** Under the price on the axis, the

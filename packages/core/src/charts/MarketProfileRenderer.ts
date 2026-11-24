@@ -1,3 +1,4 @@
+import { chartFont } from '../ui/chartType.js';
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceTagText, smallValueDecimals } from '@tradecanvas/commons';
 import { computeMarketProfile, computeSessionProfiles, assignSessionLetters, tpoLetter } from './marketProfile.js';
@@ -293,7 +294,7 @@ export class MarketProfileRenderer {
       ['VAL', text(val), this.valueAreaColor ?? theme.candleUp],
     ];
     ctx.globalAlpha = 1;
-    ctx.font = `600 10px ${theme.font.family}`;
+    ctx.font = chartFont(theme, 1, '600');
     ctx.textBaseline = 'middle';
     const lineH = 14;
     const padX = 6;

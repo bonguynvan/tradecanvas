@@ -36,6 +36,21 @@ The `3.0` branch. These move under the version's own heading when it is released
 
 ### Chart
 
+- **The last price, a quote and an indicator's value read on their tags, the quotes are outlined in Graphite, and the
+  chart's small type follows the theme.** A tag's fill is deepened, its hue kept, where the ink it takes would not read on it at 4.5:1: a
+  light chart's last price was white on its candle's green at 4.06:1 (the candle keeps its colour, the tag and the
+  countdown under it are a shade deeper), and the same goes for the bid's and ask's tags and an indicator's filled
+  value. A look's own `lastPrice.labelBackground` is left as it is. Where a theme outlines the values on its axis
+  (`valueTagsOutlined`, the Graphite themes; `axis.price.valueTagsOutlined`), the bid's, the ask's, the high's and
+  the low's tags are outlined too, so the last price is the one block of colour among them. The type the chart had
+  at 11, 10 and 9 px in every theme (the day's limit tags and their names, a pane's title, alert, signal and
+  trade-zone labels, period levels, pivots, the market profile's figures, the measure tool) is the theme's small
+  size and one and two steps under it: unchanged in a theme whose small size is 11, a size up in Graphite, and
+  grown with a widget on a wide screen as far as its box holds it (a tag 14 px tall keeps 11 px type). A rise's and a fall's figures on the card beside the crosshair and on a
+  pinned bar's card are taken toward the chart's text until they read at 4.5:1 on its ground; the pinned card's
+  move is at full strength, and the card takes a new look's colours when the look changes while it is pinned.
+  Fixed: the crosshair's percentage (`crosshair.labelChange`) was still written with the last price switched off
+  by `lastPrice.visible`.
 - **The crosshair says how far its price is from the last, and the chart's cards are set as the chart is.** Under
   the price the crosshair names on the price axis, Graphite writes that price's distance from the last one in
   percent (`+1.25%`, in the chart's locale): the `crosshair.labelChange` style key, with its switch in Chart

@@ -57,8 +57,8 @@ export interface Theme {
    */
   priceLimits?: PriceLimitColors;
   /**
-   * An indicator's value tags on the price axis drawn outlined, not filled, in this theme: the
-   * last price is then the one block of colour on the axis. The `axis.price.valueTagsOutlined`
+   * An indicator's value tags on the price axis, and the bid's, the ask's, the high's and the low's,
+   * drawn outlined, not filled, in this theme: the last price is then the one block of colour among them. The `axis.price.valueTagsOutlined`
    * style key is over it. Left out, filled.
    */
   valueTagsOutlined?: boolean;

@@ -1,3 +1,4 @@
+import { chartFont } from '../ui/chartType.js';
 import type { ViewportState, Theme, DataSeries, TradeZone, TradeZoneStyle } from '@tradecanvas/commons';
 import { DEFAULT_TRADE_ZONE_STYLE, formatPrice, priceTagText } from '@tradecanvas/commons';
 import { priceToY, barIndexToX, timestampToBarIndex } from '../viewport/ScaleMapping.js';
@@ -21,6 +22,9 @@ interface TradeZoneEvents {
 }
 
 let zoneId = 1;
+
+/** Height (px) of the ground under a zone's profit: its type stays inside it. */
+const PNL_BOX = 14;
 
 export class TradeZoneManager extends Emitter<TradeZoneEvents> {
   private zones: TradeZone[] = [];
@@ -197,7 +201,7 @@ export class TradeZoneManager extends Emitter<TradeZoneEvents> {
 
     // The long or short icon of the icon set, then the entry price.
     drawIcon(ctx, zone.direction === 'long' ? UI_ICONS.trendingUp : UI_ICONS.trendingDown, left + 4, entryY - 3 - ZONE_ICON_SIZE, ZONE_ICON_SIZE, fillColor);
-    ctx.font = `bold 10px ${theme.font.family}`;
+    ctx.font = chartFont(theme, 1, 'bold');
     ctx.fillStyle = fillColor;
     ctx.textBaseline = 'bottom';
     ctx.textAlign = 'left';
@@ -211,7 +215,7 @@ export class TradeZoneManager extends Emitter<TradeZoneEvents> {
         ? `${pnlSign}${figure(zone.pnl)} (${pnlSign}${figure(zone.pnlPercent)}%)`
         : `${pnlSign}${figure(zone.pnl)}`;
 
-      ctx.font = `bold 10px ${theme.font.family}`;
+      ctx.font = chartFont(theme, 1, 'bold', PNL_BOX);
       ctx.fillStyle = fillColor;
       ctx.textBaseline = 'top';
       ctx.textAlign = 'right';
@@ -221,14 +225,14 @@ export class TradeZoneManager extends Emitter<TradeZoneEvents> {
       const bgY = top + 2;
       ctx.globalAlpha = 0.85;
       ctx.fillStyle = theme.background;
-      fillTag(ctx, bgX, bgY, bgWidth, 14, theme);
+      fillTag(ctx, bgX, bgY, bgWidth, PNL_BOX, theme);
       ctx.globalAlpha = 1;
       ctx.fillStyle = fillColor;
       ctx.fillText(pnlText, right - 4, bgY + 1);
     }
 
     if (style.showLabel && zone.label) {
-      ctx.font = `9px ${theme.font.family}`;
+      ctx.font = chartFont(theme, 2);
       ctx.fillStyle = fillColor;
       ctx.globalAlpha = 0.8;
       ctx.textBaseline = 'top';
