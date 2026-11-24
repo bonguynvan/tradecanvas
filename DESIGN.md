@@ -210,7 +210,7 @@ none of these, it is taken out.
 
 - Two sizes do almost all the work: **13 px** for controls and names, **12 px** for figures in a
   table, a field's name, a segment and the bars under the chart. **15 px** is for a dialog's
-  title, the symbol and an order's value. **10 px** is left to a character inside a set shape (a keycap, the letter in a badge:
+  title, the symbol and an order's value. **10 px** is left to a character inside a set shape (the letter in a badge:
   `--tcw-font-size-glyph`), and to nothing a trader reads: the smallest type token is 12 too.
 - **Weight 600 means "first" or "picked"**: the last price, a profit, a picked tab or interval,
   the button that sends, a title. Everything else is 400. A heading of a column is not strong:

@@ -1396,7 +1396,7 @@ img.tcw-ss-badge {
   background: var(--tcw-bg);
   color: var(--tcw-text-dim);
   font-family: var(--tcw-font-mono);
-  font-size: var(--tcw-font-size-glyph);
+  font-size: var(--tcw-font-size-xs);
   line-height: 1.6;
   text-align: center;
   white-space: nowrap;

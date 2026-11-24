@@ -4586,8 +4586,13 @@
  * The symbol on the chart, in the watchlist, is a picked row: a neutral ground, with no bar of the
  * accent down its left and no accent tint. A row the keyboard is on has its bar in the text's colour.
  */
-/* A ground deeper than the picked one: beside a row under the pointer, the picked ground alone was not told from it. */
-.tcw-root[data-tcw-ui='graphite'] .tcw-watchlist-row.tcw-watchlist-active { background: var(--tcw-border-strong); }
+/*
+ * The picked ground, on which the row's figures read as they do on the others, and the one name in the strong
+ * weight: 600 means picked, so the names of the other rows are not strong here.
+ */
+.tcw-root[data-tcw-ui='graphite'] .tcw-watchlist-row.tcw-watchlist-active { background: var(--tcw-active-bg); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-watchlist-symbol { font-weight: var(--tcw-weight); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-watchlist-active .tcw-watchlist-symbol { font-weight: var(--tcw-weight-strong); }
 .tcw-root[data-tcw-ui='graphite'] .tcw-watchlist-row.tcw-watchlist-active::before { background: transparent; }
 .tcw-root[data-tcw-ui='graphite'] .tcw-watchlist-row:focus-visible::before { background: var(--tcw-text); }
 /* A count beside a toolbar's button (the indicators on the chart) is a plain number, not a badge in the accent. */
