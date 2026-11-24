@@ -4646,6 +4646,50 @@
     opacity: 0.8;
   }
 }
+/*
+ * The account's strip, by DESIGN.md: a total is a muted name and its figure, with nothing between
+ * them but room; the open profit is first and strong. A tab's count is a plain number, and New
+ * order a neutral button with no border, as Cancel is.
+ */
+.tcw-root[data-tcw-ui='graphite'] .tcw-account-total {
+  display: inline-flex;
+  gap: var(--tcw-space-3);
+  align-items: baseline;
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-account-total-sep { display: none; }
+.tcw-root[data-tcw-ui='graphite'] .tcw-account-total-name { color: var(--tcw-text-muted); font-family: var(--tcw-font); }
+/* A figure with no direction, a sum or a profit of nothing, is in the text's colour: a figure is what is read. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-account-total:not(.tcw-account-up, .tcw-account-down) .tcw-account-total-figure { color: var(--tcw-text); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-account-open { order: -1; }
+.tcw-root[data-tcw-ui='graphite'] .tcw-account-open .tcw-account-total-figure { font-weight: var(--tcw-weight-strong); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-account-count {
+  min-width: 0;
+  padding-inline: 0;
+  background: none;
+  /* The dim text, not the muted: 4.5:1 on the picked tab's ground too. */
+  color: var(--tcw-text-dim);
+  font-family: var(--tcw-font);
+  font-size: var(--tcw-font-size-sm);
+  font-weight: var(--tcw-weight);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-account-new {
+  border: 0;
+  background: var(--tcw-active-bg);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-account-new:hover { background: color-mix(in srgb, var(--tcw-text) 10%, var(--tcw-active-bg)); }
+@media (forced-colors: active) {
+  .tcw-root[data-tcw-ui='graphite'] .tcw-account-new { border: 1px solid ButtonText; }
+}
+/*
+ * By DESIGN.md: what the keys reach is ringed in the text's colour. These had the accent's.
+ */
+.tcw-root[data-tcw-ui='graphite'] :is(.tcw-ind-legend-name, .tcw-ind-legend-act, .tcw-ind-legend-toggle, .tcw-level-remove, .tcw-status-host-btn):focus-visible {
+  outline-color: var(--tcw-text);
+}
+.tcw-root[data-tcw-ui='graphite'] :is(.tcw-context-item, .tcw-sel-btn, .tcw-sel-swatch, .tcw-sel-option):focus-visible {
+  box-shadow: inset 0 0 0 1px var(--tcw-text);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-pane-btn:focus-visible { box-shadow: var(--tcw-ring); }
 .tcw-account-empty {
   margin: 0;
   padding: var(--tcw-space-6);

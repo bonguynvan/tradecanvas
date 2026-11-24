@@ -119,6 +119,10 @@ These fail CI, often far from the line that caused them.
 
 ## Widget UI
 
+- How the default look, Graphite, is drawn and why is in [DESIGN.md](DESIGN.md) (the
+  [DESIGN.md format](https://github.com/google-labs-code/design.md)): its tokens, its
+  components and what not to do. A change to the widget's UI follows it, and changes it when
+  a token changes.
 - Styles live in `src/widget/WidgetStyles.css`, `WidgetControls.css`
   (fields, lists, calendar, scrollbars), `WidgetDialogs.css`
   (the indicators dialog, the indicator settings and the chart settings) and

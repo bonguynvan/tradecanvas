@@ -48,6 +48,7 @@
   --tcw-field-bg-hover: #1f2125;
   --tcw-field-bg-focus: #1f2125;
   --tcw-field-line: #3d4047;
+  --tcw-field-line-focus: var(--tcw-text-muted);
   --tcw-field-line-hover: #5a5e67;
   --tcw-check-line: rgba(232, 233, 235, 0.35);
   --tcw-scroll-thumb: rgba(144, 147, 155, 0.35);
@@ -62,6 +63,7 @@
   --tcw-field-bg-hover: #ffffff;
   --tcw-field-bg-focus: #ffffff;
   --tcw-field-line: #c5c8ce;
+  --tcw-field-line-focus: var(--tcw-text-muted);
   --tcw-field-line-hover: #9a9ea7;
   --tcw-check-line: rgba(26, 28, 32, 0.4);
   --tcw-scroll-thumb: rgba(95, 101, 112, 0.4);
@@ -776,4 +778,39 @@
   .tcw-root[data-tcw-ui='graphite'] .tcw-toggle::before {
     inset: calc((100% - var(--tcw-hit-finger)) / 2);
   }
+}
+
+/*
+ * Graphite's fields, by DESIGN.md: a field says it is in focus on its own line, which takes the
+ * muted text's colour. No ring and no glow is drawn around it.
+ */
+.tcw-root[data-tcw-ui='graphite'] :is(.tcw-indi-input, .tcw-settings-select, .tcw-tf-custom-input, .tcw-watchlist-input, .tcw-style-name, .tcw-tree-rename):is(:focus, :focus-visible),
+.tcw-root[data-tcw-ui='graphite'] .tcw-alerts-form :is(input, select):focus,
+.tcw-root[data-tcw-ui='graphite'] .tcw-stepper:focus-within {
+  border-color: var(--tcw-text-muted);
+  box-shadow: none;
+  outline: none;
+}
+@media (forced-colors: active) {
+  .tcw-root[data-tcw-ui='graphite'] :is(.tcw-indi-input, .tcw-settings-select, .tcw-tf-custom-input, .tcw-watchlist-input, .tcw-style-name, .tcw-tree-rename):is(:focus, :focus-visible),
+  .tcw-root[data-tcw-ui='graphite'] .tcw-alerts-form :is(input, select):focus,
+  .tcw-root[data-tcw-ui='graphite'] .tcw-stepper:focus-within {
+    outline: 2px solid Highlight;
+  }
+}
+/* A figure that is wrong keeps its red line while it is typed in. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-bracket-quantity[data-invalid] .tcw-stepper:focus-within { border-color: var(--tcw-red); }
+/* What is ticked is ringed in the text's colour, as the buttons are. */
+.tcw-root[data-tcw-ui='graphite'] input:is([type='checkbox'], [type='radio']):focus-visible { box-shadow: var(--tcw-ring); }
+/* One choice is nothing to choose: it reads as text, not as a button in a trough. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-segmented:has(> .tcw-segment:only-child) {
+  padding: 0;
+  background: none;
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-segmented > .tcw-segment:only-child {
+  padding-inline: 0;
+  background: none;
+  color: var(--tcw-text);
+  font-weight: var(--tcw-weight);
+  cursor: default;
 }

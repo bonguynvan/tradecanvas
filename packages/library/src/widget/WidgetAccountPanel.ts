@@ -109,6 +109,31 @@ export function positionPnl(position: TradingPosition, price: number | null, mul
   return { pnl, pct };
 }
 
+/** What stands between a total's name and its figure: a colon of any script, and the room about it. */
+const TOTAL_SEP = /[\s\u00a0]*[:\uFF1A\uFE55]?[\s\u00a0]*$/;
+
+/**
+ * A total's parts, each one a look can set apart: its name, what stands between (which a look may
+ * leave out), its figure, and any words after the figure. Read together they are the words as written.
+ */
+function writeTotal(el: HTMLElement, words: string, at: number, slot: number, figure: HTMLSpanElement): void {
+  const before = at < 0 ? `${words} ` : words.slice(0, at);
+  const sep = TOTAL_SEP.exec(before)?.[0] ?? '';
+  const part = (name: string, text: string) => {
+    const span = document.createElement('span');
+    span.className = `tcw-account-total-${name}`;
+    span.textContent = text;
+    return span;
+  };
+  figure.className = 'tcw-account-total-figure';
+  const name = before.slice(0, before.length - sep.length);
+  if (name !== '') el.append(part('name', name));
+  if (sep !== '') el.append(part('sep', sep));
+  el.append(figure);
+  const after = at < 0 ? '' : words.slice(at + slot);
+  if (after !== '') el.append(part('name', after));
+}
+
 /** A figure that reads left to right in any widget: its sign stays before it. */
 function ltr(text: string): HTMLSpanElement {
   const span = document.createElement('span');
@@ -117,10 +142,10 @@ function ltr(text: string): HTMLSpanElement {
   return span;
 }
 
-/** A signed figure's colour: a gain up, a loss down, what reads as nothing neither. */
 /** On a profit's figure, a position's or a fill's: a look may set it strong. */
 const PNL_CLASS = 'tcw-account-pnl';
 
+/** A signed figure's colour: a gain up, a loss down, what reads as nothing neither. */
 function toneClass(figure: string): string {
   const tone = toneOf(figure);
   return tone ? `tcw-account-${tone}` : '';
@@ -308,7 +333,12 @@ export class WidgetAccountPanel {
       const pnl = this.pnlOf(p);
       return pnl === null ? sum : (sum ?? 0) + pnl.pnl;
     }, null);
-    if (open !== null) totals.push(this.total('account.openPnl', open));
+    if (open !== null) {
+      const total = this.total('account.openPnl', open);
+      // The figure a trader looks for first: a look may set it first and strong.
+      total.classList.add('tcw-account-open');
+      totals.push(total);
+    }
     if (fills.length > 0 || (realisedPnl !== undefined && realisedPnl !== 0)) {
       totals.push(this.total('account.realised', realisedPnl ?? fills.reduce((sum, f) => sum + (f.pnl ?? 0), 0)));
     }
@@ -367,8 +397,7 @@ export class WidgetAccountPanel {
     const words = this.t(key);
     const at = words.indexOf(AMOUNT_SLOT);
     const figure = ltr(written ?? (value < 0 ? `-${this.money(-value)}` : this.money(value)));
-    if (at < 0) el.append(`${words} `, figure);
-    else el.append(words.slice(0, at), figure, words.slice(at + AMOUNT_SLOT.length));
+    writeTotal(el, words, at, AMOUNT_SLOT.length, figure);
     return el;
   }
 
@@ -380,8 +409,7 @@ export class WidgetAccountPanel {
     const words = this.t(key);
     const at = words.indexOf(PNL_SLOT);
     const figure = ltr(amount);
-    if (at < 0) el.append(`${words} `, figure);
-    else el.append(words.slice(0, at), figure, words.slice(at + PNL_SLOT.length));
+    writeTotal(el, words, at, PNL_SLOT.length, figure);
     return el;
   }
 
