@@ -555,3 +555,59 @@
   .tcw-tape-split { forced-color-adjust: none; }
   .tcw-tape-row[data-large] { outline: 1px solid CanvasText; outline-offset: -1px; }
 }
+
+/* === The order ticket as a page of the dock === */
+
+/* The ticket's form, a dialog elsewhere, fills its page: no card, no shadow, no size of its own. */
+.tcw-dock-page.tcw-ticket-dock > .tcw-order-ticket.tcw-ticket-docked {
+  position: static;
+  inset: auto;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  height: auto;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  transform: none;
+  animation: none;
+}
+/* Its head is the page's: the dock's height and rule, held as the page scrolls. */
+.tcw-ticket-docked > .tcw-modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  flex: none;
+  min-height: var(--tcw-dock-head-h);
+  padding-block: 0;
+  padding-inline: var(--tcw-space-5) var(--tcw-space-3);
+  border-bottom: var(--tcw-dock-head-rule) solid var(--tcw-divider);
+  background: var(--tcw-bg-surface);
+}
+/* Over a look's own rule for the ticket's title (Graphite's is as specific as four classes). */
+.tcw-root .tcw-dock-page .tcw-order-ticket.tcw-ticket-docked > .tcw-modal-header h3 {
+  font-size: var(--tcw-font-size);
+  letter-spacing: 0;
+}
+.tcw-ticket-docked > .tcw-modal-body {
+  flex: 1;
+  max-height: none;
+  overflow: visible;
+}
+.tcw-ticket-docked > :is(.tcw-modal-body, .tcw-ticket-summary, .tcw-ticket-problems, .tcw-modal-footer) {
+  padding-inline: var(--tcw-space-5);
+}
+/* Its close is the page's, inside the head: a dialog's is hung out over its corner. */
+.tcw-ticket-docked > .tcw-modal-header .tcw-modal-close { margin: 0; }
+/* Its foot stays in reach under a long form. */
+.tcw-ticket-docked > .tcw-modal-footer {
+  position: sticky;
+  bottom: 0;
+  background: var(--tcw-bg-surface);
+}

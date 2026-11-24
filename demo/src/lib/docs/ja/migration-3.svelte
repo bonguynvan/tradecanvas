@@ -192,6 +192,15 @@ chart.startBracket('buy', undefined, { risk: 50 })   // ストップで 50 を�
   ないものとして扱われます。
 </p>
 
+<h3 id="ticket-dock">注文チケットはチャート横のドックで開きます</h3>
+<p>
+  ウィジェットの注文チケットは、これまでチャートの上に重なるダイアログで、入力している価格そのものを隠していました。今後はチャート横のドックの 1 ページになります：価格を隠さず、チャートを押しても閉じず、注文を 1 件送ったあとも次の注文のために残り、売買の別・種類・数量を保ちます。ボタンはドックのレールにあり、<code>widget.openPanel('orderTicket')</code> で成行のチケットを開けます。
+</p>
+<p>
+  <code>'orderTicket'</code> は新しい <code>WidgetPanel</code> です：<code>getOpenPanel()</code> と <code>onPanelChange</code> がこれを報告し、独自のページはこの id を使えません。スマートフォンでは、またはドックをオフにした場合（<code>features: {'{'} dock: false {'}'}</code>）、チケットはこれまでどおりダイアログです。どの幅でもダイアログにしたいホストは次のように指定します：
+</p>
+<pre><code>{`new ChartWidget(el, { ticketPlace: 'dialog' });`}</code></pre>
+
 <h2 id="types">広がった型</h2>
 <p>
   <code>TimeInForce</code> は <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code> になりました。すべてのメンバーを扱うコード（default

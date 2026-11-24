@@ -697,6 +697,42 @@ const SCENES = {
   },
 
   /**
+   * The order ticket as a page of the dock: beside the chart on a laptop and wider, hiding none of
+   * it, and a dialog on a phone, where the dock has no room. It was a dialog over the chart at
+   * every width, on the price it was filled in for.
+   */
+  async ticketDock() {
+    const s = await widget({ symbol: 'BTCUSDT', trading: true });
+    s.chart.connectExecution(new PaperExecutionAdapter({ markPrice: lastClose(s.chart) }));
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    host.querySelector('.tcw-quote-buy')?.click();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const checks = () => {
+      const ticket = host.querySelector('.tcw-order-ticket');
+      if (!ticket || ticket.getBoundingClientRect().width === 0) return ['the ticket did not open'];
+      const problems = [];
+      const narrow = host.querySelector('.tcw-root').hasAttribute('data-tcw-narrow');
+      const docked = ticket.classList.contains('tcw-ticket-docked');
+      if (narrow && docked) problems.push('the ticket is a page of the dock on a phone, where the dock is shut');
+      if (!narrow && !docked) problems.push('the ticket is a dialog over the chart at a width the dock shows at');
+      const box = ticket.getBoundingClientRect();
+      if (docked) {
+        const plot = host.querySelector('.tcw-chart-container').getBoundingClientRect();
+        if (box.left < plot.right - 1 && box.right > plot.left + 1 && box.top < plot.bottom && box.bottom > plot.top) problems.push('the docked ticket lies over the chart');
+        const panel = host.querySelector('.tcw-dock-panel').getBoundingClientRect();
+        for (const el of ticket.querySelectorAll('button, input, select')) {
+          const b = el.getBoundingClientRect();
+          if (b.width > 0 && (b.left < panel.left - 1 || b.right > panel.right + 1)) problems.push(`"${el.textContent || el.getAttribute('aria-label') || el.tagName}" reaches outside the dock`);
+        }
+      }
+      const place = ticket.querySelector('.tcw-ticket-place').getBoundingClientRect();
+      if (place.bottom > innerHeight + 1 || place.top < 0) problems.push('the button that sends the order is off the screen');
+      return problems;
+    };
+    return { ...s, checks };
+  },
+
+  /**
    * The order ticket on a market with limits for the day, given as the broker gives them: the
    * ceiling, the reference and the floor over the price, and the floor pressed. The ticket knew
    * them and showed none.

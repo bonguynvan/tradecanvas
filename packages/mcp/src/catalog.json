@@ -6833,6 +6833,15 @@
         ]
       },
       {
+        "name": "ticketPlace",
+        "type": "'dock' | 'dialog'",
+        "doc": "Where the order ticket opens. `'dock'` (the default): a page of the dock beside the chart, which hides no price and stays for the next order; `openPanel('orderTicket')` opens it too. `'dialog'`: a dialog over the chart, as before 3.0. A widget with no dock (`features.dock` off), or one too narrow for it (a phone), opens the dialog whatever this says.",
+        "values": [
+          "dock",
+          "dialog"
+        ]
+      },
+      {
         "name": "feedQuietAfter",
         "type": "number",
         "doc": "How long, seconds, the widget's feed may be connected and tell nothing before its price stops counting as live: the status bar then says so in place of \"Live\", and the ticket warns and sends no order at the market.",

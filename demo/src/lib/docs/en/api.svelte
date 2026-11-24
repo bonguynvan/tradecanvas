@@ -262,6 +262,8 @@ formatVolumeLoc(345_000_000, 'ko')           // '3.45억'`}</code></pre>
   nothing better is known. The lines on the chart, the prices an order may be dragged to and the ticket's checks all
   follow what is given. The widget's order ticket shows the three over its price, each a press that sets the price;
   <code>priceLimitOrder</code> puts them in the order of your board, and leaves out the ones not named.
+  The ticket itself is a page of the dock beside the chart (<code>widget.openPanel('orderTicket')</code>);
+  <code>ticketPlace: 'dialog'</code> makes it a dialog over the chart, as it is on a phone.
 </p>
 <pre><code>{`chart.setMarket(MARKET_HOSE)
 chart.setPriceLimits({ ceiling: 27.1, floor: 23.6, reference: 25.35 })   // as the broker gives them for the symbol

@@ -274,6 +274,13 @@ export interface ChartWidgetOptions {
    */
   priceLimitOrder?: readonly ('ceiling' | 'reference' | 'floor')[];
   /**
+   * Where the order ticket opens. `'dock'` (the default): a page of the dock beside the chart,
+   * which hides no price and stays for the next order; `openPanel('orderTicket')` opens it too.
+   * `'dialog'`: a dialog over the chart, as before 3.0. A widget with no dock (`features.dock`
+   * off), or one too narrow for it (a phone), opens the dialog whatever this says.
+   */
+  ticketPlace?: 'dock' | 'dialog';
+  /**
    * How long, seconds, the widget's feed may be connected and tell nothing before its price stops
    * counting as live: the status bar then says so in place of "Live", and the ticket warns and
    * sends no order at the market. A feed that is not connected does the same at once, and holds
@@ -853,7 +860,7 @@ export interface DrawingToolGroupDef {
 }
 
 /** A panel of the widget's dock, beside the chart (in a sheet on a phone). */
-export type WidgetPanel = 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder' | 'tape';
+export type WidgetPanel = 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'orderTicket' | 'depthLadder' | 'tape';
 
 /** A panel of the dock: a built-in one, or the id of a page you added with `addDockPage`. */
 export type DockPanelId = WidgetPanel | (string & {});

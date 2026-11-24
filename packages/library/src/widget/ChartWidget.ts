@@ -1391,6 +1391,8 @@ export class ChartWidget {
         fromWallTime: (date, time) => wallTimeToUtc(date, time, this.displayTimezone()),
         // On a replay a paper account trades on, "to come" is by the replay's clock, as the account has it.
         now: () => this.chart.getTradingTime(),
+        // Shut by its own Cancel, cross or Escape: its page of the dock shuts with it.
+        onDockClose: () => this.docking.closePanelByHand('orderTicket'),
       }, this.t);
       this.trading.accountPanel = new WidgetAccountPanel(accountHost, {
         onClosePosition: (id) => this.trading.closePosition(id),
@@ -4071,6 +4073,8 @@ export class ChartWidget {
       say: (...args) => w.say(...args),
       confirm: (...args) => w.confirmTrade(...args),
       get priceLimitOrder() { return w.options.priceLimitOrder; },
+      get ticketPlace() { return w.options.ticketPlace === 'dialog' ? 'dialog' as const : 'dock' as const; },
+      dockShown: () => w.docking.railShown(),
       get state() { return w.state; },
       get t() { return w.t; },
     };
