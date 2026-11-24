@@ -3,7 +3,7 @@ import { priceToY } from '../viewport/ScaleMapping.js';
 import { PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, lineDash } from '@tradecanvas/commons';
 import { AXIS_TAG_TEXT_INSET, fillTag } from '../ui/shapes.js';
 import { hLine } from '../charts/pixelGrid.js';
-import { labelTextColor } from '../ui/axisValueLabels.js';
+import { labelTextColor, tagFill } from '../ui/axisValueLabels.js';
 
 /** Where the last-price tag went on the axis, and its colours: the countdown hangs under it. */
 export interface LastPriceTag {
@@ -136,7 +136,8 @@ export class CurrentPriceLine {
 
     // The tag in a colour of its own where the look sets one (the line keeps the day's); its text the same way.
     const look = theme.style?.lastPrice;
-    const fill = look?.labelBackground ?? color;
+    // The day's colour, a shade deeper where its ink would not read on it; a look's own colour is the look's to choose.
+    const fill = look?.labelBackground ?? tagFill(color);
     const textColor = look?.labelText ?? labelTextColor(fill);
     ctx.fillStyle = fill;
     fillTag(ctx, axisX, y - TAG_HEIGHT / 2, badgeWidth, TAG_HEIGHT, theme);

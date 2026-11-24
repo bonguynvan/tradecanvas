@@ -1,6 +1,7 @@
 import type { OHLCBar, Theme, Point, TimeFormatter, TimeZoneSetting } from '@tradecanvas/commons';
 import { autoPricePrecision, priceReadoutColors, barDateZone, formatPrice, formatVolumeLoc, usesKoreanUnits, normalizeBarTime, timeParts, isDateOnly, zonedDateFormatter, type BarTimeUnit } from '@tradecanvas/commons';
 import { isolateFontFeatures } from '../engine/CanvasLayer.js';
+import { readoutTextColors } from '../ui/chartType.js';
 
 /** Gap between the pointer and the card. */
 const POINTER_GAP = 16;
@@ -218,7 +219,9 @@ export class CrosshairTooltip {
     const change = bar.close - base;
     const pct = base !== 0 ? (change / base) * 100 : 0;
     const up = change >= 0;
-    const readout = priceReadoutColors(theme);
+    // A rise's and a fall's colours as text: taken toward the chart's text until they read on its ground.
+    const read = priceReadoutColors(theme);
+    const readout = readoutTextColors(theme);
     const tone = up ? readout.up : readout.down;
     const sign = up ? '+' : '−';
 
@@ -228,7 +231,7 @@ export class CrosshairTooltip {
     this.changeEl.textContent = `${sign}${formatPrice(Math.abs(pct), 2, this.locale)}%`;
     this.changeEl.style.color = tone;
     this.changeEl.style.background = `var(--tcw-chart-card-chip-bg, ${withAlpha(tone, 0.14)})`;
-    this.dirEl.style.background = bar.close >= bar.open ? readout.up : readout.down;
+    this.dirEl.style.background = bar.close >= bar.open ? read.up : read.down;
 
     this.valueEls.open.textContent = fmt(bar.open);
     this.valueEls.high.textContent = fmt(bar.high);

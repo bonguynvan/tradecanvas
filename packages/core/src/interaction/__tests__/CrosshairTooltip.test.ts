@@ -54,6 +54,15 @@ describe('CrosshairTooltip', () => {
     }
   });
 
+  it('writes its close and its change at 4.5:1 on the chart’s ground', async () => {
+    const { GRAPHITE_LIGHT_THEME, contrastRatio } = await import('@tradecanvas/commons');
+    for (const close of [103, 97]) {
+      tip.show({ x: 100, y: 100 }, bar({ close }), GRAPHITE_LIGHT_THEME, box, { prevClose: 100 });
+      const coloured = [...card().querySelectorAll<HTMLElement>('*')].filter((el) => el.style.color && /\d/.test(el.textContent ?? '') && el.children.length === 0);
+      for (const el of coloured) expect(contrastRatio(el.style.color, GRAPHITE_LIGHT_THEME.background)!, el.textContent!).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
   it('shows O/H/L/C, the change from the previous close and the volume', () => {
     tip.show({ x: 100, y: 100 }, bar(), DARK_THEME, box, { prevClose: 102, priceRange: { min: 90, max: 110 } });
     expect(text()).toContain('100.00');

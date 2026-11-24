@@ -94,3 +94,21 @@ describe('CurrentPriceLine', () => {
     });
   });
 });
+
+describe('CurrentPriceLine: a tag that reads', () => {
+  it('fills its tag in the day’s colour deepened until its ink reads at 4.5:1, and leaves a look’s own colours alone', async () => {
+    const { GRAPHITE_LIGHT_THEME, contrastRatio, resolveChartTheme } = await import('@tradecanvas/commons');
+    for (const [price, close] of [[101, 100], [99, 100]]) {
+      const line = new CurrentPriceLine();
+      line.setPrice(price, close);
+      line.renderTag(recordingCtx().ctx, viewport(90, 110), GRAPHITE_LIGHT_THEME);
+      const tag = line.getTag()!;
+      expect(contrastRatio(tag.color, tag.textColor)!, String(price)).toBeGreaterThanOrEqual(4.5);
+    }
+    const own = resolveChartTheme(GRAPHITE_LIGHT_THEME, 'candlestick', { 'lastPrice.labelBackground': '#0b8f6f' });
+    const line = new CurrentPriceLine();
+    line.setPrice(101, 100);
+    line.renderTag(recordingCtx().ctx, viewport(90, 110), own);
+    expect(line.getTag()!.color).toBe('#0b8f6f');
+  });
+});

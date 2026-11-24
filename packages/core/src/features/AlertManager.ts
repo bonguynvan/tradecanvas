@@ -1,3 +1,4 @@
+import { chartFont } from '../ui/chartType.js';
 import type { ViewportState, Theme, Point } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
 import { Emitter } from '../realtime/Emitter.js';
@@ -600,7 +601,7 @@ export class AlertManager extends Emitter<AlertEvents> {
       ctx.setLineDash([]);
 
       // The bell of the icon set, then the price (and the alert's message).
-      ctx.font = `10px ${theme.font.family}`;
+      ctx.font = chartFont(theme, 1);
       ctx.fillStyle = color;
       ctx.textBaseline = 'bottom';
       ctx.textAlign = 'right';

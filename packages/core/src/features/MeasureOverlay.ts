@@ -1,3 +1,4 @@
+import { chartFont, chartTypeSize } from '../ui/chartType.js';
 import type { Point, ViewportState, Theme, DataSeries } from '@tradecanvas/commons';
 import { barTimeUnit, priceReadoutColors, formatPrice, MAX_PRICE_DECIMALS, priceTagText } from '@tradecanvas/commons';
 import { xToBarIndex, yToPrice, barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
@@ -184,8 +185,9 @@ function drawPill(
 ): void {
   const padX = 8;
   const padY = 6;
-  const lineH = 14;
-  const font = `600 11px ${theme.font.family}`;
+  // A line as tall as its type and the room 11 px type had in 14.
+  const lineH = chartTypeSize(theme) + 3;
+  const font = chartFont(theme, 0, '600');
   ctx.font = font;
 
   let maxW = 0;

@@ -211,6 +211,8 @@ export class CrosshairHandler {
   /** "+1.25%" for `price` against the last price, or null where none is written. */
   private changeText(price: number, viewport: ViewportState, theme: Theme): string | null {
     if (!crosshairLooks(theme).labelChange) return null;
+    // Not from a last price the chart's style has switched off: it is on the chart nowhere.
+    if (theme.style?.lastPrice.visible === false) return null;
     // A scale in percent or indexed already says how far a price is from its base.
     const mode = viewport.scaleMode;
     if (mode === 'percentage' || mode === 'indexedTo100') return null;

@@ -1,3 +1,4 @@
+import { chartFont } from '../ui/chartType.js';
 import { LayerType } from '@tradecanvas/commons';
 import type { Size, ViewportState, Theme, DataSeries, Rect, PaneStyle } from '@tradecanvas/commons';
 import { priceToY, yToPrice, xToBarIndex, barIndexToX } from '../viewport/ScaleMapping.js';
@@ -462,7 +463,7 @@ export class FrameRenderer {
     if (!indicatorEngine || panes.length === 0) return;
 
     // Cache font string once for all panels
-    const panelFont = `10px ${theme.font.family}`;
+    const panelFont = chartFont(theme, 1);
     // Build descriptor lookup once per frame — avoids O(n*m) .find() per panel
     const descMap = this.panelDescriptors(indicatorEngine);
 
@@ -805,8 +806,9 @@ export class FrameRenderer {
     const { chartRect } = viewport;
     const text = format ?? ((price: number) => priceTagText(price, viewport, viewport.pricePrecision ?? LIMIT_DECIMALS));
 
-    const boldFont = `bold 9px ${theme.font.family}`;
-    const normalFont = `10px ${theme.font.family}`;
+    const boldFont = chartFont(theme, 2, 'bold');
+    // The tag's figure stays inside the tag, which the axis's other tags are placed around at its height.
+    const normalFont = chartFont(theme, 1, '', LIMIT_TAG_HEIGHT);
 
     limitLines(limits, theme).forEach(({ price, color, label }, i) => {
       const y = priceToY(price, viewport);
