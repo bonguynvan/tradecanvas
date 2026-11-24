@@ -45,7 +45,8 @@ The `3.0` branch. These move under the version's own heading when it is released
   figures to press with no box around each, and its button that sends is as wide as the ticket leaves it. The
   toolbar draws a rule only between its groups (three, where there were six), the drawing tools stand at one
   pitch with no divider between their sections, and a tool group's corner mark shows under the pointer, on focus
-  and while its menu is open (always under a finger). The other looks are as they were; their dividers inside
+  and while its menu is open (always where there is a touch screen). A theme of yours that sets `font.size`
+  over Graphite keeps the small size on the scale under it, as before. The other looks are as they were; their dividers inside
   a group carry `tcw-toolbar-sep--minor` and `tcw-sidebar-divider--section` for CSS of your own.
 - **Graphite's ticket and account panel, on its sizes and with fills of their own.** The ticket's title is the
   size of the order's value, its sides and fields are 36 px, its segments 28 and its buttons 40; it opens with

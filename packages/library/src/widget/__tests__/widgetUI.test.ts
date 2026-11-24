@@ -432,6 +432,24 @@ describe('a look’s small type', () => {
     expect(widgetUIVariables(resolveWidgetUI({ preset: 'terminal', font: { smallSize: 12 } }))['--tcw-label-size']).toBe('10px');
   });
 
+  it('follows a theme’s own body size, where the theme sets no small size', () => {
+    // Graphite's 12 is for its 13: under a body of 11 it would be the larger of the two.
+    for (const [size, small] of [[11, '10px'], [15, '13px'], [18, '15px']] as const) {
+      const vars = widgetUIVariables(resolveWidgetUI({ font: { size } }));
+      expect(vars['--tcw-font-size-sm'], String(size)).toBe(small);
+      expect(vars['--tcw-label-size'], String(size)).toBe(small);
+    }
+    expect(widgetUIVariables(resolveWidgetUI({ font: { size: 15, smallSize: 14 } }))['--tcw-font-size-sm']).toBe('14px');
+    // Graphite's own body size said again changes nothing, and what is no size leaves its 12.
+    expect(widgetUIVariables(resolveWidgetUI({ font: { size: 13 } }))['--tcw-font-size-sm']).toBe('12px');
+    for (const bad of [9, 21, '12']) {
+      expect(widgetUIVariables(resolveWidgetUI({ font: { smallSize: bad as never } }))['--tcw-font-size-sm'], String(bad)).toBe('12px');
+    }
+    for (const preset of ['terminal', 'desk'] as const) {
+      expect(resolveWidgetUI(preset).font.smallSize, preset).toBeUndefined();
+    }
+  });
+
   it('grows with the look', () => {
     expect(scaledWidgetUI(resolveWidgetUI('graphite'), 1.5).font.smallSize).toBe(18);
     expect(scaledWidgetUI(resolveWidgetUI('print'), 1.5).font.smallSize).toBeUndefined();

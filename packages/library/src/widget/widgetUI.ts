@@ -587,7 +587,9 @@ export function resolveWidgetUI(theme?: WidgetUIPreset | WidgetUITheme): Resolve
   const radius = pick(base.radius, t.radius, (_, v) => px(v, 0, 999));
   const density = oneOf(t.density, ['compact', 'classic', 'comfortable', 'spacious', 'airy'] as const) ? t.density : 'comfortable';
   const sizes = pick(densitySizes(base, density), t.sizes, (key, v) => (key === 'icon' ? px(v, 10, 32) : px(v, 16, 80)));
-  const picked = pick({ ...base.font, smallSize: base.font.smallSize }, t.font, (key, v) => {
+  // A preset's small size is for its own body size: under a theme's other body size it follows the scale again.
+  const ownBody = px(t.font?.size, 11, 20) && t.font?.size !== base.font.size;
+  const picked = pick({ ...base.font, smallSize: ownBody ? undefined : base.font.smallSize }, t.font, (key, v) => {
     if (key === 'family' || key === 'mono') return cssValue(v);
     if (key === 'size') return px(v, 11, 20);
     if (key === 'smallSize') return px(v, MIN_TYPE_SIZE, 20);

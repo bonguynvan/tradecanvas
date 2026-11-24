@@ -1862,6 +1862,9 @@ img.tcw-ss-badge {
   .tcw-ticket-place { border: 1px solid ButtonText; }
   .tcw-ticket-side-btn:focus-visible,
   .tcw-ticket-place:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
+  /* A limit has no box in Graphite: here it has one again, and an outline on focus. */
+  .tcw-root .tcw-order-ticket .tcw-ticket-limit.tcw-ticket-limit { border: 1px solid ButtonText; }
+  .tcw-ticket-limit:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
 }
 
 /* What a confirmation asks: one sentence, the trade in full. */

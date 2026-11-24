@@ -4625,7 +4625,8 @@
 .tcw-root[data-tcw-ui='graphite'] .tcw-sidebar-divider--section { display: none; }
 /*
  * A tool group's corner mark shows where the pointer or the keys are, and while its menu is open:
- * a column of marks is not read. Under a finger, which is never "over" a button, it always shows.
+ * a column of marks is not read. Where there is a finger at all (a phone, a tablet, a laptop with
+ * a touch screen), which is never "over" a button, it always shows.
  */
 @media (hover: hover) and (pointer: fine) {
   .tcw-root[data-tcw-ui='graphite'] .tcw-multi-dot,
@@ -4634,10 +4635,16 @@
     transition: opacity var(--tcw-dur-fast) var(--tcw-ease);
   }
   .tcw-root[data-tcw-ui='graphite'] .tcw-sidebar-btn:is(:hover, :focus-visible, [aria-expanded='true']) > .tcw-multi-dot,
-  .tcw-root[data-tcw-ui='graphite'] .tcw-sidebar-split:is(:hover, :focus-within) .tcw-sidebar-menu-btn::after {
+  .tcw-root[data-tcw-ui='graphite'] .tcw-sidebar-split:is(:hover, :has(> :focus-visible)) .tcw-sidebar-menu-btn::after {
     opacity: 0.8;
   }
-  .tcw-root[data-tcw-ui='graphite'] .tcw-sidebar-menu-btn:hover::after { opacity: 1; }
+  .tcw-root[data-tcw-ui='graphite'] .tcw-sidebar-split:is(:hover, :has(> :focus-visible)) .tcw-sidebar-menu-btn:hover::after { opacity: 1; }
+}
+@media (any-pointer: coarse) {
+  .tcw-root[data-tcw-ui='graphite'] .tcw-multi-dot,
+  .tcw-root[data-tcw-ui='graphite'] .tcw-sidebar-split .tcw-sidebar-menu-btn.tcw-sidebar-menu-btn::after {
+    opacity: 0.8;
+  }
 }
 .tcw-account-empty {
   margin: 0;
