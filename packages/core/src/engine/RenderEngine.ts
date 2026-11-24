@@ -5,7 +5,7 @@ import { DARK_PRICE_LIMITS, LIGHT_PRICE_LIMITS, PRICE_AXIS_WIDTH, autoPricePreci
 import { priceScaleText, stepTicks } from '../axis/PriceAxis.js';
 import { MIN_PANE_PLOT_HEIGHT, panelScale, panelTagText } from '../axis/panelAxisTexts.js';
 import { LayerManager } from './LayerManager.js';
-import { AXIS_LABEL_HEIGHT, renderAxisValueLabels, layoutAxisValueLabels, drawAxisValueLabels, type AxisValueLabel, type FixedAxisTag } from '../ui/axisValueLabels.js';
+import { AXIS_LABEL_HEIGHT, labelTextColor, darkInkReads, renderAxisValueLabels, layoutAxisValueLabels, drawAxisValueLabels, type AxisValueLabel, type FixedAxisTag } from '../ui/axisValueLabels.js';
 import { RenderLoop } from './RenderLoop.js';
 import { DPRManager } from './DPRManager.js';
 import type { CanvasLayer } from './CanvasLayer.js';
@@ -59,8 +59,13 @@ interface AxisTagPlan {
   /** By the order of `axisBadgeLines`; undefined when the badges spread among themselves. */
   trading: number[] | undefined;
 }
-/** A limit tag's price on a theme that names no colours to pick from. */
-const LIMIT_TAG_INK = '#000';
+/** Of a theme's ground and text, the one a filled tag is written in: its darker for a fill that takes dark ink, its lighter for one that takes light. */
+function themeInkOn(fill: string, ground: string, text: string): string {
+  const darker = inkOn('#ffffff', ground, text);
+  const lighter = darker === ground ? text : ground;
+  return darkInkReads(fill) ? darker : lighter;
+}
+
 /** Decimals a price limit shows when neither the chart nor the market sets them. */
 const LIMIT_DECIMALS = 2;
 
@@ -829,8 +834,8 @@ export class FrameRenderer {
       const axisX = chartRect.x + chartRect.width + 1;
       ctx.fillStyle = color;
       fillTag(ctx, axisX, tagY - LIMIT_TAG_HEIGHT / 2, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2, LIMIT_TAG_HEIGHT, theme);
-      // The ground's colour or the text's, whichever reads on the tag: near black on the bright ones.
-      ctx.fillStyle = theme.background && theme.text ? inkOn(color, theme.background, theme.text) : LIMIT_TAG_INK;
+      // The theme's own two inks (a paper look's are not black and white), picked as every filled tag's ink is: the dark one on the bright fills.
+      ctx.fillStyle = theme.background && theme.text ? themeInkOn(color, theme.background, theme.text) : labelTextColor(color);
       ctx.font = normalFont;
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'left';

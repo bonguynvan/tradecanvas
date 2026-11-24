@@ -336,7 +336,7 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>크로스헤어 선에도 같은 네 가지(기본은 가는 실선).</td></tr>
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>축과 패널 눈금의 가격·시간 라벨.</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>각 축의 선과 라벨(패널 눈금은 가격 축을 따름).</td></tr>
-    <tr><td><code>axis.price.valueTagsOutlined</code></td><td><code>true</code>면 가격 축에 있는 지표의 값 태그를 선의 색으로 채우는 대신 윤곽선으로 그림(선 색의 테두리 안에 차트 배경 또는 패널 자체의 배경, 글자는 선의 색): 가격 패널, 지표 패널, 왼쪽 눈금에서. 배경과 너무 비슷해 그 위에서 읽을 수 없는 선은 값을 눈금의 글자 색으로 적음.</td></tr>
+    <tr><td><code>axis.price.valueTagsOutlined</code></td><td><code>true</code>면 가격 축에 있는 지표의 값 태그를 선의 색으로 채우는 대신 윤곽선으로 그림(선 색의 테두리 안에 차트 배경 또는 패널 자체의 배경, 글자는 선의 색): 가격 패널, 지표 패널, 왼쪽 눈금에서. 배경과 너무 비슷해 그 위에서 읽을 수 없는 선은 값을 눈금의 글자 색으로 적음. Graphite 테마는 이 키가 <code>false</code>가 아니면 윤곽선으로 그림.</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>범례의 값과 라벨(O, H, L, Vol).</td></tr>
     <tr><td><code>legend.upColor</code>, <code>.downColor</code></td><td>봉의 값을 읽는 곳의 상승과 하락: 범례의 종가와 변동, 크로스헤어 툴팁과 고정한 툴팁, 측정 도구. 정하지 않으면 시리즈의 색을 따르므로, 캔들을 숨기는 차트(자체 캔들을 그리는 오버레이)는 이 키를 정해 그 색을 유지함.</td></tr>
     <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>최근 가격 선과 태그. 정하지 않으면 색은 메인 시리즈를 따름. 봉의 남은 시간(<code>features.barCountdown</code>)은 태그 아래에 붙음.</td></tr>

@@ -36,6 +36,18 @@ The `3.0` branch. These move under the version's own heading when it is released
 
 ### Chart
 
+- **A price reads on its own tag, and the last price is the one block of colour on Graphite's axis.** The
+  ink on a filled tag (the last price, the countdown, an indicator's value, a mark) is now the dark or the light
+  one by which has the more contrast on the fill, in every theme: white on a candle's green was 2.3:1 and on its
+  red 3.1:1, and is now dark ink at 8.2:1 and 6:1; a deep fill keeps white. In Graphite an indicator's value
+  tags on the price axis are outlined, not filled (a theme's own `valueTagsOutlined`, which the
+  `axis.price.valueTagsOutlined` style key and its switch in Chart Settings are over; a theme object of yours
+  that sets none keeps them filled), so the last price is not
+  one of five blocks; a value's figure is its line's colour, deepened toward the chart's text where it would
+  not read at 4.5:1 on the ground (it was written in the scale's grey, or left pale). Graphite's chart is set in the chrome's small size: its axes, tags and the prices in the
+  legend are 12 px, where they were 11 beside 12 px rows of indicators (`GRAPHITE_DARK_THEME` and
+  `GRAPHITE_LIGHT_THEME` have `font.sizeSmall: 12`; the legend takes the look's `font.smallSize`). The other
+  themes keep their sizes and their filled tags.
 - **Graphite by a design file.** `DESIGN.md` at the repository's root says how the default look is drawn and
   why, in the [DESIGN.md format](https://github.com/google-labs-code/design.md): its tokens, its components and
   what not to do. Brought to it in this change: a field in focus says so on its own line, with no ring or glow

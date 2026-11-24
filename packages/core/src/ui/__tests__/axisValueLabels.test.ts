@@ -33,6 +33,17 @@ describe('labelTextColor', () => {
     expect(labelTextColor('rgb(240, 240, 240)')).toBe('#10131a');
     expect(labelTextColor('not-a-colour')).toBe('#ffffff');
   });
+
+  // White on a candle's green is 2.2:1 and on its red 3:1: a price could not be read on its own tag.
+  it('writes the ink that reads better, by contrast and not by a lightness line', () => {
+    for (const mid of ['#2fc29a', '#f2665c', '#26a69a', '#ef5350', '#4c8dff', '#e8961e', '#a78bfa', '#1aa3a8']) expect(labelTextColor(mid), mid).toBe('#10131a');
+    for (const deep of ['#0a8068', '#c0262d', '#00735c', '#1e3a8a', '#111111', '#8a5a10']) expect(labelTextColor(deep), deep).toBe('#ffffff');
+    // Near a tie the light ink: the candles' colours on a light chart, where dark ink is 4.6:1 and reads muddier than white at 4.
+    for (const near of ['#0b8f6f', '#d93f45', '#d9463e']) expect(labelTextColor(near), near).toBe('#ffffff');
+    // Every way a colour of the chart's is written that can be read: with an alpha, short, as rgb().
+    for (const written of ['#2fc29aff', '#2fc29ae6', 'rgba(47, 194, 154, 0.9)', 'rgb(47,194,154)', '#3c9']) expect(labelTextColor(written), written).toBe('#10131a');
+    expect(labelTextColor('#0a8068ff')).toBe('#ffffff');
+  });
 });
 
 describe('renderAxisValueLabels', () => {

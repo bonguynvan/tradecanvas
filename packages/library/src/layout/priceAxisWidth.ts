@@ -53,7 +53,7 @@ export function requiredPriceAxisWidth(input: PriceAxisWidthInput): number {
     need = Math.max(
       need,
       measure(label, `500 ${fontSizeSmall}px ${fontFamily}`) + LABEL_CHROME,
-      measure(tag, `bold 11px ${fontFamily}`) + PRICE_TAG_CHROME,
+      measure(tag, `bold ${Math.max(fontSizeSmall, 11)}px ${fontFamily}`) + PRICE_TAG_CHROME,
       measure(tag, `600 ${fontSizeSmall}px ${fontFamily}`) + CROSSHAIR_PILL_CHROME,
     );
   }

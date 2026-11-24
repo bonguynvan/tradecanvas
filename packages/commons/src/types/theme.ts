@@ -57,6 +57,12 @@ export interface Theme {
    */
   priceLimits?: PriceLimitColors;
   /**
+   * An indicator's value tags on the price axis drawn outlined, not filled, in this theme: the
+   * last price is then the one block of colour on the axis. The `axis.price.valueTagsOutlined`
+   * style key is over it. Left out, filled.
+   */
+  valueTagsOutlined?: boolean;
+  /**
    * The finer looks the chart worked out from its overrides
    * (`chart.applyOverrides`). Set by the chart on the theme it draws with;
    * yours needn't have one.

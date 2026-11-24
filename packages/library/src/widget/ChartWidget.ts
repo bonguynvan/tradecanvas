@@ -343,6 +343,8 @@ export class ChartWidget {
   private uiVariables = false;
   /** The chart's type sizes before the look scaled them. */
   private chartFontBase: { sizeSmall: number; sizeMedium: number; sizeLarge: number } | null = null;
+  /** The base is the sizes of the theme the chart was drawn in, not a host's: it follows the theme to another look's. */
+  private chartFontBaseIsThemes = false;
   private scaleObserver: ResizeObserver | null = null;
   private templates = new IndicatorTemplateStore();
   private templatePrompt: WidgetNamePrompt | null = null;
@@ -2229,7 +2231,10 @@ export class ChartWidget {
    * block and the prices line up in columns.
    */
   private applyLegendFont(): void {
-    this.chart.setLegend({ fontFamily: this.ui.font.mono, fontSize: typeSize(Math.round(this.ui.font.size * this.uiScale), -1) });
+    // The look's small size where it has one, as the indicators' rows under the prices are in.
+    const small = this.ui.font.smallSize;
+    const fontSize = small === undefined ? typeSize(Math.round(this.ui.font.size * this.uiScale), -1) : Math.round(small * this.uiScale);
+    this.chart.setLegend({ fontFamily: this.ui.font.mono, fontSize });
   }
 
   /**
@@ -2266,14 +2271,25 @@ export class ChartWidget {
     if (!now) return {};
     const current = { sizeSmall: now.sizeSmall, sizeMedium: now.sizeMedium, sizeLarge: now.sizeLarge };
     const written = this.drawingEdit.chartFontWritten;
-    const changedByHost = !written || written.sizeSmall !== current.sizeSmall || written.sizeMedium !== current.sizeMedium || written.sizeLarge !== current.sizeLarge;
-    if (changedByHost) this.chartFontBase = current;
+    const same = (a: typeof current, b: { sizeSmall: number; sizeMedium: number; sizeLarge: number }) => a.sizeSmall === b.sizeSmall && a.sizeMedium === b.sizeMedium && a.sizeLarge === b.sizeLarge;
+    // The sizes of the theme the chart is drawn in now: a look has its own (Graphite's small is 12). From the
+    // theme the widget gave the chart, not from the chart: what `setFont` wrote is on the theme the chart gives back.
+    const themes = this.look.get().theme?.font;
+    const own = themes ? { sizeSmall: themes.sizeSmall, sizeMedium: themes.sizeMedium, sizeLarge: themes.sizeLarge } : null;
+    const changedByHost = !written || !same(written, current);
+    if (changedByHost) {
+      this.chartFontBase = current;
+      this.chartFontBaseIsThemes = own !== null && same(current, own);
+    } else if (this.chartFontBaseIsThemes && own) {
+      // What the look wrote is still there, and its base was a theme's own: the theme now may be another look's.
+      this.chartFontBase = own;
+    }
     if (this.uiScale === 1 && !written) return {};
     const base = this.chartFontBase ?? current;
     const at = (n: number) => (this.uiScale === 1 ? n : Math.round(n * this.uiScale));
     const sizes = { sizeSmall: at(base.sizeSmall), sizeMedium: at(base.sizeMedium), sizeLarge: at(base.sizeLarge) };
-    // Back at 1 the base is the chart's own again, and the look stops writing.
-    this.drawingEdit.chartFontWritten = this.uiScale === 1 ? null : sizes;
+    // Back at 1 the sizes written are the base's own; they stay known as the look's, so a look that comes after is not taken for a host's.
+    this.drawingEdit.chartFontWritten = sizes;
     return sizes;
   }
 

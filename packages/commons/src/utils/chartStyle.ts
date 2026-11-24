@@ -208,7 +208,7 @@ export function resolveChartTheme(base: Theme, chartType: ChartType, overrides: 
       price: {
         line: str('axis.price.lineColor', plain.axisLine),
         text: str('axis.price.textColor', plain.axisLabel),
-        valueTagsOutlined: (o('axis.price.valueTagsOutlined') as boolean | undefined) ?? false,
+        valueTagsOutlined: (o('axis.price.valueTagsOutlined') as boolean | undefined) ?? plain.valueTagsOutlined ?? false,
       },
       time: { line: str('axis.time.lineColor', plain.axisLine), text: str('axis.time.textColor', plain.axisLabel) },
     },

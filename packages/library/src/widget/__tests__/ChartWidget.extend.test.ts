@@ -1388,6 +1388,36 @@ describe('ChartWidget on a wide screen', () => {
     expect(fonts[fonts.length - 1]).toMatchObject({ sizeSmall: 13, sizeMedium: 15, sizeLarge: 18 });
   });
 
+  // Graphite's chart is set a size up from the other looks': the sizes a grown widget wrote for one
+  // look were taken for the next look's own.
+  it('grows the chart’s type from the new look’s own sizes when the look changes', () => {
+    const own = { graphite: { sizeSmall: 12, sizeMedium: 13, sizeLarge: 15 }, modern: { sizeSmall: 11, sizeMedium: 13, sizeLarge: 15 } };
+    let look: keyof typeof own = 'graphite';
+    const proto = FakeChart.prototype as unknown as Record<string, unknown>;
+    const sizesWritten = () => (FakeChart.last?.fonts as (Record<string, unknown> | null)[] ?? []).reduce<Record<string, unknown>>((font, next) => (next === null ? {} : { ...font, ...next }), {});
+    // As the chart does: what `setFont` wrote is on the theme it gives back, over the theme's own sizes.
+    proto.getTheme = () => ({ font: { family: 'x', ...own[look], ...sizesWritten() } });
+    proto.getFont = () => ({ family: 'x', ...own[look], ...sizesWritten() });
+    wide(2600);
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const last = () => { const f = sizesWritten(); return [f.sizeSmall, f.sizeMedium, f.sizeLarge]; };
+    const scale = (last()[0] as number) / 12;
+    expect(scale).toBeGreaterThan(1);
+    look = 'modern';
+    widget.setUI('modern');
+    expect(last()).toEqual([Math.round(11 * scale), Math.round(13 * scale), Math.round(15 * scale)]);
+    // And however often: sizes written were once taken for the theme's own, and grew at every change.
+    for (let i = 0; i < 4; i++) {
+      look = 'graphite';
+      widget.setUI('graphite');
+      expect(last(), `graphite, turn ${i}`).toEqual([Math.round(12 * scale), Math.round(13 * scale), Math.round(15 * scale)]);
+      look = 'modern';
+      widget.setUI('modern');
+      expect(last(), `modern, turn ${i}`).toEqual([Math.round(11 * scale), Math.round(13 * scale), Math.round(15 * scale)]);
+    }
+    delete proto.getTheme;
+  });
+
   it('sets only the sizes it grows, so the other tokens a host sets in CSS stay', () => {
     wide(2600);
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
