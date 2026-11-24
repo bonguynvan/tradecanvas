@@ -36,6 +36,11 @@ The `3.0` branch. These move under the version's own heading when it is released
 
 ### Chart
 
+- **Graphite's picked ground lets a muted figure read on it, and two more picked things lose the accent.** The dark
+  theme's picked ground is `#2a2c32`, where it was `#2b2d33`: the watchlist's picked row had its muted and
+  falling figures at 4.48:1, and has them at 4.54:1. The day picked in the calendar is a block in the text's colour,
+  where it was a block of the accent, and today is told by its line and its weight, not by the accent; the alerts panel's
+  button for a new alert, its form open, is on the picked ground too.
 - **Graphite's smallest type is its small size: nothing to read is 10 px anywhere in the widget.** The look's
   smallest type token (`--tcw-font-size-xs`) is 12 px, where it was 10: the status bar, the watchlist's columns and
   changes, the tape's and the ladder's heads, the account table's heads, the hotkey sheet, the command palette's

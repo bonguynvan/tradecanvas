@@ -14,7 +14,7 @@ colors:
     text-dim: "#b0b3ba"
     text-muted: "#90939b"
     hover: "#262729"
-    picked: "#2b2d33"
+    picked: "#2a2c32"
     accent: "#f0a940"
     accent-fill: "#e8961e"
     accent-ink: "#0e1013"
