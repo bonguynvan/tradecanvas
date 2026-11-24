@@ -2,6 +2,7 @@ import type { DataSeries, Theme, ViewportState } from '@tradecanvas/commons';
 import { PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
 import { AXIS_TAG_TEXT_INSET, fillTag } from './shapes.js';
+import { labelTextColor } from './axisValueLabels.js';
 import { hLine } from '../charts/pixelGrid.js';
 
 export type PriceLineKind = 'high' | 'low' | 'bid' | 'ask';
@@ -115,9 +116,11 @@ export class PriceLines {
       const tagY = at?.get(level.kind) ?? y;
       // Pushed off the plot by the axis's other tags: left out.
       if (Number.isNaN(tagY)) continue;
-      ctx.fillStyle = colorOf(level.kind, theme);
+      const fill = colorOf(level.kind, theme);
+      ctx.fillStyle = fill;
       fillTag(ctx, axisX, tagY - TAG_HEIGHT / 2, width, TAG_HEIGHT, theme);
-      ctx.fillStyle = theme.background;
+      // The ink every filled tag of the axis is written in: the one that reads on the fill.
+      ctx.fillStyle = labelTextColor(fill);
       const text = viewport.formatPrice?.(level.price) ?? this.priceText?.(level.price) ?? formatPrice(level.price, precision);
       ctx.fillText(text, axisX + AXIS_TAG_TEXT_INSET, tagY);
     }

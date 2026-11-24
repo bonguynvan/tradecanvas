@@ -40,6 +40,9 @@ describe('labelTextColor', () => {
     for (const deep of ['#0a8068', '#c0262d', '#00735c', '#1e3a8a', '#111111', '#8a5a10']) expect(labelTextColor(deep), deep).toBe('#ffffff');
     // Near a tie the light ink: the candles' colours on a light chart, where dark ink is 4.6:1 and reads muddier than white at 4.
     for (const near of ['#0b8f6f', '#d93f45', '#d9463e']) expect(labelTextColor(near), near).toBe('#ffffff');
+    // Every way a colour of the chart's is written that can be read: with an alpha, short, as rgb().
+    for (const written of ['#2fc29aff', '#2fc29ae6', 'rgba(47, 194, 154, 0.9)', 'rgb(47,194,154)', '#3c9']) expect(labelTextColor(written), written).toBe('#10131a');
+    expect(labelTextColor('#0a8068ff')).toBe('#ffffff');
   });
 });
 

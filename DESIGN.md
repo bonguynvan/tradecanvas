@@ -231,8 +231,7 @@ The chart is the page; everything above is its frame. On it:
   with the fill, never white by habit: dark ink on the candles' green and red in the dark theme.
 - The chart's figures (axes, tags, the legend's prices) are the chrome's small size, 12 px, in
   the same face with digits of one width. A figure on the chart and one beside it are the same size.
-- The grid is the quietest thing drawn; an indicator's line is 1.5 px in a colour that is neither up
-  nor down's.
+- The grid is the quietest thing drawn.
 
 ## Layout
 
