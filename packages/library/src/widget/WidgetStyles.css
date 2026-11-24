@@ -4658,14 +4658,16 @@
 }
 .tcw-root[data-tcw-ui='graphite'] .tcw-account-total-sep { display: none; }
 .tcw-root[data-tcw-ui='graphite'] .tcw-account-total-name { color: var(--tcw-text-muted); font-family: var(--tcw-font); }
-.tcw-root[data-tcw-ui='graphite'] .tcw-account-sum .tcw-account-total-figure { color: var(--tcw-text); }
+/* A figure with no direction, a sum or a profit of nothing, is in the text's colour: a figure is what is read. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-account-total:not(.tcw-account-up, .tcw-account-down) .tcw-account-total-figure { color: var(--tcw-text); }
 .tcw-root[data-tcw-ui='graphite'] .tcw-account-open { order: -1; }
 .tcw-root[data-tcw-ui='graphite'] .tcw-account-open .tcw-account-total-figure { font-weight: var(--tcw-weight-strong); }
 .tcw-root[data-tcw-ui='graphite'] .tcw-account-count {
   min-width: 0;
   padding-inline: 0;
   background: none;
-  color: var(--tcw-text-muted);
+  /* The dim text, not the muted: 4.5:1 on the picked tab's ground too. */
+  color: var(--tcw-text-dim);
   font-family: var(--tcw-font);
   font-size: var(--tcw-font-size-sm);
   font-weight: var(--tcw-weight);

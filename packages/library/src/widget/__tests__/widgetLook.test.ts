@@ -338,6 +338,10 @@ describe('Graphite’s rules', () => {
 
   it('writes a tab’s count as a plain number, and a total as a muted name and its figure', () => {
     expect(body(css, ".tcw-root[data-tcw-ui='graphite'] .tcw-account-count")).toContain('background: none');
+    // On the picked tab's ground the muted text is under 4.5:1.
+    expect(body(css, ".tcw-root[data-tcw-ui='graphite'] .tcw-account-count")).toContain('color: var(--tcw-text-dim)');
+    // A figure of no direction is read as any figure is.
+    expect(body(css, ".tcw-root[data-tcw-ui='graphite'] .tcw-account-total:not(.tcw-account-up, .tcw-account-down) .tcw-account-total-figure")).toContain('color: var(--tcw-text)');
     expect(body(css, ".tcw-root[data-tcw-ui='graphite'] .tcw-account-total-sep")).toContain('display: none');
     expect(body(css, ".tcw-root[data-tcw-ui='graphite'] .tcw-account-total-name")).toContain('color: var(--tcw-text-muted)');
     expect(body(css, ".tcw-root[data-tcw-ui='graphite'] .tcw-account-open")).toContain('order: -1');

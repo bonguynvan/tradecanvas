@@ -142,10 +142,10 @@ function ltr(text: string): HTMLSpanElement {
   return span;
 }
 
-/** A signed figure's colour: a gain up, a loss down, what reads as nothing neither. */
 /** On a profit's figure, a position's or a fill's: a look may set it strong. */
 const PNL_CLASS = 'tcw-account-pnl';
 
+/** A signed figure's colour: a gain up, a loss down, what reads as nothing neither. */
 function toneClass(figure: string): string {
   const tone = toneOf(figure);
   return tone ? `tcw-account-${tone}` : '';
