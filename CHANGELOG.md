@@ -36,6 +36,10 @@ The `3.0` branch. These move under the version's own heading when it is released
 
 ### Chart
 
+- **A limit's price is written once where the last price sits on it in its colour.** With `lastPrice.limitColors` on
+  and the last price at a limit, the limit's own tag on the price axis gives way to the last price's: they were two
+  blocks of one colour with one figure, three with the countdown. The limit's line and its name stay, and so does
+  its tag where the price has gone through the limit far enough for the two to stand apart.
 - **A day's limit tags are tags as the axis's others are, and the last price can take a limit's colour.** A limit's
   tag on the price axis is 16 px tall with its figure in the theme's small size, where it was 14 px with a figure a
   size under, and is filled a shade deeper where no ink would read on a colour a host gave (the rule the last

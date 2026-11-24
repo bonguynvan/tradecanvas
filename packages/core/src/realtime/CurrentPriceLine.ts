@@ -30,18 +30,26 @@ export interface LimitLine {
 const AT_LIMIT = 1e-9;
 
 /**
- * The colour of the limit `price` is at: the ceiling's at or over it, the
- * floor's at or under it, the reference's at the reference price. Null
- * between them, or with no limits known.
+ * The colour of the limit `price` is at (`limitIndexAt`); null between them, or with no limits known.
  */
 function limitColorAt(price: number, limits?: readonly LimitLine[]): string | null {
-  if (!limits || limits.length < 3) return null;
+  const at = limitIndexAt(price, limits);
+  return at < 0 ? null : limits![at].color;
+}
+
+/**
+ * Which of the day's limits `price` is at, by their order (0 the ceiling, 1
+ * the floor, 2 the reference): at or over the ceiling, at or under the
+ * floor, at the reference price. -1 between them, or with no limits known.
+ */
+export function limitIndexAt(price: number, limits?: readonly { price: number }[]): number {
+  if (!limits || limits.length < 3) return -1;
   const [ceiling, floor, reference] = limits;
   const near = (limit: number) => Math.abs(limit) * AT_LIMIT;
-  if (Number.isFinite(ceiling.price) && price >= ceiling.price - near(ceiling.price)) return ceiling.color;
-  if (Number.isFinite(floor.price) && price <= floor.price + near(floor.price)) return floor.color;
-  if (Number.isFinite(reference.price) && Math.abs(price - reference.price) <= near(reference.price)) return reference.color;
-  return null;
+  if (Number.isFinite(ceiling.price) && price >= ceiling.price - near(ceiling.price)) return 0;
+  if (Number.isFinite(floor.price) && price <= floor.price + near(floor.price)) return 1;
+  if (Number.isFinite(reference.price) && Math.abs(price - reference.price) <= near(reference.price)) return 2;
+  return -1;
 }
 
 /**

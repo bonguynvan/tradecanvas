@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { DARK_THEME, LIGHT_THEME, LayerType, VN_COLORS } from '@tradecanvas/commons';
+import { DARK_THEME, LIGHT_THEME, LayerType, VN_COLORS, resolveChartTheme } from '@tradecanvas/commons';
 import type { DataSeries, Theme, ViewportState } from '@tradecanvas/commons';
 import { RenderEngine } from '../RenderEngine.js';
 import type { RenderContext } from '../RenderEngine.js';
 import { PriceAxis } from '../../axis/PriceAxis.js';
+import { CurrentPriceLine } from '../../realtime/CurrentPriceLine.js';
 import { SessionBreaks } from '../../ui/SessionBreaks.js';
 import { AXIS_LABEL_HEIGHT } from '../../ui/axisValueLabels.js';
 
@@ -941,6 +942,50 @@ describe('RenderEngine — the price limits’ colours', () => {
       expect(tags).toHaveLength(3);
       for (const tag of tags) expect(tag.font, theme.name).toContain(`${theme.font.sizeSmall}px`);
     }
+  });
+
+  /** The figures written on the price axis (not the names on the lines) with the last price at `last`, and each one's font. */
+  function axisFigures(last: number, overrides: Record<string, unknown>): { text: string; font: string }[] {
+    const { ctx } = makeContext();
+    ctx.theme = resolveChartTheme(DARK_THEME, 'candlestick', overrides as never) as Theme;
+    ctx.priceLimits = { ceiling: 99_800, floor: 98_100, reference: 98_937 };
+    // Room over the ceiling and under the floor: a tag by the plot's edge is pushed off it, limit or not.
+    ctx.viewport = { ...ctx.viewport, priceRange: { min: 96_000, max: 102_000 } };
+    const line = new CurrentPriceLine();
+    line.setPrice(last, 98_937);
+    ctx.currentPriceLine = line;
+    engine.setRenderContext(ctx);
+    engine.start();
+    engine.requestRender(LayerType.Main);
+    const layer = engine.layerManager.getLayer(LayerType.Main)!.ctx;
+    const figures: { text: string; font: string }[] = [];
+    layer.fillText = (text: string) => { if (!/^[A-Z]/.test(text)) figures.push({ text, font: layer.font }); };
+    runFrame();
+    return figures;
+  }
+
+  it('writes a limit’s price once where the last price sits on it in the limit’s colour: the limit’s own tag gives way', () => {
+    const count = (figures: { text: string }[], text: string) => figures.filter((f) => f.text === text).length;
+    for (const [last, text] of [[99_800, '99,800.00'], [98_100, '98,100.00'], [98_937, '98,937.00']] as const) {
+      // The key off: the limit's tag and the last price's, each with the figure.
+      expect(count(axisFigures(last, {}), text), `${text} off`).toBe(2);
+      const on = axisFigures(last, { 'lastPrice.limitColors': true });
+      expect(count(on, text), `${text} on`).toBe(1);
+      // The one left is the last price's, in its bold.
+      expect(on.find((f) => f.text === text)!.font).toContain('bold');
+      // The other two limits keep their tags.
+      for (const other of ['99,800.00', '98,100.00', '98,937.00']) if (other !== text) expect(count(on, other), `${other} beside ${text}`).toBe(1);
+    }
+  });
+
+  it('keeps a limit’s tag where the last price has gone through it, or is hidden', () => {
+    // Through the ceiling, far enough for the two tags to stand apart: the limit is still named at its own price.
+    const through = axisFigures(101_500, { 'lastPrice.limitColors': true });
+    expect(through.filter((f) => f.text === '99,800.00')).toHaveLength(1);
+    expect(through.filter((f) => f.text === '101,500.00')).toHaveLength(1);
+    const hidden = axisFigures(99_800, { 'lastPrice.limitColors': true, 'lastPrice.visible': false });
+    expect(hidden.filter((f) => f.text === '99,800.00')).toHaveLength(1);
+    expect(hidden.find((f) => f.text === '99,800.00')!.font).not.toContain('bold');
   });
 
   it('takes the light colours for a light theme of its own that gives none', () => {

@@ -25,7 +25,7 @@ import type { IndicatorEngine } from '../indicators/IndicatorEngine.js';
 import { valuePlots } from '../indicators/plots.js';
 import type { DrawingRenderer } from '../drawings/DrawingRenderer.js';
 import type { TradingRenderer } from '../trading/TradingRenderer.js';
-import type { CurrentPriceLine } from '../realtime/CurrentPriceLine.js';
+import { limitIndexAt, type CurrentPriceLine } from '../realtime/CurrentPriceLine.js';
 import type { ChartLegend } from '../ui/ChartLegend.js';
 import type { Watermark } from '../ui/Watermark.js';
 import { COUNTDOWN_HEIGHT, type BarCountdown } from '../ui/BarCountdown.js';
@@ -532,9 +532,20 @@ export class FrameRenderer {
       const y = priceToY(level.price, viewport);
       if (onPlot(y)) boxes.push({ y, above: QUOTE_TAG_HALF, below: QUOTE_TAG_HALF, source: 'quote', key: level.kind });
     }
-    (ctx.priceLimits ? limitLines(ctx.priceLimits) : []).forEach(({ price }, i) => {
+    const limits = ctx.priceLimits ? limitLines(ctx.priceLimits) : [];
+    // The last price on a limit, in that limit's colour (`lastPrice.limitColors`): the limit's own tag would be a
+    // second block of the same colour with the same figure against it, so it gives way and the price is written once.
+    const lastY = boxes.length > 0 && boxes[0].source === 'last' ? boxes[0].y : null;
+    const lastOn = lastY !== null && ctx.theme.style?.lastPrice.limitColors ? limitIndexAt(last as number, limits) : -1;
+    let covered = -1;
+    limits.forEach(({ price }, i) => {
       const y = priceToY(price, viewport);
-      if (onPlot(y)) boxes.push({ y, above: LIMIT_TAG_HEIGHT / 2, below: LIMIT_TAG_HEIGHT / 2, source: 'limit', key: i });
+      if (!onPlot(y)) return;
+      if (i === lastOn && Math.abs(y - (lastY as number)) < LAST_TAG_HALF + LIMIT_TAG_HEIGHT / 2) {
+        covered = i;
+        return;
+      }
+      boxes.push({ y, above: LIMIT_TAG_HEIGHT / 2, below: LIMIT_TAG_HEIGHT / 2, source: 'limit', key: i });
     });
     const aligned = ctx.alignAxisLabels !== false;
     if (aligned) {
@@ -554,6 +565,8 @@ export class FrameRenderer {
       else if (b.source === 'limit') plan.limits[b.key as number] = at[i];
       else if (b.source === 'trading') plan.trading![b.key as number] = at[i];
     });
+    // Left out, as a tag pushed off the plot is: its line and its name stay.
+    if (covered >= 0) plan.limits[covered] = Number.NaN;
     if (!aligned) {
       for (const y of ctx.tradingRenderer?.axisTagYs(viewport, ctx.theme) ?? []) {
         if (onPlot(y)) plan.fixed.push({ y, half: AXIS_LABEL_HEIGHT / 2 });
