@@ -112,7 +112,7 @@ describe('resolveWidgetUI', () => {
     }
     const v = vars({});
     expect([1, 2, 3, 4, 5, 6, 7].map((n) => v[`--tcw-space-${n}`])).toEqual(['2px', '4px', '6px', '8px', '12px', '20px', '32px']);
-    expect(v).toMatchObject({ '--tcw-control-pad': '12px', '--tcw-bar-pad': '12px', '--tcw-menu-row-pad': '12px', '--tcw-odd': '0px', '--tcw-legend-line': '20px', '--tcw-legend-line-pane': '16px', '--tcw-line-xs': '14px' });
+    expect(v).toMatchObject({ '--tcw-control-pad': '12px', '--tcw-bar-pad': '12px', '--tcw-menu-row-pad': '12px', '--tcw-odd': '0px', '--tcw-legend-line': '20px', '--tcw-legend-line-pane': '16px', '--tcw-line-xs': '16px' });
     // 18 px a line at 13 px.
     expect(parseFloat(v['--tcw-line-height']) * 13).toBeCloseTo(18, 3);
   });
@@ -417,7 +417,10 @@ describe('a look’s small type', () => {
     expect(graphite['--tcw-font-size-sm']).toBe('12px');
     expect(graphite['--tcw-label-size']).toBe('12px');
     // The smallest size stays, for a short label (a count, a unit).
-    expect(graphite['--tcw-font-size-xs']).toBe('10px');
+    // Nothing to read is under its small size: the smallest type is the small size too.
+    expect(graphite['--tcw-font-size-xs']).toBe('12px');
+    // A character inside a set shape (a badge's letter, a keycap) keeps the scale's smallest.
+    expect(graphite['--tcw-font-size-glyph']).toBe('10px');
     for (const preset of ['modern', 'print', 'studio', 'capsule'] as const) {
       expect(widgetUIVariables(resolveWidgetUI(preset))['--tcw-font-size-sm'], preset).toBe('11px');
     }
@@ -448,6 +451,22 @@ describe('a look’s small type', () => {
     for (const preset of ['terminal', 'desk'] as const) {
       expect(resolveWidgetUI(preset).font.smallSize, preset).toBeUndefined();
     }
+  });
+
+  it('leaves the smallest type two steps under the body where a look sets no small size, and the glyph there in every look', () => {
+    for (const preset of ['modern', 'print', 'studio', 'capsule', 'terminal', 'desk'] as const) {
+      const vars = widgetUIVariables(resolveWidgetUI(preset));
+      expect(vars['--tcw-font-size-xs'], preset).toBe(vars['--tcw-font-size-glyph']);
+      expect(parseFloat(vars['--tcw-font-size-xs']), preset).toBeLessThanOrEqual(parseFloat(vars['--tcw-font-size-sm']));
+    }
+    // A theme's own small size is its smallest to read, in any look; under its own body size Graphite follows the scale again.
+    expect(widgetUIVariables(resolveWidgetUI({ preset: 'print', font: { smallSize: 12 } }))['--tcw-font-size-xs']).toBe('12px');
+    const body11 = widgetUIVariables(resolveWidgetUI({ font: { size: 11 } }));
+    expect(body11['--tcw-font-size-xs']).toBe(body11['--tcw-font-size-glyph']);
+    // Grown for a wide screen, the two grow with the rest.
+    const grown = widgetUIVariables(scaledWidgetUI(resolveWidgetUI('graphite'), 1.5));
+    expect(grown['--tcw-font-size-xs']).toBe('18px');
+    expect(parseFloat(grown['--tcw-font-size-glyph'])).toBeGreaterThan(10);
   });
 
   it('grows with the look', () => {

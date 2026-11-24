@@ -157,7 +157,9 @@ export interface WidgetUIFont {
   size: number;
   /**
    * The small size, px, 10 to 20: figures in a table, a field's name, a segment. Left out, it is
-   * the step under `size` on the look's scale (11 for 13).
+   * the step under `size` on the look's scale (11 for 13). A look that sets it writes nothing to
+   * read under it: its smallest type (`--tcw-font-size-xs`) is this size too, and only a character
+   * inside a set shape (`--tcw-font-size-glyph`) stays two steps under `size`.
    */
   smallSize?: number;
   weight: number;
@@ -634,6 +636,10 @@ export function widgetUIVariables(ui: ResolvedWidgetUI): Record<string, string> 
   const even = isEvenDensity(ui.density);
   const tool = compact ? 1 : TOOL_STEP;
   const small = f.smallSize ?? typeSize(f.size, -1);
+  // A character inside a set shape (a badge's letter, a keycap): the scale's smallest, in every look.
+  const glyph = typeSize(f.size, -2);
+  // The smallest type to read: the scale's smallest too, but a look that sets its small size has nothing under it.
+  const tiny = f.smallSize === undefined ? glyph : small;
   // A half step over the other buttons (an even size, so the icon centres on whole pixels),
   // but never so wide the column keeps less than its room a side.
   const toolStep = even ? evenPx(s.control * TOOL_STEP) : Math.round(s.control * TOOL_STEP);
@@ -653,7 +659,7 @@ export function widgetUIVariables(ui: ResolvedWidgetUI): Record<string, string> 
     '--tcw-line-height': even ? String(Math.round((evenPx(f.size * LINE_RATIO) / f.size) * 1e5) / 1e5) : String(LINE_RATIO),
     '--tcw-legend-line': p(legendLine),
     '--tcw-legend-line-pane': p(paneLine),
-    '--tcw-line-xs': even ? p(evenPx(typeSize(f.size, -2) * LINE_RATIO)) : String(LINE_RATIO),
+    '--tcw-line-xs': even ? p(evenPx(tiny * LINE_RATIO)) : String(LINE_RATIO),
     // The bars' text buttons a whole number of pixels wide, where the browser can round a box sized by its content.
     '--tcw-text-w': even ? TEXT_WIDTH_ROUNDED : 'auto',
     '--tcw-radius-xs': p(r.xs),
@@ -686,7 +692,8 @@ export function widgetUIVariables(ui: ResolvedWidgetUI): Record<string, string> 
     '--tcw-font-mono': f.mono,
     '--tcw-font-size': p(f.size),
     '--tcw-font-size-sm': p(small),
-    '--tcw-font-size-xs': p(typeSize(f.size, -2)),
+    '--tcw-font-size-xs': p(tiny),
+    '--tcw-font-size-glyph': p(glyph),
     '--tcw-font-size-lg': p(typeSize(f.size, 1)),
     '--tcw-font-size-xl': p(typeSize(f.size, 2)),
     '--tcw-font-size-display': p(typeSize(f.size, 3)),

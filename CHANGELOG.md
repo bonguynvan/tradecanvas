@@ -36,6 +36,15 @@ The `3.0` branch. These move under the version's own heading when it is released
 
 ### Chart
 
+- **Graphite's smallest type is its small size: nothing to read is 10 px anywhere in the widget.** The look's
+  smallest type token (`--tcw-font-size-xs`) is 12 px, where it was 10: the status bar, the watchlist's columns and
+  changes, the tape's and the ladder's heads, the account table's heads, the hotkey sheet, the command palette's
+  headings, hints and notes. A look that sets its small size writes nothing to read under it, and so does a `ui.font.smallSize` of
+  your own in any look (the smallest type is then that size too, where it was two steps under the body); the
+  other presets are as they were. A character inside a set shape (a keycap in the command palette, the letter in a symbol's
+  badge) has a token of its own, `--tcw-font-size-glyph`, two steps under the body in every
+  look. In the watchlist the symbol on the chart is a picked row, on a neutral ground, with no bar of the accent
+  down its left.
 - **Graphite's chart dialogs are drawn by the design file.** Every dialog's title is 15 px, where it was 21, and its
   Cancel a neutral button with no border. In Indicators, Symbol search, Chart Settings and an indicator's or a
   drawing's settings: nothing is 10 px (a group's name, an
