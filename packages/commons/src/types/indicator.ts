@@ -252,6 +252,15 @@ export interface IndicatorConfig {
    * neither names a zone: UTC's days.
    */
   exchangeTimeZone?: string;
+  /**
+   * When the trading day starts, in minutes after midnight on the exchange's
+   * clock, where it is not midnight: 1020 for a session opening at 17:00
+   * that runs past midnight (CME's). The indicators that start again each
+   * day, week or month start them there, the day named by the date it ends
+   * on. Set by the chart from the symbol's sessions (`SymbolInfo.sessions`,
+   * `tradingDayStart`), and never saved with a layout. Unset: midnight.
+   */
+  sessionStart?: number;
 }
 
 /** The kinds of interval an indicator's visibility is set for. */

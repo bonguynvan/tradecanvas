@@ -12,7 +12,7 @@ const DAY_WIDTH_SHARE = 0.7;
 const OUTSIDE_FADE = 0.5;
 
 const sameRules = (a: SessionVolumeRules, b: SessionVolumeRules): boolean =>
-  a.rows === b.rows && a.valueArea === b.valueArea && a.timeZone === b.timeZone;
+  a.rows === b.rows && a.valueArea === b.valueArea && a.timeZone === b.timeZone && a.sessionStart === b.sessionStart;
 
 /** A bar's point: its day's POC and value area, and the day it is in, where the lines break. */
 const pointOf = (p: SessionVolumeProfile): IndicatorValue => ({ poc: p.poc, vah: p.valueAreaHigh, val: p.valueAreaLow, session: p.start });
@@ -50,6 +50,7 @@ export class SessionVolumeProfileIndicator extends IndicatorBase {
       rows: getIntParam(config, 'rows', 24, 1),
       valueArea: getNumberParam(config, 'valueArea', 70),
       timeZone: config.exchangeTimeZone ?? null,
+      sessionStart: config.sessionStart ?? null,
     });
   }
 

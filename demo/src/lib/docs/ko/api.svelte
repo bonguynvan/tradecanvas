@@ -506,6 +506,15 @@ chart.setSessionShadingConfig({
 <pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
 chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
 chart.isExtendedHoursVisible()`}</code></pre>
+<p>
+  <strong>거래일.</strong> 자정을 넘기는 세션(CME 시카고 시간 17:00~16:00)은 개장 시각에 거래일을 시작합니다. 그러면 하루, 한 주, 한 달마다 다시 시작하는 지표(Session VWAP, VWAP과 누적 델타의 anchor, 세션 거래량 프로파일, MTF 평균의 하루), 전일 레벨선, 마켓 프로파일의 하루가 17:00부터 17:00까지이며, 끝나는 날의 날짜로 부릅니다. 하루 안에 있는 세션은 자정 그대로입니다. 일봉과 체결로 만드는 하루는 시간대의 자정 그대로입니다.
+</p>
+<pre><code>{`chart.setSymbolInfo({ symbol: 'ES', timeZone: 'America/Chicago', sessions: [{ start: '17:00', end: '16:00' }] })
+// Session VWAP, svp, 전일 레벨선: 17:00부터 17:00까지
+
+import { tradingDayStart } from '@tradecanvas/chart'
+tradingDayStart([{ start: '17:00', end: '16:00' }])   // 1020: minutes after midnight
+tradingDayStart([{ start: '09:30', end: '16:00' }])   // null: midnight`}</code></pre>
 
 <h3>이전 기간 레벨 (PDH / PDL / PDC)</h3>
 <p>

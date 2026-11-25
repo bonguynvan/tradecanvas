@@ -38,7 +38,7 @@ export class MTFMovingAverageIndicator extends IndicatorBase {
     if (data.length === 0) return { values, series };
 
     const completed: number[] = []; // closes of completed HTF buckets
-    const keyOf = periodKeyer(data, tf, config.exchangeTimeZone);
+    const keyOf = periodKeyer(data, tf, config.exchangeTimeZone, config.sessionStart);
     let currentKey = keyOf(data[0].time);
     let runningClose = data[0].close;
     let maForBucket: number | null = null;

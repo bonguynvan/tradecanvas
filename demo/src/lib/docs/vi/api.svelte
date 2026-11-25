@@ -528,6 +528,15 @@ chart.setSessionShadingConfig({
 <pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
 chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
 chart.isExtendedHoursVisible()`}</code></pre>
+<p>
+  <strong>Ngày giao dịch.</strong> Một phiên kéo qua nửa đêm (phiên 17:00 đến 16:00 giờ Chicago của CME) bắt đầu ngày giao dịch từ giờ mở phiên. Khi đó các chỉ báo bắt đầu lại mỗi ngày, tuần hoặc tháng (Session VWAP, anchor của VWAP và của cumulative delta, volume profile theo phiên, các ngày của MTF average), các đường ngày trước và các ngày của market profile chạy từ 17:00 đến 17:00, mỗi ngày mang tên ngày nó kết thúc. Các phiên nằm trong một ngày vẫn tính từ nửa đêm. Nến ngày và các ngày dựng từ giao dịch vẫn theo nửa đêm của múi giờ.
+</p>
+<pre><code>{`chart.setSymbolInfo({ symbol: 'ES', timeZone: 'America/Chicago', sessions: [{ start: '17:00', end: '16:00' }] })
+// Session VWAP, svp, các đường ngày trước: từ 17:00 đến 17:00
+
+import { tradingDayStart } from '@tradecanvas/chart'
+tradingDayStart([{ start: '17:00', end: '16:00' }])   // 1020: minutes after midnight
+tradingDayStart([{ start: '09:30', end: '16:00' }])   // null: midnight`}</code></pre>
 
 <h3>Mức của kỳ trước (PDH / PDL / PDC)</h3>
 <p>

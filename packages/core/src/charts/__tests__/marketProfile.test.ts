@@ -187,3 +187,12 @@ describe('MarketProfileRenderer stats', () => {
     expect(values[0]).toMatch(/^\d{2,3},\d{3}\.\d{2}$/);
   });
 });
+
+describe('computeSessionProfiles on a trading day that starts in the evening', () => {
+  it('splits the days at the session’s open', () => {
+    const t = (hour: number) => Date.UTC(2023, 0, 2, hour + 6);
+    const bars: OHLCBar[] = [t(9), t(15), t(17), t(23)].map((time, i) => ({ time, open: 10 + i, high: 12 + i, low: 9 + i, close: 11 + i, volume: 1 }));
+    expect(computeSessionProfiles(bars, 5, 20, {}, 'America/Chicago').map((p) => [p.startIndex, p.endIndex])).toEqual([[0, 3]]);
+    expect(computeSessionProfiles(bars, 5, 20, {}, 'America/Chicago', 17 * 60).map((p) => [p.startIndex, p.endIndex])).toEqual([[0, 1], [2, 3]]);
+  });
+});
