@@ -2,7 +2,7 @@
 
 # Built-in indicators
 
-135 indicators. Add one with `chart.addIndicator(id, params)`; params you leave out take the defaults below.
+136 indicators. Add one with `chart.addIndicator(id, params)`; params you leave out take the defaults below.
 An indicator's values at bar `i` are `chart.getIndicatorOutput(instanceId).series[i]`, an object keyed by the line keys listed here.
 "Source ✓" means it has a `source` input: a price (`close`, `open`, `high`, `low`, `hl2`, `hlc3`, `ohlc4`, `hlcc4`) or another indicator's line (`indicatorSource(instanceId, key)`).
 
@@ -62,7 +62,7 @@ Drawn over the candles, on the price scale.
 | `candlepatterns` | Candlestick Patterns | trendPeriod: 10, reversal: 1, continuation: 1, indecision: 0 | bull: Bullish, bear: Bearish, neutral: Indecision | — | |
 | `fvg` | Fair Value Gaps | minPercent: 0, showFilled: 0 | bull: Bullish top, bullLow: Bullish bottom, bear: Bearish top, bearLow: Bearish bottom | — | |
 
-## In a pane of their own (86)
+## In a pane of their own (87)
 
 Drawn in a pane under the chart (`addIndicator(id, params, 'bottom' | 'top')`), with their own scale and levels.
 
@@ -154,3 +154,4 @@ Drawn in a pane under the chart (`addIndicator(id, params, 'bottom' | 'top')`), 
 | `tradevalue` | Trade Value | — | value: Value | — | |
 | `binarywave` | Binary Wave | ma: 20, fast: 12, slow: 26, signal: 9, roc: 12, stoch: 14 | value: Wave | 0 | |
 | `sroc` | Smoothed Rate of Change | ema: 13, roc: 21 | value: S-ROC | 0 | |
+| `rsidiv` | RSI Divergence | period: 14, left: 5, right: 5, minBars: 5, maxBars: 60, hidden: 0 | value: RSI, bull: Bullish, bear: Bearish | 30, 70 | |

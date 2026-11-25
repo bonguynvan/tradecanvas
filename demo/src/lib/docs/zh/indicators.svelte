@@ -203,6 +203,19 @@ import { detectFairValueGaps } from '@tradecanvas/chart'
 detectFairValueGaps(bars, { minPercent: 0.1 })
 // [{ index, formed, direction: 'up' | 'down', top, bottom, filledAt }]`}</code></pre>
 
+<h2 id="divergences">背离</h2>
+<p>
+  背离是指价格与振荡指标各转向两次，但方向不一致。看涨背离出现在两个低点：价格创出更低的低点，而指标的低点更高。看跌背离出现在两个高点：价格创出更高的高点，而指标的高点更低。<code>rsidiv</code> 是带背离标记的 RSI：每处背离在两个转折点之间画一条线，并在第二个转折点做标记；<code>hidden: 1</code> 还会加上隐藏背离（价格守住，RSI 没有），用虚线表示。转折点需要比它之前的 <code>left</code> 根K线和之后的 <code>right</code> 根K线都突出，因此背离会晚 <code>right</code> 根K线才确认，确认它的那根K线收盘后不再改变（那根K线仍在形成时，它可能出现又消失）；两个转折点相距 <code>minBars</code> 到 <code>maxBars</code> 根。<code>detectDivergences(bars, line, options)</code> 可读取任何每根K线一个值的序列（没有值处为 null），不需要图表。
+</p>
+<pre><code>{`chart.addIndicator('rsidiv', {}, 'bottom')                    // RSI，并标出背离
+chart.addIndicator('rsidiv', { hidden: 1 }, 'bottom')         // 加上隐藏背离，虚线
+chart.addIndicator('rsidiv', { left: 3, right: 3 }, 'bottom') // 更近的转折点：晚 3 根确认，数量更多
+
+import { detectDivergences } from '@tradecanvas/chart'
+
+detectDivergences(bars, macdHistogram, { left: 5, right: 5, minBars: 5, maxBars: 60, hidden: true })
+// [{ kind: 'bullish' | 'bearish', hidden, from, to, confirmed, valueFrom, valueTo, priceFrom, priceTo }]`}</code></pre>
+
 <h2>自定义指标</h2>
 <p>
   简便的方式是 <code>defineIndicator</code>：给出它的输入，以及一个根据K线返回其线条的函数，

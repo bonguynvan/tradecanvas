@@ -144,3 +144,5 @@ export { CompareSymbolIndicator, CompareSymbolPaneIndicator, SpreadIndicator, Co
 export { detectCandlePatterns, CANDLE_PATTERNS } from './candles/detect.js';
 export { detectFairValueGaps } from './overlay/detectFairValueGaps.js';
 export type { FairValueGap, FairValueGapOptions } from './overlay/detectFairValueGaps.js';
+export { detectDivergences } from './panel/detectDivergences.js';
+export type { Divergence, DivergenceOptions } from './panel/detectDivergences.js';

@@ -16,7 +16,7 @@ const BUILT_IN: Record<Exclude<IndicatorCategory, 'other'>, readonly string[]> =
     'chopzone', 'vhf', 'trendstrength', 'lrslope', 'rsquared', 'rwi', 'majority', 'asi',
   ],
   oscillators: [
-    'rsi', 'macd', 'stochastic', 'williamsR', 'cci', 'roc', 'tsi', 'ao', 'uo', 'crsi', 'coppock', 'kst',
+    'rsi', 'rsidiv', 'macd', 'stochastic', 'williamsR', 'cci', 'roc', 'tsi', 'ao', 'uo', 'crsi', 'coppock', 'kst',
     'elderray', 'stc', 'fisher', 'dpo', 'bop', 'cmo', 'trix', 'rvi', 'stochrsi', 'ppo', 'ac', 'rmi',
     'disparity', 'qstick', 'pgo', 'bbpb', 'mom', 'smi', 'smiergodic', 'po', 'psy', 'newpsy', 'sonar',
     'binarywave', 'sroc', 'abratio', 'advdecline',

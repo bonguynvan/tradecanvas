@@ -2,7 +2,7 @@
 import type { NumberParam } from './indicator.js';
 
 /**
- * The 135 built-in indicators, by id: the inputs
+ * The 136 built-in indicators, by id: the inputs
  * `chart.addIndicator(id, params)` takes, each optional (its default in its
  * note), and the keys of the lines it draws, as
  * `chart.getIndicatorOutput(instanceId)` and `indicatorSource(instanceId, key)`
@@ -1339,5 +1339,23 @@ export interface BuiltInIndicators {
       showFilled?: NumberParam;
     };
     lines: 'bull' | 'bullLow' | 'bear' | 'bearLow';
+  };
+  /** RSI Divergence, in a pane of its own. Lines: `value` (RSI), `bull` (Bullish), `bear` (Bearish). Levels at 30, 70. */
+  rsidiv: {
+    params: {
+      /** A whole number, at least 1. Default 14. */
+      period?: NumberParam;
+      /** A whole number, at least 1. Default 5. */
+      left?: NumberParam;
+      /** A whole number, at least 1. Default 5. */
+      right?: NumberParam;
+      /** A whole number, at least 1. Default 5. */
+      minBars?: NumberParam;
+      /** A whole number, at least 1. Default 60. */
+      maxBars?: NumberParam;
+      /** A whole number, at least 0, at most 1. Default 0. */
+      hidden?: NumberParam;
+    };
+    lines: 'value' | 'bull' | 'bear';
   };
 }

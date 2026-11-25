@@ -4770,6 +4770,79 @@
           "kind": "line"
         }
       ]
+    },
+    {
+      "id": "rsidiv",
+      "name": "RSI Divergence",
+      "shortName": "RSI Div",
+      "placement": "panel",
+      "category": "oscillators",
+      "params": {
+        "period": 14,
+        "left": 5,
+        "right": 5,
+        "minBars": 5,
+        "maxBars": 60,
+        "hidden": 0
+      },
+      "inputs": {
+        "period": {
+          "kind": "int",
+          "min": 1,
+          "step": 1
+        },
+        "left": {
+          "kind": "int",
+          "min": 1,
+          "step": 1
+        },
+        "right": {
+          "kind": "int",
+          "min": 1,
+          "step": 1
+        },
+        "minBars": {
+          "kind": "int",
+          "min": 1,
+          "step": 1
+        },
+        "maxBars": {
+          "kind": "int",
+          "min": 1,
+          "step": 1
+        },
+        "hidden": {
+          "kind": "int",
+          "min": 0,
+          "max": 1,
+          "step": 1
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "RSI",
+          "kind": "line"
+        },
+        {
+          "key": "bull",
+          "title": "Bullish",
+          "kind": "markers"
+        },
+        {
+          "key": "bear",
+          "title": "Bearish",
+          "kind": "markers"
+        }
+      ],
+      "levels": [
+        30,
+        70
+      ],
+      "scale": {
+        "min": 0,
+        "max": 100
+      }
     }
   ],
   "drawingTools": [
