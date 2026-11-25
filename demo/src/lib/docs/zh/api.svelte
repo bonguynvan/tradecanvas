@@ -512,7 +512,7 @@ const levels = computePeriodLevels(bars, 'day', 'Australia/Sydney')  // [{ id, l
 <h3>市场轮廓（TPO）</h3>
 <p>
   一种“价格停留时间”直方图：每根K线会为其价格范围触及的每个价格档位贡献一个 TPO，
-  由此显示控制点（Point of Control，成交最密集的价格）和价值区（约 70% 的 TPO）。
+  由此显示控制点（Point of Control，成交最密集的价格）和价值区（约 70% 的 TPO，按 Market Profile 的算法从控制点起每次向较重一侧加入两格）。
   它与成交量分布不同——按时间而非成交量加权——并固定在左侧，因此两者可以同时显示。
   默认关闭；可在设置面板中切换，也可以直接调用：
 </p>

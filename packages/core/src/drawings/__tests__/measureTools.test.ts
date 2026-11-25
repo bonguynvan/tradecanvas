@@ -9,6 +9,7 @@ import { RiskRewardTool } from '../tools/RiskReward.js';
 import { ForecastTool, BarsPatternTool } from '../tools/forecast.js';
 import { VolumeProfileRangeTool } from '../tools/VolumeProfileRange.js';
 import { AnchoredVWAPTool } from '../tools/AnchoredVWAP.js';
+import { growValueArea } from '../../indicators/valueArea.js';
 import { drawingLook, setDrawingLook } from '../drawingLook.js';
 import { drawing, recordingCtx, unitViewport } from './fixtures.js';
 
@@ -140,6 +141,36 @@ describe('profiles and VWAP', () => {
     const vwap0 = (first.high + first.low + first.close) / 3;
     expect(tool.hitTestAnchor({ x: 105, y: y(vwap0) }, state, tall, 3)).toBe(0);
     expect(tool.hitTestAnchor({ x: 105, y: y(95) }, state, tall, 3)).toBe(-1);
+  });
+});
+
+describe('the range volume profile’s value area', () => {
+  it('grows two rows at a time toward the heavier pair, as the chart’s market profile and the session volume profile do', () => {
+    type Rows = { bins: Float64Array; poc: number; valueLow: number; valueHigh: number };
+    const rowsOf = (tool: VolumeProfileRangeTool, start: number, end: number) =>
+      (tool as unknown as { rowsOf(data: OHLCBar[], s: number, e: number): Rows | null }).rowsOf(bars, start, end);
+    /** A row at a time toward the heavier neighbour, as it was counted before. */
+    const oneByOne = (bins: Float64Array, poc: number, target: number): [number, number] => {
+      let lo = poc, hi = poc, held = bins[poc];
+      while (held < target && (lo > 0 || hi < bins.length - 1)) {
+        const below = lo > 0 ? bins[lo - 1] : -1;
+        const above = hi < bins.length - 1 ? bins[hi + 1] : -1;
+        if (above >= below) held += bins[++hi]; else held += bins[--lo];
+      }
+      return [lo, hi];
+    };
+    const tool = new VolumeProfileRangeTool();
+    let differs = 0;
+    for (let start = 0; start + 20 < bars.length; start++) {
+      const rows = rowsOf(tool, start, start + 20);
+      if (!rows) continue;
+      const target = rows.bins.reduce((a, b) => a + b, 0) * 0.7;
+      const pairs = growValueArea(rows.bins, rows.poc, target);
+      expect([rows.valueLow, rows.valueHigh]).toEqual(pairs);
+      if (oneByOne(rows.bins, rows.poc, target).join() !== pairs.join()) differs++;
+    }
+    // The bars hold ranges where the two counts part.
+    expect(differs).toBeGreaterThan(0);
   });
 });
 
