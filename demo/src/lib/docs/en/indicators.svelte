@@ -216,6 +216,19 @@ import { detectFairValueGaps } from '@tradecanvas/chart'
 detectFairValueGaps(bars, { minPercent: 0.1 })
 // [{ index, formed, direction: 'up' | 'down', top, bottom, filledAt }]`}</code></pre>
 
+<h2 id="divergences">Divergences</h2>
+<p>
+  A divergence is the price and an oscillator turning twice and not the same way. Bullish, at two lows: the price makes a lower low and the oscillator a higher one. Bearish, at two highs: the price makes a higher high and the oscillator a lower one. <code>rsidiv</code> is the RSI with a line between its two turns at each divergence and a mark at the second; <code>hidden: 1</code> adds the hidden ones (the price holds, the RSI does not), dashed. A turn stands out from <code>left</code> bars before it and <code>right</code> bars after, so a divergence is known <code>right</code> bars late and does not change afterwards; the two turns are <code>minBars</code> to <code>maxBars</code> apart. <code>detectDivergences(bars, line, options)</code> reads any line with one value a bar (null where it has none) and needs no chart.
+</p>
+<pre><code>{`chart.addIndicator('rsidiv', {}, 'bottom')                    // the RSI, its divergences marked
+chart.addIndicator('rsidiv', { hidden: 1 }, 'bottom')         // the hidden ones too, dashed
+chart.addIndicator('rsidiv', { left: 3, right: 3 }, 'bottom') // nearer turns: known 3 bars late, and more of them
+
+import { detectDivergences } from '@tradecanvas/chart'
+
+detectDivergences(bars, macdHistogram, { left: 5, right: 5, minBars: 5, maxBars: 60, hidden: true })
+// [{ kind: 'bullish' | 'bearish', hidden, from, to, confirmed, valueFrom, valueTo, priceFrom, priceTo }]`}</code></pre>
+
 <h2>Your own indicator</h2>
 <p>
   The short way is <code>defineIndicator</code>: its inputs, and one function that returns its lines from the

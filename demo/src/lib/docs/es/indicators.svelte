@@ -225,6 +225,19 @@ import { detectFairValueGaps } from '@tradecanvas/chart'
 detectFairValueGaps(bars, { minPercent: 0.1 })
 // [{ index, formed, direction: 'up' | 'down', top, bottom, filledAt }]`}</code></pre>
 
+<h2 id="divergences">Divergencias</h2>
+<p>
+  Una divergencia es el precio y un oscilador girando dos veces, y no en el mismo sentido. Alcista, en dos mínimos: el precio marca un mínimo más bajo y el oscilador uno más alto. Bajista, en dos máximos: el precio marca un máximo más alto y el oscilador uno más bajo. <code>rsidiv</code> es el RSI con una línea entre sus dos giros en cada divergencia y una marca en el segundo; <code>hidden: 1</code> añade las ocultas (el precio aguanta, el RSI no), en discontinua. Un giro destaca sobre las <code>left</code> barras anteriores y las <code>right</code> posteriores, así que una divergencia se conoce con <code>right</code> barras de retraso y después no cambia; los dos giros están separados entre <code>minBars</code> y <code>maxBars</code>. <code>detectDivergences(bars, line, options)</code> lee cualquier línea con un valor por barra (null donde no lo hay) y no necesita gráfico.
+</p>
+<pre><code>{`chart.addIndicator('rsidiv', {}, 'bottom')                    // el RSI, con sus divergencias marcadas
+chart.addIndicator('rsidiv', { hidden: 1 }, 'bottom')         // también las ocultas, en discontinua
+chart.addIndicator('rsidiv', { left: 3, right: 3 }, 'bottom') // giros más cercanos: se conocen con 3 barras de retraso, y hay más
+
+import { detectDivergences } from '@tradecanvas/chart'
+
+detectDivergences(bars, macdHistogram, { left: 5, right: 5, minBars: 5, maxBars: 60, hidden: true })
+// [{ kind: 'bullish' | 'bearish', hidden, from, to, confirmed, valueFrom, valueTo, priceFrom, priceTo }]`}</code></pre>
+
 <h2>Tu propio indicador</h2>
 <p>
   El camino corto es <code>defineIndicator</code>: sus entradas, y una sola función que devuelve sus líneas a partir de

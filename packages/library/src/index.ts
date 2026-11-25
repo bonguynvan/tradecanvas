@@ -168,6 +168,8 @@ export type {
 export { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core';
 export { detectFairValueGaps } from '@tradecanvas/core';
 export type { FairValueGap, FairValueGapOptions } from '@tradecanvas/core';
+export { detectDivergences } from '@tradecanvas/core';
+export type { Divergence, DivergenceOptions } from '@tradecanvas/core';
 
 // Re-export themes and defaults
 export {

@@ -128,7 +128,7 @@ new ChartWidget(el, { feed, symbol: 'AAPL', timeframe: '1d' })`}</code></pre>
   </li>
   <li>
     <code>custom_indicators_getter</code> 向けに書いた<strong>カスタムインジケーター</strong>は、
-    <a href={href('/docs/plugins')}>インジケータープラグイン</a>として書き直します。135 個の組み込みインジケーターに
+    <a href={href('/docs/plugins')}>インジケータープラグイン</a>として書き直します。136 個の組み込みインジケーターに
     同じことをするものがあれば、それを使います。
   </li>
   <li>

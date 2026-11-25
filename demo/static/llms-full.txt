@@ -1,6 +1,6 @@
 # TradeCanvas
 
-> Trading chart library for the web, drawn with Canvas 2D or WebGL (TypeScript, no runtime dependencies): candlestick, Heikin-Ashi, Renko and other chart types, 135 indicators, drawing tools, live exchange feeds, orders and positions on the chart, alerts, replay and backtesting. npm: @tradecanvas/chart (Chart and the ChartWidget UI), @tradecanvas/react, @tradecanvas/vue, @tradecanvas/svelte, @tradecanvas/analytics.
+> Trading chart library for the web, drawn with Canvas 2D or WebGL (TypeScript, no runtime dependencies): candlestick, Heikin-Ashi, Renko and other chart types, 136 indicators, drawing tools, live exchange feeds, orders and positions on the chart, alerts, replay and backtesting. npm: @tradecanvas/chart (Chart and the ChartWidget UI), @tradecanvas/react, @tradecanvas/vue, @tradecanvas/svelte, @tradecanvas/analytics.
 
 Use `ChartWidget` (`@tradecanvas/chart/widget`) for a complete trading UI, or `Chart` (`@tradecanvas/chart`) to build your own around it. Both need a sized DOM element and run in the browser only.
 
@@ -47,7 +47,7 @@ skills/tradecanvas/SKILL.md
 
 ---
 name: tradecanvas
-description: Build trading and financial charts with TradeCanvas (@tradecanvas/chart) — candlesticks and 24 other chart types, 135 indicators, drawing tools, live exchange data, orders and positions on the chart, signals and trade zones, alerts, replay, a full trading widget. Use when a project imports @tradecanvas/*, or when asked to add a price, candlestick or trading chart to a web app (vanilla TS/JS, React, Vue, Svelte).
+description: Build trading and financial charts with TradeCanvas (@tradecanvas/chart) — candlesticks and 24 other chart types, 136 indicators, drawing tools, live exchange data, orders and positions on the chart, signals and trade zones, alerts, replay, a full trading widget. Use when a project imports @tradecanvas/*, or when asked to add a price, candlestick or trading chart to a web app (vanilla TS/JS, React, Vue, Svelte).
 ---
 
 # TradeCanvas
@@ -2266,7 +2266,7 @@ skills/tradecanvas/references/indicators.md
 
 # Built-in indicators
 
-135 indicators. Add one with `chart.addIndicator(id, params)`; params you leave out take the defaults below.
+136 indicators. Add one with `chart.addIndicator(id, params)`; params you leave out take the defaults below.
 An indicator's values at bar `i` are `chart.getIndicatorOutput(instanceId).series[i]`, an object keyed by the line keys listed here.
 "Source ✓" means it has a `source` input: a price (`close`, `open`, `high`, `low`, `hl2`, `hlc3`, `ohlc4`, `hlcc4`) or another indicator's line (`indicatorSource(instanceId, key)`).
 
@@ -2326,7 +2326,7 @@ Drawn over the candles, on the price scale.
 | `candlepatterns` | Candlestick Patterns | trendPeriod: 10, reversal: 1, continuation: 1, indecision: 0 | bull: Bullish, bear: Bearish, neutral: Indecision | — | |
 | `fvg` | Fair Value Gaps | minPercent: 0, showFilled: 0 | bull: Bullish top, bullLow: Bullish bottom, bear: Bearish top, bearLow: Bearish bottom | — | |
 
-## In a pane of their own (86)
+## In a pane of their own (87)
 
 Drawn in a pane under the chart (`addIndicator(id, params, 'bottom' | 'top')`), with their own scale and levels.
 
@@ -2418,6 +2418,7 @@ Drawn in a pane under the chart (`addIndicator(id, params, 'bottom' | 'top')`), 
 | `tradevalue` | Trade Value | — | value: Value | — | |
 | `binarywave` | Binary Wave | ma: 20, fast: 12, slow: 26, signal: 9, roc: 12, stoch: 14 | value: Wave | 0 | |
 | `sroc` | Smoothed Rate of Change | ema: 13, roc: 21 | value: S-ROC | 0 | |
+| `rsidiv` | RSI Divergence | period: 14, left: 5, right: 5, minBars: 5, maxBars: 60, hidden: 0 | value: RSI, bull: Bullish, bear: Bearish | 30, 70 | |
 
 ==============================================================================
 packages/library/README.md
@@ -2453,7 +2454,7 @@ packages/library/README.md
   <b>English</b> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.vi.md">Tiếng Việt</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.zh-CN.md">简体中文</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.ja.md">日本語</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.ko.md">한국어</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.es.md">Español</a>
 </p>
 
-**TradeCanvas is the open-source chart library for trading apps** ([tradecanvas.dev](https://tradecanvas.dev/)), under the MIT licence. Candlesticks to Renko, 135 indicators, 76 drawing tools, live feeds and orders on the chart, on Canvas 2D or WebGL, with no third-party dependencies. Use the full `ChartWidget`, or build your own interface on the headless `Chart`, in TypeScript, React, Vue or Svelte.
+**TradeCanvas is the open-source chart library for trading apps** ([tradecanvas.dev](https://tradecanvas.dev/)), under the MIT licence. Candlesticks to Renko, 136 indicators, 76 drawing tools, live feeds and orders on the chart, on Canvas 2D or WebGL, with no third-party dependencies. Use the full `ChartWidget`, or build your own interface on the headless `Chart`, in TypeScript, React, Vue or Svelte.
 
 It is a charting engine you own: MIT-licensed, installed from npm and served with your app, fed by your own data, shown under your own brand. No logo on the chart, nothing to apply for, no platform between you and your users. Coming from TradingView's charting library or Lightweight Charts? Keep your datafeed: [moving from TradingView](https://tradecanvas.dev/docs/from-tradingview/).
 
@@ -2463,7 +2464,7 @@ It is a charting engine you own: MIT-licensed, installed from npm and served wit
 
 ## Highlights
 
-- **25 chart types, 135 indicators, 76 drawing tools**, indicators on indicators, alerts on lines, undo and redo.
+- **25 chart types, 136 indicators, 76 drawing tools**, indicators on indicators, alerts on lines, undo and redo.
 - **Trading on the chart**: positions with live P&L, orders and stops you drag, a paper broker or your own.
 - **Live data** from Binance, Bybit, Coinbase, Kraken and Upbit, or your own feed in about twenty lines.
 - **Fast**: a million bars panned at 60 fps with WebGL; a live tick in about a microsecond; ten minutes of 30,000 trades a second on a million bars with no memory growth ([soak](https://github.com/bonguynvan/tradecanvas/blob/main/benchmarks/2026-11-03.md)).

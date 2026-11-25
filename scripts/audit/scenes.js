@@ -1184,6 +1184,18 @@ const SCENES = {
     return s;
   },
 
+  /** The RSI with its divergences, the hidden ones too: a line between the two turns of each, a mark at the second. */
+  async divergences() {
+    const s = await widget();
+    const id = s.chart.addIndicator('rsidiv', { hidden: 1 }, 'bottom');
+    const found = () => s.chart.getIndicatorOutput?.(id)?.meta?.divergences ?? null;
+    const checks = () => {
+      const list = found();
+      return list === null || list.length > 0 ? [] : ['the scene has no divergence to draw'];
+    };
+    return { ...s, checks };
+  },
+
   /** Fair value gaps, the filled ones kept: a box for each, the open ones to the right edge. */
   async fairValueGaps() {
     const s = await widget();

@@ -216,6 +216,19 @@ import { detectFairValueGaps } from '@tradecanvas/chart'
 detectFairValueGaps(bars, { minPercent: 0.1 })
 // [{ index, formed, direction: 'up' | 'down', top, bottom, filledAt }]`}</code></pre>
 
+<h2 id="divergences">Divergence</h2>
+<p>
+  Divergence là khi giá và một oscillator cùng đảo chiều hai lần nhưng không theo cùng một hướng. Bullish, ở hai đáy: giá tạo đáy thấp hơn còn oscillator tạo đáy cao hơn. Bearish, ở hai đỉnh: giá tạo đỉnh cao hơn còn oscillator tạo đỉnh thấp hơn. <code>rsidiv</code> là RSI kèm một đường nối hai điểm đảo chiều ở mỗi divergence và một dấu ở điểm thứ hai; <code>hidden: 1</code> thêm các hidden divergence (giá giữ được, RSI thì không), vẽ nét đứt. Một điểm đảo chiều phải nổi lên so với <code>left</code> bar trước nó và <code>right</code> bar sau nó, nên divergence được biết trễ <code>right</code> bar và sau đó không đổi nữa; hai điểm cách nhau từ <code>minBars</code> đến <code>maxBars</code>. <code>detectDivergences(bars, line, options)</code> đọc bất kỳ đường nào có một giá trị mỗi bar (null ở chỗ không có) và không cần biểu đồ.
+</p>
+<pre><code>{`chart.addIndicator('rsidiv', {}, 'bottom')                    // RSI, có đánh dấu divergence
+chart.addIndicator('rsidiv', { hidden: 1 }, 'bottom')         // thêm hidden divergence, nét đứt
+chart.addIndicator('rsidiv', { left: 3, right: 3 }, 'bottom') // điểm đảo chiều gần hơn: biết trễ 3 bar, và nhiều hơn
+
+import { detectDivergences } from '@tradecanvas/chart'
+
+detectDivergences(bars, macdHistogram, { left: 5, right: 5, minBars: 5, maxBars: 60, hidden: true })
+// [{ kind: 'bullish' | 'bearish', hidden, from, to, confirmed, valueFrom, valueTo, priceFrom, priceTo }]`}</code></pre>
+
 <h2>Chỉ báo tự viết</h2>
 <p>
   Cách ngắn là <code>defineIndicator</code>: các tham số của chỉ báo, và một hàm trả về các đường của nó từ
