@@ -6,14 +6,14 @@
 
 <svelte:head>
   <title>はじめに — TradeCanvas ドキュメント</title>
-  <meta name="description" content="136 種類のインジケーターと 76 種類の描画ツールを備え、チャートにロゴを表示しない MIT ライセンスのトレーディングチャート TradeCanvas をインストールして、最初のチャートを 1 分以内に表示します。" />
+  <meta name="description" content="137 種類のインジケーターと 76 種類の描画ツールを備え、チャートにロゴを表示しない MIT ライセンスのトレーディングチャート TradeCanvas をインストールして、最初のチャートを 1 分以内に表示します。" />
 </svelte:head>
 
 <h1>はじめに</h1>
 <p>TradeCanvas をインストールして、1 分以内にチャートを表示しましょう。</p>
 <p>
   TradeCanvas は MIT ライセンスで、チャートにロゴを表示しません。25 種類のチャート、
-  136 種類のインジケーター、76 種類の描画ツールを標準で備えています。
+  137 種類のインジケーター、76 種類の描画ツールを標準で備えています。
 </p>
 
 <h2>インストール</h2>
@@ -106,7 +106,7 @@ args = ["-y", "@tradecanvas/mcp"]`}</code></pre>
 <ul>
   <li><a href={href('/docs/api')}>API リファレンス</a> — <code>Chart</code> と <code>ChartWidget</code> の全 API</li>
   <li><a href={href('/docs/chart-types')}>チャートタイプ</a> — 25 種類の組み込みチャートタイプ</li>
-  <li><a href={href('/docs/indicators')}>インジケーター</a> — 136 種類のインジケーター一覧</li>
+  <li><a href={href('/docs/indicators')}>インジケーター</a> — 137 種類のインジケーター一覧</li>
   <li><a href={href('/docs/realtime')}>リアルタイムとリプレイ</a> — ストリーミングアダプターとリプレイモード</li>
   <li><a href={href('/docs/analytics')}>分析</a> — 戦略バックテスターとリスク指標</li>
 </ul>

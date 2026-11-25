@@ -229,6 +229,18 @@ import { detectDivergences } from '@tradecanvas/chart'
 detectDivergences(bars, macdHistogram, { left: 5, right: 5, minBars: 5, maxBars: 60, hidden: true })
 // [{ kind: 'bullish' | 'bearish', hidden, from, to, confirmed, valueFrom, valueTo, priceFrom, priceTo }]`}</code></pre>
 
+<h2 id="session-volume-profile">Volume profile theo phiên</h2>
+<p>
+  <code>svp</code> vẽ khối lượng theo giá của từng ngày giao dịch: biên độ của ngày được chia thành <code>rows</code> hàng, khối lượng của mỗi bar chia đều cho các hàng mà biên độ của nó phủ qua, vẽ thành các hàng kéo sang phải từ bar đầu tiên của ngày. Phía trên là point of control của ngày (hàng nhiều khối lượng nhất) và value area (các hàng quanh nó chứa <code>valueArea</code> phần trăm khối lượng của ngày, mặc định 70), vẽ thành các đường ngang qua ngày. Một ngày bắt đầu lúc nửa đêm theo giờ của sàn (<code>setExchangeTimeZone</code>), giống Session VWAP. <code>poc</code>, <code>vah</code> và <code>val</code> của mỗi bar là của cả ngày chứa nó, tính cả các bar sau nó: ở một ngày đã qua, bar buổi sáng mang profile lúc đóng cửa của ngày, còn với ngày đang giao dịch chúng dịch chuyển theo giao dịch. Chúng dùng để đọc một ngày, không dùng làm tín hiệu hay backtest tại bar đó. <code>volumeProfile</code> là một profile cho mọi bar đã tải; <code>sessionVolumeProfiles</code> trả về các hàng của từng ngày mà không cần biểu đồ.
+</p>
+<pre><code>{`chart.addIndicator('svp')                           // mỗi ngày một profile, kèm POC và value area
+chart.addIndicator('svp', { rows: 40, valueArea: 68 }) // hàng mịn hơn, value area hẹp hơn
+
+import { sessionVolumeProfiles } from '@tradecanvas/chart'
+
+sessionVolumeProfiles(bars, { rows: 24, valueArea: 70, timeZone: 'America/New_York' })
+// [{ start, end, time, low, high, rowHeight, volumes, total, poc, valueAreaLow, valueAreaHigh, valueAreaRows }]`}</code></pre>
+
 <h2>Chỉ báo tự viết</h2>
 <p>
   Cách ngắn là <code>defineIndicator</code>: các tham số của chỉ báo, và một hàm trả về các đường của nó từ

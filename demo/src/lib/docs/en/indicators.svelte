@@ -229,6 +229,18 @@ import { detectDivergences } from '@tradecanvas/chart'
 detectDivergences(bars, macdHistogram, { left: 5, right: 5, minBars: 5, maxBars: 60, hidden: true })
 // [{ kind: 'bullish' | 'bearish', hidden, from, to, confirmed, valueFrom, valueTo, priceFrom, priceTo }]`}</code></pre>
 
+<h2 id="session-volume-profile">Session volume profile</h2>
+<p>
+  <code>svp</code> draws each trading day's volume by price: the day's range split into <code>rows</code>, each bar's volume shared by the rows its range covers, drawn as rows growing right from the day's first bar. Over them, the day's point of control (the busiest row) and its value area (the rows around it holding <code>valueArea</code> percent of the day's volume, 70 by default) are lines across the day. A day starts at midnight on the exchange's clock (<code>setExchangeTimeZone</code>), as Session VWAP's does. Each bar's <code>poc</code>, <code>vah</code> and <code>val</code> are its whole day's, the bars after it included: on a past day a morning bar carries the day's closing profile, and on the day still trading they move as it trades. They are for reading a day, not for signals or a backtest at that bar. <code>volumeProfile</code> is one profile of every bar loaded; <code>sessionVolumeProfiles</code> gives the days' rows with no chart.
+</p>
+<pre><code>{`chart.addIndicator('svp')                           // a profile a day, with its POC and value area
+chart.addIndicator('svp', { rows: 40, valueArea: 68 }) // finer rows, a narrower value area
+
+import { sessionVolumeProfiles } from '@tradecanvas/chart'
+
+sessionVolumeProfiles(bars, { rows: 24, valueArea: 70, timeZone: 'America/New_York' })
+// [{ start, end, time, low, high, rowHeight, volumes, total, poc, valueAreaLow, valueAreaHigh, valueAreaRows }]`}</code></pre>
+
 <h2>Your own indicator</h2>
 <p>
   The short way is <code>defineIndicator</code>: its inputs, and one function that returns its lines from the

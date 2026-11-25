@@ -222,6 +222,18 @@ import { detectDivergences } from '@tradecanvas/chart'
 detectDivergences(bars, macdHistogram, { left: 5, right: 5, minBars: 5, maxBars: 60, hidden: true })
 // [{ kind: 'bullish' | 'bearish', hidden, from, to, confirmed, valueFrom, valueTo, priceFrom, priceTo }]`}</code></pre>
 
+<h2 id="session-volume-profile">세션 거래량 프로파일</h2>
+<p>
+  <code>svp</code>는 거래일마다 가격별 거래량을 그립니다. 그날의 가격 범위를 <code>rows</code>개 행으로 나누고, 각 봉의 거래량을 그 범위가 걸치는 행에 고르게 나눈 뒤, 그날 첫 봉에서 오른쪽으로 뻗는 행으로 그립니다. 그 위에 그날의 POC(거래량이 가장 많은 행)와 밸류 에어리어(그 주변에서 그날 거래량의 <code>valueArea</code>퍼센트, 기본 70을 담는 행)를 그날을 가로지르는 선으로 표시합니다. 하루는 거래소 시계의 자정에 시작합니다(<code>setExchangeTimeZone</code>). Session VWAP과 같습니다. 각 봉의 <code>poc</code>, <code>vah</code>, <code>val</code>은 그 봉이 속한 하루 전체의 값이므로, 그 봉 뒤의 봉까지 포함합니다. 지난 날에는 아침 봉이 그날 마감 시점의 프로파일을 갖고, 거래 중인 날에는 거래에 따라 움직입니다. 하루를 읽기 위한 것이며, 그 봉에서의 신호나 백테스트에는 맞지 않습니다. <code>volumeProfile</code>은 불러온 모든 봉의 프로파일 하나이며, <code>sessionVolumeProfiles</code>는 차트 없이 날마다의 행을 돌려줍니다.
+</p>
+<pre><code>{`chart.addIndicator('svp')                           // 하루에 프로파일 하나, POC와 밸류 에어리어 포함
+chart.addIndicator('svp', { rows: 40, valueArea: 68 }) // 더 촘촘한 행, 더 좁은 밸류 에어리어
+
+import { sessionVolumeProfiles } from '@tradecanvas/chart'
+
+sessionVolumeProfiles(bars, { rows: 24, valueArea: 70, timeZone: 'America/New_York' })
+// [{ start, end, time, low, high, rowHeight, volumes, total, poc, valueAreaLow, valueAreaHigh, valueAreaRows }]`}</code></pre>
+
 <h2>나만의 지표</h2>
 <p>
   짧은 방법은 <code>defineIndicator</code>입니다: 입력값, 그리고 봉에서 지표의 선을 돌려주는 함수 하나이며,

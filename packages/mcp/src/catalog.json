@@ -4843,6 +4843,48 @@
         "min": 0,
         "max": 100
       }
+    },
+    {
+      "id": "svp",
+      "name": "Session Volume Profile",
+      "shortName": "SVP",
+      "placement": "overlay",
+      "category": "volume",
+      "params": {
+        "rows": 24,
+        "valueArea": 70
+      },
+      "inputs": {
+        "rows": {
+          "kind": "int",
+          "min": 1,
+          "max": 200,
+          "step": 1
+        },
+        "valueArea": {
+          "kind": "number",
+          "min": 1,
+          "max": 100,
+          "step": 1
+        }
+      },
+      "plots": [
+        {
+          "key": "poc",
+          "title": "POC",
+          "kind": "line"
+        },
+        {
+          "key": "vah",
+          "title": "VAH",
+          "kind": "line"
+        },
+        {
+          "key": "val",
+          "title": "VAL",
+          "kind": "line"
+        }
+      ]
     }
   ],
   "drawingTools": [

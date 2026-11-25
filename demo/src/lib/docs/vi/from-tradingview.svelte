@@ -128,7 +128,7 @@ new ChartWidget(el, { feed, symbol: 'AAPL', timeframe: '1d' })`}</code></pre>
   </li>
   <li>
     <strong>Chỉ báo tuỳ biến</strong> viết cho <code>custom_indicators_getter</code> phải viết lại thành một
-    <a href={href('/docs/plugins')}>plugin chỉ báo</a>, trừ khi một trong 136 chỉ báo có sẵn làm được việc tương tự.
+    <a href={href('/docs/plugins')}>plugin chỉ báo</a>, trừ khi một trong 137 chỉ báo có sẵn làm được việc tương tự.
   </li>
   <li>
     <strong>Một số công cụ vẽ và featureset</strong> không có bản tương đương. <code>migration_lookup</code> cho biết đó là những cái nào,
