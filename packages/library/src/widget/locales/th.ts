@@ -598,6 +598,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'ticket.tif.fok': 'FOK',
   'account.oco': 'OCO',
   'ticket.value': 'มูลค่า',
+  'ticket.available': 'ใช้ได้',
   'ticket.risk': 'ความเสี่ยง',
   'ticket.reward': 'ผลตอบแทน',
   'ticket.rewardRisk': 'ผลตอบแทนต่อความเสี่ยง',

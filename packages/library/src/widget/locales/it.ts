@@ -598,6 +598,7 @@ export const IT_MESSAGES: WidgetMessages = {
   'ticket.tif.fok': 'FOK',
   'account.oco': 'OCO',
   'ticket.value': 'Valore',
+  'ticket.available': 'Disponibile',
   'ticket.risk': 'Rischio',
   'ticket.reward': 'Guadagno',
   'ticket.rewardRisk': 'Guadagno su rischio',

@@ -604,6 +604,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'ticket.tif.fok': 'FOK',
   'account.oco': 'OCO',
   'ticket.value': 'שווי',
+  'ticket.available': 'זמין',
   'ticket.risk': 'סיכון',
   'ticket.reward': 'רווח',
   'ticket.rewardRisk': 'רווח לסיכון',

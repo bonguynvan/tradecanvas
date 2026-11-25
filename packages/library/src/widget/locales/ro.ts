@@ -598,6 +598,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'ticket.tif.fok': 'FOK',
   'account.oco': 'OCO',
   'ticket.value': 'Valoare',
+  'ticket.available': 'Disponibil',
   'ticket.risk': 'Risc',
   'ticket.reward': 'Câștig',
   'ticket.rewardRisk': 'Câștig pe risc',

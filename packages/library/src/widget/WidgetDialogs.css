@@ -1815,6 +1815,13 @@ img.tcw-ss-badge {
   font-size: var(--tcw-font-size-lg);
   font-weight: var(--tcw-weight-strong);
 }
+/* The account's currency after its money: a unit, quieter and smaller than the figure it follows. */
+.tcw-ticket-unit {
+  color: var(--tcw-text-dim);
+  font-size: var(--tcw-font-size-sm);
+  font-weight: 400;
+}
+
 .tcw-ticket-figure.tcw-ticket-up { color: var(--tcw-green); }
 .tcw-ticket-figure.tcw-ticket-down { color: var(--tcw-red); }
 

@@ -598,6 +598,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'ticket.tif.fok': 'FOK',
   'account.oco': 'OCO',
   'ticket.value': 'Tutar',
+  'ticket.available': 'Kullanılabilir',
   'ticket.risk': 'Risk',
   'ticket.reward': 'Kazanç',
   'ticket.rewardRisk': 'Kazanç/risk',

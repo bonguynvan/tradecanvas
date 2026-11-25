@@ -604,6 +604,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'ticket.tif.fok': 'FOK',
   'account.oco': 'OCO',
   'ticket.value': 'ارزش',
+  'ticket.available': 'در دسترس',
   'ticket.risk': 'ریسک',
   'ticket.reward': 'سود',
   'ticket.rewardRisk': 'سود به ریسک',

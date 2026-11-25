@@ -598,6 +598,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'ticket.tif.fok': 'FOK',
   'account.oco': 'OCO',
   'ticket.value': '金額',
+  'ticket.available': '可用資金',
   'ticket.risk': '風險',
   'ticket.reward': '收益',
   'ticket.rewardRisk': '收益風險比',

@@ -506,7 +506,9 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   order ticket: buy or sell, market, limit or stop, quantity, price, an optional
   stop-loss and take-profit, and time in force. It checks the order as you fill it in
   (a buy limit goes below the market, a stop-loss on the losing side of the entry…)
-  and shows the reward:risk. Placing it sends an <code>orderPlace</code> intent. With a
+  and shows the reward:risk, and over the order's value what the account has free to pay for it
+  (<code>freeMargin</code>), each followed by the account's <code>currency</code> where the adapter names one.
+  Placing it sends an <code>orderPlace</code> intent. With a
   market set (<code>chart.setMarket</code>), it also keeps its prices on the market's step and
   the order's price inside the day's ceiling and floor, starts at one lot, and takes whole lots above one
   (fewer shares are an odd-lot order of their own).

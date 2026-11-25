@@ -1393,6 +1393,8 @@ export class ChartWidget {
         now: () => this.chart.getTradingTime(),
         // Shut by its own Cancel, cross or Escape: its page of the dock shuts with it.
         onDockClose: () => this.docking.closePanelByHand('orderTicket'),
+        // What the account has free, and its currency, beside the order's value.
+        account: () => this.chart.getAccount(),
       }, this.t);
       this.trading.accountPanel = new WidgetAccountPanel(accountHost, {
         onClosePosition: (id) => this.trading.closePosition(id),

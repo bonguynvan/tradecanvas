@@ -598,6 +598,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'ticket.tif.fok': 'FOK',
   'account.oco': 'OCO',
   'ticket.value': '金額',
+  'ticket.available': '利用可能額',
   'ticket.risk': 'リスク',
   'ticket.reward': 'リワード',
   'ticket.rewardRisk': 'リスクリワード比',

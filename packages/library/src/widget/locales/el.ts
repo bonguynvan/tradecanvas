@@ -598,6 +598,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'ticket.tif.fok': 'FOK',
   'account.oco': 'OCO',
   'ticket.value': 'Αξία',
+  'ticket.available': 'Διαθέσιμο',
   'ticket.risk': 'Κίνδυνος',
   'ticket.reward': 'Κέρδος',
   'ticket.rewardRisk': 'Κέρδος προς κίνδυνο',
