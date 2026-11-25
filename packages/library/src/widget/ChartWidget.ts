@@ -3,8 +3,8 @@ import { barTimeUnit, marketStatus, offsetAt, stepDecimals, timeframeFollowsDays
 import { settingToTimezone, timezoneOptions, timezoneToSetting } from './widgetTimezones.js';
 import { installFormControls } from './formControls.js';
 import { Chart } from '../Chart.js';
-import { DARK_THEME, LIGHT_THEME, MODERN_DARK_THEME, MODERN_LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
-import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState, DockPageHandle, DockPageSpec, DockPanelId } from './types.js';
+import { DARK_THEME, LIGHT_THEME, GRAPHITE_DARK_THEME, GRAPHITE_LIGHT_THEME, MODERN_DARK_THEME, MODERN_LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
+import type { ActiveIndicatorInfo, BrokerOrderRules, ChartWidgetOptions, WidgetState, ChartSettingsState, DockPageHandle, DockPageSpec, DockPanelId } from './types.js';
 import { CHART_TYPES, DRAWING_TOOL_GROUPS, DEFAULT_SYMBOLS, DEFAULT_SETTINGS } from './widgetConfig.js';
 import { SETTINGS_LOOK_KEYS } from './widgetSettingsLook.js';
 import { injectWidgetStyles, removeWidgetStyles } from './WidgetStyles.js';
@@ -49,9 +49,10 @@ import { WidgetContextMenu } from './WidgetContextMenu.js';
 import { TEXT_LAYOUTS, TEXT_PLACES } from './drawingText.js';
 import { WidgetInlineText } from './WidgetInlineText.js';
 import { chartMenuEntries, priceEntries } from './chartMenu.js';
-import { WidgetAccountPanel } from './WidgetAccountPanel.js';
+import { MARGIN_LEVEL_DECIMALS, WidgetAccountPanel } from './WidgetAccountPanel.js';
 import { WidgetOrderTicket } from './WidgetOrderTicket.js';
 import { WidgetNamePrompt } from './WidgetNamePrompt.js';
+import { WidgetConfirm, type ConfirmRequest } from './WidgetConfirm.js';
 import { WidgetIntervalInput } from './WidgetIntervalInput.js';
 import { IndicatorTemplateStore } from './indicatorTemplates.js';
 import { IME_KEY_CODE, inOverlay, isKeyTarget, isTyping, registerKeyRoot } from './keyTarget.js';
@@ -76,10 +77,14 @@ import { type CompareWay } from './widgetCompare.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue } from './legendValues.js';
-import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, indicatorGroup, isCrosshairCursor, isMarkerPlot, sourceParam, valuePlots } from '@tradecanvas/core';
+import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, downloadBlob, fileNamePart, imageFileName, indicatorCategory, indicatorGroup, isCrosshairCursor, isMarkerPlot, sourceParam, valuePlots } from '@tradecanvas/core';
+import type { BracketSize } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
+import { WidgetQuoteButtons } from './WidgetQuoteButtons.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
+import { WidgetTape, type TapeChoices } from './WidgetTape.js';
+import { minSizeFor, readTapePrefs, withMinSize, writeTapePrefs } from './tapePrefs.js';
 import { WidgetDataWindow, PERCENT_DECIMALS as DATA_WINDOW_PERCENT_DECIMALS } from './WidgetDataWindow.js';
 import type { DepthData } from '@tradecanvas/commons';
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
@@ -87,6 +92,7 @@ import type { CrosshairMovePayload, CrosshairSyncPayload, DataSeries } from '@tr
 import { formatVolumeLoc, timeframeToMs } from '@tradecanvas/commons';
 import { resolveMessages, createTranslator, fill, writingDirection, type MessageKey, type Translator } from './i18n.js';
 import { shownConnection } from './connectionStatus.js';
+import { feedHealth, FEED_QUIET_AFTER_S, type FeedHealth } from './feedHealth.js';
 import { localizeToolGroups } from './widgetLocales.js';
 import { WidgetLoadingOverlay } from './WidgetLoadingOverlay.js';
 import { WidgetHistoryPill } from './WidgetHistoryPill.js';
@@ -96,7 +102,7 @@ import { CHART_STYLE_KEYS, type ChartStyleKey } from '@tradecanvas/commons';
 import { WidgetCompares, type ComparesHost } from './WidgetCompares.js';
 import { WidgetWatchlists, type WatchlistsHost } from './WidgetWatchlists.js';
 import { WidgetAlerts, type AlertsHost } from './WidgetAlerts.js';
-import { WidgetTrading, type TradingHost } from './WidgetTrading.js';
+import { WidgetTrading, refusalReason, type TradingHost } from './WidgetTrading.js';
 import { WidgetMenus, type MenusHost } from './WidgetMenus.js';
 import { WidgetLegendView, type LegendHost, legendRowInset, STACK_GAP } from './WidgetLegendView.js';
 import { WidgetCommands, type CommandsHost } from './WidgetCommands.js';
@@ -119,12 +125,15 @@ import {
 
 /** How long a just-drawn text waits for its press to end before asking for its words anyway. */
 const TEXT_PROMPT_FALLBACK_MS = 600;
+/** How long a note of what was done stays, and one of what went wrong: that one is there to be read (ms). */
+const TOAST_MS = 3500;
+const TOAST_ERROR_MS = 8000;
 /** How far past a scale step (px) the widget must be before its look changes size: no flicker at the edge. */
 const SCALE_DEAD_BAND = 24;
 /** The tokens a bigger scale changes: bars, buttons, icons, menu rows, type and the lines it sits on. */
 const SCALED_TOKENS = [
   '--tcw-toolbar-h', '--tcw-control-h', '--tcw-control-h-sm', '--tcw-icon', '--tcw-sidebar-w', '--tcw-tool-h', '--tcw-tool-icon', '--tcw-menu-item-h',
-  '--tcw-font-size', '--tcw-font-size-sm', '--tcw-font-size-xs', '--tcw-font-size-lg', '--tcw-font-size-xl', '--tcw-font-size-display',
+  '--tcw-font-size', '--tcw-font-size-sm', '--tcw-font-size-xs', '--tcw-font-size-glyph', '--tcw-font-size-lg', '--tcw-font-size-xl', '--tcw-font-size-display',
   '--tcw-line-height', '--tcw-line-xs', '--tcw-label-size',
 ] as const;
 
@@ -139,6 +148,8 @@ const DRAWING_BUTTON_ROOM = 44 + 10 * 2;
 const SLOW_LOCAL_SWITCH_MS = 48;
 /** Base series this long are assumed slow to resample before any timing exists. */
 const LARGE_SERIES_BARS = 50_000;
+/** The tape writes a size in full under this, and shortened (1.2K) from it up. */
+const TAPE_SHORT_FROM = 1000;
 
 /** Upper bound on waiting for a paint — rAF never fires in a frame that isn't rendering. */
 const PAINT_WAIT_MAX_MS = 100;
@@ -332,12 +343,20 @@ export class ChartWidget {
   private uiVariables = false;
   /** The chart's type sizes before the look scaled them. */
   private chartFontBase: { sizeSmall: number; sizeMedium: number; sizeLarge: number } | null = null;
+  /** The base is the sizes of the theme the chart was drawn in, not a host's: it follows the theme to another look's. */
+  private chartFontBaseIsThemes = false;
   private scaleObserver: ResizeObserver | null = null;
   private templates = new IndicatorTemplateStore();
   private templatePrompt: WidgetNamePrompt | null = null;
   /** The note shown over a signal marker under the pointer. */
   private markerTip: HTMLDivElement | null = null;
   private dataWindow: WidgetDataWindow | null = null;
+  /** The tape (time and sales), a page of the dock: made only with the `tape` option. */
+  private tape: WidgetTape | null = null;
+  /** Lets go of the feed's trades the open tape follows; null while it is shut. */
+  private stopTapeTrades: (() => void) | null = null;
+  /** The symbol the tape lists: a least size chosen there is that symbol's. */
+  private tapeSymbol = '';
   private lastHoverIndex: number | null = null;
   /** The bar the crosshair reported at it: on Renko and the like a brick, not a data bar. */
   private lastHoverBar: OHLCBar | null = null;
@@ -505,11 +524,12 @@ export class ChartWidget {
       volume: true,
       legend: true,
       crosshair: true,
-      // Pro trading charts have no cursor-following OHLCV popup — just the
-      // legend, which ChartWidget already renders. Off by default here
-      // (the headless Chart's own default stays `true`); opt back in via
-      // `chartOptions: { features: { crosshairTooltip: true } }`.
-      crosshairTooltip: false,
+      // Trading charts have no OHLCV popup following the pointer: the legend
+      // says it, and the popup is asked for with a press held still on the
+      // plot (the headless Chart's own default stays `true`, under a pointer
+      // that hovers). `chartOptions: { features: { crosshairTooltip: true } }`
+      // has it follow the pointer here too, `false` never shows it.
+      crosshairTooltip: 'hold',
       keyboard: true,
       screenshot: true,
       alerts: true,
@@ -912,6 +932,7 @@ export class ChartWidget {
     // The clock each second, while the page is in view.
     this.clockTimer = setInterval(() => {
       if (!pageHidden() && this.featureState.statusBar && this.featureState['statusBar.clock']) this.statusBar?.tick();
+      this.checkFeed();
     }, CLOCK_TICK_MS);
     // A drag on the price axis turns auto off without a settings change: the switch follows the chart.
     this.chart.on('priceRangeChange', () => this.chartSettings.refreshScaleSwitches());
@@ -1088,6 +1109,36 @@ export class ChartWidget {
     });
     // The indicators' values changed (a tick, or outputs from the indicator worker) under a still pointer.
     this.chart.on('indicatorUpdate', () => this.docking.scheduleDataWindow());
+
+    // The tape (opt-in): the trades of the chart's symbol, the feed's followed while it is open.
+    if (this.options.tape) {
+      const given = typeof this.options.tape === 'object' ? this.options.tape : {};
+      // What a reader chose here before, kept in this browser, over what the options start it with:
+      // each choice by itself, so what they never chose is still the host's to set.
+      const kept = readTapePrefs(this.tapeStorage());
+      this.tapeSymbol = this.state.symbol;
+      const tape = new WidgetTape(this.root, {
+        formatTime: (time) => this.formatTapeTime(time),
+        formatPrice: (p) => this.formatAlertPrice(p),
+        formatSize: (size, decimals) => this.formatTapeSize(size, decimals),
+        onToggle: (open) => this.followTapeTrades(open),
+        onClose: () => this.docking.closePanelByHand('tape'),
+        onChange: (chosen, changed) => this.keepTapeChoice(chosen, changed),
+      }, {
+        ...given,
+        side: kept.side ?? given.side,
+        group: kept.group ?? given.group,
+        minSize: minSizeFor(kept, this.tapeSymbol) ?? given.minSize,
+      }, this.t);
+      this.tape = tape;
+      this.chart.on('trades', (e) => tape.push(e.payload.trades));
+      // Another symbol's trades are another tape, with a least size of its own.
+      this.chart.on('symbolChange', (e) => {
+        this.tapeSymbol = (e.payload as { symbol?: string }).symbol ?? this.state.symbol;
+        tape.clear();
+        tape.setMinSize(minSizeFor(readTapePrefs(this.tapeStorage()), this.tapeSymbol) ?? given.minSize ?? 0);
+      });
+    }
     // The bar another chart of a grid points at here, or the latest again when it goes.
     this.chart.on('crosshairSync', (e) => {
       if (this.pointerOnChart) return;
@@ -1314,20 +1365,40 @@ export class ChartWidget {
     if (options.trading !== false) {
       this.trading.orderTicket = new WidgetOrderTicket(this.root, {
         onSubmit: (intent) => {
-          this.chart.placeOrderIntent(intent);
-          this.say(fill(this.t('ticket.sent'), {
+          const text = fill(this.t('ticket.sent'), {
             side: this.t(intent.side === 'buy' ? 'ticket.buy' : 'ticket.sell'),
             quantity: intent.quantity ?? 1,
             price: this.formatAlertPrice(intent.price),
-          }));
+          });
+          // With no broker connected the order is an event for the app, and nobody will say what
+          // became of it: it is sent, and the ticket shuts. Said first: an app may answer at once.
+          if (!this.chart.getExecutionAdapter()) {
+            this.say(text);
+            this.chart.placeOrderIntent(intent);
+            return undefined;
+          }
+          // With one, the ticket waits for its answer by the order's id, and says itself that the
+          // order is on its way: "sent" is said once the broker took it (it may refuse it).
+          const id = this.chart.placeOrderIntent(intent)?.clientOrderId;
+          if (id !== undefined) this.ticketOrder = { id, text, note: this.shownToast };
+          return id;
         },
         formatPrice: (p) => this.formatAlertPrice(p),
         formatAmount: (v) => this.formatMoney(v),
         formatNumber: (v, d) => this.formatNumber(v, d),
+        // An order good till a date ends at a time on the chart's own clock.
+        toWallTime: (time) => utcToWallTime(time, this.displayTimezone()),
+        fromWallTime: (date, time) => wallTimeToUtc(date, time, this.displayTimezone()),
+        // On a replay a paper account trades on, "to come" is by the replay's clock, as the account has it.
+        now: () => this.chart.getTradingTime(),
+        // Shut by its own Cancel, cross or Escape: its page of the dock shuts with it.
+        onDockClose: () => this.docking.closePanelByHand('orderTicket'),
+        // What the account has free, and its currency, beside the order's value.
+        account: () => this.chart.getAccount(),
       }, this.t);
       this.trading.accountPanel = new WidgetAccountPanel(accountHost, {
-        onClosePosition: (id) => this.chart.closePositionIntent(id),
-        onReversePosition: (id) => this.chart.reversePositionIntent(id),
+        onClosePosition: (id) => this.trading.closePosition(id),
+        onReversePosition: (id) => this.trading.reversePosition(id),
         onCancelOrder: (id) => this.chart.cancelOrderIntent(id),
         onNewOrder: () => this.trading.openOrderTicket(),
         formatPrice: (p) => this.formatAlertPrice(p),
@@ -1339,15 +1410,42 @@ export class ChartWidget {
         formatNumber: (v, d) => this.formatNumber(v, d),
         onToggle: (open) => {
           this.markOpen('account', open);
+          // Opened: the log as it is now, an app's own clearing of it included.
+          this.trading.markLogStale();
           this.trading.refreshAccount();
         },
       }, this.t);
+      // Sell and Buy under the legend, each with its price: a press opens the ticket on that side.
+      this.trading.quoteButtons = new WidgetQuoteButtons(this.chartContainer, {
+        onTrade: (side) => this.trading.openOrderTicket(undefined, { side }),
+        formatPrice: (p) => this.formatAlertPrice(p),
+      }, this.t);
+      if (this.trading.refreshQuote()) this.legend.scheduleLegend();
+      // A broker connected, or gone: the buttons come and go with it, and the indicators' rows move.
+      this.chart.on('executionChange', () => {
+        this.trading.refreshQuote();
+        this.legend.scheduleLegend(true);
+      });
       // indicatorUpdate comes once per tick, so open P&L follows the price.
-      for (const event of ['ordersChange', 'positionsChange', 'executionFill', 'dataUpdate', 'indicatorUpdate'] as const) {
+      for (const event of ['ordersChange', 'positionsChange', 'executionFill', 'executionError', 'accountChange', 'bidAskChange', 'replayState', 'dataUpdate', 'indicatorUpdate'] as const) {
         this.chart.on(event, () => this.trading.refreshAccountSoon());
+      }
+      // What the activity log records: it is read again after one of these, not on every tick.
+      for (const event of ['ordersChange', 'executionFill', 'executionError', 'executionChange', 'symbolChange'] as const) {
+        this.chart.on(event, () => this.trading.markLogStale());
       }
     }
 
+    // A bracket or a draft order confirmed on the chart is held back while the feed is down, as an order in one press is.
+    this.chart.setOrderGate(() => this.trading.feedUp());
+    if (options.orderRules) this.trading.setOrderRules(options.orderRules);
+    for (const event of ['symbolChange', 'executionChange', 'replayState'] as const) this.chart.on(event, () => this.dropConfirmation());
+    this.chart.on('positionsChange', () => this.dropConfirmation('position'));
+    // A button on a position's line closes or reverses it in one press: confirmed first, as its row in the panel is.
+    this.chart.setPositionGuard((action, id, send) => {
+      if (action === 'positionClose') this.trading.closePosition(id, send);
+      else this.trading.reversePosition(id, send);
+    });
     // Bracket-order placement: floating confirm/cancel bar + event wiring.
     if (options.trading !== false) {
       this.trading.bracketBar = new WidgetBracketBar(this.chartContainer, {
@@ -1356,6 +1454,7 @@ export class ChartWidget {
           this.chart.cancelBracket();
           this.trading.bracketBar?.hide();
         },
+        onQuantity: (quantity) => this.trading.setBracketQuantity(quantity),
       }, this.t);
       // Placed only once the broker took it; a bracket that goes no further than the event is confirmed.
       this.chart.on('bracketPlace', (e) => {
@@ -1368,7 +1467,24 @@ export class ChartWidget {
         const b = e.payload.bracket;
         this.say(fill(this.t(b.side === 'buy' ? 'bracket.longPlaced' : 'bracket.shortPlaced'), { rr: b.riskReward.toFixed(2) }));
       });
+      // The broker took the order the ticket waits on: the ticket shuts, and the order is said to be sent,
+      // unless something was said of it since (a fill, a part dropped), which says more.
+      this.chart.on('orderPlaced', (e) => {
+        const id = e.payload.intent.clientOrderId;
+        const asked = this.ticketOrder;
+        if (id === undefined || asked?.id !== id) return;
+        this.ticketOrder = null;
+        this.trading.orderTicket?.accepted(id);
+        if (this.shownToast === null || this.shownToast === asked.note) this.say(asked.text);
+      });
       this.chart.on('executionError', (e) => {
+        if (e.payload.command === 'orderPlace') {
+          // Refused: in the ticket that asked for it, which stays with what was typed; a note for an order asked for elsewhere.
+          const { clientOrderId: id } = e.payload;
+          if (id !== undefined && this.ticketOrder?.id === id) this.ticketOrder = null;
+          const inTicket = id !== undefined && this.trading.orderTicket?.refused(id, refusalReason(e.payload)) === true;
+          if (!inTicket) this.trading.sayOrderRefused(e.payload);
+        }
         if (e.payload.command !== 'bracketPlace') return;
         if (e.payload.reason === 'noQuantity') {
           this.say(this.t('bracket.noQuantity'), 'error');
@@ -1376,26 +1492,30 @@ export class ChartWidget {
         }
         // No price yet: only code can confirm a bracket then, and the event tells it.
         if (e.payload.reason === 'noPrice') return;
-        const cause = e.payload.cause;
-        const reason = cause instanceof Error ? cause.message : typeof cause === 'string' ? cause : e.payload.message;
-        this.say(fill(this.t('bracket.refused'), { reason }), 'error');
+        this.say(fill(this.t('bracket.refused'), { reason: refusalReason(e.payload) }), 'error');
+      });
+      this.chart.on('executionFill', (e) => this.trading.sayPartDropped(e.payload));
+      // A warning the account gives once: it shows with the toasts off, as an error does.
+      this.chart.on('marginCall', (e) => {
+        // The figure with its sign and its percent is one thing, left to right, in a sentence written either way.
+        const level = `\u2066${this.formatNumber(e.payload.marginLevel * 100, MARGIN_LEVEL_DECIMALS)}%\u2069`;
+        this.say(fill(this.t('toast.marginCall'), { level }), 'error');
       });
 
       // Depth-of-market ladder (opt-in; fed via widget.setDepth)
       if (options.depthLadder) {
         this.trading.depthLadder = new WidgetDepthLadder(this.root, {
-          onTrade: (side, price) => {
-            this.chart.placeOrderIntent({ side, type: 'limit', price });
-            this.say(fill(this.t(side === 'buy' ? 'order.buyLimit' : 'order.sellLimit'), { price: this.formatAlertPrice(price) }));
-          },
+          onTrade: (side, price) => this.trading.placeLadderOrder(side, price),
+          quantity: () => this.trading.oneTouchQuantity(),
           formatPrice: (p) => this.formatAlertPrice(p),
           priceStep: (p) => this.chart.getPriceStep(p),
           onToggle: (open) => this.markOpen('ladder', open),
           onClose: () => this.docking.closePanelByHand('depthLadder'),
         }, undefined, this.t);
-        // Your working orders, marked on the rows where they wait.
-        const ladder = this.trading.depthLadder;
-        this.chart.on('ordersChange', () => ladder.setOrders(this.chart.getOrders()));
+        // Your working orders, marked on the rows where they wait: those of the symbol whose book this is.
+        for (const event of ['ordersChange', 'symbolChange'] as const) {
+          this.chart.on(event, () => this.trading.refreshLadderOrders());
+        }
       }
       // Esc-cancel originates in the chart; reflect it in the bar.
       this.chart.on('dataUpdate', (e) => {
@@ -1664,7 +1784,7 @@ export class ChartWidget {
       // No stream to say the interval or the symbol: the legend and the indicators kept to some take them from here.
       this.chart.setDataTimeframe(this.state.timeframe);
       // Only a symbol the host named: the fallback one (the first listed, or BTCUSDT) may not be its bars'.
-      if (options.symbol) this.chart.setSymbolName(options.symbol);
+      if (options.symbol) this.showHandSymbol(options.symbol);
     }
 
     // Watchlist live-update loop. 1s cadence keeps DOM churn low while still
@@ -1934,10 +2054,13 @@ export class ChartWidget {
     // saved snapshot reflects what the user actually saw under that ticker.
     this.layouts.flushActiveLayout();
     if (symbol !== this.state.symbol) {
-      // Fill marks sit on this symbol's bars; the next symbol starts with none.
-      this.chart.clearFills();
+      // The fills are the account's: the chart marks those of the symbol it shows, and keeps the rest.
+      // Those that came while it knew no symbol name none, and would be marked on every one: they go.
+      if (this.chart.getSymbol() === '') this.chart.clearFills();
       this.chartInfoAtSwitch = this.chart.getSymbolInfo();
     }
+    // What a confirmation asked about was the last symbol's.
+    if (symbol !== this.state.symbol) this.dropConfirmation();
     this.state = { ...this.state, symbol };
     this.options.onSymbolChange?.(symbol);
     this.updateUI();
@@ -1950,9 +2073,19 @@ export class ChartWidget {
     if (this.adapter) {
       await this.connectStream();
     } else {
-      // The bars are the host's: no stream names the symbol on the legend.
-      this.chart.setSymbolName(symbol);
+      this.showHandSymbol(symbol);
     }
+  }
+
+  /**
+   * The bars are the host's: no stream names their symbol. The chart is told it, so that it draws
+   * that symbol's orders and positions and no other's, and the legend names it.
+   */
+  private showHandSymbol(symbol: string): void {
+    this.chart.setSymbol(symbol);
+    this.chart.setSymbolName(symbol);
+    // The account panel follows with the host's bars (`dataUpdate`); the ladder's own orders have no such cue.
+    this.trading?.refreshLadderOrders();
   }
 
   /**
@@ -2020,11 +2153,11 @@ export class ChartWidget {
   }
 
   /**
-   * Change the widget's look: a preset (`'modern'`, `'print'`, `'studio'`,
+   * Change the widget's look: a preset (`'graphite'`, `'modern'`, `'print'`, `'studio'`,
    * `'terminal'`, `'capsule'`, `'desk'`) or your theme over one. Colours stay with
-   * `setTheme`, but for Modern's own dark and light, which the chart takes
+   * `setTheme`, but for Graphite's and Modern's own dark and light, which the chart takes
    * unless `setTheme` or the `theme` option gave it a theme object. The look sets the chart's bar layout and face too (its figures
-   * face, which is the system's sans in Modern and Print; golden bars, except when compact),
+   * face, which is the system's sans in Graphite, Modern and Print; golden bars, except when compact),
    * over any set on the chart itself, unless `chartOptions` set the bar
    * layout or a `font.family`; the sizes of `chartOptions.font` stay.
    */
@@ -2040,6 +2173,9 @@ export class ChartWidget {
     this.applyChartShapes();
     this.applyLegendFont();
     this.applyChartLook();
+    // A look may leave some dividers out: which stand at an end or beside another is asked again.
+    this.toolbar?.tidy();
+    this.sidebar?.tidy();
   }
 
   /** The scale the look is drawn at: its own, or by the widget's width when `'auto'` (1 before it is laid out). */
@@ -2099,7 +2235,10 @@ export class ChartWidget {
    * block and the prices line up in columns.
    */
   private applyLegendFont(): void {
-    this.chart.setLegend({ fontFamily: this.ui.font.mono, fontSize: typeSize(Math.round(this.ui.font.size * this.uiScale), -1) });
+    // The look's small size where it has one, as the indicators' rows under the prices are in.
+    const small = this.ui.font.smallSize;
+    const fontSize = small === undefined ? typeSize(Math.round(this.ui.font.size * this.uiScale), -1) : Math.round(small * this.uiScale);
+    this.chart.setLegend({ fontFamily: this.ui.font.mono, fontSize });
   }
 
   /**
@@ -2136,14 +2275,25 @@ export class ChartWidget {
     if (!now) return {};
     const current = { sizeSmall: now.sizeSmall, sizeMedium: now.sizeMedium, sizeLarge: now.sizeLarge };
     const written = this.drawingEdit.chartFontWritten;
-    const changedByHost = !written || written.sizeSmall !== current.sizeSmall || written.sizeMedium !== current.sizeMedium || written.sizeLarge !== current.sizeLarge;
-    if (changedByHost) this.chartFontBase = current;
+    const same = (a: typeof current, b: { sizeSmall: number; sizeMedium: number; sizeLarge: number }) => a.sizeSmall === b.sizeSmall && a.sizeMedium === b.sizeMedium && a.sizeLarge === b.sizeLarge;
+    // The sizes of the theme the chart is drawn in now: a look has its own (Graphite's small is 12). From the
+    // theme the widget gave the chart, not from the chart: what `setFont` wrote is on the theme the chart gives back.
+    const themes = this.look.get().theme?.font;
+    const own = themes ? { sizeSmall: themes.sizeSmall, sizeMedium: themes.sizeMedium, sizeLarge: themes.sizeLarge } : null;
+    const changedByHost = !written || !same(written, current);
+    if (changedByHost) {
+      this.chartFontBase = current;
+      this.chartFontBaseIsThemes = own !== null && same(current, own);
+    } else if (this.chartFontBaseIsThemes && own) {
+      // What the look wrote is still there, and its base was a theme's own: the theme now may be another look's.
+      this.chartFontBase = own;
+    }
     if (this.uiScale === 1 && !written) return {};
     const base = this.chartFontBase ?? current;
     const at = (n: number) => (this.uiScale === 1 ? n : Math.round(n * this.uiScale));
     const sizes = { sizeSmall: at(base.sizeSmall), sizeMedium: at(base.sizeMedium), sizeLarge: at(base.sizeLarge) };
-    // Back at 1 the base is the chart's own again, and the look stops writing.
-    this.drawingEdit.chartFontWritten = this.uiScale === 1 ? null : sizes;
+    // Back at 1 the sizes written are the base's own; they stay known as the look's, so a look that comes after is not taken for a host's.
+    this.drawingEdit.chartFontWritten = sizes;
     return sizes;
   }
 
@@ -2156,6 +2306,9 @@ export class ChartWidget {
     if (this.destroyed) return;
     this.destroyed = true;
     this.scope.dispose();
+    // A toast over a dialog is in the layer the widgets share: it goes with its widget.
+    this.shownToast?.remove();
+    this.shownToast = null;
     this.stopPreload?.();
     this.stopKeyboardInset?.();
     this.stopKeyboardInset = null;
@@ -2199,6 +2352,7 @@ export class ChartWidget {
     for (const menu of this.hostMenus) menu.destroy();
     this.hostMenus.clear();
     this.templatePrompt?.destroy();
+    this.confirmDialog?.destroy();
     this.chartSettings.chartTemplatePrompt?.destroy();
     this.drawingEdit.drawingTemplatePrompt?.destroy();
     this.intervals.intervalInput?.destroy();
@@ -2210,9 +2364,12 @@ export class ChartWidget {
     this.trading.orderTicket?.destroy();
     if (this.trading.accountFrame) cancelAnimationFrame(this.trading.accountFrame);
     this.trading.bracketBar?.destroy();
+    this.trading.quoteButtons?.destroy();
     this.alerting.alertNotifier?.destroy();
     this.trading.depthLadder?.destroy();
     this.dataWindow?.destroy();
+    this.followTapeTrades(false);
+    this.tape?.destroy();
     if (this.watching.watchlistInterval) clearInterval(this.watching.watchlistInterval);
     if (this.marketTimer) clearInterval(this.marketTimer);
     if (this.clockTimer) clearInterval(this.clockTimer);
@@ -2325,6 +2482,11 @@ export class ChartWidget {
       this.chart.setPaneTitlesVisible(!this.featureState.indicatorLegend);
       this.legend.scheduleLegend();
     }
+    if (changed('tradeButtons') || changed('orderTicket')) {
+      // The indicators' rows stand under the buttons: they move up or down with them.
+      this.trading.refreshQuote();
+      this.legend.scheduleLegend(true);
+    }
     if (changed('menu.priceAxisAdd')) {
       this.chart.setFeatures({ priceAxisAddButton: this.priceAxisAddDefault && this.featureState['menu.priceAxisAdd'] });
     }
@@ -2369,6 +2531,7 @@ export class ChartWidget {
       ['accountPanel', () => this.trading.toggleAccountPanel(false)],
       ['orderTicket', () => this.trading.orderTicket?.close()],
       ['depthLadder', () => this.docking.dock?.closePage('depthLadder')],
+      ['tape', () => this.docking.dock?.closePage('tape')],
       ['goToDate', () => this.goToDate?.close()],
       ['settings', () => this.settings?.close()],
       ['indicatorSettings', () => this.indicatorSettings?.close()],
@@ -2604,6 +2767,16 @@ export class ChartWidget {
       }
       default: return null;
     }
+  }
+
+  /**
+   * The broker's rules for orders in the symbol now: the kinds of order it takes, by the
+   * exchange's names, the times in force and the lot. They stand over the market's preset, and a
+   * ticket that is open takes them at once: call it as the symbol or the session changes. `null`
+   * goes back to the chart's own.
+   */
+  setOrderRules(rules: BrokerOrderRules | null): void {
+    this.trading.setOrderRules(rules);
   }
 
   /** Open or close the account panel (no argument: the other way from now). */
@@ -2980,6 +3153,32 @@ export class ChartWidget {
     this.say(ok ? this.t('toast.imageCopied') : this.t('toast.imageCopyFailed'), ok ? 'info' : 'error');
   }
 
+  /** What the chart is called on paper: its symbol and its interval. */
+  private paperTitle(): string {
+    return `${this.state.symbol}, ${this.state.timeframe}`;
+  }
+
+  /** Opens the browser's print dialog for the chart alone, under its symbol and interval (`Chart.print`); a toast says when there was nothing to print. */
+  printChart(): void {
+    if (this.chart.print({ title: this.paperTitle() }) === false) this.say(this.t('toast.printFailed'), 'error');
+  }
+
+  /** Saves the chart as a PDF of one page, named after its symbol and interval (`Chart.toPdf`); a toast says when none could be made. */
+  async saveChartPdf(): Promise<void> {
+    let pdf: Blob | null = null;
+    try {
+      pdf = await this.chart.toPdf({ title: this.paperTitle() });
+    } catch {
+      // Too large for the browser to hold, or its canvas refused: said below, as no PDF.
+      pdf = null;
+    }
+    if (!pdf) {
+      this.say(this.t('toast.pdfFailed'), 'error');
+      return;
+    }
+    downloadBlob(pdf, imageFileName([this.state.symbol, this.state.timeframe].map(fileNamePart).filter((part) => part !== '').join('-'), 'pdf'));
+  }
+
   /** Copy a shareable deep-link (current view encoded in the URL hash) to the clipboard. */
   async copyShareLink(): Promise<void> {
     return this.layouts.copyShareLink();
@@ -2990,9 +3189,15 @@ export class ChartWidget {
     return this.trading.setDepth(depth);
   }
 
-  /** Begin a draggable bracket order at the latest price and show the action bar. */
-  startBracket(side: 'buy' | 'sell'): void {
-    return this.trading.startBracket(side);
+  /**
+   * Begin a draggable bracket order at the latest price and show the action
+   * bar, where its quantity is typed. `size` gives the quantity the field
+   * starts with (`{ quantity: 2 }`; else the one last typed, else the
+   * market's lot), or sizes the bracket by the money at risk
+   * (`{ risk: 50 }`): its quantity then follows its lines, with no field.
+   */
+  startBracket(side: 'buy' | 'sell', size?: BracketSize): void {
+    return this.trading.startBracket(side, size);
   }
 
   private openIndicatorSettings(instanceId: string): void {
@@ -3059,6 +3264,48 @@ export class ChartWidget {
    */
   private formatMoney(value: number): string {
     return this.formatNumber(value, Math.min(stepDecimals(this.chart.getPriceStep()), MONEY_DECIMALS));
+  }
+
+  /** Follow the feed's trades for the tape while it is open, and let go of them when it shuts. */
+  private followTapeTrades(open: boolean): void {
+    // Taken up before it is let go of: the feed is never dropped and asked again in between.
+    const stop = open ? this.chart.followTrades() ?? null : null;
+    this.stopTapeTrades?.();
+    this.stopTapeTrades = stop;
+  }
+
+  /** Where the tape's choices are kept: this browser, unless the tape was told to keep nothing (`persist: false`). */
+  private tapeStorage(): Storage | null {
+    const given = this.options.tape;
+    return typeof given === 'object' && given.persist === false ? null : browserStorage();
+  }
+
+  /**
+   * What a reader just chose on the tape is kept in this browser, as the
+   * dock's width is: that one choice, and a least size under the symbol it
+   * was typed on. What they did not choose is not written, so the host's
+   * options still start it.
+   */
+  private keepTapeChoice(chosen: TapeChoices, changed: keyof TapeChoices): void {
+    const storage = this.tapeStorage();
+    if (!storage) return;
+    const kept = readTapePrefs(storage);
+    if (changed === 'minSize') writeTapePrefs(storage, withMinSize(kept, this.tapeSymbol, chosen.minSize));
+    else if (changed === 'side') writeTapePrefs(storage, { ...kept, side: chosen.side });
+    else writeTapePrefs(storage, { ...kept, group: chosen.group });
+  }
+
+  /** A trade's time as the tape writes it: the time of day in the display zone, to the second. */
+  private formatTapeTime(time: number): string {
+    const { time: hoursAndMinutes } = utcToWallTime(time, this.displayTimezone());
+    return `${hoursAndMinutes}:${String(new Date(time).getUTCSeconds()).padStart(2, '0')}`;
+  }
+
+  /** A trade's size as the tape writes it: shortened from a thousand up; below, to the decimals the tape writes every size to, so the column lines up. */
+  private formatTapeSize(size: number, decimals: number): string {
+    if (size >= TAPE_SHORT_FROM) return this.formatVolume(size);
+    const locale = this.chartSettings.settingsState.numberLocale || undefined;
+    return size.toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
   }
 
   /** A volume as the data window shows it: in 만, 억 and 조 when the chart's numbers are Korean. */
@@ -3255,14 +3502,27 @@ export class ChartWidget {
 
   // --- Toast ---
 
+  /** The toast showing, if one is: the next takes its place. */
+  private shownToast: HTMLElement | null = null;
   /**
-   * Show a transient toast inside the widget. Auto-dismisses after 3.5s.
+   * The order the ticket sent to a broker and waits on: what to say once it is taken, and the
+   * note that was showing when it went (another since then is of the order, and says more).
+   */
+  private ticketOrder: { id: string; text: string; note: HTMLElement | null } | null = null;
+
+  /**
+   * Show a transient toast inside the widget. It goes by itself: after 3.5 s,
+   * or 8 s for an error, which is there to be read (an order refused).
    * Used by the drag-drop importer for success / failure feedback, but
    * exposed so apps can post their own (e.g. "alert triggered at 64,200").
    * `icon`: one of the widget's icons (`'bell'`, `'check'`, `'info'`…) before the text.
+   * One shows at a time: a new one takes the place of the one showing.
    */
   toast(message: string, kind: 'info' | 'error' = 'info', icon?: string): void {
+    // They share one place: two at once would lie one over the other.
+    this.shownToast?.remove();
     const el = document.createElement('div');
+    this.shownToast = el;
     el.className = `tcw-toast ${kind === 'error' ? 'tcw-toast-error' : ''}`;
     el.setAttribute('role', kind === 'error' ? 'alert' : 'status');
     // An icon name the set doesn't have shows no icon.
@@ -3281,12 +3541,16 @@ export class ChartWidget {
     host.appendChild(el);
     // Trigger CSS transition on next frame
     requestAnimationFrame(() => el.classList.add('tcw-toast-in'));
+    const gone = () => {
+      el.remove();
+      if (this.shownToast === el) this.shownToast = null;
+    };
     setTimeout(() => {
       el.classList.remove('tcw-toast-in');
-      el.addEventListener('transitionend', () => el.remove(), { once: true });
+      el.addEventListener('transitionend', gone, { once: true });
       // Hard timeout in case transitionend doesn't fire (display:none, etc.)
-      setTimeout(() => el.remove(), 400);
-    }, 3500);
+      setTimeout(gone, 400);
+    }, kind === 'error' ? TOAST_ERROR_MS : TOAST_MS);
   }
 
   /**
@@ -3594,12 +3858,38 @@ export class ChartWidget {
     this.toolbar?.update(this.state);
     this.sidebar?.update(this.state);
     this.favoritesBar?.setActive(this.state.activeTool);
+    // The connection is set in several places, each followed by this: the feed's health is read again with it.
+    this.checkFeed();
     this.showConnection();
   }
 
-  /** The feed's state in the status bar: "Live", or how far behind a delayed symbol runs. */
+  /** The feed's health as the last second found it. */
+  private feed: FeedHealth = 'live';
+
+  /**
+   * The feed's health now: down, or connected and telling nothing for longer than `feedQuietAfter`.
+   * The status bar stops saying "Live" and trading is told, as it changes.
+   */
+  private checkFeed(): void {
+    const market = marketStatus(this.chart.getSymbolInfo?.(), Date.now()).state;
+    // A replay's prices are its own: what the live feed does is nothing to an order placed there.
+    const health = this.chart.isReplayActive?.() ? 'live' : feedHealth({
+      hasFeed: this.adapter != null,
+      state: this.state.connectionState,
+      lastUpdate: this.chart.getFeedTime?.() ?? null,
+      now: Date.now(),
+      quietAfter: this.options.feedQuietAfter ?? FEED_QUIET_AFTER_S,
+      marketOpen: market === 'open' ? true : market === 'closed' ? false : null,
+    });
+    if (health === this.feed) return;
+    this.feed = health;
+    this.trading?.setFeed(health);
+    this.showConnection();
+  }
+
+  /** The feed's state in the status bar: "Live", how far behind a delayed symbol runs, or that it tells nothing. */
   private showConnection(): void {
-    const shown = shownConnection(this.state.connectionState, this.state.connectionMessage, this.chart.getSymbolInfo?.(), this.t);
+    const shown = shownConnection(this.state.connectionState, this.state.connectionMessage, this.chart.getSymbolInfo?.(), this.t, this.feed === 'quiet');
     this.statusBar?.update({
       connectionState: this.state.connectionState,
       message: shown.message,
@@ -3607,6 +3897,36 @@ export class ChartWidget {
       symbol: this.state.symbol,
       timeframe: this.state.timeframe,
     });
+  }
+
+  private confirmDialog: WidgetConfirm | null = null;
+  /** What the open confirmation is about: a position's is put aside when the positions change under it. */
+  private confirmAbout: 'position' | 'order' | null = null;
+
+  /**
+   * Ask before a trade that one press would make (a position closed or reversed, an order from
+   * the right-click menu or the depth ladder), then do it. With `confirmOrders: false` it is done
+   * at once: a broker's choice for traders who ask for one-click trading.
+   */
+  private confirmTrade(request: Omit<ConfirmRequest, 'onConfirm'> & { about?: 'position' }, run: () => void): void {
+    if (this.options.confirmOrders === false) {
+      run();
+      return;
+    }
+    const { about, ...asked } = request;
+    this.confirmDialog ??= new WidgetConfirm(this.root, this.t);
+    this.confirmAbout = about ?? 'order';
+    this.confirmDialog.open({ ...asked, onConfirm: run });
+  }
+
+  /**
+   * Put the open confirmation aside, undone: what it said is no longer so (another symbol shown,
+   * the broker gone, a replay begun, the positions changed under a close or a reverse). Asked
+   * again, it says what is so now.
+   */
+  private dropConfirmation(about?: 'position'): void {
+    if (about && this.confirmAbout !== about) return;
+    this.confirmDialog?.close();
   }
 
   /** Mark `role` open or closed; the toolbar's effect shows it. */
@@ -3638,6 +3958,7 @@ export class ChartWidget {
   private themeFor(dark: boolean): Theme {
     const own = dark ? this.themeOf.dark : this.themeOf.light;
     if (own) return own;
+    if (this.ui.preset === 'graphite') return dark ? GRAPHITE_DARK_THEME : GRAPHITE_LIGHT_THEME;
     if (this.ui.preset === 'modern') return dark ? MODERN_DARK_THEME : MODERN_LIGHT_THEME;
     return dark ? DARK_THEME : LIGHT_THEME;
   }
@@ -3752,6 +4073,10 @@ export class ChartWidget {
       get featureState() { return w.featureState; },
       formatAlertPrice: (...args) => w.formatAlertPrice(...args),
       say: (...args) => w.say(...args),
+      confirm: (...args) => w.confirmTrade(...args),
+      get priceLimitOrder() { return w.options.priceLimitOrder; },
+      get ticketPlace() { return w.options.ticketPlace === 'dialog' ? 'dialog' as const : 'dock' as const; },
+      dockShown: () => w.docking.railShown(),
       get state() { return w.state; },
       get t() { return w.t; },
     };
@@ -3805,6 +4130,7 @@ export class ChartWidget {
       get featureState() { return w.featureState; },
       handleRemoveIndicator: (...args) => w.handleRemoveIndicator(...args),
       get indicatorLegend() { return w.indicatorLegend; },
+      get quoteButtons() { return w.trading.quoteButtons; },
       indicatorValueText: (...args) => w.indicatorValueText(...args),
       get legendHoverIndex() { return w.legendHoverIndex; },
       openIndicatorSettings: (...args) => w.openIndicatorSettings(...args),
@@ -3828,6 +4154,8 @@ export class ChartWidget {
       get commandPalettePart() { return w.commandPalettePart; },
       get comparing() { return w.comparing; },
       copyChartImage: (...args) => w.copyChartImage(...args),
+      printChart: (...args) => w.printChart(...args),
+      saveChartPdf: (...args) => w.saveChartPdf(...args),
       copyShareLink: (...args) => w.layouts.copyShareLink(...args),
       get featureState() { return w.featureState; },
       handleToggleTheme: (...args) => w.handleToggleTheme(...args),
@@ -3913,6 +4241,7 @@ export class ChartWidget {
       get root() { return w.root; },
       get settingsState() { return w.chartSettings.settingsState; },
       get symbolInfoPanel() { return w.symbolInfoPanel; },
+      get tape() { return w.tape; },
       get t() { return w.t; },
       get toolbar() { return w.toolbar; },
       get trading() { return w.trading; },
@@ -3961,6 +4290,7 @@ export class ChartWidget {
       get root() { return w.root; },
       say: (...args) => w.say(...args),
       get t() { return w.t; },
+      get toolsButton() { return w.sidebar?.buttonAtFoot() ?? null; },
       get ui() { return w.ui; },
       whenLoaded: (...args) => w.whenLoaded(...args),
     };

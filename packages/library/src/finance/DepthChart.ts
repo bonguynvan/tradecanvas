@@ -34,6 +34,11 @@ export class DepthChart extends BaseFinanceChart {
     renderDepthChart(ctx, width, height, this.options, theme, pos);
   }
 
+  /** A picture of the chart: nothing under a pointer. */
+  protected renderStill(ctx: CanvasRenderingContext2D, width: number, height: number, theme: Theme): void {
+    renderDepthChart(ctx, width, height, this.options, theme, null);
+  }
+
   update(data: DepthData): void {
     this.options = { ...this.options, data };
     this.applyLabel();

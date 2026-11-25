@@ -222,6 +222,131 @@ await chart.setTimeframe('500T')
 const builder = new TickBarBuilder(100)
 builder.push([{ time, price, volume }])   // → [{ bar, closed }]`}</code></pre>
 
+<h2 id="order-flow">Bên nào chủ động khớp</h2>
+<p>
+  Feed có thể cho biết bên nào chủ động trong mỗi lệnh khớp, tức bên vượt spread: <code>side</code> trên một
+  trade (<code>'buy'</code> khi bên mua khớp vào giá ask, <code>'sell'</code> khi bên bán khớp vào giá
+  bid) và <code>buyVolume</code> trên một nến, là phần <code>volume</code> mà bên mua chủ động lấy. Cả hai
+  đều không bắt buộc. Có <code>buyVolume</code> thì nến có delta, tức mua trừ bán:
+  <code>barDelta(bar)</code> trả về delta đó, hoặc <code>null</code> với nến không ghi, và chỉ báo Volume
+  Delta (<code>voldelta</code>) vẽ delta này cùng tổng cộng dồn của nó thay cho giá trị ước lượng.
+  <code>BinanceAdapter</code> điền cả hai, từ taker buy volume của sàn và các aggregate trade;
+  <code>MockAdapter</code> tự tạo ra chúng.
+</p>
+<pre><code>{`chart.setData([{ time, open, high, low, close, volume: 1200, buyVolume: 700 }])
+chart.addIndicator('voldelta', { mode: 1, anchor: 'session' })   // the cumulative delta, from each session's start
+
+barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</code></pre>
+<p>
+  Chart mang <code>buyVolume</code> đi tới mọi nơi nó mang khối lượng. Nến ghép từ các nến khác
+  (<code>resampleBars</code>, khung thời gian mà feed không có) cộng dồn nó; nến tick, và nến gộp từ tick,
+  đếm nó từ các trade có ghi <code>side</code>; nến đang replay có nó theo cùng tỉ lệ với khối lượng; bản xuất
+  CSV và JSON ghi nó vào một cột riêng (<code>Buy Volume</code>), và bản nhập đọc lại được cột này. Nến có một
+  phần không ghi thì không có giá trị này: biết một nửa thì không tính là biết.
+</p>
+<p>
+  Ba điều cần biết. Trade đưa vào bằng <code>chart.updateLastBarFromTick</code> cũng được đếm khi nó có
+  <code>side</code>; trade có khối lượng mà không có side làm nến đang hình thành không còn
+  <code>buyVolume</code>. Renko, Kagi, line break, point and figure và range bars là nến do chart vẽ ra, không
+  phải nến của feed: chỉ báo trên các chart đó đọc nến được vẽ, vốn không có số liệu này, nên delta ở đó là
+  giá trị ước lượng. Và khi chỉ một số nến của chuỗi có ghi, delta tích luỹ cộng delta thật với giá trị ước
+  lượng, mà mỗi giá trị ước lượng là toàn bộ khối lượng của một nến: đường này nhảy bậc ở chỗ hai loại gặp nhau.
+  Các cầu nối JS API và UDF không có trường cho số liệu này.
+</p>
+
+<h2 id="footprint">Biểu đồ footprint</h2>
+<p>
+  <code>chartType: 'footprint'</code> vẽ, bên cạnh mỗi nến, những gì đã khớp ở từng mức giá bên trong nến đó:
+  phần bên bán chủ động khớp vào giá bid nằm bên trái, phần bên mua chủ động khớp vào giá ask nằm bên phải. Hàng
+  giá nào có một bên áp đảo bên kia thì được in đậm trên nền đậm hơn, hàng giá khớp nhiều nhất có đường viền bao
+  quanh, và một cây nến mảnh đứng ở bên trái mỗi nến. Trong widget, loại này là Footprint trong menu loại biểu đồ,
+  và các thiết lập của nó nằm trong Chart Settings.
+</p>
+<pre><code>{`const chart = new Chart(el, { chartType: 'footprint' })
+await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1m' })`}</code></pre>
+<p>
+  Với một feed có trade thì chỉ cần vậy (<code>fetchTrades</code> và <code>subscribeTrades</code>, như
+  <code>BinanceAdapter</code> và <code>MockAdapter</code> có): khi đang hiển thị footprint, chart hỏi feed các
+  trade gần nhất, một nghìn trade, rồi theo các trade trực tiếp, và dừng lại khi loại biểu đồ đổi. Feed chỉ giữ ít
+  trade, nên lúc đầu chỉ những nến mới nhất có footprint: nến mà các trade gần nhất bắt đầu giữa chừng bị bỏ qua,
+  các nến trước nó là nến mảnh, và từ đó footprint lớn dần theo các trade trực tiếp. Đổi symbol hoặc timeframe thì
+  nó bắt đầu lại.
+</p>
+<p>
+  Host có trade riêng thì đưa vào bằng <code>chart.addTrades(trades)</code>, ở bất kỳ loại biểu đồ nào: mỗi
+  trade được tính vào nến theo thời gian của nó và hàng giá theo giá của nó, ở bên đã chủ động khớp. Trade không
+  có <code>side</code> được suy ra từ trade ngay trước nó (mua khi giá đi lên tới nó, bán khi giá đi xuống): đây
+  là giá trị ước lượng, như delta của một nến không có <code>buyVolume</code>. Host tự giữ các hàng giá thì đưa
+  thẳng các hàng đó, từng nến một, và <code>footprintOf</code> tạo chúng từ trade trong một lần gọi.
+</p>
+<pre><code>{`import { footprintOf, footprintStats } from '@tradecanvas/chart'
+
+chart.setChartTypeOptions({ footprint: { rowSize: 0.5, collect: false } })   // các hàng giá là của host
+chart.setFootprint([
+  { time: bar.time, levels: [{ price: 100, buy: 12, sell: 30 }, { price: 100.5, buy: 41, sell: 9 }] },
+])
+chart.setFootprint(footprintOf(trades, '1m', 0.5))    // hoặc tạo từ trade
+
+const rows = chart.getFootprint(bar.time)             // { time, levels }, hoặc null với nến không có
+if (rows) footprintStats(rows.levels)                 // { buy, sell, volume, delta, poc, … }
+chart.clearFootprint()                                // trước khi đưa hàng giá của chuỗi khác`}</code></pre>
+<table>
+  <thead><tr><th>Thiết lập</th><th>Mặc định</th><th>Tác dụng</th></tr></thead>
+  <tbody>
+    <tr><td><code>rowSize</code></td><td><code>'auto'</code></td><td>Chiều cao một hàng giá, tính theo giá. Auto là khoảng một phần mười nghìn của giá cuối, làm tròn về 1, 2 hoặc 5 (5 ở mức 60.000), theo bội số nguyên của bước giá của symbol; với các hàng đưa vào bằng tay, là bước nhỏ nhất giữa các mức giá của chúng. Đổi sang cỡ khác thì footprint bắt đầu lại.</td></tr>
+    <tr><td><code>cells</code></td><td><code>'bidAsk'</code></td><td><code>'bidAsk'</code>: hai bên tách riêng. <code>'delta'</code>: mua trừ bán. <code>'volume'</code>: cả hai cộng lại.</td></tr>
+    <tr><td><code>imbalance</code></td><td><code>3</code></td><td>Một bên phải gấp bên kia bao nhiêu lần, lệch nhau một hàng, thì được đánh dấu: phần mua ở một mức giá so với phần bán ở hàng ngay dưới, và phần bán so với phần mua ở hàng ngay trên. 0 thì không đánh dấu hàng nào.</td></tr>
+    <tr><td><code>collect</code></td><td><code>true</code></td><td>false: chart không hỏi feed để lấy trade.</td></tr>
+    <tr><td><code>totals</code></td><td><code>true</code></td><td>Dưới mỗi nến là tổng các hàng của nó: mua trừ bán theo màu của dấu, và bên dưới là cả hai cộng lại. Chỉ viết khi nến đủ rộng cho một con số; thang giá chừa chỗ cho chúng dưới nến thấp nhất. false: không viết.</td></tr>
+  </tbody>
+</table>
+<p>
+  Mức zoom quyết định một nến mang gì. Chọn footprint thì chart zoom vào tới chỗ đọc được các con số, và nến
+  của nó có thể rộng hơn nến thường nhiều; zoom ra thì các con số nhường chỗ cho một thanh cho mỗi bên, rồi cho
+  nến thường. Các hàng quá mỏng để đọc được vẽ gộp 2, 5, 10… hàng làm một, ở các mức giá tròn. Footprint được giữ
+  cho 500 nến mới nhất và không được lưu cùng trạng thái của chart. Trong replay, các nến chưa được hiện không có ô nào, nến đang hình thành từ các nến nhỏ hơn cũng vậy.
+  Trên tick chart, mỗi trade được tính vào nến mở gần nhất tại lúc nó đến, nên trade đầu tiên của một
+  nến có thể rơi vào nến ngay trước. Nó được vẽ bằng Canvas 2D, kể cả khi dùng renderer WebGL. <code>renderPriceChart</code> vẽ nó từ
+  <code>footprint</code>, là các hàng đúng như <code>chart.getFootprint()</code> trả về.
+</p>
+
+<h2 id="tape">Tape, và chính các trade</h2>
+<p>
+  <code>chart.followTrades()</code> theo dõi các trade của symbol trên chart cho tới khi hàm nó trả về được gọi:
+  các trade gần nhất của feed, rồi các trade trực tiếp, dưới dạng sự kiện <code>trades</code>. Feed chỉ được hỏi
+  một lần dù có bao nhiêu bên theo dõi, và chart đang hiển thị footprint thì tự theo dõi. Trade đưa vào bằng
+  <code>chart.addTrades()</code> cũng được báo theo cách đó. Không trade nào của feed bị báo hai lần: không khi
+  đổi sang timeframe khác của cùng symbol, cũng không sau khi kết nối lại, lúc đó chỉ những trade bị lỡ mới được báo,
+  dù các trade sau chúng đã được báo trước. <code>chart.getTrades()</code> trả về các trade vừa được báo,
+  tối đa hai nghìn trade, cho bên lắng nghe đến sau khi chúng đã được báo.
+</p>
+<pre><code>{`const stop = chart.followTrades()
+chart.on('trades', (e) => {
+  // e.payload.trades: cũ nhất trước
+  // e.payload.recent: các trade gần nhất của feed, không phải trade vừa khớp
+  for (const trade of e.payload.trades) log(trade.time, trade.price, trade.volume, trade.side)
+})
+stop()   // feed được thả ra khi không còn ai theo dõi và chart không phải footprint`}</code></pre>
+<p>
+  Trong widget, <code>tape: true</code> thêm tape (time and sales) vào dock: các trade mới nhất ở trên cùng,
+  mỗi trade có thời gian, giá và khối lượng, giá mang màu của bên chủ động khớp. Một thanh phía trên danh sách
+  cho biết bên mua và bên bán mỗi bên lấy bao nhiêu trong các hàng đang hiện, trade lớn gấp mười lần cỡ thông
+  thường được làm nổi, và có thể bỏ các trade nhỏ hơn một cỡ tối thiểu
+  (<code>{`tape: { minSize: 0.5 }`}</code>, hoặc gõ ngay trong panel). Widget chỉ theo dõi trade của feed khi
+  tape đang mở. <code>widget.openPanel('tape')</code> mở nó; các công tắc của nó là
+  <code>tape</code> và <code>dock.tape</code>.
+</p>
+<p>
+  Menu ở đầu tape cho phép chỉ liệt kê trade của một bên (mua, hoặc bán), và gộp các trade khớp cùng lúc
+  thành một hàng: cùng thời điểm, cùng giá và cùng bên thì cộng khối lượng lại, nên một lệnh thị trường
+  khớp với nhiều lệnh chờ sẽ hiện đúng là một trade. Hàng gộp được so với cỡ tối thiểu, và được xét là
+  trade lớn, theo tổng của nó. Cả hai có thể đặt từ đầu
+  (<code>{`tape: { side: 'buy', group: true }`}</code>). Những gì người dùng chọn trong panel được lưu trong
+  trình duyệt và có lại ở lần sau: bên và việc gộp áp dụng cho mọi mã, còn cỡ tối thiểu thì theo từng mã,
+  vì cùng một con số có nghĩa khác nhau ở mỗi mã.
+  Lựa chọn của người dùng được dùng thay cho tuỳ chọn ban đầu, tính riêng từng lựa chọn; <code>persist: false</code> không lưu gì cả.
+</p>
+
 <h2>Trạng thái thị trường và tin tức</h2>
 <p>
   <code>marketStatus(info, now)</code> cho biết thị trường của một mã có mở cửa tại một thời điểm hay không, dựa trên
@@ -383,7 +508,7 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // every mark from 
 
 <h3>Paper trading trong replay</h3>
 <p>
-  Execution adapter có <code>setMarkPrice(price, time)</code> (như
+  Execution adapter có <code>setMarkPrice(price, time, symbol)</code> (như
   <code>PaperExecutionAdapter</code>) giao dịch theo replay: trong khi replay, biểu đồ
   chuyển cho adapter từng giá và thời gian được replay, nên order và stop được khớp khi replay đi qua
   chúng và các fill nằm trên nến được replay. Giá thấp và giá cao của mỗi bước đều được tính, và một lần nhảy
@@ -392,6 +517,8 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // every mark from 
   nó thay đổi; khi replay kết thúc, nó quay lại giá trực tiếp, và các fill lại theo
   đồng hồ thực. Cảnh báo giá vẫn theo dõi thị trường trực tiếp trong suốt quá trình; cảnh báo trên đường chỉ báo
   chờ replay kết thúc.
+  <code>chart.getTradingTime()</code> là thời điểm một order đặt lúc này được đặt: thời điểm của replay khi
+  tài khoản đang giao dịch theo replay, còn không thì theo đồng hồ thực. Order ticket của widget tính ngày của order good till date từ đó.
 </p>
 <pre><code>{`chart.connectExecution(new PaperExecutionAdapter())
 chart.replayStart({ startIndex: 300, paused: true })

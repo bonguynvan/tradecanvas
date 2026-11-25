@@ -4,7 +4,7 @@ const fr: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Graphiques de trading en Canvas pour le web',
     description:
-      'TradeCanvas est une bibliothèque de graphiques de trading pour le web, dessinée en Canvas 2D ou WebGL : 18 types de graphiques, 134 indicateurs, 76 outils de dessin, flux de marché en direct, ordres sur le graphique, replay et backtesting, en 30 langues. Aucune dépendance, MIT.',
+      'TradeCanvas est une bibliothèque de graphiques de trading pour le web, dessinée en Canvas 2D ou WebGL : 18 types de graphiques, 138 indicateurs, 76 outils de dessin, flux de marché en direct, ordres sur le graphique, replay et backtesting, en 30 langues. Aucune dépendance, MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const fr: SiteMessages = {
     release: 'moteur de rendu WebGL, 30 langues',
     title: 'Le moteur de graphiques des applications de trading.',
     ledeHtml:
-      'Des chandeliers au Renko, 134 indicateurs, 76 outils de dessin, des flux de marché en direct et des ordres sur le graphique. Dessiné en Canvas 2D ou WebGL, sans aucune dépendance. Intégrez le <code>ChartWidget</code> complet ou bâtissez votre propre interface sur le moteur headless <code>Chart</code>.',
+      'Des chandeliers au Renko, 138 indicateurs, 76 outils de dessin, des flux de marché en direct et des ordres sur le graphique. Dessiné en Canvas 2D ou WebGL, sans aucune dépendance. Intégrez le <code>ChartWidget</code> complet ou bâtissez votre propre interface sur le moteur headless <code>Chart</code>.',
     getStarted: 'Commencer',
     browseExamples: 'Voir les exemples',
     specsLabel: 'Chiffres clés',
@@ -71,7 +71,7 @@ const fr: SiteMessages = {
           title: 'Lire le marché',
           text: 'Bandes, moyennes et oscillateurs sur les bougies, niveaux de Fibonacci et lignes de tendance par-dessus, chacun avec ses réglages et ses alertes.',
           points: [
-            '134 indicateurs, l’un sur l’autre, comme une moyenne du RSI',
+            '138 indicateurs, l’un sur l’autre, comme une moyenne du RSI',
             '76 outils de dessin avec aimant, groupes et annulation',
             'Alertes sur les prix, les lignes et les croisements d’indicateurs',
           ],
@@ -218,11 +218,11 @@ const fr: SiteMessages = {
     },
     indicators: {
       title: 'Indicateurs',
-      stat: '134 intégrés',
+      stat: '138 intégrés',
       blurb:
         'Superpositions et panneaux calculés en interne, sans aucune dépendance mathématique. En direct, seule la barre en formation est recalculée — 0,001 ms par tick avec quatre indicateurs sur 100k barres.',
       tryThis: [
-        'Cliquez sur le bouton Indicateurs (ou Ctrl+K) et cherchez parmi les 134',
+        'Cliquez sur le bouton Indicateurs (ou Ctrl+K) et cherchez parmi les 138',
         'Cliquez sur le nom d’un indicateur dans la légende : paramètres, couleurs et niveaux',
         'Réglez le champ « Source » d’une moyenne mobile sur la ligne d’un autre indicateur',
         'Faites glisser la ligne entre deux panneaux pour les redimensionner ; les boutons en haut à droite d’un panneau le déplacent, le replient ou l’agrandissent',
@@ -381,7 +381,7 @@ const fr: SiteMessages = {
     },
     overrides: {
       title: 'Overrides de style',
-      stat: '107 clés',
+      stat: '122 clés',
       blurb:
         'N’importe quelle partie de l’aspect du graphique par clé, à part du thème : la grille dans chaque sens, le réticule, les axes, les panneaux, la légende, le dernier cours, le volume et les couleurs de chaque type de graphique. Ici la grille verticale est masquée, l’horizontale en pointillés, le réticule plein, et la ligne de signal du MACD en tirets dans un panneau avec son propre séparateur.',
       tryThis: [
@@ -435,6 +435,17 @@ const fr: SiteMessages = {
         'Basculez entre Canvas 2D et WebGL au-dessus du graphique : chaque bascule chronomètre un court défilement',
         'Repérez les rangées brillantes : des murs de taille qui restent sur un prix dans le temps',
         'Zoomez sur un mur puis faites défiler d’un côté à l’autre : les cellules suivent les barres',
+      ],
+    },
+    orderflow: {
+      title: 'Flux d’ordres',
+      stat: 'Footprint + ruban',
+      blurb:
+        'Chaque transaction du flux, avec le côté qui l’a prise. Le graphique footprint écrit, à côté de chaque barre, ce que les vendeurs ont pris au bid et ce que les acheteurs ont pris à l’ask à chaque prix à l’intérieur, marque les lignes où un côté l’a emporté sur l’autre, et additionne chaque barre en dessous : acheté moins vendu, puis les deux ensemble. À côté, le ruban liste les transactions à mesure qu’elles se font, les plus récentes en haut, dans la couleur du côté qui les a prises.',
+      tryThis: [
+        'Regardez la barre la plus récente se remplir ligne par ligne à mesure que les transactions arrivent, et ses totaux changer en dessous',
+        'Ouvrez le menu dans l’en-tête du ruban : ne listez que les achats ou les ventes, ou regroupez en une ligne les transactions simultanées',
+        'Saisissez une taille minimale dans le ruban pour ne garder que les grosses transactions, puis dézoomez : les chiffres de chaque ligne laissent place à une petite barre par côté, et les totaux restent',
       ],
     },
     switching: {
@@ -493,6 +504,23 @@ const fr: SiteMessages = {
     counterClock: 'Courbe anti-horaire : prix contre volume, moyennes sur 25 jours',
     avgVolume: 'Volume, moyenne',
     avgPrice: 'Prix, moyenne',
+    payoff: 'Iron condor : gains et pertes à l’échéance',
+    smile: 'Volatilité implicite par prix d’exercice',
+    weekdayReturns: 'Rendements quotidiens par jour de la semaine',
+    scorecard: 'Stratégie face à la référence',
+    strategy: 'Stratégie',
+    benchmark: 'Référence',
+    allocationRings: 'Allocation par classe d’actifs et secteur',
+    allocationOverTime: 'Allocation au fil de l’année',
+    volSurface: 'Volatilité implicite par prix d’exercice et échéance',
+    strike: 'Prix d’exercice',
+    expiry: 'Échéance',
+    depthOverTime: 'Profondeur du carnet d’ordres dans le temps',
+    quarterReturns: 'Rendement par trimestre et classe d’actifs',
+    turnHint: 'Faites glisser un graphique pour le tourner ; un double-clic le remet dans sa vue initiale.',
+    exportLabel: 'Enregistrer le graphique du portefeuille',
+    print: 'Imprimer',
+    reportPdf: 'Tous les graphiques dans un seul PDF',
     waterfall: {
       start: 'Début',
       btcLong: 'BTC long',
@@ -704,7 +732,7 @@ const fr: SiteMessages = {
         { name: 'Aucune dépendance tierce à l’exécution', detail: 'Rien d’autre à installer ni à auditer' },
       ],
       indicators: [
-        { name: '134 indicateurs intégrés', detail: 'Points pivots de six sortes, MA Cross, corrélation avec un autre symbole' },
+        { name: '138 indicateurs intégrés', detail: 'Points pivots de six sortes, MA Cross, corrélation avec un autre symbole' },
         { name: 'Source de prix', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: 'Un indicateur appliqué à un indicateur', detail: 'Comme une moyenne mobile du RSI, mise à jour à chaque tick' },
         { name: 'Plusieurs indicateurs dans un panneau, déplacés d’un panneau à l’autre', detail: 'moveIndicatorToPane' },
@@ -775,7 +803,7 @@ const fr: SiteMessages = {
       ],
       customization: [
         { name: 'Trois apparences pour le widget', detail: 'Studio, Terminal, Capsule ; ui et setUI ; variables CSS --tcw-*' },
-        { name: 'L’apparence du graphique, clé par clé', detail: 'applyOverrides sur 107 clés typées, sur une couche hôte et une couche utilisateur' },
+        { name: 'L’apparence du graphique, clé par clé', detail: 'applyOverrides sur 122 clés typées, sur une couche hôte et une couche utilisateur' },
         { name: 'Des paramètres qui atteignent chaque clé', detail: 'Un onglet de style pour le type de graphique affiché, un onglet trading' },
         { name: '114 interrupteurs de fonctionnalités', detail: 'features, setFeatures, isFeatureOn ; modifiables en marche' },
         { name: 'Vos propres pièces dans le widget', detail: 'Boutons et menus déroulants de la barre d’outils, boutons de la barre latérale, éléments d’état, emplacements, entrées de menu' },
@@ -927,6 +955,7 @@ const fr: SiteMessages = {
       frameworks: 'Frameworks',
       embed: 'Widget intégrable',
       migration: 'Passer à la 2.0',
+      'migration-3': 'Passer à la 3.0',
       'from-tradingview': 'Passer de TradingView',
       'how-it-works': 'Fonctionnement',
       api: 'Référence de l’API',

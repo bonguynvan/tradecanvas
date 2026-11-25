@@ -160,10 +160,12 @@ chart.addIndicator('vwap', { anchor: 'all' })   // 불러온 모든 봉, 예전�
 </table>
 
 <p>
-  <code>voldelta</code>(Volume Delta)는 OHLCV로 매수/매도 압력을 근사합니다. 상승 마감한 봉은
-  양의 거래량을, 하락 봉은 음의 거래량을 더합니다. <code>mode: 0</code>은 봉별 히스토그램,
-  <code>mode: 1</code>은 누적 델타입니다. (진짜 틱 델타를 구하려면 체결별 매수/매도 데이터가 필요한데,
-  OHLCV 시리즈에는 그 정보가 없습니다.)
+  <code>voldelta</code>(Volume Delta)는 각 봉에서 매수 측이 가져간 거래량에서 매도 측이 가져간 거래량을 뺀 값입니다.
+  누가 체결을 가져갔는지 알려 주는 봉(봉의 <code>buyVolume</code>)은 실제 델타를 줍니다. 알려 주지 않는 봉은
+  마감 방식으로 읽습니다: 시가 이상으로 마감하면 거래량 전체를 양으로, 아니면 음으로 보며, OHLCV 봉으로 할 수 있는
+  가장 가까운 값입니다. <code>mode: 0</code>은 봉별 히스토그램, <code>mode: 1</code>은 누적 델타이며,
+  <code>anchor</code> 기간마다 다시 시작합니다(<code>'session'</code>, <code>'week'</code> 또는 <code>'month'</code>.
+  기본값 <code>'all'</code>에서는 다시 시작하지 않습니다).
 </p>
 
 <h2>아시아 HTS에서 익숙한 지표</h2>
@@ -193,6 +195,58 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   불러오지 않습니다. import하려면 앱의 의존성에 <code>@tradecanvas/core</code>를 추가하세요.
 </p>
 <pre><code>{`import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core/patterns'`}</code></pre>
+
+<h2 id="fair-value-gaps">페어 밸류 갭</h2>
+<p>
+  세 개의 봉에서 세 번째 봉의 저가가 첫 번째 봉의 고가보다 위에 있으면(하락에서는 세 번째 봉의 고가가 첫 번째 봉의 저가보다 아래에 있으면) 페어 밸류 갭이 남습니다. 그 사이 가격에서는 가운데 봉만 거래되었습니다. 차트는 그 가격대에 상자를 그립니다. 갭이 열려 있는 동안에는 가운데 봉에서 오른쪽 끝까지, 상승 갭은 청록색, 하락 갭은 분홍색입니다(캔들 패턴 표시와 같은 색으로, 캔들의 초록과 빨강과 구분됩니다. 지표 스타일에서 바꿀 수 있습니다). 이후 처음으로 전체를 지나간 봉이 갭을 메우며, <code>showFilled</code>가 1이 아니면 차트에서 사라집니다. <code>detectFairValueGaps</code>는 차트 없이 전부를, 각각을 메운 봉과 함께 돌려줍니다.
+</p>
+<pre><code>{`chart.addIndicator('fvg')                              // 아직 열려 있는 갭마다 상자 하나
+chart.addIndicator('fvg', { minPercent: 0.1 })         // 가격의 0.1% 미만인 갭은 제외
+chart.addIndicator('fvg', { showFilled: 1 })           // 메워진 갭도 흐리게, 메운 봉까지 남김
+
+import { detectFairValueGaps } from '@tradecanvas/chart'
+
+detectFairValueGaps(bars, { minPercent: 0.1 })
+// [{ index, formed, direction: 'up' | 'down', top, bottom, filledAt }]`}</code></pre>
+
+<h2 id="divergences">다이버전스</h2>
+<p>
+  다이버전스는 가격과 오실레이터가 각각 두 번 방향을 바꾸되 같은 방향으로 움직이지 않는 것입니다. 강세는 두 저점에서 나타납니다. 가격은 더 낮은 저점을, 오실레이터는 더 높은 저점을 만듭니다. 약세는 두 고점에서 나타납니다. 가격은 더 높은 고점을, 오실레이터는 더 낮은 고점을 만듭니다. <code>rsidiv</code>는 RSI에 각 다이버전스의 두 전환점을 잇는 선과 두 번째 전환점의 표시를 더한 지표입니다. <code>hidden: 1</code>이면 히든 다이버전스(가격은 지키고 RSI는 지키지 못함)도 점선으로 추가됩니다. 전환점은 앞의 <code>left</code>개 봉과 뒤의 <code>right</code>개 봉보다 두드러져야 하므로, 다이버전스는 <code>right</code>개 봉 늦게 확정되고 확정하는 봉이 마감된 뒤로는 바뀌지 않습니다(그 봉이 아직 진행 중일 때는 나타났다 사라질 수 있습니다). 두 전환점의 간격은 <code>minBars</code>에서 <code>maxBars</code>개 봉입니다. <code>detectDivergences(bars, line, options)</code>는 봉마다 값이 하나인 어떤 선이든(값이 없는 곳은 null) 읽으며 차트가 필요 없습니다.
+</p>
+<pre><code>{`chart.addIndicator('rsidiv', {}, 'bottom')                    // RSI와 그 다이버전스 표시
+chart.addIndicator('rsidiv', { hidden: 1 }, 'bottom')         // 히든 다이버전스도, 점선으로
+chart.addIndicator('rsidiv', { left: 3, right: 3 }, 'bottom') // 더 가까운 전환점: 3개 봉 늦게 확정, 더 많이
+
+import { detectDivergences } from '@tradecanvas/chart'
+
+detectDivergences(bars, macdHistogram, { left: 5, right: 5, minBars: 5, maxBars: 60, hidden: true })
+// [{ kind: 'bullish' | 'bearish', hidden, from, to, confirmed, valueFrom, valueTo, priceFrom, priceTo }]`}</code></pre>
+
+<h2 id="session-volume-profile">세션 거래량 프로파일</h2>
+<p>
+  <code>svp</code>는 거래일마다 가격별 거래량을 그립니다. 그날의 가격 범위를 <code>rows</code>개 행으로 나누고, 각 봉의 거래량을 그 범위가 걸치는 행에 고르게 나눈 뒤, 그날 첫 봉에서 오른쪽으로 뻗는 행으로 그립니다. 그 위에 그날의 POC(거래량이 가장 많은 행)와 밸류 에어리어(그 주변에서 그날 거래량의 <code>valueArea</code>퍼센트, 기본 70을 담는 행. Market Profile처럼 더 무거운 쪽에서 두 행씩 더합니다)를 그날을 가로지르는 선으로 표시합니다. 하루는 거래소 시계의 자정에 시작합니다(<code>setExchangeTimeZone</code>). Session VWAP과 같습니다. 각 봉의 <code>poc</code>, <code>vah</code>, <code>val</code>은 그 봉이 속한 하루 전체의 값이므로, 그 봉 뒤의 봉까지 포함합니다. 지난 날에는 아침 봉이 그날 마감 시점의 프로파일을 갖고, 거래 중인 날에는 거래에 따라 움직입니다. 하루를 읽기 위한 것이며, 그 봉에서의 신호나 백테스트에는 맞지 않습니다. <code>volumeProfile</code>은 불러온 모든 봉의 프로파일 하나이며, <code>sessionVolumeProfiles</code>는 차트 없이 날마다의 행을 돌려줍니다.
+</p>
+<pre><code>{`chart.addIndicator('svp')                           // 하루에 프로파일 하나, POC와 밸류 에어리어 포함
+chart.addIndicator('svp', { rows: 40, valueArea: 68 }) // 더 촘촘한 행, 더 좁은 밸류 에어리어
+
+import { sessionVolumeProfiles } from '@tradecanvas/chart'
+
+sessionVolumeProfiles(bars, { rows: 24, valueArea: 70, timeZone: 'America/New_York' })
+// [{ start, end, time, low, high, rowHeight, volumes, total, poc, valueAreaLow, valueAreaHigh, valueAreaRows }]`}</code></pre>
+
+<h2 id="order-blocks">오더 블록</h2>
+<p>
+  스윙 고점은 앞의 <code>length</code>개 봉보다 높고 뒤의 <code>length</code>개 봉보다 낮지 않은 봉입니다(기본 5). 그래서 <code>length</code>개 봉 늦게 확정됩니다. 스윙 저점은 아래쪽으로 같습니다. 종가가 아직 돌파되지 않은 최근 스윙 고점을 넘으면, 스윙과 그 종가 사이에서 가장 낮은 봉이 강세 오더 블록이 되며 범위는 그 봉의 고가에서 저가입니다. 종가가 최근 스윙 저점 아래로 내려가면 그 사이에서 가장 높은 봉이 약세 오더 블록이 됩니다. 스윙 하나에서 블록은 하나만 만들어집니다. <code>orderblocks</code>는 블록마다 페어 밸류 갭과 같은 색의 상자를 그리고, 블록이 유효한 동안 오른쪽 끝까지 늘입니다. 종가가 블록을 뚫으면(강세 블록은 아래로, 약세 블록은 위로) 무너진 것으로 보고 지우며, <code>showBroken</code>이 1이면 남겨 둡니다. 유효한 블록은 쪽마다 가장 최근 <code>count</code>개만 그립니다(기본 5, 0이면 전부). 오래되고 먼 블록은 화면만 어지럽힙니다. <code>detectOrderBlocks</code>는 차트 없이 전부를, 각각을 무너뜨린 봉과 함께 돌려줍니다.
+</p>
+<pre><code>{`chart.addIndicator('orderblocks')                    // 유효한 블록
+chart.addIndicator('orderblocks', { count: 3 })        // 쪽마다 최근 세 개
+chart.addIndicator('orderblocks', { length: 3 })       // 짧은 스윙: 블록이 더 많고 더 빨리 확정
+chart.addIndicator('orderblocks', { showBroken: 1 })   // 무너진 블록도, 흐리게, 무너뜨린 봉까지
+
+import { detectOrderBlocks } from '@tradecanvas/chart'
+
+detectOrderBlocks(bars, { length: 5 })
+// [{ kind: 'bullish' | 'bearish', index, formed, top, bottom, swing, brokenAt }]`}</code></pre>
 
 <h2>나만의 지표</h2>
 <p>

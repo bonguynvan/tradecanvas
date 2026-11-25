@@ -5,8 +5,24 @@ import { applyWidgetUI, resolveWidgetUI, scaledWidgetUI, typeSize, widgetScaleFo
 import { injectWidgetStyles, removeWidgetStyles } from '../WidgetStyles.js';
 
 describe('resolveWidgetUI', () => {
-  it('is the Modern look by default', () => {
-    const ui = resolveWidgetUI();
+  it('is the Graphite look by default: one corner, one shadow, controls on five heights', () => {
+    const graphite = resolveWidgetUI();
+    expect(graphite.preset).toBe('graphite');
+    expect(new Set(Object.values(graphite.radius))).toEqual(new Set([3]));
+    expect(new Set(Object.values(graphite.shadows)).size).toBe(1);
+    const heights = [20, 24, 28, 36, 40];
+    for (const density of ['compact', 'comfortable', 'spacious'] as const) {
+      const { control, controlSmall, menuItem } = resolveWidgetUI({ density }).sizes;
+      for (const height of [control, controlSmall, menuItem]) expect(heights, `${density} ${height}`).toContain(height);
+    }
+    // Its drawing tools' button is on the heights too: 36 in the column, 40 in the roomy one.
+    const tool = (density?: 'spacious') => widgetUIVariables(resolveWidgetUI({ density }))['--tcw-tool-h'];
+    expect([tool(), tool('spacious')]).toEqual(['36px', '40px']);
+    expect(graphite.font.family).toMatch(/^'IBM Plex Sans', /);
+  });
+
+  it('is the Modern look when asked for', () => {
+    const ui = resolveWidgetUI('modern');
     expect(ui.preset).toBe('modern');
     expect(ui).toMatchObject({ toolbar: 'docked', sidebar: 'docked', intervals: 'plain', active: 'tint', borders: { separators: true }, font: { labelCase: 'none', size: 13 }, iconStroke: 1.5 });
     expect(ui).toEqual(resolveWidgetUI('modern'));
@@ -58,7 +74,7 @@ describe('resolveWidgetUI', () => {
     expect(vars({ preset: 'print', density: 'spacious' })).toMatchObject({ '--tcw-tool-h': '54px', '--tcw-tool-icon': '34px', '--tcw-sidebar-w': '60px' });
     expect(vars({ preset: 'print', density: 'compact' })).toMatchObject({ '--tcw-tool-h': '26px', '--tcw-tool-icon': '16px', '--tcw-sidebar-w': '32px' });
     // Modern: a 20 px icon on a 36 px tool in a 44 px column, over the 16 px icons elsewhere.
-    expect(vars({})).toMatchObject({ '--tcw-tool-h': '36px', '--tcw-tool-icon': '20px', '--tcw-sidebar-w': '44px' });
+    expect(vars({ preset: 'modern' })).toMatchObject({ '--tcw-tool-h': '36px', '--tcw-tool-icon': '20px', '--tcw-sidebar-w': '44px' });
     // Each look's column holds its tool with a little room either side, tool and icon even sizes:
     // the icon is centred on whole pixels in its button, and the button in its column.
     for (const preset of ['modern', 'print', 'studio', 'terminal', 'capsule', 'desk'] as const) {
@@ -96,7 +112,7 @@ describe('resolveWidgetUI', () => {
     }
     const v = vars({});
     expect([1, 2, 3, 4, 5, 6, 7].map((n) => v[`--tcw-space-${n}`])).toEqual(['2px', '4px', '6px', '8px', '12px', '20px', '32px']);
-    expect(v).toMatchObject({ '--tcw-control-pad': '12px', '--tcw-bar-pad': '12px', '--tcw-menu-row-pad': '12px', '--tcw-odd': '0px', '--tcw-legend-line': '20px', '--tcw-legend-line-pane': '16px', '--tcw-line-xs': '14px' });
+    expect(v).toMatchObject({ '--tcw-control-pad': '12px', '--tcw-bar-pad': '12px', '--tcw-menu-row-pad': '12px', '--tcw-odd': '0px', '--tcw-legend-line': '20px', '--tcw-legend-line-pane': '16px', '--tcw-line-xs': '16px' });
     // 18 px a line at 13 px.
     expect(parseFloat(v['--tcw-line-height']) * 13).toBeCloseTo(18, 3);
   });
@@ -243,7 +259,7 @@ describe('resolveWidgetUI', () => {
       active: 'glow' as never,
     });
     const base = resolveWidgetUI();
-    expect(ui.preset).toBe('modern');
+    expect(ui.preset).toBe('graphite');
     expect(ui.radius).toEqual(base.radius);
     expect(ui.sizes.control).toBe(base.sizes.control);
     expect(ui.sizes.toolbar).toBe(base.sizes.toolbar);
@@ -274,9 +290,9 @@ describe('resolveWidgetUI', () => {
     expect(resolveWidgetUI({ font: { family: "'Inter', var(--brand-font), sans-serif" } }).font.family).toBe("'Inter', var(--brand-font), sans-serif");
   });
 
-  it('is Modern for anything that isn’t a look', () => {
+  it('is Graphite for anything that isn’t a look', () => {
     for (const theme of [null, 5, [], 'nope']) {
-      expect(resolveWidgetUI(theme as never), String(theme)).toEqual(resolveWidgetUI('modern'));
+      expect(resolveWidgetUI(theme as never), String(theme)).toEqual(resolveWidgetUI('graphite'));
     }
   });
 
@@ -391,5 +407,70 @@ describe('the look on a wide screen', () => {
     expect(resolveWidgetUI({ scale: 1 }).scale).toBe(1);
     expect(resolveWidgetUI({ scale: 1.2 }).scale).toBe(1.2);
     expect(resolveWidgetUI({ scale: 9 as never }).scale).toBe('auto');
+  });
+});
+
+// Figures in a table and a field's name at 11 px read as small print beside 13 px body text.
+describe('a look’s small type', () => {
+  it('is 12 px in Graphite, and the scale’s step under the body in the other looks', () => {
+    const graphite = widgetUIVariables(resolveWidgetUI('graphite'));
+    expect(graphite['--tcw-font-size-sm']).toBe('12px');
+    expect(graphite['--tcw-label-size']).toBe('12px');
+    // The smallest size stays, for a short label (a count, a unit).
+    // Nothing to read is under its small size: the smallest type is the small size too.
+    expect(graphite['--tcw-font-size-xs']).toBe('12px');
+    // A character inside a set shape (a badge's letter, a keycap) keeps the scale's smallest.
+    expect(graphite['--tcw-font-size-glyph']).toBe('10px');
+    for (const preset of ['modern', 'print', 'studio', 'capsule'] as const) {
+      expect(widgetUIVariables(resolveWidgetUI(preset))['--tcw-font-size-sm'], preset).toBe('11px');
+    }
+  });
+
+  it('is a theme’s own where it sets one, and left where that is no size', () => {
+    expect(widgetUIVariables(resolveWidgetUI({ preset: 'print', font: { smallSize: 12 } }))['--tcw-font-size-sm']).toBe('12px');
+    for (const bad of [9, 21, Number.NaN, '12']) {
+      expect(widgetUIVariables(resolveWidgetUI({ preset: 'print', font: { smallSize: bad as never } }))['--tcw-font-size-sm'], String(bad)).toBe('11px');
+    }
+    // Labels in capitals keep the smallest size, whatever the small one is.
+    expect(widgetUIVariables(resolveWidgetUI({ preset: 'terminal', font: { smallSize: 12 } }))['--tcw-label-size']).toBe('10px');
+  });
+
+  it('follows a theme’s own body size, where the theme sets no small size', () => {
+    // Graphite's 12 is for its 13: under a body of 11 it would be the larger of the two.
+    for (const [size, small] of [[11, '10px'], [15, '13px'], [18, '15px']] as const) {
+      const vars = widgetUIVariables(resolveWidgetUI({ font: { size } }));
+      expect(vars['--tcw-font-size-sm'], String(size)).toBe(small);
+      expect(vars['--tcw-label-size'], String(size)).toBe(small);
+    }
+    expect(widgetUIVariables(resolveWidgetUI({ font: { size: 15, smallSize: 14 } }))['--tcw-font-size-sm']).toBe('14px');
+    // Graphite's own body size said again changes nothing, and what is no size leaves its 12.
+    expect(widgetUIVariables(resolveWidgetUI({ font: { size: 13 } }))['--tcw-font-size-sm']).toBe('12px');
+    for (const bad of [9, 21, '12']) {
+      expect(widgetUIVariables(resolveWidgetUI({ font: { smallSize: bad as never } }))['--tcw-font-size-sm'], String(bad)).toBe('12px');
+    }
+    for (const preset of ['terminal', 'desk'] as const) {
+      expect(resolveWidgetUI(preset).font.smallSize, preset).toBeUndefined();
+    }
+  });
+
+  it('leaves the smallest type two steps under the body where a look sets no small size, and the glyph there in every look', () => {
+    for (const preset of ['modern', 'print', 'studio', 'capsule', 'terminal', 'desk'] as const) {
+      const vars = widgetUIVariables(resolveWidgetUI(preset));
+      expect(vars['--tcw-font-size-xs'], preset).toBe(vars['--tcw-font-size-glyph']);
+      expect(parseFloat(vars['--tcw-font-size-xs']), preset).toBeLessThanOrEqual(parseFloat(vars['--tcw-font-size-sm']));
+    }
+    // A theme's own small size is its smallest to read, in any look; under its own body size Graphite follows the scale again.
+    expect(widgetUIVariables(resolveWidgetUI({ preset: 'print', font: { smallSize: 12 } }))['--tcw-font-size-xs']).toBe('12px');
+    const body11 = widgetUIVariables(resolveWidgetUI({ font: { size: 11 } }));
+    expect(body11['--tcw-font-size-xs']).toBe(body11['--tcw-font-size-glyph']);
+    // Grown for a wide screen, the two grow with the rest.
+    const grown = widgetUIVariables(scaledWidgetUI(resolveWidgetUI('graphite'), 1.5));
+    expect(grown['--tcw-font-size-xs']).toBe('18px');
+    expect(parseFloat(grown['--tcw-font-size-glyph'])).toBeGreaterThan(10);
+  });
+
+  it('grows with the look', () => {
+    expect(scaledWidgetUI(resolveWidgetUI('graphite'), 1.5).font.smallSize).toBe(18);
+    expect(scaledWidgetUI(resolveWidgetUI('print'), 1.5).font.smallSize).toBeUndefined();
   });
 });

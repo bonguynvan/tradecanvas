@@ -1,3 +1,4 @@
+import { chartFont } from '../ui/chartType.js';
 import type { ViewportState, Theme, DataSeries, SignalMarker, SignalMarkerStyle } from '@tradecanvas/commons';
 import { DEFAULT_SIGNAL_STYLE } from '@tradecanvas/commons';
 import { priceToY, barIndexToX, timestampToBarIndex } from '../viewport/ScaleMapping.js';
@@ -142,7 +143,7 @@ export class SignalMarkerManager extends Emitter<SignalMarkerEvents> {
       this.renderArrow(ctx, x, y, marker.direction, scaledSize, color);
 
       if (style.showLabel && marker.label) {
-        ctx.font = `10px ${theme.font.family}`;
+        ctx.font = chartFont(theme, 1);
         ctx.fillStyle = color;
         ctx.textAlign = 'center';
         ctx.textBaseline = marker.direction === 'long' ? 'top' : 'bottom';
@@ -151,7 +152,7 @@ export class SignalMarkerManager extends Emitter<SignalMarkerEvents> {
       }
 
       if (style.showConfidence && marker.confidence < 1) {
-        ctx.font = `9px ${theme.font.family}`;
+        ctx.font = chartFont(theme, 2);
         ctx.fillStyle = color;
         ctx.globalAlpha = 0.7;
         ctx.textAlign = 'center';

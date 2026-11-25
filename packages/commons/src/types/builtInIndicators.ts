@@ -2,7 +2,7 @@
 import type { NumberParam } from './indicator.js';
 
 /**
- * The 134 built-in indicators, by id: the inputs
+ * The 138 built-in indicators, by id: the inputs
  * `chart.addIndicator(id, params)` takes, each optional (its default in its
  * note), and the keys of the lines it draws, as
  * `chart.getIndicatorOutput(instanceId)` and `indicatorSource(instanceId, key)`
@@ -419,8 +419,10 @@ export interface BuiltInIndicators {
   /** Volume Delta, in a pane of its own. Lines: `value` (Delta). */
   voldelta: {
     params: {
-      /** A whole number, at least 0, at most 1. Default 0. */
+      /** Cumulative. A whole number, at least 0, at most 1. Default 0. */
       mode?: NumberParam;
+      /** Default `'all'`. */
+      anchor?: 'all' | 'session' | 'week' | 'month' | (string & {});
     };
     lines: 'value';
   };
@@ -1327,5 +1329,55 @@ export interface BuiltInIndicators {
       indecision?: NumberParam;
     };
     lines: 'bull' | 'bear' | 'neutral';
+  };
+  /** Fair Value Gaps, on the price pane. Lines: `bull` (Bullish top), `bullLow` (Bullish bottom), `bear` (Bearish top), `bearLow` (Bearish bottom). */
+  fvg: {
+    params: {
+      /** At least 0, in steps of 0.05. Default 0. */
+      minPercent?: NumberParam;
+      /** A whole number, at least 0, at most 1. Default 0. */
+      showFilled?: NumberParam;
+    };
+    lines: 'bull' | 'bullLow' | 'bear' | 'bearLow';
+  };
+  /** RSI Divergence, in a pane of its own. Lines: `value` (RSI), `bull` (Bullish), `bear` (Bearish). Levels at 30, 70. */
+  rsidiv: {
+    params: {
+      /** A whole number, at least 1. Default 14. */
+      period?: NumberParam;
+      /** A whole number, at least 1. Default 5. */
+      left?: NumberParam;
+      /** A whole number, at least 1. Default 5. */
+      right?: NumberParam;
+      /** A whole number, at least 1. Default 5. */
+      minBars?: NumberParam;
+      /** A whole number, at least 1. Default 60. */
+      maxBars?: NumberParam;
+      /** A whole number, at least 0, at most 1. Default 0. */
+      hidden?: NumberParam;
+    };
+    lines: 'value' | 'bull' | 'bear';
+  };
+  /** Session Volume Profile, on the price pane. Lines: `poc` (POC), `vah` (VAH), `val` (VAL). */
+  svp: {
+    params: {
+      /** A whole number, at least 1, at most 200. Default 24. */
+      rows?: NumberParam;
+      /** At least 1, at most 100, in steps of 1. Default 70. */
+      valueArea?: NumberParam;
+    };
+    lines: 'poc' | 'vah' | 'val';
+  };
+  /** Order Blocks, on the price pane. Lines: `bull` (Bullish top), `bullLow` (Bullish bottom), `bear` (Bearish top), `bearLow` (Bearish bottom). */
+  orderblocks: {
+    params: {
+      /** A whole number, at least 1, at most 50. Default 5. */
+      length?: NumberParam;
+      /** A whole number, at least 0, at most 1. Default 0. */
+      showBroken?: NumberParam;
+      /** A whole number, at least 0, at most 100. Default 5. */
+      count?: NumberParam;
+    };
+    lines: 'bull' | 'bullLow' | 'bear' | 'bearLow';
   };
 }

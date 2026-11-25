@@ -18,8 +18,8 @@ interface PeriodAgg {
   close: number;
 }
 
-function aggregate(bars: ReadonlyArray<OHLCBar>, period: LevelPeriod, exchangeTimeZone?: string | null): PeriodAgg[] {
-  const keyOf = periodKeyer(bars, period === 'day' ? 'session' : 'week', exchangeTimeZone);
+function aggregate(bars: ReadonlyArray<OHLCBar>, period: LevelPeriod, exchangeTimeZone?: string | null, dayStart?: number | null): PeriodAgg[] {
+  const keyOf = periodKeyer(bars, period === 'day' ? 'session' : 'week', exchangeTimeZone, dayStart);
   const out: PeriodAgg[] = [];
   for (const bar of bars) {
     const key = keyOf(bar.time);
@@ -46,8 +46,10 @@ export function computePeriodLevels(
   bars: ReadonlyArray<OHLCBar>,
   period: LevelPeriod = 'day',
   exchangeTimeZone?: string | null,
+  /** When the trading day starts, minutes after the exchange's midnight (`tradingDayStart`); midnight when left out. */
+  dayStart?: number | null,
 ): PriceLevel[] {
-  const periods = aggregate(bars, period, exchangeTimeZone);
+  const periods = aggregate(bars, period, exchangeTimeZone, dayStart);
   if (periods.length < 2) return [];
 
   const prior = periods[periods.length - 2];

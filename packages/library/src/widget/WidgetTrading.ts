@@ -1,12 +1,29 @@
 import { WidgetAccountPanel } from './WidgetAccountPanel.js';
 import { WidgetOrderTicket, type OrderTicketStart } from './WidgetOrderTicket.js';
-import type { OrderTicketRules } from './orderTicket.js';
+import { ticketTimeInForce, type OrderTicketRules, type PriceLimitName } from './orderTicket.js';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
-import type { DepthData } from '@tradecanvas/commons';
+import type { WidgetQuoteButtons } from './WidgetQuoteButtons.js';
+import type { DepthData, ExecutionErrorPayload, FillEvent } from '@tradecanvas/commons';
+import { stepDecimals, tickerOf } from '@tradecanvas/commons';
 import { fill, type MessageKey } from './i18n.js';
-import { positionLevels } from '@tradecanvas/core';
+import { positionLevels, type BracketSize } from '@tradecanvas/core';
 import type { ChartWidget } from './ChartWidget.js';
+import { ofSymbol } from '../model/TradingBook.js';
+import type { FeedHealth } from './feedHealth.js';
+import type { BrokerOrderRules } from './types.js';
+
+/** Prices that differ by less than this are the same price (float dust), as the order ticket has it. */
+const LIMIT_EPSILON = 1e-9;
+
+/** The digits a quantity is written to when it is a sum of parts: the sum's rounding is past them. */
+const QUANTITY_DIGITS = 12;
+
+/** Why the adapter refused something: its own words when it gave them, else the error's. */
+export function refusalReason(error: Pick<ExecutionErrorPayload, 'message' | 'cause'>): string {
+  const { cause } = error;
+  return cause instanceof Error ? cause.message : typeof cause === 'string' ? cause : error.message;
+}
 
 /** What trading reads of the widget around it, and asks of it. */
 export interface TradingHost {
@@ -16,6 +33,14 @@ export interface TradingHost {
   readonly featureState: ChartWidget['featureState'];
   formatAlertPrice: ChartWidget['formatAlertPrice'];
   say: ChartWidget['say'];
+  /** The order the ticket shows the day's ceiling, reference and floor in (`priceLimitOrder`). */
+  readonly priceLimitOrder: readonly PriceLimitName[] | undefined;
+  /** Where the ticket opens (`ticketPlace`): a page of the dock unless the widget says a dialog. */
+  readonly ticketPlace: 'dock' | 'dialog';
+  /** Whether the dock's rail shows now: its switch on, and the widget wide enough for it. */
+  dockShown: () => boolean;
+  /** Ask before something that cannot be taken back; with confirmations off (`confirmOrders: false`) it is done at once. */
+  confirm: ChartWidget['confirmTrade'];
   readonly state: ChartWidget['state'];
   readonly t: ChartWidget['t'];
 }
@@ -31,11 +56,64 @@ export class WidgetTrading {
 
   orderTicket: WidgetOrderTicket | null = null;
 
+  /** Whether the ticket is a page of the dock in this widget (`ticketPlace`), where the dock can show it. */
+  get ticketInDock(): boolean {
+    return this.host.ticketPlace === 'dock';
+  }
+  private feed: FeedHealth = 'live';
+
   accountFrame = 0;
 
   bracketBar: WidgetBracketBar | null = null;
 
+  /** The quantity last typed for a bracket: the next one starts with it. */
+  private bracketQuantity: number | null = null;
+
   depthLadder: WidgetDepthLadder | null = null;
+
+  /** Sell and Buy on the chart, under its legend. */
+  quoteButtons: WidgetQuoteButtons | null = null;
+
+  /** The activity log as last read, and whether something was logged since: it is read again only then. */
+  private log: ReturnType<TradingHost['chart']['getActivityLog']> = [];
+  private logStale = true;
+
+  /** An order the adapter refused: the widget had said it was sent, so it says this too, with the toasts off as well. */
+  sayOrderRefused(error: ExecutionErrorPayload): void {
+    this.host.say(fill(this.host.t('order.refused'), { reason: refusalReason(error) }), 'error');
+  }
+
+  /** A fill that dropped the rest of its order (immediate-or-cancel, filled in part): how much filled, of how much. */
+  sayPartDropped(event: FillEvent): void {
+    const { quantity, dropped } = event;
+    if (dropped === undefined || !(dropped > 0)) return;
+    const asked = Number((quantity + dropped).toPrecision(QUANTITY_DIGITS));
+    this.host.say(fill(this.host.t('order.partDropped'), { filled: quantity, quantity: asked }));
+  }
+
+  /** Something the log records happened: the panel reads it again on its next frame. */
+  markLogStale(): void {
+    this.logStale = true;
+  }
+
+  /**
+   * The Sell and Buy buttons with the prices now: the best bid and ask, or
+   * the last price for both where the feed gives none or one side only, and on a replay,
+   * whose prices are not the live quote's. Shown while an execution adapter
+   * is connected to the chart (there is a broker to send to), and the order
+   * ticket and the buttons are switched on. Returns whether they are shown.
+   */
+  refreshQuote(): boolean {
+    const buttons = this.quoteButtons;
+    if (!buttons) return false;
+    const shown = this.host.featureState.orderTicket && this.host.featureState.tradeButtons && this.host.chart.getExecutionAdapter() != null;
+    buttons.setShown(shown);
+    if (!shown) return false;
+    const last = this.host.chart.getData().at(-1)?.close ?? null;
+    // Both sides or neither: one side beside the last price is no spread, and a bid is no price to buy at.
+    buttons.update(this.quote() ?? { bid: last, ask: last });
+    return true;
+  }
 
   /** Open or close the account panel (no argument: the other way from now). */
   toggleAccountPanel(open?: boolean): void {
@@ -50,34 +128,71 @@ export class WidgetTrading {
   openOrderTicket(price?: number, start: Partial<OrderTicketStart> = {}): void {
     if (!this.host.featureState.orderTicket) return;
     const data = this.host.chart.getData();
-    this.orderTicket?.open({
+    const ticket = this.orderTicket;
+    if (!ticket) return;
+    // Beside the chart where the dock has the page and shows; else (no dock, a phone) the dialog.
+    const docked = this.ticketInDock && this.host.dock?.has('orderTicket') === true && this.host.dockShown();
+    // Open as a dialog while its page is the dock's: the page shuts, the ticket with it, before it opens again.
+    if (!docked) this.host.dock?.closePage('orderTicket');
+    ticket.open({
       ...start,
       price: price ?? start.price,
       lastPrice: data.length > 0 ? data[data.length - 1].close : null,
+      quote: this.quote(),
       rules: this.orderRules(),
       symbol: this.host.state.symbol,
       // − and + move a price by the market's step; a click on the chart lands between steps.
       step: (p) => this.host.chart.getPriceStep(p),
       round: (p) => this.host.chart.roundPrice(p),
-    });
+    }, docked ? 'dock' : 'dialog');
+    ticket.setPriceLive(this.feed === 'live');
+    // After the ticket has its order: the page's `onShow` finds it open and starts no other. Then the
+    // keyboard, which a page still hidden could not take.
+    if (docked) {
+      this.host.dock?.open('orderTicket');
+      ticket.focusStart();
+    }
   }
 
   /** A market's rules for the order ticket (`setMarket`): its step, the day's limits, its lot. */
   private orderRules(): OrderTicketRules {
     const market = this.host.chart.getMarket();
-    if (!market) return {};
+    const broker = this.brokerRules;
+    // The broker's kinds, times in force and lot stand over the market's preset.
+    const given: OrderTicketRules = broker ? {
+      ...(broker.orderKinds && broker.orderKinds.length > 0 ? { kinds: broker.orderKinds } : {}),
+      ...(broker.timesInForce ? { timesInForce: broker.timesInForce } : {}),
+      ...(broker.lot !== undefined ? { lot: broker.lot } : {}),
+    } : {};
+    if (!market) return given;
     const stepped = market.priceStep !== undefined || (market.priceSteps?.length ?? 0) > 0;
     return {
       roundPrice: stepped ? (p) => this.host.chart.roundPrice(p) : undefined,
       limits: this.host.chart.getPriceLimits(),
+      limitOrder: this.host.priceLimitOrder,
       lot: market.volumeUnit,
       multiplier: market.contractMultiplier,
+      ...given,
     };
+  }
+
+  /** The broker's rules for the symbol now (`orderRules`, `setOrderRules`); null with none. */
+  private brokerRules: BrokerOrderRules | null = null;
+
+  /** The broker's rules for orders now: a ticket that is open takes them at once. */
+  setOrderRules(rules: BrokerOrderRules | null): void {
+    this.brokerRules = rules;
+    this.orderTicket?.setRules(this.orderRules());
+  }
+
+  /** The working orders the ladder marks on its rows: those of the symbol whose book it shows. */
+  refreshLadderOrders(): void {
+    this.depthLadder?.setOrders(ofSymbol(this.host.chart.getOrders(), this.host.chart.getSymbol()));
   }
 
   /** Redraw the account panel once a frame at most (ticks, fills and order changes come in bursts). */
   refreshAccountSoon(): void {
-    if (this.accountFrame || !this.accountPanel) return;
+    if (this.accountFrame || (!this.accountPanel && !this.quoteButtons && !this.orderTicket?.isOpen())) return;
     this.accountFrame = requestAnimationFrame(() => {
       this.accountFrame = 0;
       if (!this.host.destroyed) this.refreshAccount();
@@ -85,6 +200,9 @@ export class WidgetTrading {
   }
 
   refreshAccount(): void {
+    this.refreshQuote();
+    // An account that moved with the price where it was (a fill, a cancel) is still news to the ticket.
+    this.orderTicket?.refreshAccount();
     if (!this.accountPanel) return;
     const data = this.host.chart.getData();
     const price = data.length > 0 ? data[data.length - 1].close : null;
@@ -93,17 +211,144 @@ export class WidgetTrading {
       orders: this.host.chart.getOrders(),
       fills: this.host.chart.getFills(),
       price,
+      symbol: this.host.chart.getSymbol() || undefined,
       realisedPnl: this.host.chart.getRealisedPnl(),
+      account: this.host.chart.getAccount(),
+      log: this.activityLog(),
+      multiplier: this.host.chart.getMarket()?.contractMultiplier,
     });
-    this.orderTicket?.setLastPrice(price);
+    this.orderTicket?.setLastPrice(price, this.quote());
   }
 
-  /** Ask for a limit or stop order at `price` (one unit), and say so. */
+  /**
+   * The best bid and ask now, where the feed gives both: what a Sell and a Buy trade at, on the
+   * buttons and in the ticket. Null with one side only (a bid is no price to buy at), with none,
+   * and on a replay, whose bars carry no quote: both sides are then at the last price.
+   */
+  private quote(): { bid: number; ask: number } | null {
+    const live = this.host.chart.isReplayActive() ? null : this.host.chart.getBidAsk();
+    // A bid over its ask is a feed that fell behind on one side: no pair of prices to trade by.
+    return live?.bid !== undefined && live.ask !== undefined && live.bid <= live.ask ? { bid: live.bid, ask: live.ask } : null;
+  }
+
+  /** What an order asked for in one press is for: the market's lot where it trades in lots (HOSE: 100 shares), else one. */
+  private quickQuantity(): number {
+    const lot = this.lot();
+    return lot !== undefined && lot > 1 ? lot : 1;
+  }
+
+  /** The lot orders are in: the broker's, else the market's. */
+  private lot(): number | undefined {
+    return this.brokerRules?.lot ?? this.host.chart.getMarket()?.volumeUnit;
+  }
+
+  /**
+   * What the price on the chart is worth (`feedHealth`). Not live, the ticket says so and sends
+   * no order at the market. With the feed down, an order asked for in one press, or a bracket
+   * or a draft confirmed, is held back too: the chart itself has stopped. A feed that is only
+   * quiet holds none of those back: their price is the trader's own, and a market after hours
+   * is quiet.
+   */
+  setFeed(health: FeedHealth): void {
+    this.feed = health;
+    this.orderTicket?.setPriceLive(health === 'live');
+  }
+
+  /** Whether an order asked for in one press may go out: not while the feed is down, and it says why. */
+  feedUp(): boolean {
+    if (this.feed !== 'down') return true;
+    this.host.say(this.host.t('order.noLivePrice'), 'error');
+    return false;
+  }
+
+  /** A limit order from a rung of the depth ladder, for the market's lot. Past the day's limits it is not asked for. */
+  placeLadderOrder(side: 'buy' | 'sell', price: number): void {
+    this.placeOrderAt(side === 'buy' ? 'buyLimit' : 'sellLimit', price);
+  }
+
+  /** The quantity an order asked for in one press is for: what the ladder's cells say before the press. */
+  oneTouchQuantity(): number {
+    return this.quickQuantity();
+  }
+
+  /** Close a position at the market, once it is confirmed: from its row in the account panel, or its button on the chart. */
+  closePosition(positionId: string, send: () => void = () => this.host.chart.closePositionIntent(positionId)): void {
+    const text = this.positionText('confirm.close', positionId);
+    // Gone since its button was drawn: there is nothing to ask about.
+    if (text === null) return;
+    this.host.confirm({ title: this.host.t('account.closePosition'), text, confirmLabel: this.host.t('account.closePosition'), about: 'position' }, send);
+  }
+
+  /** Reverse a position at the market, once it is confirmed. */
+  reversePosition(positionId: string, send: () => void = () => this.host.chart.reversePositionIntent(positionId)): void {
+    const text = this.positionText('confirm.reverse', positionId);
+    if (text === null) return;
+    this.host.confirm({ title: this.host.t('account.reverse'), text, confirmLabel: this.host.t('account.reverse'), about: 'position' }, send);
+  }
+
+  /** What is about to be done to a position, in full: its side, what is open of it and its symbol. Null for one the account no longer holds. */
+  private positionText(key: 'confirm.close' | 'confirm.reverse', positionId: string): string | null {
+    const position = this.host.chart.getPositions().find((p) => p.id === positionId);
+    if (!position) return null;
+    const symbol = position.symbol ?? this.host.state.symbol;
+    return fill(this.host.t(key), {
+      side: this.host.t(position.side === 'buy' ? 'account.long' : 'account.short'),
+      quantity: String(position.quantity - (position.closedQuantity ?? 0)),
+      symbol: symbol ? tickerOf(symbol) : '',
+    }).replace(/\s+/g, ' ').trim();
+  }
+
+  /** The activity log, read from the chart only when something was logged since the last read. */
+  private activityLog(): ReturnType<TradingHost['chart']['getActivityLog']> {
+    if (this.logStale) {
+      this.log = this.host.chart.getActivityLog();
+      this.logStale = false;
+    }
+    return this.log;
+  }
+
+  /**
+   * Whether an order may be at `price` today: inside the day's ceiling and
+   * floor, where the market has them. Past them it says what today's prices
+   * are, in the ticket's own words, and answers no.
+   */
+  allowedToday(price: number): boolean {
+    const limits = this.host.chart.getPriceLimits();
+    if (!limits || (price <= limits.ceiling + LIMIT_EPSILON && price >= limits.floor - LIMIT_EPSILON)) return true;
+    const { formatAlertPrice } = this.host;
+    this.host.say(fill(this.host.t('ticket.problem.priceLimits'), { floor: formatAlertPrice(limits.floor), ceiling: formatAlertPrice(limits.ceiling) }), 'error');
+    return false;
+  }
+
+  /** Ask for a limit or stop order at `price`, for the market's lot, and say so. Past the day's limits it is not asked for. */
   placeOrderAt(kind: 'buyLimit' | 'sellLimit' | 'buyStop' | 'sellStop', price: number): void {
+    if (!this.feedUp() || !this.allowedToday(price)) return;
     const side = kind.startsWith('buy') ? 'buy' : 'sell';
     const stop = kind.endsWith('Stop');
-    this.host.chart.placeOrderIntent(stop ? { side, type: 'stop', price, stopPrice: price, quantity: 1 } : { side, type: 'limit', price, quantity: 1 });
-    this.host.say(fill(this.host.t(`order.${kind}` as MessageKey), { price: this.host.formatAlertPrice(price) }));
+    const quantity = this.quickQuantity();
+    // Under a broker's rules it is one of the broker's kinds, by the exchange's name and with a time in force it takes.
+    const rules = this.orderRules();
+    const taken = rules.kinds?.find((k) => k.type === (stop ? 'stop' : 'limit'));
+    if (rules.kinds && !taken) {
+      this.host.say(this.host.t('order.kindNotTaken'), 'error');
+      return;
+    }
+    const named = {
+      ...(taken ? { exchangeType: taken.code } : {}),
+      ...(rules.kinds || rules.timesInForce ? { timeInForce: ticketTimeInForce({ type: stop ? 'stop' : 'limit', kind: taken?.code, timeInForce: 'gtc' }, rules) } : {}),
+    };
+    const order = fill(this.host.t(`order.${kind}` as MessageKey), { price: this.host.formatAlertPrice(price) });
+    const symbol = this.host.state.symbol;
+    this.host.confirm({
+      title: this.host.t('confirm.place'),
+      text: fill(this.host.t('confirm.order'), { order, quantity: String(quantity), symbol: symbol ? tickerOf(symbol) : '' }).replace(/\s+/g, ' ').trim(),
+      confirmLabel: this.host.t('confirm.place'),
+    }, () => {
+      // Asked a moment ago: the feed may have gone since, and the price was this symbol's.
+      if (this.host.state.symbol !== symbol || !this.feedUp()) return;
+      this.host.chart.placeOrderIntent(stop ? { side, type: 'stop', price, stopPrice: price, quantity, ...named } : { side, type: 'limit', price, quantity, ...named });
+      this.host.say(order);
+    });
   }
 
   /** The depth ladder, a page of the dock: open or shut it (the Trade menu's entry). */
@@ -119,16 +364,37 @@ export class WidgetTrading {
     if (depth) this.host.chart.pushDepthSnapshot(depth);
   }
 
-  /** Begin a draggable bracket order at the latest price and show the action bar. */
-  startBracket(side: 'buy' | 'sell'): void {
-    if (this.host.chart.startBracket(side)) {
-      this.bracketBar?.show(side);
+  /**
+   * Begin a draggable bracket order at the latest price and show the action
+   * bar. Its quantity is typed in the bar: it starts at `size.quantity`,
+   * else at the one last typed, else at the market's lot (one without). A
+   * bracket sized by `size.risk` has no field: its quantity follows its lines.
+   */
+  startBracket(side: 'buy' | 'sell', size?: BracketSize): void {
+    if (size?.risk !== undefined) {
+      if (this.host.chart.startBracket(side, undefined, size)) this.bracketBar?.show(side);
+      return;
     }
+    const lot = this.lot();
+    const board = lot !== undefined && lot > 1 ? lot : null;
+    const quantity = firstQuantity(size?.quantity, this.bracketQuantity, board);
+    if (!this.host.chart.startBracket(side, undefined, { ...size, quantity })) return;
+    this.bracketBar?.show(side, {
+      quantity,
+      // A lot, else the quantity's own last digit (0.5 moves by 0.1), as the order ticket steps.
+      step: (q) => board ?? lastDigitStep(q),
+    });
+  }
+
+  /** The bar's quantity field was typed in: the bracket takes it, and the next one starts with it. */
+  setBracketQuantity(quantity: number | null): void {
+    if (quantity !== null) this.bracketQuantity = quantity;
+    this.host.chart.setBracketSize(quantity === null ? undefined : { quantity });
   }
 
   /** Open the order ticket from a Long/Short Position drawing, filled with its levels. */
   openOrderTicketFromDrawing(id: string): void {
-    const levels = positionLevels(this.host.chart.getDrawings().find((d) => d.id === id));
+    const levels = positionLevels(this.host.chart.getDrawings().find((d) => d.id === id), this.host.chart.getMarket()?.contractMultiplier);
     if (!levels) return;
     // The size the drawing writes: its risk unrounded, taken down to the decimals it shows.
     const decimals = Math.max(0, Math.min(8, Math.round(levels.quantityDecimals)));
@@ -140,4 +406,17 @@ export class WidgetTrading {
       quantity: Math.floor(levels.quantity * step) / step,
     });
   }
+}
+
+/** The quantity a bracket starts with: the one asked for, else the one last typed when the market's lot takes it, else a lot (one without). */
+function firstQuantity(asked: number | undefined, typed: number | null, lot: number | null): number {
+  if (asked !== undefined && Number.isFinite(asked) && asked > 0) return asked;
+  if (typed !== null && (lot === null || typed % lot === 0)) return typed;
+  return lot ?? 1;
+}
+
+/** One of a quantity's last digit: 0.1 for 0.5, 1 for a whole number or none. */
+function lastDigitStep(quantity: number): number {
+  const decimals = Number.isFinite(quantity) ? stepDecimals(quantity) : 0;
+  return decimals > 0 ? Number((10 ** -decimals).toFixed(decimals)) : 1;
 }

@@ -1,4 +1,6 @@
-import type { FillEvent, TradingOrder, TradingPosition } from '@tradecanvas/commons';
+import type { ActivityEntry } from '../model/ActivityLog.js';
+import type { AccountSummary, FillEvent, TradingOrder, TradingPosition } from '@tradecanvas/commons';
+import { orderQuantityText, positionMark, sameSymbol, tickerOf } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, type MessageKey, type Translator } from './i18n.js';
 import { markPart } from './widgetFeatures.js';
@@ -23,21 +25,37 @@ export interface AccountSnapshot {
   positions: readonly TradingPosition[];
   orders: readonly TradingOrder[];
   fills: readonly FillEvent[];
-  /** The latest price, for the positions' profit and loss. */
+  /** The latest price of the symbol the chart shows, for the profit and loss of the positions of that symbol. */
   price: number | null;
+  /**
+   * The symbol the chart shows. A row of another symbol names its own, and a position of another
+   * is valued by the adapter's own price for it (`markPrice`), or not at all: the chart's price is
+   * not that symbol's. Left out, every row is taken for the chart's.
+   */
+  symbol?: string;
   /** The P&L realised by every fill (the list may keep only the latest); else the listed fills' sum. */
   realisedPnl?: number;
+  /** The account's money, from a broker that keeps one: its balance, equity and free margin head the totals. */
+  account?: AccountSummary | null;
+  /** What a move of one in price is worth for one unit (the market's contract multiplier), in the positions' P&L. Default 1. */
+  multiplier?: number;
+  /** What happened to the orders, oldest first (`chart.getActivityLog()`): the Log tab. */
+  log?: readonly ActivityEntry[];
 }
 
-type Tab = 'positions' | 'orders' | 'history';
-const TABS: readonly Tab[] = ['positions', 'orders', 'history'];
-const REASONS = ['order', 'close', 'reverse', 'stopLoss', 'takeProfit'] as const;
-const ORDER_TYPES = ['market', 'limit', 'stop'] as const;
-const TIME_IN_FORCE = ['gtc', 'day'] as const;
+type Tab = 'positions' | 'orders' | 'history' | 'log';
+const TABS: readonly Tab[] = ['positions', 'orders', 'history', 'log'];
+const EVENTS = ['placed', 'moved', 'cancelled', 'filled', 'rejected'] as const;
+const REASONS = ['order', 'close', 'reverse', 'stopLoss', 'takeProfit', 'liquidation'] as const;
+/** A margin level is written to a tenth of a percent: near a margin call the tenths are what is read. */
+export const MARGIN_LEVEL_DECIMALS = 1;
+const ORDER_TYPES = ['market', 'limit', 'stop', 'stopLimit'] as const;
+const TIME_IN_FORCE = ['gtc', 'day', 'gtd', 'ioc', 'fok'] as const;
 /** What a cell holds where there is nothing (no stop, no price yet). */
 const NONE = '—';
 /** Where the totals' words take their figure. */
 const PNL_SLOT = '{pnl}';
+const AMOUNT_SLOT = '{amount}';
 /** The positions table's column of the latest price, rewritten on a tick. */
 const PRICE_COLUMN = 3;
 
@@ -52,6 +70,23 @@ function known<T extends string>(known: readonly T[], value: string | undefined,
   return (known as readonly string[]).includes(value ?? '') ? (value as T) : fallback;
 }
 
+/** The same log: as long, and ending with the same line (it grows at its end, and a fill may take a line's place). */
+function sameLog(a: readonly ActivityEntry[] | undefined, b: readonly ActivityEntry[] | undefined): boolean {
+  if ((a?.length ?? 0) !== (b?.length ?? 0)) return false;
+  const last = a?.at(-1);
+  const other = b?.at(-1);
+  return last?.time === other?.time && last?.kind === other?.kind && last?.orderId === other?.orderId && last?.message === other?.message && last?.price === other?.price;
+}
+
+/** The same money: the figures the totals show. */
+function sameAccount(a: AccountSummary | null | undefined, b: AccountSummary | null | undefined): boolean {
+  if (!a || !b) return !a && !b;
+  return a.balance === b.balance && a.equity === b.equity && a.freeMargin === b.freeMargin && a.unrealisedPnl === b.unrealisedPnl && a.marginLevel === b.marginLevel;
+}
+
+/** A time the panel can write: a good-till-date order's date. */
+const writable = (time: number | undefined): time is number => time !== undefined && Number.isFinite(time);
+
 /** Same rows: the same objects in the same order (a tick changes only the price). */
 function sameRows(a: readonly object[], b: readonly object[]): boolean {
   return a.length === b.length && a.every((row, i) => row === b[i]);
@@ -64,14 +99,39 @@ interface LiveCells {
   pnl: HTMLSpanElement;
 }
 
-/** A position's open profit or loss at `price`, and as a percent of what went in. */
-export function positionPnl(position: TradingPosition, price: number | null): { pnl: number; pct: number } | null {
+/** A position's open profit or loss at `price` (a point worth `multiplier` a unit), and as a percent of what went in. */
+export function positionPnl(position: TradingPosition, price: number | null, multiplier = 1): { pnl: number; pct: number } | null {
   if (price === null) return null;
   const open = position.quantity - (position.closedQuantity ?? 0);
   const direction = position.side === 'buy' ? 1 : -1;
-  const pnl = (price - position.entryPrice) * open * direction;
+  const pnl = (price - position.entryPrice) * open * direction * multiplier;
   const pct = position.entryPrice !== 0 ? ((price - position.entryPrice) / position.entryPrice) * 100 * direction : 0;
   return { pnl, pct };
+}
+
+/** What stands between a total's name and its figure: a colon of any script, and the room about it. */
+const TOTAL_SEP = /[\s\u00a0]*[:\uFF1A\uFE55]?[\s\u00a0]*$/;
+
+/**
+ * A total's parts, each one a look can set apart: its name, what stands between (which a look may
+ * leave out), its figure, and any words after the figure. Read together they are the words as written.
+ */
+function writeTotal(el: HTMLElement, words: string, at: number, slot: number, figure: HTMLSpanElement): void {
+  const before = at < 0 ? `${words} ` : words.slice(0, at);
+  const sep = TOTAL_SEP.exec(before)?.[0] ?? '';
+  const part = (name: string, text: string) => {
+    const span = document.createElement('span');
+    span.className = `tcw-account-total-${name}`;
+    span.textContent = text;
+    return span;
+  };
+  figure.className = 'tcw-account-total-figure';
+  const name = before.slice(0, before.length - sep.length);
+  if (name !== '') el.append(part('name', name));
+  if (sep !== '') el.append(part('sep', sep));
+  el.append(figure);
+  const after = at < 0 ? '' : words.slice(at + slot);
+  if (after !== '') el.append(part('name', after));
 }
 
 /** A figure that reads left to right in any widget: its sign stays before it. */
@@ -81,6 +141,9 @@ function ltr(text: string): HTMLSpanElement {
   span.textContent = text;
   return span;
 }
+
+/** On a profit's figure, a position's or a fill's: a look may set it strong. */
+const PNL_CLASS = 'tcw-account-pnl';
 
 /** A signed figure's colour: a gain up, a loss down, what reads as nothing neither. */
 function toneClass(figure: string): string {
@@ -196,9 +259,13 @@ export class WidgetAccountPanel {
     const rowsSame = sameRows(before.positions, snapshot.positions)
       && sameRows(before.orders, snapshot.orders)
       && sameRows(before.fills, snapshot.fills)
-      && before.realisedPnl === snapshot.realisedPnl;
+      // Another symbol shown: other rows are the chart's own, and are valued by its price.
+      && before.symbol === snapshot.symbol
+      && before.realisedPnl === snapshot.realisedPnl
+      && before.multiplier === snapshot.multiplier
+      && sameLog(before.log, snapshot.log);
     if (rowsSame) {
-      if (before.price !== snapshot.price) {
+      if (before.price !== snapshot.price || !sameAccount(before.account, snapshot.account)) {
         this.renderTotals();
         if (this.open && this.tab === 'positions') this.patchPrices();
       }
@@ -234,6 +301,7 @@ export class WidgetAccountPanel {
       positions: this.snapshot.positions.length,
       orders: this.snapshot.orders.length,
       history: this.snapshot.fills.length,
+      log: this.snapshot.log?.length ?? 0,
     };
     for (const [tab, btn] of this.tabButtons) {
       const selected = tab === this.tab;
@@ -247,19 +315,90 @@ export class WidgetAccountPanel {
     this.renderTotals();
   }
 
-  /** The open P&L (with positions and a price) and the realised (once there are fills or a figure), on every tab. */
+  /**
+   * The account's balance, equity and free margin (from a broker that keeps
+   * them) and its margin level while positions hold margin, the open P&L
+   * (with positions and a price) and the realised (once there are fills or
+   * a figure), on every tab.
+   */
   private renderTotals(): void {
-    const { positions, price, fills, realisedPnl } = this.snapshot;
+    const { positions, fills, realisedPnl, account } = this.snapshot;
     const totals: HTMLElement[] = [];
-    const open = positions.reduce<number | null>((sum, p) => {
-      const pnl = positionPnl(p, price);
+    if (account) {
+      totals.push(this.sum('account.balance', account.balance), this.sum('account.equity', account.equity), this.sum('account.freeMargin', account.freeMargin));
+      if (account.marginLevel !== undefined && Number.isFinite(account.marginLevel)) totals.push(this.sum('account.marginLevel', account.marginLevel, this.level(account.marginLevel)));
+    }
+    // The broker's own figure when it keeps the account; else the rows' sum.
+    const open = account && positions.length > 0 ? account.unrealisedPnl : positions.reduce<number | null>((sum, p) => {
+      const pnl = this.pnlOf(p);
       return pnl === null ? sum : (sum ?? 0) + pnl.pnl;
     }, null);
-    if (open !== null) totals.push(this.total('account.openPnl', open));
+    if (open !== null) {
+      const total = this.total('account.openPnl', open);
+      // The figure a trader looks for first: a look may set it first and strong.
+      total.classList.add('tcw-account-open');
+      totals.push(total);
+    }
     if (fills.length > 0 || (realisedPnl !== undefined && realisedPnl !== 0)) {
       totals.push(this.total('account.realised', realisedPnl ?? fills.reduce((sum, f) => sum + (f.pnl ?? 0), 0)));
     }
     this.totalsEl.replaceChildren(...totals);
+  }
+
+  private multiplier(): number {
+    const m = this.snapshot.multiplier;
+    return m !== undefined && Number.isFinite(m) && m > 0 ? m : 1;
+  }
+
+  /** Whether an order, a position or a fill is of the symbol the chart shows: its own says so, or it names none, or the chart's is not told. */
+  private ofChart(item: { symbol?: string }): boolean {
+    const shown = this.snapshot.symbol;
+    return shown === undefined || item.symbol === undefined || sameSymbol(item.symbol, shown);
+  }
+
+  /** Whether the rows name their symbols: once one of them is of another symbol than the chart's. */
+  private namesSymbols(): boolean {
+    const { positions, orders, fills } = this.snapshot;
+    return [...positions, ...orders, ...fills].some((item) => !this.ofChart(item));
+  }
+
+  /** A row's symbol as its first cell reads: the ticker, without the venue before it; the chart's for one that names none. */
+  private symbolText(item: { symbol?: string }): string {
+    const symbol = item.symbol ?? this.snapshot.symbol;
+    return symbol === undefined ? NONE : tickerOf(symbol);
+  }
+
+  /**
+   * The price a position is valued at: the adapter's own price for it where it gives one, which
+   * is what the account's total is counted at; without, the chart's latest for a position of the
+   * symbol it shows, and none for one of another (the chart's price is not its own).
+   */
+  private markOf(position: TradingPosition): number | null {
+    const mark = positionMark(position);
+    if (mark !== null) return mark;
+    return this.ofChart(position) ? this.snapshot.price : null;
+  }
+
+  /**
+   * A position's open profit and loss at its own price, by its own multiplier where the adapter
+   * says one. Without, the chart's market's for a position of the chart's symbol, and none for
+   * another symbol's.
+   */
+  private pnlOf(position: TradingPosition): ReturnType<typeof positionPnl> {
+    const own = position.multiplier;
+    const multiplier = own !== undefined && Number.isFinite(own) && own > 0 ? own : this.ofChart(position) ? this.multiplier() : 1;
+    return positionPnl(position, this.markOf(position), multiplier);
+  }
+
+  /** A sum of money that is no profit or loss: its words and the figure, in no tone; a debt reads with its minus. */
+  private sum(key: MessageKey, value: number, written?: string): HTMLElement {
+    const el = document.createElement('span');
+    el.className = 'tcw-account-total tcw-account-sum';
+    const words = this.t(key);
+    const at = words.indexOf(AMOUNT_SLOT);
+    const figure = ltr(written ?? (value < 0 ? `-${this.money(-value)}` : this.money(value)));
+    writeTotal(el, words, at, AMOUNT_SLOT.length, figure);
+    return el;
   }
 
   /** A total: its words, the figure in them read left to right ("+6.00", never "6.00+"); after them, if they have no place for it. */
@@ -270,8 +409,7 @@ export class WidgetAccountPanel {
     const words = this.t(key);
     const at = words.indexOf(PNL_SLOT);
     const figure = ltr(amount);
-    if (at < 0) el.append(`${words} `, figure);
-    else el.append(words.slice(0, at), figure, words.slice(at + PNL_SLOT.length));
+    writeTotal(el, words, at, PNL_SLOT.length, figure);
     return el;
   }
 
@@ -282,16 +420,17 @@ export class WidgetAccountPanel {
     this.live = [];
     if (this.tab === 'positions') this.renderPositions();
     else if (this.tab === 'orders') this.renderOrders();
-    else this.renderHistory();
+    else if (this.tab === 'history') this.renderHistory();
+    else this.renderLog();
     if (focused) [...this.content.querySelectorAll<HTMLElement>('[data-focus-key]')].find((el) => el.dataset.focusKey === focused)?.focus();
   }
 
   /** The price and P&L cells, rewritten in place. */
   private patchPrices(): void {
-    const { price } = this.snapshot;
     for (const cells of this.live) {
+      const price = this.markOf(cells.position);
       cells.price.textContent = price === null ? NONE : this.callbacks.formatPrice(price);
-      this.writePnl(cells.pnl, positionPnl(cells.position, price));
+      this.writePnl(cells.pnl, this.pnlOf(cells.position));
     }
   }
 
@@ -303,6 +442,13 @@ export class WidgetAccountPanel {
     return this.callbacks.formatAmount ? this.callbacks.formatAmount(value) : value.toFixed(2);
   }
 
+  /** A margin level as a percent: the equity's part of the margin held. */
+  private level(value: number): string {
+    const percent = value * 100;
+    const figure = this.callbacks.formatNumber ? this.callbacks.formatNumber(Math.abs(percent), MARGIN_LEVEL_DECIMALS) : Math.abs(percent).toFixed(MARGIN_LEVEL_DECIMALS);
+    return `${percent < 0 ? '-' : ''}${figure}%`;
+  }
+
   private percent(value: number): string {
     const figure = (v: number) => (this.callbacks.formatNumber ? this.callbacks.formatNumber(v, 2) : v.toFixed(2));
     return `${signed(figure(Math.abs(value)), value, figure(0))}%`;
@@ -310,12 +456,12 @@ export class WidgetAccountPanel {
 
   private writePnl(span: HTMLSpanElement, result: { pnl: number; pct: number } | null): void {
     if (result === null) {
-      span.className = '';
+      span.className = PNL_CLASS;
       span.textContent = NONE;
       return;
     }
     const amount = this.amount(result.pnl);
-    span.className = toneClass(amount);
+    span.className = `${PNL_CLASS} ${toneClass(amount)}`.trim();
     span.textContent = `${amount} · ${this.percent(result.pct)}`;
   }
 
@@ -393,29 +539,52 @@ export class WidgetAccountPanel {
     return wrap;
   }
 
+  /**
+   * The take-profit cell: the target, or with take-profit levels the
+   * nearest of them and how many more targets there are, the take-profit
+   * that closes the rest among them ("110.00 +2").
+   */
+  private target(of: Pick<TradingPosition, 'takeProfit' | 'takeProfits'>): string {
+    const levels = of.takeProfits ?? [];
+    if (levels.length === 0) return this.price(of.takeProfit);
+    const more = levels.length - 1 + (of.takeProfit !== undefined ? 1 : 0);
+    const first = this.callbacks.formatPrice(levels[0].price);
+    return more > 0 ? `${first} +${more}` : first;
+  }
+
+  /** How long an order works, with a dated order's date after it. */
+  private timeInForceText(order: TradingOrder): string {
+    if (!order.timeInForce) return NONE;
+    const name = this.t(`ticket.tif.${known(TIME_IN_FORCE, order.timeInForce, 'gtc')}` as MessageKey);
+    return order.timeInForce === 'gtd' && writable(order.expireTime) ? `${name} · ${this.callbacks.formatTime(order.expireTime)}` : name;
+  }
+
   private price(value: number | undefined): string {
     return value === undefined ? NONE : this.callbacks.formatPrice(value);
   }
 
   private renderPositions(): void {
     const { formatPrice } = this.callbacks;
-    const { price } = this.snapshot;
+    const named = this.namesSymbols();
     const pnls: HTMLSpanElement[] = [];
     const rows = this.snapshot.positions.map((p) => {
       const open = p.quantity - (p.closedQuantity ?? 0);
+      const price = this.markOf(p);
       const pnl = ltr('');
-      this.writePnl(pnl, positionPnl(p, price));
+      this.writePnl(pnl, this.pnlOf(p));
       pnls.push(pnl);
       // "Close position: Long 2 @ 100.00", so each row's buttons say which.
       const which = `${this.sideText(p.side, 'position')} ${open} @ ${formatPrice(p.entryPrice)}`;
       return [
+        ...(named ? [this.symbolText(p)] : []),
         this.sideCell(p.side),
         String(open),
         formatPrice(p.entryPrice),
         price === null ? NONE : formatPrice(price),
-        pnl,
         this.price(p.stopLoss),
-        this.price(p.takeProfit),
+        this.target(p),
+        pnl,
+        // What is done about a position is done on reading its profit: the figures stand together, the profit last, and the buttons right after it.
         this.actions(
           { icon: 'arrowUpDown', label: `${this.t('account.reverse')}: ${which}`, key: `reverse:${p.id}`, run: () => this.callbacks.onReversePosition(p.id) },
           { icon: 'x', label: `${this.t('account.closePosition')}: ${which}`, key: `close:${p.id}`, run: () => this.callbacks.onClosePosition(p.id), danger: true },
@@ -424,36 +593,51 @@ export class WidgetAccountPanel {
     });
     const table = this.table(
       [
+        ...this.symbolColumn(named),
         { key: 'account.side' }, { key: 'account.quantity', num: true }, { key: 'account.entry', num: true },
-        { key: 'account.price', num: true }, { key: 'account.pnl', num: true }, { key: 'account.stopLoss', num: true },
-        { key: 'account.takeProfit', num: true }, { key: null },
+        { key: 'account.price', num: true }, { key: 'account.stopLoss', num: true },
+        { key: 'account.takeProfit', num: true }, { key: 'account.pnl', num: true }, { key: null },
       ],
       rows,
       'account.noPositions',
     );
     if (!table) return;
     const trs = [...table.tBodies[0].rows];
-    this.snapshot.positions.forEach((position, i) => this.live.push({ position, price: trs[i].cells[PRICE_COLUMN], pnl: pnls[i] }));
+    const priceColumn = PRICE_COLUMN + (named ? 1 : 0);
+    this.snapshot.positions.forEach((position, i) => this.live.push({ position, price: trs[i].cells[priceColumn], pnl: pnls[i] }));
+  }
+
+  /** The column that names each row's symbol, when they are named. */
+  private symbolColumn(named: boolean): Column[] {
+    return named ? [{ key: 'watchlist.columnSymbol' }] : [];
   }
 
   private renderOrders(): void {
     const { formatPrice } = this.callbacks;
+    const named = this.namesSymbols();
     const rows = this.snapshot.orders.map((o) => {
-      const type = known(ORDER_TYPES, o.type === 'stopLimit' ? 'stop' : o.type, 'limit');
+      const type = known(ORDER_TYPES, o.type, 'limit');
+      // A stop-limit's two prices, its stop before its limit as its name has them: one figure, left to right in any row.
+      const stop = o.type === 'stopLimit' && o.stopPrice !== undefined && Number.isFinite(o.stopPrice) && o.stopPrice !== o.price ? o.stopPrice : null;
+      // Filled of the whole, once a part of it has filled, as its tag on the chart says: one figure, left to right in any row.
+      const quantity = orderQuantityText(o, ' / ');
       const which = `${this.sideText(o.side, 'trade')} ${o.quantity} @ ${formatPrice(o.price)}`;
       return [
+        ...(named ? [this.symbolText(o)] : []),
         this.sideCell(o.side, 'trade'),
-        this.t(`ticket.type.${type}` as MessageKey),
-        String(o.quantity),
-        formatPrice(o.price),
+        // One of a group where one cancels the others says so beside its type, as its tag on the chart does.
+        o.ocoGroup ? `${this.t(`ticket.type.${type}` as MessageKey)} · ${this.t('account.oco')}` : this.t(`ticket.type.${type}` as MessageKey),
+        quantity === String(o.quantity) ? quantity : ltr(quantity),
+        stop === null ? formatPrice(o.price) : ltr(`${formatPrice(stop)} / ${formatPrice(o.price)}`),
         this.price(o.stopLoss),
-        this.price(o.takeProfit),
-        o.timeInForce ? this.t(`ticket.tif.${known(TIME_IN_FORCE, o.timeInForce, 'gtc')}` as MessageKey) : NONE,
+        this.target(o),
+        this.timeInForceText(o),
         this.actions({ icon: 'x', label: `${this.t('account.cancelOrder')}: ${which}`, key: `cancel:${o.id}`, run: () => this.callbacks.onCancelOrder(o.id), danger: true }),
       ];
     });
     this.table(
       [
+        ...this.symbolColumn(named),
         { key: 'account.side' }, { key: 'ticket.type' }, { key: 'account.quantity', num: true }, { key: 'account.price', num: true },
         { key: 'account.stopLoss', num: true }, { key: 'account.takeProfit', num: true }, { key: 'ticket.timeInForce' }, { key: null },
       ],
@@ -464,16 +648,18 @@ export class WidgetAccountPanel {
 
   private renderHistory(): void {
     const { formatPrice, formatTime } = this.callbacks;
+    const named = this.namesSymbols();
     // The newest first.
     const rows = [...this.snapshot.fills].reverse().map((f) => {
       const pnl = ltr('');
       if (f.pnl !== undefined) {
         pnl.textContent = this.amount(f.pnl);
-        pnl.className = toneClass(pnl.textContent);
+        pnl.className = `${PNL_CLASS} ${toneClass(pnl.textContent)}`.trim();
       } else {
         pnl.textContent = NONE;
       }
       return [
+        ...(named ? [this.symbolText(f)] : []),
         formatTime(f.time),
         this.sideCell(f.side, 'trade'),
         String(f.quantity),
@@ -484,11 +670,34 @@ export class WidgetAccountPanel {
     });
     this.table(
       [
+        ...this.symbolColumn(named),
         { key: 'account.time' }, { key: 'account.side' }, { key: 'account.quantity', num: true },
         { key: 'account.price', num: true }, { key: 'account.reason' }, { key: 'account.pnl', num: true },
       ],
       rows,
       'account.noFills',
+    );
+  }
+
+  /** What happened to the orders, the newest first: when, what, the order, and why for a fill or a refusal. */
+  private renderLog(): void {
+    const { formatPrice, formatTime } = this.callbacks;
+    const rows = [...(this.snapshot.log ?? [])].reverse().map((entry) => [
+      formatTime(entry.time),
+      this.t(`account.event.${known(EVENTS, entry.kind, 'placed')}` as MessageKey),
+      entry.side ? this.sideCell(entry.side, 'trade') : NONE,
+      entry.quantity !== undefined ? String(entry.quantity) : NONE,
+      entry.price !== undefined ? formatPrice(entry.price) : NONE,
+      // A refusal's own words; a fill's reason.
+      entry.message ?? (entry.reason ? this.t(`account.reason.${known(REASONS, entry.reason, 'order')}` as MessageKey) : NONE),
+    ]);
+    this.table(
+      [
+        { key: 'account.time' }, { key: 'account.event' }, { key: 'account.side' }, { key: 'account.quantity', num: true },
+        { key: 'account.price', num: true }, { key: 'account.reason' },
+      ],
+      rows,
+      'account.noLog',
     );
   }
 }

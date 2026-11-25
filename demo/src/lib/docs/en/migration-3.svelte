@@ -1,0 +1,227 @@
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const { href } = useI18n();
+</script>
+
+<svelte:head>
+  <title>Moving to 3.0 — TradeCanvas docs</title>
+  <meta name="description" content="What changes for your code between TradeCanvas 2.x and 3.0: each behaviour that changed and the option that keeps the old one. 3.0 is on npm." />
+</svelte:head>
+
+<h1>Moving to 3.0</h1>
+<p>
+  3.0 is on npm (<code>npm i @tradecanvas/chart</code>). It lists
+  each change that can break code written for 2.x and what to do about it. For 1.x to 2.0, see
+  <a href={href('/docs/migration')}>Moving to 2.0</a>.
+</p>
+
+<h2 id="behaviour">Behaviour that changed</h2>
+
+<h3 id="brackets">A confirmed bracket goes to the execution adapter</h3>
+<p>
+  With an execution adapter connected (<code>chart.connectExecution(adapter)</code>), a confirmed bracket is now
+  sent to it as one order: the entry with its quantity, its stop-loss and its take-profit. In 2.x it stayed the
+  <code>bracketPlace</code> event unless the adapter was connected with <code>brackets: 'place'</code>, and the
+  chart warned once in the console that it was not sent.
+</p>
+<ul>
+  <li>
+    <strong>Your code places the event's bracket itself.</strong> Connect with <code>brackets: 'event'</code>, or
+    the bracket is placed twice: once by the chart and once by you.
+  </li>
+  <li>
+    <strong>You passed <code>brackets: 'place'</code>.</strong> Nothing to do; the option can go.
+  </li>
+  <li>
+    <strong>No adapter connected.</strong> Nothing changes: the bracket is the <code>bracketPlace</code> event.
+  </li>
+</ul>
+<pre><code>{`// 2.x: an event, unless asked            // 3.0: an order, unless asked
+chart.connectExecution(broker)             chart.connectExecution(broker, { brackets: 'event' })
+chart.connectExecution(broker, { brackets: 'place' })   →   chart.connectExecution(broker)`}</code></pre>
+<p>
+  A bracket is sent with the quantity it is sized with. One with none is not confirmed: it stays on the chart, and
+  <code>executionError</code> says so (<code>reason: 'noQuantity'</code>). The widget's bracket bar now has a
+  quantity field, so the brackets its toolbar starts have one; a bracket your code starts takes a size as the
+  third argument (see <a href={href('/docs/trading')}>Trading</a>):
+</p>
+<pre><code>{`chart.startBracket('buy', undefined, { quantity: 2 })
+chart.startBracket('buy', undefined, { risk: 50 })   // the quantity that loses 50 at the stop`}</code></pre>
+
+<h3 id="trade-buttons">Sell and Buy show on the chart with an execution adapter</h3>
+<p>
+  With an execution adapter connected and the order ticket on, the widget now shows Sell and Buy under the
+  chart's legend. A host that connects an adapter only to draw its orders and positions turns them off:
+</p>
+<pre><code>{`new ChartWidget(el, { features: { tradeButtons: false } });`}</code></pre>
+<p>
+  With <code>orderTicket</code> off, or with no adapter, they never show. A host that turns every order switch
+  off by name has one more to name: <code>tradeButtons</code> is new, and on unless set.
+</p>
+
+<h3 id="stop-limit">The paper account fills a stop-limit within its limit</h3>
+<p>
+  <code>PaperExecutionAdapter</code> filled a <code>stopLimit</code> order at its stop, as a stop order. It now
+  makes it a limit order at its <code>price</code> once the stop is reached: the order stays working (its type
+  reads <code>'limit'</code>) until the price is within the limit. A test that expected a position as soon as the
+  stop was reached moves the price within the limit first, or places a <code>'stop'</code> order.
+</p>
+
+<h3 id="hand-prices">A price set by hand is on the market's grid</h3>
+<p>
+  <code>orderModify</code>, <code>positionModify</code>, <code>bracketPlace</code>, the <code>orderPlace</code> of a draft order or of the
+  right-click menu, <code>priceAxisAdd</code> and <code>chartContextMenu</code> carried the price under the pointer as a pixel gives it
+  (<code>62549.71592675613</code>). They now carry it on the market's price step, else to the decimals the price axis
+  shows: what <code>chart.roundPrice</code> gives. A bracket and a draft order start on the grid too, whatever price they are started at, and an alert dragged lands on it. A line let go on the step it was on reports nothing. Code that rounded
+  these itself can stop.
+  On a market with a ceiling and a floor for the day, an order's own price is kept inside them too: dragged past one, it is reported at it.
+</p>
+
+<h3 id="finger">Under a finger, no control is smaller than 32 px</h3>
+<p>
+  On a device whose main pointer is coarse (a phone, a tablet), the widget's controls are now 32 px each way at
+  least, in every look and <code>density</code>: a <code>compact</code> widget on a tablet no longer has 24 px
+  buttons, and each row of the indicator legend is 32 px tall where it was 20. Under a mouse the drawing is as it
+  was and only what a press takes changes: 20 px each way at least. A page that measured the widget's parts on a
+  touch screen (a legend's height, a dialog's) reads larger numbers.
+</p>
+
+<h3 id="order-answer">An order from the ticket waits for the adapter's answer</h3>
+<p>
+  With an execution adapter connected, the order ticket no longer shuts as it places: it waits until the adapter's
+  <code>placeOrder</code> resolves (it shuts) or rejects (it stays, and says why). An adapter whose
+  <code>placeOrder</code> never settles leaves the ticket waiting: resolve with the order, or reject with the reason.
+  Three more things changed with it. Every <code>orderPlace</code> payload now carries a <code>clientOrderId</code>, and
+  <code>placeOrderIntent</code> returns the order as sent (it returned nothing). A market order from the ticket carries
+  the ask for a Buy and the bid for a Sell as its <code>price</code>, where the feed gives both (it was the last price).
+  And an order asked for in one press, from the right-click menu or the depth ladder, is for the market's lot where it
+  has one (it was for 1, and the ladder's had no quantity).
+</p>
+
+<h3 id="orders-by-symbol">Orders, positions and fills are drawn on their own symbol</h3>
+<p>
+  An order, a position or a fill that names its <code>symbol</code> is drawn only while the chart shows that
+  symbol. On another it is kept: <code>getOrders()</code>, <code>getPositions()</code> and <code>getFills()</code>
+  give the whole account, and <code>chart.getSymbol()</code> says which of it is drawn. The chart now names the
+  symbol it shows on every <code>orderPlace</code> payload and the paper account keeps it, so a position opened on
+  one symbol is not drawn on the next, where it was, with a profit counted from the wrong price. What names no
+  symbol is drawn on every symbol, as before: an adapter of your own for an account of several symbols names it on
+  its orders, positions and fills.
+</p>
+<p>
+  Three things changed with it. Every fill told by <code>executionFill</code> and <code>getFills()</code> has a
+  <code>symbol</code> once the chart shows one, and <code>ChartWidget</code> no longer forgets the fills when its
+  symbol changes: the history and the realised profit are the account's, and the marks come back with their
+  symbol. <code>setMarkPrice</code> takes the symbol as a third argument, which the chart gives in a replay: fed
+  prices that name their symbol, the paper account works and values each symbol by its own; fed prices that name
+  none, it is one market, as it was. And with bars set by hand the chart knows no symbol until it is told:
+  <code>chart.setSymbol(symbol)</code>, which <code>ChartWidget</code> calls itself.
+</p>
+<h3 id="hold-tooltip">A press held on the chart shows the price popup</h3>
+<p>
+  In <code>ChartWidget</code>, a mouse press held still on the plot for half a second shows the floating OHLCV tooltip
+  for the bar under the pointer, until the button is let go: the tooltip follows the pointer and the chart does not pan
+  meanwhile. A press held that long is therefore no longer a click, nor the start of a pan. The widget's
+  <code>crosshairTooltip</code> feature is now <code>'hold'</code> where it was <code>false</code>: pass
+  <code>{`chartOptions: { features: { crosshairTooltip: false } }`}</code> for no popup, as before, or <code>true</code>
+  for one under a pointer that hovers. The headless <code>Chart</code> is not changed: its tooltip follows the pointer
+  unless told otherwise, and takes <code>'hold'</code> too.
+</p>
+
+<h3 id="live-price">One-press orders wait for a live price</h3>
+<p>
+  With a feed of its own (<code>adapter</code>), <code>ChartWidget</code> no longer sends an order asked for in one
+  press (the right-click menu, the depth ladder), nor a bracket or a draft order confirmed, while that feed is not
+  connected: it says why instead. While the feed is not connected, or has told nothing for a minute
+  (<code>feedQuietAfter</code>), the ticket sends no market order, and the status bar says “No price updates” where
+  it said “Live” over a stalled stream. <code>feedQuietAfter: 0</code> never calls a connected feed quiet; a feed
+  that is not connected holds orders back all the same.
+</p>
+
+<h3 id="confirmations">One-press trades are confirmed, and a bid on the ladder is bought at</h3>
+<p>
+  <code>ChartWidget</code> now asks before a position is closed or reversed (the account panel, the buttons on the
+  chart) and before an order from the right-click menu or the depth ladder is placed: they went out in one press.
+  <code>confirmOrders: false</code> keeps one press. On the depth ladder a press on a bid now places a
+  <strong>buy</strong> limit at that price, and a press on an ask a <strong>sell</strong> limit, where a bid was sold
+  into and an ask bought: <code>orderPlace</code> carries the other side from the same cell than it did. A test or a
+  script that pressed those cells, or expected an order at once, needs the confirmation's button
+  (<code>.tcw-confirm .tcw-done-btn</code>) or the option.
+</p>
+
+<h3 id="graphite">The widget's default look is Graphite</h3>
+<p>
+  A <code>ChartWidget</code> with no <code>ui</code> is now drawn in the Graphite look, where it was Modern:
+  neutral grounds, corners of 3 px, a 40 px toolbar, and what is picked shown on a lighter ground, not on amber. The
+  chart's own colours change with it (<code>GRAPHITE_DARK_THEME</code>, <code>GRAPHITE_LIGHT_THEME</code>) unless
+  <code>theme</code> is an object of yours. <code>ui: 'modern'</code> keeps the look before it, colours and all. The
+  stylesheet's default tokens are Graphite's, so CSS that set a few <code>--tcw-*</code> tokens over Modern's now
+  sets them over Graphite's. In every look the order ticket's button now names the order
+  (<code>Buy 100 HPG</code>), the order's value is the last line over it, and a position's row in the account panel
+  ends with its P&amp;L and its Reverse and Close buttons after it, past its stop and target: a test that read the button's text or a column by its place
+  needs the new one.
+</p>
+
+<h3 id="money">Vietnamese shares are worth their price in dong</h3>
+<p>
+  <code>MARKET_HOSE</code>, <code>MARKET_HOSE_ETF</code>, <code>MARKET_HNX</code> and <code>MARKET_UPCOM</code>
+  write a price in thousands of dong (26.40 is 26,400 dong) and now say so: their
+  <code>contractMultiplier</code> is 1,000. An order's value in the ticket, a position's profit in the account panel
+  and the amounts on the chart's tags are counted by it, so 100 shares at 26.40 read 2,640,000 where they read
+  2,640. On every market the amounts on the chart's tags (a position's profit, what a stop or a target would make)
+  are now counted by the market's multiplier, as the panel's were: a VN30F position's tag reads in dong, not in
+  points. <code>scaleMarketPrices</code> divides the multiplier by its factor, so
+  <code>scaleMarketPrices(MARKET_HOSE, 1000)</code>, with prices in dong, has a multiplier of 1. If you multiplied
+  by 1,000 yourself (in <code>formatAmount</code>, or in what you show beside the chart), stop. A
+  <code>PaperExecutionAdapter</code> given no <code>multiplier</code> of its own now takes the market's from the
+  chart it is connected to (the chart calls the adapter's optional <code>setMultiplier</code>, when connected and
+  when the market changes), so its margin, its balance and its fills' profit are in the same money; one given a
+  <code>multiplier</code> keeps it. A Long or Short Position drawing and a bracket sized by <code>risk</code> count
+  the quantity that risk buys by the multiplier too: 5,000,000 dong at risk with the stop 1.00 away is 5,000
+  shares, where it was 5,000,000. <code>positionLevels(drawing, multiplier)</code> takes the market's as its second
+  argument. A position keeps the multiplier it opened with (<code>TradingPosition.multiplier</code>, which the paper account
+  sets): a chart shown another market, or another symbol, revalues nothing that is open, and the panel and the
+  chart's tags count each position by its own. A market made by spreading a preset keeps the preset's
+  multiplier: <code>{'{'} ...MARKET_HOSE, pricePrecision: 0, priceStep: 10 {'}'}</code> for prices in dong still has
+  1,000, and reads a thousand times too much. Use <code>scaleMarketPrices(MARKET_HOSE, 1000)</code>, or set
+  <code>contractMultiplier: 1</code> in the spread.
+  What is sent to a broker is as it was, but for a quantity worked out from a risk, as above.
+</p>
+
+<h3 id="mark">A position's <code>markPrice</code> is what it is counted at</h3>
+<p>
+  If your execution adapter gives a position a <code>markPrice</code>, the account panel's row and the chart's tag
+  now count the position at it, for a position of the chart's own symbol too; before, the price was read only for
+  a position of another symbol, and the chart's latest price counted the rest. So keep it current: say the
+  positions again as the mark moves. An adapter that stamps it once shows a row that stands still. Leave the field
+  out to have the chart's latest price as before. A <code>markPrice</code> of 0 is taken for none.
+</p>
+
+<h3 id="ticket-dock">The order ticket opens in the dock, beside the chart</h3>
+<p>
+  The widget's order ticket was a dialog over the chart, on the price it was filled in for. It is now a page of the dock, beside the chart: it hides no price, a press on the chart does not shut it, and it stays for the next order once one is sent, on the same side, kind and quantity. Its button is on the dock's rail, and <code>widget.openPanel('orderTicket')</code> opens it with a ticket at the market.
+</p>
+<p>
+  <code>'orderTicket'</code> is one more <code>WidgetPanel</code>: <code>getOpenPanel()</code> and <code>onPanelChange</code> report it, and a page of your own cannot take that id. On a phone, or with the dock off (<code>features: {'{'} dock: false {'}'}</code>), the ticket is the dialog it was. A host that wants the dialog at every width says so:
+</p>
+<pre><code>{`new ChartWidget(el, { ticketPlace: 'dialog' });`}</code></pre>
+
+<h2 id="types">Types that grew</h2>
+<p>
+  <code>TimeInForce</code> is now <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. Code that handles every
+  member (a <code>switch</code> with no default, a <code>Record&lt;TimeInForce, …&gt;</code>) needs the three new
+  ones; an execution adapter of your own may refuse those it does not take.
+</p>
+<p>
+  <code>FillReason</code> has <code>'liquidation'</code> too, for a position the paper account closed in a
+  stop-out, and <code>ExecutionEventType</code> has <code>'marginCall'</code>. Neither happens unless the paper
+  account is given <code>stopOutLevel</code> or <code>marginCallLevel</code>, but code that handles every member
+  needs them.
+</p>
+
+<h2 id="unchanged">Not changed</h2>
+<ul>
+  <li>Data, saved layouts and settings from 2.x load as before.</li>
+  <li>Indicators, drawings, themes and style keys keep their names.</li>
+</ul>

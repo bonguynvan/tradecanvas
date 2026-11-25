@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { DARK_THEME } from '@tradecanvas/commons';
-import { spreadLabels, labelTextColor, renderAxisValueLabels, layoutAxisValueLabels, AXIS_LABEL_HEIGHT } from '../axisValueLabels.js';
+import { DARK_THEME, contrastRatio } from '@tradecanvas/commons';
+import { spreadLabels, labelTextColor, tagFill, renderAxisValueLabels, layoutAxisValueLabels, AXIS_LABEL_HEIGHT } from '../axisValueLabels.js';
 
 describe('spreadLabels', () => {
   it('leaves tags that do not touch where they are', () => {
@@ -33,9 +33,34 @@ describe('labelTextColor', () => {
     expect(labelTextColor('rgb(240, 240, 240)')).toBe('#10131a');
     expect(labelTextColor('not-a-colour')).toBe('#ffffff');
   });
+
+  // White on a candle's green is 2.2:1 and on its red 3:1: a price could not be read on its own tag.
+  it('writes the ink that reads better, by contrast and not by a lightness line', () => {
+    for (const mid of ['#2fc29a', '#f2665c', '#26a69a', '#ef5350', '#4c8dff', '#e8961e', '#a78bfa', '#1aa3a8']) expect(labelTextColor(mid), mid).toBe('#10131a');
+    for (const deep of ['#0a8068', '#c0262d', '#00735c', '#1e3a8a', '#111111', '#8a5a10']) expect(labelTextColor(deep), deep).toBe('#ffffff');
+    // Near a tie the light ink: the candles' colours on a light chart, where dark ink is 4.6:1 and reads muddier than white at 4.
+    for (const near of ['#0b8f6f', '#d93f45', '#d9463e']) expect(labelTextColor(near), near).toBe('#ffffff');
+    // Every way a colour of the chart's is written that can be read: with an alpha, short, as rgb().
+    for (const written of ['#2fc29aff', '#2fc29ae6', 'rgba(47, 194, 154, 0.9)', 'rgb(47,194,154)', '#3c9']) expect(labelTextColor(written), written).toBe('#10131a');
+    expect(labelTextColor('#0a8068ff')).toBe('#ffffff');
+  });
 });
 
 describe('renderAxisValueLabels', () => {
+  it('deepens a fill on which neither ink reads, until the ink it takes does at 4.5:1, and keeps its hue', () => {
+    // A light chart's candles, and a full red: white is under 4.5:1 on each, and is still the ink they take.
+    for (const fill of ['#0b8f6f', '#d93f45', '#f23645']) {
+      const deep = tagFill(fill);
+      expect(deep, fill).not.toBe(fill);
+      expect(contrastRatio(deep, labelTextColor(deep))!, fill).toBeGreaterThanOrEqual(4.5);
+      expect(labelTextColor(deep), fill).toBe('#ffffff');
+    }
+    const [r, g] = /(\d+),\s*(\d+),\s*(\d+)/.exec(tagFill('#0b8f6f'))!.slice(1).map(Number);
+    expect(g).toBeGreaterThan(r);
+    // A fill its ink reads on is left as it is, and so is one that cannot be read.
+    for (const fill of ['#2fc29a', '#f2665c', '#0a5c48', '#ffffff', 'gold', 'var(--x)']) expect(tagFill(fill), fill).toBe(fill);
+  });
+
   it('drops tags off the axis and draws the rest in their colours', () => {
     const fills: string[] = [];
     const texts: string[] = [];

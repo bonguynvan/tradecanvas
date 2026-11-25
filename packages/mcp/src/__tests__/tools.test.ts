@@ -130,8 +130,8 @@ describe('tools', () => {
 describe('the finance charts', () => {
   it('list_finance_charts names every class @tradecanvas/chart has, and finds one by its purpose', () => {
     const all = call('list_finance_charts').data as { count: number; charts: { name: string; what: string; options: string[] }[]; usage: string };
-    expect(all.count).toBe(14);
-    expect(all.charts.map((c) => c.name)).toEqual(expect.arrayContaining(['BarChart', 'DepthChart', 'EquityCurveChart', 'HeatmapChart', 'PerformanceDashboard']));
+    expect(all.count).toBe(22);
+    expect(all.charts.map((c) => c.name)).toEqual(expect.arrayContaining(['BarChart', 'DepthChart', 'EquityCurveChart', 'HeatmapChart', 'PerformanceDashboard', 'PayoffChart', 'CurveChart', 'BoxPlotChart', 'RadarChart', 'SunburstChart', 'StackedAreaChart', 'SurfaceChart', 'Bar3DChart']));
     expect(all.charts.every((c) => c.what.length > 20 && c.options.length > 3)).toBe(true);
     expect(all.usage).toContain("from '@tradecanvas/chart'");
     const book = call('list_finance_charts', { query: 'order book' }).data as typeof all;
@@ -176,5 +176,42 @@ describe('the finance charts', () => {
       const target = TOOLS.find((t) => t.name === name)!.inputSchema.properties.target as { enum: string[] };
       expect(target.enum).toEqual(expect.arrayContaining(['ChartWidget', 'Chart', 'ChartWidgetGrid', 'SparklineChart', 'PerformanceDashboard']));
     }
+  });
+});
+
+describe('the charts drawn with no page', () => {
+  it('list_options takes renderPriceChart, with how it is called', () => {
+    const drawn = call('list_options', { target: 'renderPriceChart' }).data as { target: string; what: string; options: { name: string; required?: boolean; doc?: string }[]; usage: string };
+    expect(drawn.target).toBe('renderPriceChart');
+    expect(drawn.what).toMatch(/no page/);
+    expect(drawn.options.map((o) => o.name)).toEqual(expect.arrayContaining(['data', 'symbol', 'timeframe', 'indicators', 'drawings', 'markers', 'visibleRange', 'theme', 'chartType', 'features', 'path2D']));
+    expect(drawn.options.find((o) => o.name === 'data')?.required).toBe(true);
+    // What only a chart on a page has is not among them.
+    expect(drawn.options.map((o) => o.name)).not.toContain('crosshair');
+    expect(drawn.usage).toContain('renderPriceChart(ctx, options, { width');
+    const found = call('list_options', { target: 'renderPriceChart', query: 'Path2D' }).data as typeof drawn;
+    expect(found.options.map((o) => o.name)).toEqual(['path2D']);
+  });
+
+  it('validate_options checks its options, and an unknown target is told its name too', () => {
+    const bad = call('validate_options', { target: 'renderPriceChart', options: { data: [], indicatorz: [], theme: 'sepia' } });
+    expect((bad.data as { valid: boolean }).valid).toBe(false);
+    expect(bad.text).toMatch(/indicatorz/);
+    expect(bad.text).toMatch(/Did you mean 'indicators'/);
+    expect(call('validate_options', { target: 'renderPriceChart', options: {} }).text).toMatch(/needs 'data'/);
+    expect(call('validate_options', { target: 'renderPriceChart', options: { data: [], chartType: 'line' } }).text).toBe('No problems found.');
+    expect(call('validate_options', { target: 'PieChart', options: {} }).text).toContain('renderPriceChart');
+  });
+
+  it('knows its plugins and its other symbols’ bars, and what its features are', () => {
+    const drawn = call('list_options', { target: 'renderPriceChart' }).data as { options: { name: string }[] };
+    expect(drawn.options.map((o) => o.name)).toEqual(expect.arrayContaining(['plugins', 'symbolSeries']));
+    expect(call('validate_options', { target: 'renderPriceChart', options: { data: [], plugins: [], symbolSeries: {} } }).text).toBe('No problems found.');
+    expect(call('validate_options', { target: 'renderPriceChart', options: { data: [], features: { volume: false, legend: false } } }).text).toBe('No problems found.');
+    // A feature of a chart on a page is none of a still one's.
+    const page = call('validate_options', { target: 'renderPriceChart', options: { data: [], features: { crosshair: false } } });
+    expect(page.text).toMatch(/crosshair/);
+    expect((page.data as { valid: boolean }).valid).toBe(false);
+    expect(call('validate_options', { target: 'renderPriceChart', options: { data: [], features: { volume: 'no' } } }).text).toMatch(/volume/);
   });
 });

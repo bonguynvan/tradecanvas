@@ -225,7 +225,8 @@ describe('a paper account only goes forward in a replay', () => {
     chart.replayStart({ steps, startIndex: 2, paused: true });
     const spy = vi.spyOn(paper, 'setMarkPrice');
     chart.disconnectExecution();
-    expect(spy).toHaveBeenCalledWith(hours[9].close, undefined);
+    // No time (the clock's), and no symbol: these bars were set by hand.
+    expect(spy).toHaveBeenCalledWith(hours[9].close, undefined, undefined);
   });
 });
 
@@ -287,3 +288,90 @@ describe('replay events and seeking by time', () => {
   });
 });
 
+
+describe('a footprint in a replay of finer steps', () => {
+  const shownUntil = () => (chart as unknown as { chartRenderer: { shownUntil: number | null } }).chartRenderer.shownUntil;
+
+  it('shows the cells of a bar once it has closed, not while it forms: its trades are the whole bar’s', () => {
+    chart.setChartType('footprint');
+    chart.replayStart({ steps, startIndex: 2, paused: true, interval: 100 });
+    // The start bar is whole: its cells show, the next bar's do not.
+    expect(shownUntil()).toBe(hours[3].time);
+    chart.replaySeek(chart.getReplayProgress().current + 1); // the first 15 minutes of hour 3
+    expect(shownUntil()).toBe(hours[3].time);
+    chart.replaySeek(chart.getReplayProgress().current + 2); // 45 minutes in
+    expect(shownUntil()).toBe(hours[3].time);
+    chart.replaySeek(chart.getReplayProgress().current + 1); // its last step: the bar closes
+    expect(shownUntil()).toBe(hours[4].time);
+  });
+});
+
+describe('the moment orders are placed at', () => {
+  const CLOCK = Date.UTC(2026, 10, 23, 9, 0);
+  let paper: PaperExecutionAdapter;
+  let fills: number[];
+
+  beforeEach(() => {
+    vi.setSystemTime(CLOCK);
+    paper = new PaperExecutionAdapter({ markPrice: 500 });
+    fills = [];
+    chart.on('executionFill', (e) => fills.push((e.payload as { time: number }).time));
+  });
+
+  it('is the clock’s with no replay, and on a replay no paper account trades on', () => {
+    expect(chart.getTradingTime()).toBe(CLOCK);
+    chart.replayStart({ steps, startIndex: 3, paused: true });
+    expect(chart.getTradingTime()).toBe(CLOCK);
+  });
+
+  it('is the replay’s while a paper account trades on it: what its fills are timed with', async () => {
+    chart.connectExecution(paper);
+    expect(chart.getTradingTime()).toBe(CLOCK);
+    chart.replayStart({ steps, startIndex: 3, paused: true });
+    await paper.placeOrder({ side: 'buy', type: 'market', quantity: 1 });
+    expect(chart.getTradingTime()).toBe(fills[0]);
+    expect(fills[0]).toBeLessThan(CLOCK);
+    chart.replaySeek(chart.getReplayProgress().current + 1);
+    await paper.placeOrder({ side: 'buy', type: 'market', quantity: 1 });
+    expect(chart.getTradingTime()).toBe(fills[1]);
+    expect(fills[1]).toBeGreaterThan(fills[0]);
+    // A seek back takes the account's clock nowhere: it only goes forward.
+    chart.replaySeek(chart.getReplayProgress().current - 3);
+    expect(chart.getTradingTime()).toBe(fills[1]);
+    chart.replayStop();
+    expect(chart.getTradingTime()).toBe(CLOCK);
+  });
+
+  it('is what the account holds the date of a good-till-date order against', async () => {
+    chart.connectExecution(paper);
+    chart.replayStart({ steps, startIndex: 3, paused: true });
+    const now = chart.getTradingTime();
+    const till = (expireTime: number) => paper.placeOrder({ side: 'buy', type: 'limit', price: 100, quantity: 1, timeInForce: 'gtd', expireTime });
+    await expect(till(now)).rejects.toThrow();
+    await expect(till(now + 1)).resolves.toMatchObject({ timeInForce: 'gtd', expireTime: now + 1 });
+  });
+
+  it('is the clock’s for an account given a price with a time that is no number, as the account takes it', () => {
+    chart.connectExecution(paper);
+    chart.replayStart({ steps, startIndex: 3, paused: true });
+    const feed = (chart as unknown as { feedReplayMarks(marks: [number, number][]): void }).feedReplayMarks.bind(chart);
+    feed([[133, Number.NaN]]);
+    expect(chart.getTradingTime()).toBe(CLOCK);
+  });
+
+  it('is the clock’s on a replay for an adapter that takes no replayed prices', () => {
+    // A broker of one's own: it has no price to be told, so the replay tells it none.
+    (paper as { setMarkPrice?: unknown }).setMarkPrice = undefined;
+    chart.connectExecution(paper);
+    chart.replayStart({ steps, startIndex: 3, paused: true });
+    expect(chart.getTradingTime()).toBe(CLOCK);
+  });
+
+  it('is the clock’s again for an account connected after another traded on the replay', async () => {
+    chart.connectExecution(paper);
+    chart.replayStart({ steps, startIndex: 3, paused: true });
+    expect(chart.getTradingTime()).toBeLessThan(CLOCK);
+    chart.disconnectExecution();
+    expect(chart.getTradingTime()).toBe(CLOCK);
+  });
+});

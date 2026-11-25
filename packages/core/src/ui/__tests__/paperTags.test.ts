@@ -5,6 +5,7 @@ import { CurrentPriceLine } from '../../realtime/CurrentPriceLine.js';
 import { TimeAxis } from '../../axis/TimeAxis.js';
 import { BarCountdown } from '../BarCountdown.js';
 import { drawAxisValueLabels, labelTextColor } from '../axisValueLabels.js';
+import { contrastRatio } from '@tradecanvas/commons';
 
 const viewport: ViewportState = {
   visibleRange: { from: 0, to: 10 },
@@ -120,7 +121,13 @@ describe('an indicator’s value tag on the price axis', () => {
     expect(fills.map((f) => f.color)).toEqual(['#4c8dff', '#fbfaf5', '#e0a030', '#fbfaf5']);
     const [outer, inner] = fills;
     expect(inner.at).toEqual([outer.at[0] + 1, outer.at[1] + 1, outer.at[2] - 2, outer.at[3] - 2]);
-    expect(texts).toEqual([{ color: '#4c8dff', text: '101.25' }, { color: '#e0a030', text: '98.10' }]);
+    // Its text is the line's colour, deepened on this pale page until it reads (see below).
+    expect(texts.map((t) => t.text)).toEqual(['101.25', '98.10']);
+    for (const t of texts) expect(contrastRatio(t.color, '#fbfaf5')!).toBeGreaterThanOrEqual(4.5);
+    // On a dark ground the same lines read as they are, and are written so.
+    const night = recorder();
+    drawAxisValueLabels(night.ctx, labels, 200, 70, themed({ 'axis.price.valueTagsOutlined': true, 'background.color': '#131416' }));
+    expect(night.texts.map((t) => t.color)).toEqual(['#4c8dff', '#e0a030']);
     // An outlined tag is the size of a filled one.
     const filled = recorder();
     drawAxisValueLabels(filled.ctx, labels, 200, 70, themed());
@@ -136,6 +143,18 @@ describe('an indicator’s value tag on the price axis', () => {
     expect(outer.at[2] - inner.at[2]).toBeCloseTo(4 / 1.5, 6);
   });
 
+  it('has an edge of one pixel on a context that cannot say how it is scaled: one that gives no transform, or has none to ask', () => {
+    const theme = themed({ 'axis.price.valueTagsOutlined': true });
+    for (const getTransform of [() => undefined, undefined]) {
+      const { ctx, fills } = recorder();
+      // Over the recorder's own answer: a stand-in context's, and an older browser's.
+      const mute = new Proxy(ctx, { get: (target, prop) => (prop === 'getTransform' ? getTransform : Reflect.get(target, prop)) });
+      expect(() => drawAxisValueLabels(mute, labels, 200, 70, theme)).not.toThrow();
+      const [outer, inner] = fills;
+      expect(inner.at).toEqual([outer.at[0] + 1, outer.at[1] + 1, outer.at[2] - 2, outer.at[3] - 2]);
+    }
+  });
+
   it('is on the ground it is given: a pane’s own, where the pane has one', () => {
     const theme = themed({ 'axis.price.valueTagsOutlined': true, 'background.color': '#fbfaf5' });
     const { ctx, fills } = recorder();
@@ -143,13 +162,19 @@ describe('an indicator’s value tag on the price axis', () => {
     expect(fills.map((f) => f.color)).toEqual(['#4c8dff', '#eeeae0', '#e0a030', '#eeeae0']);
   });
 
-  it('writes in the scale’s own text colour where the line’s would not read on the ground', () => {
+  it('writes a value in its line’s colour deepened until it reads at 4.5:1 on the ground, where the line’s own would not', () => {
     const theme = themed({ 'axis.price.valueTagsOutlined': true, 'background.color': '#fbfaf5', 'axis.price.textColor': '#222222' });
     const { ctx, texts, fills } = recorder();
-    drawAxisValueLabels(ctx, [{ y: 40, text: '1.00', color: '#f4f2ea' }, { y: 70, text: '2.00', color: '#1f6feb' }], 200, 70, theme);
-    // A pale line on a pale page: its edge is still its own, its value is read in the scale's ink.
+    // A page's pale line, two pale lines of a chart (1.8:1 and 2.4:1 on white, and they were written so), and one that reads.
+    const lines = ['#f4f2ea', '#90caf9', '#b39ddb', '#1a56c4'];
+    drawAxisValueLabels(ctx, lines.map((color, i) => ({ y: 40 + 30 * i, text: `${i}.00`, color })), 200, 70, theme);
+    // Its edge is still its own.
     expect(fills[0].color).toBe('#f4f2ea');
-    expect(texts).toEqual([{ color: '#222222', text: '1.00' }, { color: '#1f6feb', text: '2.00' }]);
+    for (const [i, text] of texts.entries()) expect(contrastRatio(text.color, '#fbfaf5')!, lines[i]).toBeGreaterThanOrEqual(4.5);
+    // What reads is left as it is, and what is deepened keeps its hue: a blue stays bluer than it is red.
+    expect(texts[3].color).toBe('#1a56c4');
+    const [r, , b] = /(\d+),\s*(\d+),\s*(\d+)/.exec(texts[1].color)!.slice(1).map(Number);
+    expect(b).toBeGreaterThan(r);
   });
 });
 

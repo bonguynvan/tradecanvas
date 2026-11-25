@@ -42,6 +42,27 @@ describe('CrosshairTooltip', () => {
     expect(card().style.fontVariantNumeric).toBe('tabular-nums');
   });
 
+  it('is set in the theme’s small size and face: its figures, its labels, its time and its change', () => {
+    for (const size of [11, 12, 14]) {
+      const theme = { ...DARK_THEME, font: { ...DARK_THEME.font, family: 'Figures, sans-serif', sizeSmall: size } };
+      tip.show({ x: 100, y: 100 }, bar(), theme, box);
+      expect(card().style.fontSize, String(size)).toBe(`${size}px`);
+      expect(card().style.fontFamily).toContain('Figures');
+      // Nothing in the card is set in a size of its own.
+      const own = [...card().querySelectorAll<HTMLElement>('*')].map((el) => el.style.fontSize).filter(Boolean);
+      expect(own, String(size)).toEqual([]);
+    }
+  });
+
+  it('writes its close and its change at 4.5:1 on the chart’s ground', async () => {
+    const { GRAPHITE_LIGHT_THEME, contrastRatio } = await import('@tradecanvas/commons');
+    for (const close of [103, 97]) {
+      tip.show({ x: 100, y: 100 }, bar({ close }), GRAPHITE_LIGHT_THEME, box, { prevClose: 100 });
+      const coloured = [...card().querySelectorAll<HTMLElement>('*')].filter((el) => el.style.color && /\d/.test(el.textContent ?? '') && el.children.length === 0);
+      for (const el of coloured) expect(contrastRatio(el.style.color, GRAPHITE_LIGHT_THEME.background)!, el.textContent!).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
   it('shows O/H/L/C, the change from the previous close and the volume', () => {
     tip.show({ x: 100, y: 100 }, bar(), DARK_THEME, box, { prevClose: 102, priceRange: { min: 90, max: 110 } });
     expect(text()).toContain('100.00');
@@ -99,6 +120,23 @@ describe('CrosshairTooltip', () => {
     const [, x, y] = /translate\((-?\d+)px, (-?\d+)px\)/.exec(card().style.transform) ?? [];
     expect(Number(x)).toBeLessThan(490);
     expect(Number(y)).toBeLessThanOrEqual(300);
+  });
+
+  // On a phone's plot the card fits on neither side of the pointer: pushed back inside, it lay on the bar it reads.
+  it('goes over the pointer, or under it near the top, where the plot has room on neither side', () => {
+    const plot = { x: 0, y: 0, width: 260, height: 400 };
+    const size = tip as unknown as { width: number; height: number };
+    const placed = (pointer: { x: number; y: number }) => {
+      tip.show(pointer, bar(), DARK_THEME, box, { plot });
+      const [, x, y] = /translate\((-?\d+)px, (-?\d+)px\)/.exec(card().style.transform) ?? [];
+      return { left: Number(x), top: Number(y), right: Number(x) + size.width, bottom: Number(y) + size.height };
+    };
+    const middle = placed({ x: 150, y: 200 });
+    expect(middle.bottom).toBeLessThan(200);
+    expect(middle.left).toBeGreaterThanOrEqual(0);
+    expect(middle.right).toBeLessThanOrEqual(260);
+    const top = placed({ x: 150, y: 20 });
+    expect(top.top).toBeGreaterThan(20);
   });
 
   it('keeps the pill readable when the up/down colour is not hex or rgb', () => {

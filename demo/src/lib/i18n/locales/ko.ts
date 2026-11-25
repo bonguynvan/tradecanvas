@@ -4,7 +4,7 @@ const ko: SiteMessages = {
   meta: {
     title: 'TradeCanvas · 웹을 위한 캔버스 트레이딩 차트',
     description:
-      'TradeCanvas는 Canvas 2D 또는 WebGL로 그리는 웹용 트레이딩 차트 라이브러리입니다. 18가지 차트 유형, 134개 지표, 76개 그리기 도구, 실시간 거래소 피드, 차트 위 주문, 리플레이와 백테스트를 30개 언어로 제공합니다. 의존성 없음, MIT.',
+      'TradeCanvas는 Canvas 2D 또는 WebGL로 그리는 웹용 트레이딩 차트 라이브러리입니다. 18가지 차트 유형, 138개 지표, 76개 그리기 도구, 실시간 거래소 피드, 차트 위 주문, 리플레이와 백테스트를 30개 언어로 제공합니다. 의존성 없음, MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const ko: SiteMessages = {
     release: 'WebGL 렌더러, 30개 언어',
     title: '트레이딩 앱을 위한 차트 엔진.',
     ledeHtml:
-      '캔들스틱부터 렌코까지, 134개 지표, 76개 그리기 도구, 실시간 거래소 피드와 차트 위 주문. 의존성 없이 Canvas 2D 또는 WebGL로 그립니다. 완성된 <code>ChartWidget</code>을 바로 넣거나, 헤드리스 <code>Chart</code> 위에 나만의 UI를 만드세요.',
+      '캔들스틱부터 렌코까지, 138개 지표, 76개 그리기 도구, 실시간 거래소 피드와 차트 위 주문. 의존성 없이 Canvas 2D 또는 WebGL로 그립니다. 완성된 <code>ChartWidget</code>을 바로 넣거나, 헤드리스 <code>Chart</code> 위에 나만의 UI를 만드세요.',
     getStarted: '시작하기',
     browseExamples: '예제 둘러보기',
     specsLabel: '주요 수치',
@@ -71,7 +71,7 @@ const ko: SiteMessages = {
           title: '시장 읽기',
           text: '봉 위에 밴드, 이동평균, 오실레이터를, 그 위에 피보나치 레벨과 추세선을 올립니다. 각각 고유한 설정과 알림이 있습니다.',
           points: [
-            '134개 지표, 지표 위에 지표를 얹을 수 있음 (예: RSI의 이동평균)',
+            '138개 지표, 지표 위에 지표를 얹을 수 있음 (예: RSI의 이동평균)',
             '자석, 그룹, 실행 취소를 갖춘 76개 그리기 도구',
             '가격, 선, 지표 교차에 대한 알림',
           ],
@@ -218,11 +218,11 @@ const ko: SiteMessages = {
     },
     indicators: {
       title: '지표',
-      stat: '내장 134개',
+      stat: '내장 138개',
       blurb:
         '오버레이와 보조 차트 지표를 자체 계산하며, 수학 라이브러리 의존성이 없습니다. 실시간 틱에서는 형성 중인 봉만 다시 계산합니다 — 10만 봉, 지표 4개에서 틱당 0.001 ms.',
       tryThis: [
-        '지표 버튼(또는 Ctrl+K)을 누르고 134개 중 원하는 지표를 검색하세요',
+        '지표 버튼(또는 Ctrl+K)을 누르고 138개 중 원하는 지표를 검색하세요',
         '범례에서 지표 이름을 클릭하세요: 입력값, 색상, 레벨',
         '이동평균의 소스를 다른 지표의 선으로 설정하세요',
         '패널 사이의 선을 드래그해 크기를 조절하세요. 패널 오른쪽 위 버튼으로 이동, 접기, 최대화를 할 수 있습니다',
@@ -381,7 +381,7 @@ const ko: SiteMessages = {
     },
     overrides: {
       title: '스타일 오버라이드',
-      stat: '키 107개',
+      stat: '키 122개',
       blurb:
         '차트 모양의 어떤 부분이든 테마와 따로 키로 정합니다: 방향별 격자, 크로스헤어, 축, 패널, 범례, 최근 가격, 거래량, 차트 유형별 색. 여기서는 세로 격자를 끄고, 가로 격자를 점선으로, 크로스헤어를 실선으로 했으며, MACD 의 시그널 선은 자체 구분선이 있는 패널에서 점선입니다.',
       tryThis: [
@@ -435,6 +435,17 @@ const ko: SiteMessages = {
         '차트 위에서 Canvas 2D와 WebGL을 전환: 전환할 때마다 짧은 이동을 측정',
         '밝은 가로줄을 찾아보세요: 한 가격에 오래 머무는 물량 벽입니다',
         '벽 하나를 확대한 뒤 좌우로 이동해 보세요: 셀이 캔들과 함께 움직입니다',
+      ],
+    },
+    orderflow: {
+      title: '오더 플로',
+      stat: '풋프린트 + 체결 내역',
+      blurb:
+        '피드의 모든 체결을, 어느 쪽이 가져갔는지와 함께 보여 줍니다. 풋프린트 차트는 각 봉 옆에, 그 안의 가격마다 매도 측이 매수호가에서 가져간 수량과 매수 측이 매도호가에서 가져간 수량을 쓰고, 한쪽이 다른 쪽을 압도한 행을 표시하며, 봉마다 합계를 그 아래에 씁니다. 매수에서 매도를 뺀 값과 둘을 더한 값입니다. 그 옆의 체결 내역은 체결이 일어나는 대로, 최신 체결을 맨 위에, 가져간 쪽의 색으로 나열합니다.',
+      tryThis: [
+        '체결이 들어올 때마다 최신 봉이 한 행씩 채워지고 그 아래 합계가 바뀌는 것을 지켜보세요',
+        '체결 내역 머리글의 메뉴를 열어 매수 또는 매도만 나열하거나, 동시에 일어난 체결을 한 행으로 묶어 보세요',
+        '체결 내역에 최소 수량을 입력해 큰 체결만 남긴 다음 차트를 축소해 보세요. 행은 막대가 되고 합계는 남습니다',
       ],
     },
     switching: {
@@ -493,6 +504,23 @@ const ko: SiteMessages = {
     counterClock: '역시계곡선: 가격과 거래량, 25일 평균',
     avgVolume: '거래량, 평균',
     avgPrice: '가격, 평균',
+    payoff: '아이언 콘도르: 만기 손익',
+    smile: '행사가별 내재변동성',
+    weekdayReturns: '요일별 일간 수익률',
+    scorecard: '전략과 벤치마크 비교',
+    strategy: '전략',
+    benchmark: '벤치마크',
+    allocationRings: '자산군과 섹터별 배분',
+    allocationOverTime: '연간 배분 추이',
+    volSurface: '행사가와 만기별 내재변동성',
+    strike: '행사가',
+    expiry: '만기',
+    depthOverTime: '시간에 따른 호가 깊이',
+    quarterReturns: '분기·자산군별 수익률',
+    turnHint: '차트를 드래그하면 돌아가고, 더블 클릭하면 처음 시점으로 돌아갑니다.',
+    exportLabel: '포트폴리오 차트 저장',
+    print: '인쇄',
+    reportPdf: '모든 차트를 PDF 하나로',
     waterfall: {
       start: '시작',
       btcLong: 'BTC 롱',
@@ -704,7 +732,7 @@ const ko: SiteMessages = {
         { name: '서드파티 런타임 의존성 없음', detail: '따로 설치하거나 점검할 것이 없음' },
       ],
       indicators: [
-        { name: '내장 지표 134개', detail: '여섯 종류의 피벗 포인트, MA Cross, 다른 종목과의 상관관계' },
+        { name: '내장 지표 138개', detail: '여섯 종류의 피벗 포인트, MA Cross, 다른 종목과의 상관관계' },
         { name: '가격 소스', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: '지표 위의 지표', detail: '예: RSI의 이동평균, 틱마다 갱신' },
         { name: '한 패널에 여러 지표, 패널 간 이동', detail: 'moveIndicatorToPane' },
@@ -775,7 +803,7 @@ const ko: SiteMessages = {
       ],
       customization: [
         { name: '위젯의 세 가지 외관', detail: 'Studio, Terminal, Capsule. ui와 setUI. --tcw-* CSS 변수' },
-        { name: '키 단위로 정하는 차트의 모양', detail: '타입이 지정된 107개 키에 applyOverrides, 호스트 계층과 사용자 계층' },
+        { name: '키 단위로 정하는 차트의 모양', detail: '타입이 지정된 122개 키에 applyOverrides, 호스트 계층과 사용자 계층' },
         { name: '모든 키에 닿는 설정', detail: '보고 있는 차트 유형의 스타일 탭과 트레이딩 탭' },
         { name: '기능 스위치 114개', detail: 'features, setFeatures, isFeatureOn. 실행 중에도 변경' },
         { name: '위젯에 넣는 나만의 요소', detail: '도구 모음 버튼과 드롭다운, 사이드바 버튼, 상태 항목, 슬롯, 메뉴 항목' },
@@ -927,6 +955,7 @@ const ko: SiteMessages = {
       frameworks: '프레임워크',
       embed: '임베드 위젯',
       migration: '2.0으로 마이그레이션',
+      'migration-3': '3.0으로 마이그레이션',
       'from-tradingview': 'TradingView에서 옮겨오기',
       'how-it-works': '작동 방식',
       api: 'API 레퍼런스',

@@ -176,3 +176,30 @@ export function detectPrecision(values: number[]): number {
   }
   return Math.min(maxDecimals, 8);
 }
+
+/** A quantity to the digits it is written in, with no sum's rounding after them: 0.1 + 0.2 reads 0.3. */
+export function quantityText(quantity: number): string {
+  return String(Number(quantity.toFixed(8)));
+}
+
+/**
+ * An order's quantity as its tag on the chart and its row in a list write
+ * it: how much of it has filled, of how much (`2/5`, with `between` between
+ * the two), once a part of it has; else the quantity alone.
+ */
+export function orderQuantityText(order: { quantity: number; filledQuantity?: number }, between = '/'): string {
+  const filled = order.filledQuantity;
+  return typeof filled === 'number' && Number.isFinite(filled) && filled > 0
+    ? `${quantityText(filled)}${between}${quantityText(order.quantity)}`
+    : String(order.quantity);
+}
+
+/**
+ * The price the adapter values a position at (`TradingPosition.markPrice`), where it gives one;
+ * null where it gives none. A price under zero is one (a spread, a contract in a glut); 0 is
+ * taken for none, as it is what an adapter that has no price yet often says.
+ */
+export function positionMark(position: { markPrice?: number }): number | null {
+  const mark = position.markPrice;
+  return mark !== undefined && Number.isFinite(mark) && mark !== 0 ? mark : null;
+}

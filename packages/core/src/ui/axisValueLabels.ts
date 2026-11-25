@@ -1,4 +1,5 @@
 import type { Theme } from '@tradecanvas/commons';
+import { contrastRatio, inkOn, readableOn } from '@tradecanvas/commons';
 import { AXIS_TAG_TEXT_INSET, fillTag, outlineTag } from './shapes.js';
 
 /** A coloured tag on a value axis: an indicator line's latest value. */
@@ -44,35 +45,60 @@ export function spreadLabels(ys: readonly number[], top: number, bottom: number,
   return out;
 }
 
-/** Dark text on a light tag, light text on a dark one. */
+const TAG_INK_DARK = '#10131a';
+const TAG_INK_LIGHT = '#ffffff';
+/**
+ * How much more contrast the dark ink must have to be chosen: near a tie the light one is, as dark
+ * ink on a deep, full colour reads muddier than its ratio says.
+ */
+const DARK_INK_LEAD = 1.25;
+
+/**
+ * The ink a tag's text is written in: the dark or the light one, whichever has the more contrast
+ * on the tag's fill (the dark one by a clear lead, `DARK_INK_LEAD`). White on a candle's green or
+ * red is under 3:1, so the middle colours a chart is drawn in take the dark ink; only a deep fill
+ * takes the light one. A fill's alpha is not counted, and a colour that cannot be read (a name,
+ * `hsl()`) takes the light ink, as before.
+ */
 export function labelTextColor(background: string): string {
-  const rgb = parseColor(background);
-  if (!rgb) return '#ffffff';
-  const [r, g, b] = rgb;
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.62 ? '#10131a' : '#ffffff';
+  return darkInkReads(background) ? TAG_INK_DARK : TAG_INK_LIGHT;
 }
 
-/** How far apart two colours' lightness has to be, of 1, for one to be read as text on the other. */
-const READABLE_LIGHTNESS_GAP = 0.25;
-
-/** Whether text in `color` reads on `ground`. A colour that cannot be read as numbers is taken to. */
-function readsOn(color: string, ground: string): boolean {
-  const text = parseColor(color);
-  const under = parseColor(ground);
-  if (!text || !under) return true;
-  const lightness = ([r, g, b]: [number, number, number]): number => (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return Math.abs(lightness(text) - lightness(under)) >= READABLE_LIGHTNESS_GAP;
+/** Whether a fill takes the dark ink (see `labelTextColor`): for a tag written in a theme's own two inks. */
+export function darkInkReads(background: string): boolean {
+  const onDark = contrastRatio(background, TAG_INK_DARK);
+  const onLight = contrastRatio(background, TAG_INK_LIGHT);
+  if (onDark === null || onLight === null) return false;
+  return onDark >= onLight * DARK_INK_LEAD;
 }
 
-function parseColor(color: string): [number, number, number] | null {
-  const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(color.trim());
-  if (hex) {
-    const h = hex[1].length === 3 ? hex[1].replace(/./g, (c) => c + c) : hex[1];
-    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
-  }
-  const rgb = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/i.exec(color.trim());
-  return rgb ? [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])] : null;
+/** The contrast a filled tag's ink has on its fill, at the least. */
+const TAG_CONTRAST = 4.5;
+
+/**
+ * The colour a tag is filled with: `fill`, or, where the ink it takes
+ * (`labelTextColor`) would not read on it at 4.5:1, the nearest shade of it
+ * that the ink does read on, its hue kept. A light chart's candles are of a
+ * middle lightness on which white is 4:1 and dark ink no better: the candle
+ * keeps its colour, its tag is a shade deeper. A colour that cannot be read
+ * is left as it is.
+ */
+export function tagFill(fill: string): string {
+  const ink = labelTextColor(fill);
+  return readableOn(fill, ink, ink === TAG_INK_LIGHT ? TAG_INK_DARK : TAG_INK_LIGHT, TAG_CONTRAST);
+}
+
+/** The contrast a value written on an outlined tag has on its ground, at the least. */
+const OUTLINED_TEXT_CONTRAST = 4.5;
+
+/**
+ * The colour of the figure on an outlined tag: its line's, taken toward the ink that reads on the
+ * ground (dark on a light one, light on a dark one) until it reads there at 4.5:1, its hue kept.
+ * A ground that is no colour (a stand-in theme's) leaves the line's colour as it is.
+ */
+export function outlinedTagText(color: string, ground: string): string {
+  if (typeof ground !== 'string') return color;
+  return readableOn(color, ground, inkOn(ground, TAG_INK_DARK, TAG_INK_LIGHT), OUTLINED_TEXT_CONTRAST);
 }
 
 /** A tag already on the axis that value tags keep clear of: its centre and half its height. */
@@ -138,18 +164,17 @@ export function drawAxisValueLabels(
   const half = AXIS_LABEL_HEIGHT / 2;
   // Outlined: the chart's ground under an edge and a text in the line's colour, where a look wants no blocks of colour.
   const outlined = theme.style?.axis.price.valueTagsOutlined === true;
-  // A line's colour that would not read on the ground writes its value in the scale's own text colour.
-  const scaleText = theme.style?.axis.price.text ?? theme.axisLabel;
   for (const label of labels) {
     const top = Math.round(label.y - half);
     // The axis's width, as an order's tag and the last price's are.
     if (outlined) {
       outlineTag(ctx, axisX + 1, top, axisWidth - 2, AXIS_LABEL_HEIGHT, theme, label.color, ground);
-      ctx.fillStyle = readsOn(label.color, ground) ? label.color : scaleText;
+      ctx.fillStyle = outlinedTagText(label.color, ground);
     } else {
-      ctx.fillStyle = label.color;
+      const fill = tagFill(label.color);
+      ctx.fillStyle = fill;
       fillTag(ctx, axisX + 1, top, axisWidth - 2, AXIS_LABEL_HEIGHT, theme);
-      ctx.fillStyle = labelTextColor(label.color);
+      ctx.fillStyle = labelTextColor(fill);
     }
     ctx.fillText(label.text, axisX + 1 + AXIS_TAG_TEXT_INSET, Math.round(label.y));
   }

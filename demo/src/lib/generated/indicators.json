@@ -1425,14 +1425,25 @@
     "placement": "panel",
     "category": "volume",
     "params": {
-      "mode": 0
+      "mode": 0,
+      "anchor": "all"
     },
     "inputs": {
       "mode": {
         "kind": "int",
+        "label": "Cumulative",
         "min": 0,
         "max": 1,
         "step": 1
+      },
+      "anchor": {
+        "kind": "choice",
+        "options": [
+          "all",
+          "session",
+          "week",
+          "month"
+        ]
       }
     },
     "plots": [
@@ -4711,6 +4722,221 @@
         "key": "neutral",
         "title": "Indecision",
         "kind": "dots"
+      }
+    ]
+  },
+  {
+    "id": "fvg",
+    "name": "Fair Value Gaps",
+    "shortName": "FVG",
+    "placement": "overlay",
+    "category": "patterns",
+    "params": {
+      "minPercent": 0,
+      "showFilled": 0
+    },
+    "inputs": {
+      "minPercent": {
+        "kind": "number",
+        "min": 0,
+        "step": 0.05
+      },
+      "showFilled": {
+        "kind": "int",
+        "min": 0,
+        "max": 1,
+        "step": 1
+      }
+    },
+    "plots": [
+      {
+        "key": "bull",
+        "title": "Bullish top",
+        "kind": "line"
+      },
+      {
+        "key": "bullLow",
+        "title": "Bullish bottom",
+        "kind": "line"
+      },
+      {
+        "key": "bear",
+        "title": "Bearish top",
+        "kind": "line"
+      },
+      {
+        "key": "bearLow",
+        "title": "Bearish bottom",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "rsidiv",
+    "name": "RSI Divergence",
+    "shortName": "RSI Div",
+    "placement": "panel",
+    "category": "oscillators",
+    "params": {
+      "period": 14,
+      "left": 5,
+      "right": 5,
+      "minBars": 5,
+      "maxBars": 60,
+      "hidden": 0
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "left": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "right": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "minBars": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "maxBars": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "hidden": {
+        "kind": "int",
+        "min": 0,
+        "max": 1,
+        "step": 1
+      }
+    },
+    "plots": [
+      {
+        "key": "value",
+        "title": "RSI",
+        "kind": "line"
+      },
+      {
+        "key": "bull",
+        "title": "Bullish",
+        "kind": "markers"
+      },
+      {
+        "key": "bear",
+        "title": "Bearish",
+        "kind": "markers"
+      }
+    ],
+    "levels": [
+      30,
+      70
+    ],
+    "scale": {
+      "min": 0,
+      "max": 100
+    }
+  },
+  {
+    "id": "svp",
+    "name": "Session Volume Profile",
+    "shortName": "SVP",
+    "placement": "overlay",
+    "category": "volume",
+    "params": {
+      "rows": 24,
+      "valueArea": 70
+    },
+    "inputs": {
+      "rows": {
+        "kind": "int",
+        "min": 1,
+        "max": 200,
+        "step": 1
+      },
+      "valueArea": {
+        "kind": "number",
+        "min": 1,
+        "max": 100,
+        "step": 1
+      }
+    },
+    "plots": [
+      {
+        "key": "poc",
+        "title": "POC",
+        "kind": "line"
+      },
+      {
+        "key": "vah",
+        "title": "VAH",
+        "kind": "line"
+      },
+      {
+        "key": "val",
+        "title": "VAL",
+        "kind": "line"
+      }
+    ]
+  },
+  {
+    "id": "orderblocks",
+    "name": "Order Blocks",
+    "shortName": "OB",
+    "placement": "overlay",
+    "category": "patterns",
+    "params": {
+      "length": 5,
+      "showBroken": 0,
+      "count": 5
+    },
+    "inputs": {
+      "length": {
+        "kind": "int",
+        "min": 1,
+        "max": 50,
+        "step": 1
+      },
+      "showBroken": {
+        "kind": "int",
+        "min": 0,
+        "max": 1,
+        "step": 1
+      },
+      "count": {
+        "kind": "int",
+        "min": 0,
+        "max": 100,
+        "step": 1
+      }
+    },
+    "plots": [
+      {
+        "key": "bull",
+        "title": "Bullish top",
+        "kind": "line"
+      },
+      {
+        "key": "bullLow",
+        "title": "Bullish bottom",
+        "kind": "line"
+      },
+      {
+        "key": "bear",
+        "title": "Bearish top",
+        "kind": "line"
+      },
+      {
+        "key": "bearLow",
+        "title": "Bearish bottom",
+        "kind": "line"
       }
     ]
   }

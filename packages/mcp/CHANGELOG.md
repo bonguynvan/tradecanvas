@@ -1,5 +1,69 @@
 # @tradecanvas/mcp
 
+## 3.0.0-beta.2
+
+### Patch Changes
+
+- Updated dependencies [093d887]
+  - @tradecanvas/commons@3.0.0-beta.2
+
+## 3.0.0-beta.1
+
+### Patch Changes
+
+- @tradecanvas/commons@3.0.0-beta.1
+
+## 3.0.0-beta.0
+
+### Minor Changes
+
+- a02e56c: Six more finance charts, twenty in all, for options and portfolios: `PayoffChart` (what an options position makes or loses at expiry, with its breakevens and the price now; `payoffStats` and `optionPayoff` give the numbers), `CurveChart` (values against a strike or a tenor: a volatility smile, a term structure, a yield curve), `BoxPlotChart` (quartiles, whiskers and outliers for each group; `boxPlotStats`), `RadarChart` (several measures on spokes, a shape a series), `SunburstChart` (parts inside parts, a ring a level, with a click) and `StackedAreaChart` (series one on another, or as shares with `normalized`). Each reads out under the pointer, takes `theme`, `font`, `locale` and `ariaLabel`, and is in the MCP server's `list_finance_charts`.
+- 8c7206e: The price chart drawn with no page. `renderPriceChart(ctx, options, size)` draws the price chart on a 2D context of your own: a canvas made in Node (`@napi-rs/canvas`, `skia-canvas`) for a picture in an email, a report or a message from a bot, or an OffscreenCanvas in a worker. It is one frame, put together as `Chart` puts its own together: at the same size it is the picture a chart on a page gives of the same bars after `fitContent()`, with the chart type, volume, both axes, the legend, the last price, a watermark, indicators on the price pane and in panes, drawings, and buy and sell marks. `options` are `Chart`'s where they say how the chart looks, with `data`, `symbol`, `timeframe`, `indicators` (as `chart.getIndicatorSetup()` gives them), `drawings`, `markers`, `visibleRange`, `pricePrecision`, `timeZone`, `symbolSeries` and `plugins`. Node has no `Path2D`: give your canvas library's as `path2D`. An option that is wrong throws before anything is drawn, by its name. It has no crosshair, orders, positions, alerts or compare lines. `ChartLegend.measure()` works out the legend's size without drawing it. The MCP server's `list_options` and `validate_options` take `renderPriceChart` as a target.
+
+  Fixed: a chart beside a left price scale keeps its fit when its container reports its size. With bars fitted closer than a slot usually gets, a size report widened the slots as if the left scale were not there, and the oldest bars went off view.
+
+- ce79cad: Charts in three dimensions, twenty-two finance charts in all. `SurfaceChart` draws values over two axes as a sheet in a box (implied volatility by strike and expiry, a profit by price and day): a shaded surface, a wireframe, or with `style: 'slices'` a filled line for each `y`. `Bar3DChart` stands a column on each value in rows a series deep. A drag turns them (a mouse turns and tilts, a finger turns only, so a page still scrolls under them), a double click goes back to the `view` given, and `getView`, `setView`, `onViewChange` and `rotate` are there for it. `depthSurface` turns a run of order books into a surface: depth over time. Values are coloured by `colorRamp`. Both read out under the pointer, take a click, and are in the MCP server's `list_finance_charts`.
+
+### Patch Changes
+
+- Updated dependencies [911facf]
+- Updated dependencies [2c9573d]
+- Updated dependencies [c2ca355]
+- Updated dependencies [97b23f2]
+- Updated dependencies [aa3d83e]
+- Updated dependencies [0255b1c]
+- Updated dependencies [ff55699]
+- Updated dependencies [a02e56c]
+- Updated dependencies [155c3c2]
+- Updated dependencies [a20d034]
+- Updated dependencies [bc8c0ad]
+- Updated dependencies [7794c09]
+- Updated dependencies [3424cac]
+- Updated dependencies [4b0db09]
+- Updated dependencies [c831304]
+- Updated dependencies [17e2036]
+- Updated dependencies [15f357d]
+- Updated dependencies [64ee76c]
+- Updated dependencies [421cf22]
+- Updated dependencies [4577047]
+- Updated dependencies [a710c22]
+- Updated dependencies [6b21eed]
+- Updated dependencies [8f4964c]
+- Updated dependencies [f8890a4]
+- Updated dependencies [99ce483]
+- Updated dependencies [6d0d6c8]
+- Updated dependencies [4ea3014]
+- Updated dependencies [63f07fd]
+- Updated dependencies [8c7206e]
+- Updated dependencies [db1febf]
+- Updated dependencies [ce79cad]
+- Updated dependencies [6dbd99c]
+- Updated dependencies [4a7c3e0]
+- Updated dependencies [d6dbb34]
+- Updated dependencies [a3ba736]
+- Updated dependencies [7d320ac]
+  - @tradecanvas/commons@3.0.0-beta.0
+
 ## 2.17.1
 
 ### Patch Changes

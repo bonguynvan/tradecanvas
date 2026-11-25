@@ -35,7 +35,7 @@ describe('resolveChartTheme', () => {
     expect(s.axis).toEqual({ price: { line: DARK_THEME.axisLine, text: DARK_THEME.axisLabel, valueTagsOutlined: false }, time: { line: DARK_THEME.axisLine, text: DARK_THEME.axisLabel } });
     expect(s.grid.verticalAtPeriods).toBe(false);
     expect(s.legend).toEqual({ text: DARK_THEME.text, label: DARK_THEME.textSecondary, up: DARK_THEME.candleUp, down: DARK_THEME.candleDown });
-    expect(s.lastPrice).toEqual({ visible: true, up: DARK_THEME.candleUp, down: DARK_THEME.candleDown, style: 'dotted', width: 1, labelBackground: null, labelText: null });
+    expect(s.lastPrice).toEqual({ visible: true, up: DARK_THEME.candleUp, down: DARK_THEME.candleDown, style: 'dotted', width: 1, labelBackground: null, labelText: null, limitColors: false });
     expect(s.watermark.color).toBeNull();
     expect(s.sessionBreaks).toEqual({ color: null, style: null, width: null });
     expect(s.highLow.color).toBeNull();
@@ -163,7 +163,7 @@ describe('resolveChartTheme', () => {
   it('colours the last price as the series unless it has its own', () => {
     const t = resolveChartTheme(DARK_THEME, 'candlestick', { 'series.candlestick.upColor': '#0f0', 'lastPrice.downColor': '#f00', 'lastPrice.style': 'solid' });
     // Its tag has no colour of its own until one is set: the day's, and the text that reads on it.
-    expect(t.style!.lastPrice).toEqual({ visible: true, up: '#0f0', down: '#f00', style: 'solid', width: 1, labelBackground: null, labelText: null });
+    expect(t.style!.lastPrice).toEqual({ visible: true, up: '#0f0', down: '#f00', style: 'solid', width: 1, labelBackground: null, labelText: null, limitColors: false });
   });
 
   it('gives the last price’s tag, the value tags and the grid’s vertical lines their own keys', () => {
@@ -270,5 +270,43 @@ describe('readIndicatorPlotStyles', () => {
       .toEqual({ down: { visible: false } });
     // Kept within what is drawn: 2 to 40 px.
     expect(readPlotStyles({ up: { size: 500 }, down: { size: 0.5 } })).toEqual({ up: { size: 40 }, down: { size: 2 } });
+  });
+});
+
+// A look says how its chart's value tags are drawn; what the host sets is over it.
+describe('a theme’s own value tags', () => {
+  it('are outlined in Graphite, filled in the other themes, and as the override says where there is one', async () => {
+    const { GRAPHITE_DARK_THEME, GRAPHITE_LIGHT_THEME, MODERN_DARK_THEME, LIGHT_THEME } = await import('@tradecanvas/commons');
+    for (const theme of [GRAPHITE_DARK_THEME, GRAPHITE_LIGHT_THEME]) {
+      expect(chartStyleValue(theme, {}, 'axis.price.valueTagsOutlined'), theme.name).toBe(true);
+      expect(chartStyleValue(theme, { 'axis.price.valueTagsOutlined': false }, 'axis.price.valueTagsOutlined')).toBe(false);
+    }
+    for (const theme of [DARK_THEME, LIGHT_THEME, MODERN_DARK_THEME]) expect(chartStyleValue(theme, {}, 'axis.price.valueTagsOutlined')).toBe(false);
+  });
+
+  it('the last price takes a limit’s colour only where the key says so: off in every theme', async () => {
+    const { GRAPHITE_DARK_THEME, MODERN_DARK_THEME, LIGHT_THEME } = await import('@tradecanvas/commons');
+    for (const theme of [DARK_THEME, LIGHT_THEME, MODERN_DARK_THEME, GRAPHITE_DARK_THEME]) {
+      expect(chartStyleValue(theme, {}, 'lastPrice.limitColors'), theme.name).toBe(false);
+      expect(resolveChartTheme(theme, 'candlestick', { 'lastPrice.limitColors': true }).style!.lastPrice.limitColors).toBe(true);
+    }
+  });
+
+  it('the crosshair’s price says how far it is from the last in Graphite, not in the other themes, and as the override says', async () => {
+    const { GRAPHITE_DARK_THEME, GRAPHITE_LIGHT_THEME, MODERN_DARK_THEME, LIGHT_THEME } = await import('@tradecanvas/commons');
+    for (const theme of [GRAPHITE_DARK_THEME, GRAPHITE_LIGHT_THEME]) {
+      expect(chartStyleValue(theme, {}, 'crosshair.labelChange'), theme.name).toBe(true);
+      expect(resolveChartTheme(theme, 'candlestick', { 'crosshair.labelChange': false }).style!.crosshair.labelChange).toBe(false);
+    }
+    for (const theme of [DARK_THEME, LIGHT_THEME, MODERN_DARK_THEME]) {
+      expect(chartStyleValue(theme, {}, 'crosshair.labelChange'), theme.name).toBe(false);
+      expect(resolveChartTheme(theme, 'candlestick', { 'crosshair.labelChange': true }).style!.crosshair.labelChange).toBe(true);
+    }
+  });
+
+  it('are in 12 px type in Graphite, where the chrome’s figures are, and 11 in the others', async () => {
+    const { GRAPHITE_DARK_THEME, GRAPHITE_LIGHT_THEME, MODERN_DARK_THEME, LIGHT_THEME } = await import('@tradecanvas/commons');
+    expect([GRAPHITE_DARK_THEME, GRAPHITE_LIGHT_THEME].map((t) => [t.font.sizeSmall, t.font.sizeMedium, t.font.sizeLarge])).toEqual([[12, 13, 15], [12, 13, 15]]);
+    expect([DARK_THEME, LIGHT_THEME, MODERN_DARK_THEME].map((t) => t.font.sizeSmall)).toEqual([11, 11, 11]);
   });
 });

@@ -54,11 +54,13 @@ export interface ChartWidgetOptions {
   theme?: ThemeName | Theme;
   /**
    * The widget's look: its corners, sizes, type, lines, shadows and bars.
-   * A preset (`'modern'`, the default; `'print'`; `'studio'`; `'terminal'`; `'capsule'`; `'desk'`)
-   * or your theme over one; a theme object without `preset` starts from Modern (`preset: 'print'`
-   * for the look before it). Colours stay with `theme`, but for Modern's: a code editor's dark and
-   * light (`MODERN_DARK_THEME` / `MODERN_LIGHT_THEME` on the chart), in each mode `theme` gave no
-   * object for.
+   * A preset (`'graphite'`, the default; `'modern'`; `'print'`; `'studio'`; `'terminal'`;
+   * `'capsule'`; `'desk'`) or your theme over one; a theme object without `preset` starts from
+   * Graphite (`preset: 'modern'` for the default before it, `'print'` for the one before that).
+   * Colours stay with `theme`, but for Graphite's and Modern's: each has a dark and a light of
+   * its own (`GRAPHITE_DARK_THEME` / `GRAPHITE_LIGHT_THEME`, `MODERN_DARK_THEME` /
+   * `MODERN_LIGHT_THEME` on the chart), in each mode `theme` gave no object for. Graphite's face
+   * is IBM Plex Sans where the page loads it (the widget loads no fonts), else the system's sans.
    */
   ui?: import('./widgetUI.js').WidgetUIPreset | import('./widgetUI.js').WidgetUITheme;
 
@@ -156,6 +158,18 @@ export interface ChartWidgetOptions {
   depthLadder?: boolean;
 
   /**
+   * The tape (time and sales), a page of the dock: the trades of the chart's
+   * symbol as they are made, newest on top, each with its time, price and
+   * size in the colour of who took it. Off until this is `true` (its switch
+   * only hides it), or the settings it starts with. While it is open the
+   * widget follows the feed's trades (a feed with `fetchTrades` and
+   * `subscribeTrades`); trades given with `chart.addTrades` are listed too.
+   * Open it with `widget.openPanel('tape')`, its rail button or the command
+   * palette.
+   */
+  tape?: boolean | import('./WidgetTape.js').TapeOptions;
+
+  /**
    * The account panel at the bottom: open positions with their profit and
    * loss, working orders and the fills so far, with close, reverse and cancel,
    * and an order ticket. A toolbar button opens it. Default `true` when
@@ -239,6 +253,43 @@ export interface ChartWidgetOptions {
    */
   searchSymbols?: (query: string, signal: AbortSignal) => Promise<SymbolInfo[]>;
   historyLimit?: number;
+  /**
+   * Ask before a trade that one press would make: a position closed or reversed (its row in the
+   * account panel, its buttons on the chart), an order from the right-click menu or the depth
+   * ladder. The dialog says what it is in full (side, quantity, price, symbol); Enter does it,
+   * Escape leaves it. On unless this is `false`: one-click trading, for a broker whose traders
+   * ask for it. The order ticket is not asked about twice: its Place is the confirmation.
+   */
+  confirmOrders?: boolean;
+  /**
+   * The broker's rules for orders, to start with: see `BrokerOrderRules`. `widget.setOrderRules`
+   * gives others as the symbol or the session changes.
+   */
+  orderRules?: BrokerOrderRules;
+  /**
+   * The order the ticket shows the day's ceiling, reference and floor in, over its price: boards
+   * differ, and a trader reads them where their broker's board has them. Leave one out not to
+   * show it. Default `['ceiling', 'reference', 'floor']`. The row shows on a market with limits
+   * for the day (`chart.setPriceLimits`), and a press on a price is the order's price.
+   */
+  priceLimitOrder?: readonly ('ceiling' | 'reference' | 'floor')[];
+  /**
+   * Where the order ticket opens. `'dock'` (the default): a page of the dock beside the chart,
+   * which hides no price and stays for the next order; `openPanel('orderTicket')` opens it too.
+   * `'dialog'`: a dialog over the chart, as before 3.0. A widget with no dock (`features.dock`
+   * off), or one too narrow for it (a phone), opens the dialog whatever this says.
+   */
+  ticketPlace?: 'dock' | 'dialog';
+  /**
+   * How long, seconds, the widget's feed may be connected and tell nothing before its price stops
+   * counting as live: the status bar then says so in place of "Live", and the ticket warns and
+   * sends no order at the market. A feed that is not connected does the same at once, and holds
+   * back as well an order asked for in one press (the right-click menu, the depth ladder) and a
+   * bracket or a draft order confirmed; 0 here does not switch that off. Not judged while the
+   * symbol's market is shut (its `sessions`), in a replay, nor with bars of your own (no
+   * `adapter`). Default 60; 0 never calls a connected feed quiet.
+   */
+  feedQuietAfter?: number;
   /** Bars per request when scrolling back for older bars (adapters with `fetchHistoryBefore`). Default 500. */
   historyPageSize?: number;
 
@@ -809,7 +860,7 @@ export interface DrawingToolGroupDef {
 }
 
 /** A panel of the widget's dock, beside the chart (in a sheet on a phone). */
-export type WidgetPanel = 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder';
+export type WidgetPanel = 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'orderTicket' | 'depthLadder' | 'tape';
 
 /** A panel of the dock: a built-in one, or the id of a page you added with `addDockPage`. */
 export type DockPanelId = WidgetPanel | (string & {});
@@ -840,4 +891,33 @@ export interface DockPageSpec {
 export interface DockPageHandle {
   /** Take the page away, shutting it first if it is open. Its id is free again. */
   remove(): void;
+}
+
+/**
+ * A kind of order as the exchange names it, for the order ticket: `{ code: 'ATO', type: 'market' }`.
+ * `type` is the kind the chart knows it as, which decides whether the ticket asks a price for it
+ * and how it is drawn; `code` goes with the order as `exchangeType`, for the broker.
+ */
+export interface BrokerOrderKind {
+  /** The exchange's name for it: `LO`, `ATO`, `ATC`, `MP`, `MTL`… */
+  code: string;
+  /** What the ticket calls it. Unset: its code. */
+  label?: string;
+  type: 'market' | 'limit' | 'stop' | 'stopLimit';
+  /** The times in force this kind takes, over the rules' own. */
+  timesInForce?: readonly ('gtc' | 'day' | 'gtd' | 'ioc' | 'fok')[];
+}
+
+/**
+ * What a broker takes for the symbol and the session now. An exchange's preset (`setMarket`)
+ * has its price steps and its lot; these are the broker's own, they stand over it, and they
+ * change with no release of the library: `widget.setOrderRules` as the session or the board does.
+ */
+export interface BrokerOrderRules {
+  /** The kinds of order, in place of Market, Limit, Stop and Stop-limit. Unset or empty: those four. */
+  orderKinds?: readonly BrokerOrderKind[];
+  /** The times in force taken. Unset: all a kind of order has. */
+  timesInForce?: readonly ('gtc' | 'day' | 'gtd' | 'ioc' | 'fok')[];
+  /** The lot, over the market's `volumeUnit`. */
+  lot?: number;
 }

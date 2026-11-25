@@ -2,6 +2,10 @@ import type { BarLayout, ViewportState, Rect, DataSeries, PriceScaleMode, ScaleM
 import { CHART_SPACING, DEFAULT_CHART_DENSITY, PHI, clamp, computePriceRange, fitPriceRange } from '@tradecanvas/commons';
 import { DEFAULT_BAR_WIDTH, DEFAULT_BAR_SPACING, PRICE_AXIS_WIDTH, TIME_AXIS_HEIGHT } from '@tradecanvas/commons';
 
+/** The widest a bar's body gets by zooming in, px, unless a chart asks for wider slots (`setMaxBarSlot`). */
+export const DEFAULT_MAX_BAR_WIDTH = 30;
+/** Where slots may get wider than that, the room past the newest bar is this share of the plot at most. */
+const WIDE_BAR_ROOM_SHARE = 0.25;
 /**
  * Narrowest bar slot (bar + gap) in CSS pixels. Below the usual floor (the
  * slot whose body is `minBarWidth`) the chart only zooms out as far as it
@@ -25,6 +29,18 @@ export const PRICE_SCALE_MARGIN = CHART_SPACING[DEFAULT_CHART_DENSITY].priceMarg
 /** Margins must leave the prices at least this share of the height. */
 const MIN_PRICE_SHARE = 0.2;
 
+/** A viewport as it stood, for `Viewport.restore`. */
+export interface ViewportSnapshot {
+  state: ViewportState;
+  priceAxisWidth: number;
+  margins: ScaleMargins;
+}
+
+/** A state of its own: the ranges and the plot are not shared with the one it was read from. */
+function ownState(state: ViewportState): ViewportState {
+  return { ...state, visibleRange: { ...state.visibleRange }, priceRange: { ...state.priceRange }, chartRect: { ...state.chartRect } };
+}
+
 export class Viewport {
   private state: ViewportState;
   // A field rather than state: computeChartRect runs while state is being built.
@@ -44,6 +60,8 @@ export class Viewport {
   private margins: ScaleMargins = { top: PRICE_SCALE_MARGIN, bottom: PRICE_SCALE_MARGIN };
   private minBarWidth: number;
   private maxBarWidth: number;
+  /** The widest slot a chart asked for in place of the usual (a footprint's); null: the usual. */
+  private wideSlot: number | null = null;
   private rightMarginBars: number;
   private freePan = true;
   private minVisibleBars = 3;
@@ -54,7 +72,7 @@ export class Viewport {
     containerWidth: number,
     containerHeight: number,
     minBarWidth = 2,
-    maxBarWidth = 30,
+    maxBarWidth = DEFAULT_MAX_BAR_WIDTH,
     rightMarginBars = CHART_SPACING[DEFAULT_CHART_DENSITY].rightMargin,
   ) {
     this.minBarWidth = minBarWidth;
@@ -96,6 +114,22 @@ export class Viewport {
       };
     }
     return this.stateCache;
+  }
+
+  /**
+   * The viewport as it stands, to put back with `restore`: a frame is laid
+   * out at another size for a picture, and the page's is the page's again.
+   */
+  snapshot(): ViewportSnapshot {
+    return { state: ownState(this.state), priceAxisWidth: this.priceAxisWidth, margins: { ...this.margins } };
+  }
+
+  /** The viewport as `snapshot` found it: the bars on view, the prices, the plot, the scale's width and margins. */
+  restore(kept: ViewportSnapshot): void {
+    this.state = ownState(kept.state);
+    this.priceAxisWidth = kept.priceAxisWidth;
+    this.margins = { ...kept.margins };
+    this.invalidate();
   }
 
   /** Drop the cached snapshot — called by every method that mutates `state`. */
@@ -191,7 +225,24 @@ export class Viewport {
   /** Offset at which the newest bar sits `rightMargin` bars from the right edge — the resting view. */
   private endOffset(): number {
     const barUnit = this.state.barWidth + this.state.barSpacing;
-    return this.dataLength * barUnit - this.state.chartRect.width + this.rightMarginBars * barUnit;
+    return this.dataLength * barUnit - this.state.chartRect.width + this.roomPastNewest(barUnit);
+  }
+
+  /**
+   * The room past the newest bar, px: so many of the bars' own slots. Where
+   * a chart lets its bars get wider than candles do (a footprint's), no more
+   * than at the usual widest slot, and a share of the plot at most: so many
+   * slots of bars that wide would push the bars themselves off a narrow plot.
+   */
+  private roomPastNewest(barUnit: number): number {
+    const room = this.rightMarginBars * barUnit;
+    if (this.wideSlot === null) return room;
+    return Math.min(room, this.rightMarginBars * this.unitOf(this.maxBarWidth), this.state.chartRect.width * WIDE_BAR_ROOM_SHARE);
+  }
+
+  /** The slot whose body is `barWidth` wide. */
+  private unitOf(barWidth: number): number {
+    return this.barLayout === 'golden' ? barWidth / GOLDEN_BODY : barWidth + DEFAULT_BAR_SPACING;
   }
 
   /** Width of the price axis strip; see `ViewportState.priceAxisWidth`. */
@@ -296,8 +347,36 @@ export class Viewport {
     return this.minBarUnit;
   }
 
+  /**
+   * How wide a slot (a bar and its gap) may get by zooming in, px, for a
+   * chart whose bars carry text (a footprint's numbers): in place of the
+   * usual limit, the slot of a bar 30 px wide. Null, or a slot no wider than
+   * the usual one, puts the usual limit back, and slots wider than it are
+   * narrowed to it.
+   */
+  setMaxBarSlot(px: number | null): void {
+    this.wideSlot = px !== null && Number.isFinite(px) && px > this.unitOf(this.maxBarWidth) ? px : null;
+    this.clampUnit();
+    this.clampOffset();
+    this.updateVisibleRange();
+    this.invalidate();
+  }
+
+  /**
+   * Zoom to slots (a bar and its gap) `px` wide, within the limits, and
+   * rest at the newest bars. A width that is none changes nothing.
+   */
+  setBarSlot(px: number): void {
+    if (!Number.isFinite(px) || px <= 0) return;
+    this.applyUnit(clamp(px, this.minUnit(), this.maxUnit()));
+    this.state.offset = this.endOffset();
+    this.clampOffset();
+    this.updateVisibleRange();
+    this.invalidate();
+  }
+
   private maxUnit(): number {
-    return this.barLayout === 'golden' ? this.maxBarWidth / GOLDEN_BODY : this.maxBarWidth + DEFAULT_BAR_SPACING;
+    return this.wideSlot ?? this.unitOf(this.maxBarWidth);
   }
 
   /**

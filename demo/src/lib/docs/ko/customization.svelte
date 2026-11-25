@@ -62,7 +62,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid의 모든 차트`}</code
 <p>
   스위치는 위젯 자체의 부품을 보이고 숨깁니다. 차트 자체에서 무언가를 막으려면 — 그리기, 거래, 확대·축소, 특정 시간 단위 —
   차트의 features(<code>chartOptions.features</code>)를 쓰세요. 데이터나 저장소를 함께 가져오는 부품은 옵션으로 남습니다:
-  <code>trading</code>, <code>watchlist</code>, <code>depthLadder</code>, <code>layouts</code>가 그 부품의 존재 여부를
+  <code>trading</code>, <code>watchlist</code>, <code>depthLadder</code>, <code>tape</code>, <code>layouts</code>가 그 부품의 존재 여부를
   정하고, 스위치는 그 버튼을 숨깁니다. 스위치를 켜도 이 부품들은 추가되지 않습니다: <code>features: &#123; depthLadder: true &#125;</code>만으로는 호가창이 만들어지지 않습니다.
 </p>
 <p>예전의 켜기/끄기 옵션이 바로 이 스위치이며, 지금처럼 쓸 수 있습니다:</p>
@@ -88,7 +88,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid의 모든 차트`}</code
       <code>indicatorSettings</code> <code>drawingSettings</code> <code>dataWindow</code> <code>commandPalette</code>
       <code>hotkeySheet</code> <code>goToDate</code> <code>replay</code> <code>screenshot</code> <code>copyImage</code>
       <code>shareView</code> <code>autoFib</code> <code>themeToggle</code> <code>fullscreen</code> <code>accountPanel</code>
-      <code>orderTicket</code> <code>bracketOrders</code> <code>depthLadder</code> <code>layouts</code>
+      <code>orderTicket</code> <code>tradeButtons</code> <code>bracketOrders</code> <code>depthLadder</code> <code>tape</code> <code>layouts</code>
       <code>indicatorTemplates</code> <code>compare</code> <code>indicatorLegend</code> <code>navigation</code>
       <code>customTimeframes</code> <code>marks</code> <code>intervalTyping</code> <code>symbolTyping</code> <code>dragDropImport</code> <code>hotkeys</code>
       <code>toasts</code> <code>favoritesBar</code>
@@ -104,7 +104,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid의 모든 차트`}</code
     </td></tr>
     <tr><td>도크</td><td>
       <code>dock.watchlist</code> <code>dock.alerts</code> <code>dock.objectTree</code> <code>dock.dataWindow</code>
-      <code>dock.symbolInfo</code> <code>dock.depthLadder</code>
+      <code>dock.symbolInfo</code> <code>dock.depthLadder</code> <code>dock.tape</code>
     </td></tr>
     <tr><td>그리기 사이드바</td><td>
       <code>sidebar.cursor</code> <code>sidebar.favorites</code> <code>sidebar.lines</code> <code>sidebar.fibonacci</code>
@@ -145,6 +145,7 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid의 모든 차트`}</code
   <code>menu.chart.*</code>는 오른쪽 클릭 메뉴와 가격 축 옆의 "+" 모두에 적용됩니다. <code>compare</code>는 객체 트리의
   추가 버튼을 없애고, 이미 켜진 비교는 목록에 남습니다. <code>toasts</code>는 위젯 자체의 알림을 끄고(오류는 계속 보입니다),
   <code>widget.toast()</code>로 띄운 알림은 그대로 보입니다.
+  토스트는 한 번에 하나만 보입니다. 새 토스트가 보이던 것을 대신하고, 긴 것은 줄을 바꿉니다.
   <code>selectionToolbar</code>를 끄면 선택한 그림 위의 도구 모음이 숨겨집니다. 오른쪽 클릭 메뉴는 그대로입니다.
   <code>statusBar.rangeTimeframe</code>를 끄면 기간 막대의 기간이 봉에 비해 길어도 시간 단위를 유지하고, 켜면 주봉이나 월봉으로 바꿨다가 되돌립니다.
   거래 도구는 툴바의 거래 메뉴 하나에 모여 있습니다: <code>toolbar.bracketOrders</code>, <code>toolbar.depthLadder</code>,

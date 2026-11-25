@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { IndicatorEngine, registerBuiltInIndicators } from '@tradecanvas/core';
 import { EN_TRANSLATOR, createTranslator, resolveMessages } from '../i18n.js';
 import { DE_MESSAGES } from '../locales/de.js';
+import { VI_MESSAGES } from '../locales/vi.js';
 import { widgetIndicatorLabel } from '../indicatorInputWords.js';
 
 const engine = new IndicatorEngine();
@@ -29,5 +30,24 @@ describe('an indicator’s label in the widget', () => {
     const own = { defaultConfig: { type: 'ema' }, shortName: 'TDK', inputs: { type: { options: [{ value: 'ema', label: 'Mũ' }, { value: 'sma', label: 'Đơn' }, 'wma'] } } };
     expect(widgetIndicatorLabel({ id: 'tdk', params: { type: 'sma' }, descriptor: own }, EN_TRANSLATOR)).toBe('TDK Đơn');
     expect(widgetIndicatorLabel({ id: 'tdk', params: { type: 'ema' }, descriptor: own }, EN_TRANSLATOR)).toBe('TDK');
+  });
+});
+
+describe('a switch in the widget’s language', () => {
+  const patterns = (params: Record<string, number>) => ({
+    id: 'candlepatterns',
+    params: { trendPeriod: 10, reversal: 1, continuation: 1, indecision: 0, ...params },
+    descriptor: {
+      shortName: 'Patterns',
+      defaultConfig: { trendPeriod: 10, reversal: 1, continuation: 1, indecision: 0 },
+      inputs: { trendPeriod: { kind: 'int' as const, min: 2 }, reversal: { kind: 'int' as const, min: 0, max: 1 }, continuation: { kind: 'int' as const, min: 0, max: 1 }, indecision: { kind: 'int' as const, min: 0, max: 1 } },
+    },
+  });
+
+  it('names one turned on or off in the widget’s words, and leaves one at its default out', () => {
+    expect(widgetIndicatorLabel(patterns({}), EN_TRANSLATOR)).toBe('Patterns 10');
+    expect(widgetIndicatorLabel(patterns({ reversal: 0, indecision: 1 }), EN_TRANSLATOR)).toBe('Patterns 10 Reversal off Indecision');
+    const vi = createTranslator(VI_MESSAGES);
+    expect(widgetIndicatorLabel(patterns({ reversal: 0, indecision: 1 }), vi)).toBe('Patterns 10 Đảo chiều tắt Lưỡng lự');
   });
 });

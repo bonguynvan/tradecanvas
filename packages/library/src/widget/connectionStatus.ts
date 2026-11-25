@@ -18,7 +18,10 @@ export function shownConnection(
   message: string,
   info: Pick<SymbolInfo, 'delayMinutes'> | null | undefined,
   t: Translator,
+  quiet = false,
 ): ShownConnection {
+  // Connected, and telling nothing: "Live" would be said of a price that is minutes old.
+  if (state === 'connected' && quiet) return { message: t('status.noUpdates'), delayed: true };
   const delay = info?.delayMinutes;
   if (state !== 'connected' || delay === undefined || !Number.isFinite(delay) || delay <= 0) return { message, delayed: false };
   return { message: fill(t('status.delayed'), { minutes: Math.ceil(delay) }), delayed: true };

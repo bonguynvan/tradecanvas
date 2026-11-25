@@ -94,3 +94,82 @@ describe('CurrentPriceLine', () => {
     });
   });
 });
+
+describe('CurrentPriceLine: a tag that reads', () => {
+  it('fills its tag in the day’s colour deepened until its ink reads at 4.5:1, and leaves a look’s own colours alone', async () => {
+    const { GRAPHITE_LIGHT_THEME, contrastRatio, resolveChartTheme } = await import('@tradecanvas/commons');
+    for (const [price, close] of [[101, 100], [99, 100]]) {
+      const line = new CurrentPriceLine();
+      line.setPrice(price, close);
+      line.renderTag(recordingCtx().ctx, viewport(90, 110), GRAPHITE_LIGHT_THEME);
+      const tag = line.getTag()!;
+      expect(contrastRatio(tag.color, tag.textColor)!, String(price)).toBeGreaterThanOrEqual(4.5);
+    }
+    const own = resolveChartTheme(GRAPHITE_LIGHT_THEME, 'candlestick', { 'lastPrice.labelBackground': '#0b8f6f' });
+    const line = new CurrentPriceLine();
+    line.setPrice(101, 100);
+    line.renderTag(recordingCtx().ctx, viewport(90, 110), own);
+    expect(line.getTag()!.color).toBe('#0b8f6f');
+  });
+});
+
+describe('CurrentPriceLine: at the day’s limits', () => {
+  const lines = [
+    { price: 107, color: '#ff00ff', label: 'CE' },
+    { price: 93, color: '#00ffff', label: 'FL' },
+    { price: 100, color: '#ffd700', label: 'REF' },
+  ];
+  const tagAt = async (price: number, on: boolean, close = 100) => {
+    const { resolveChartTheme } = await import('@tradecanvas/commons');
+    const theme = resolveChartTheme(DARK_THEME, 'candlestick', on ? { 'lastPrice.limitColors': true } : {});
+    const line = new CurrentPriceLine();
+    line.setPrice(price, close);
+    line.renderTag(recordingCtx().ctx, viewport(90, 110), theme, lines);
+    return line.getTag()!.color.toLowerCase();
+  };
+
+  it('is the limit’s colour at the ceiling, at the floor and at the reference, where the style says so', async () => {
+    expect(await tagAt(107, true)).toBe('#ff00ff');
+    expect(await tagAt(93, true)).toBe('#00ffff');
+    expect(await tagAt(100, true)).toBe('#ffd700');
+    // Past a limit (a market that lets a price through) is at it still.
+    expect(await tagAt(108, true)).toBe('#ff00ff');
+    expect(await tagAt(92.5, true)).toBe('#00ffff');
+  });
+
+  it('draws its line in the limit’s colour too, and its tag over a look’s own tag colours', async () => {
+    const { resolveChartTheme } = await import('@tradecanvas/commons');
+    const theme = resolveChartTheme(DARK_THEME, 'candlestick', { 'lastPrice.limitColors': true, 'lastPrice.labelBackground': '#123456', 'lastPrice.labelTextColor': '#abcdef' });
+    const strokes: string[] = [];
+    const state: Record<string, unknown> = {};
+    const ctx = new Proxy(state, {
+      get: (target, key: string) => (key in target ? target[key] : key === 'stroke' ? () => strokes.push(String(target.strokeStyle)) : key === 'measureText' ? () => ({ width: 10 }) : () => {}),
+      set: (target, key: string, value) => { target[key] = value; return true; },
+    }) as unknown as CanvasRenderingContext2D;
+    const line = new CurrentPriceLine();
+    line.setPrice(107, 100);
+    line.render(ctx, viewport(90, 112), theme, lines);
+    expect(strokes.map((c) => c.toLowerCase())).toEqual(['#ff00ff']);
+    expect(line.getTag()!.color.toLowerCase()).toBe('#ff00ff');
+    expect(line.getTag()!.textColor).not.toBe('#abcdef');
+    // Between the limits the look's own tag is back.
+    line.setPrice(103, 100);
+    line.render(ctx, viewport(90, 112), theme, lines);
+    expect(line.getTag()!.color).toBe('#123456');
+    expect(line.getTag()!.textColor).toBe('#abcdef');
+  });
+
+  it('is the day’s colour between them, and everywhere with the style off or no limits known', async () => {
+    const up = DARK_THEME.candleUp.toLowerCase();
+    const down = DARK_THEME.candleDown.toLowerCase();
+    expect(await tagAt(103, true)).toBe(up);
+    expect(await tagAt(97, true)).toBe(down);
+    expect(await tagAt(107, false)).toBe(up);
+    expect(await tagAt(93, false)).toBe(down);
+    const { resolveChartTheme } = await import('@tradecanvas/commons');
+    const line = new CurrentPriceLine();
+    line.setPrice(107, 100);
+    line.renderTag(recordingCtx().ctx, viewport(90, 110), resolveChartTheme(DARK_THEME, 'candlestick', { 'lastPrice.limitColors': true }));
+    expect(line.getTag()!.color.toLowerCase()).toBe(up);
+  });
+});

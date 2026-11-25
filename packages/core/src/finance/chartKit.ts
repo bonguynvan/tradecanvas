@@ -34,6 +34,9 @@ export const BOTTOM_LABELS = 20;
 /** Room for a label's text around it, px. */
 export const LABEL_SIZE = 11;
 const LEGEND_SWATCH = 10;
+/** A legend entry's stretch of line: long enough for dashes to read as dashes. */
+const LEGEND_LINE = 22;
+const LEGEND_LINE_WIDTH = 2;
 const LEGEND_GAP = 6;
 const LEGEND_ITEM_GAP = 16;
 const LEGEND_ROW = 18;
@@ -105,6 +108,16 @@ export function niceScale(min: number, max: number, maxTicks = 5, widened = fals
   for (let k = first; k <= last; k++) ticks.push(clean(k * step, decimals));
   if (ticks.length < 2 || !ticks.every(Number.isFinite)) return UNIT_SCALE;
   return { min: ticks[0], max: ticks[ticks.length - 1], step: clean(step, decimals), ticks };
+}
+
+/**
+ * How far `value` is from `min` to `max`: 0 at `min`, 1 at `max`. By halves
+ * where the two are further apart than the largest number, so that values
+ * at both ends of what a number can hold still have a place between them.
+ */
+export function shareBetween(value: number, min: number, max: number): number {
+  const span = max - min;
+  return Number.isFinite(span) ? (value - min) / span : (value / 2 - min / 2) / (max / 2 - min / 2);
 }
 
 /** Where `value` falls along a span of pixels, `start` at the scale's min (or max when `inverted`). */
@@ -190,6 +203,18 @@ export function axisFormat(scale: NiceScale, locale?: string): (value: number) =
   return fixedFormat(locale, stepDecimals(scale.step));
 }
 
+/** How a value reads between a scale's ticks, by how many decimals its steps have. */
+const readoutFor = Array.from({ length: MAX_DECIMALS + 1 }, (_, decimals) => cached((locale) => new Intl.NumberFormat(locale, { maximumFractionDigits: decimals })));
+
+/**
+ * A value read between a scale's ticks: up to two more decimals than its
+ * steps have, so a price of 0.0431 on steps of 0.01 is not written 0.04.
+ */
+export function readoutFormat(scale: NiceScale, locale?: string): (value: number) => string {
+  const format = readoutFor[Math.min(MAX_DECIMALS, stepDecimals(scale.step) + 2)](locale);
+  return (value) => format.format(value);
+}
+
 const shortFor = cached((locale) => new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 2 }));
 
 /** A series' colour: its own, else the palette's in turn. */
@@ -212,7 +237,16 @@ export function canvasMeasure(ctx: CanvasRenderingContext2D, theme: Theme): Meas
 export interface LegendItem {
   label: string;
   color: string;
+  /**
+   * Shown as a stretch of line in place of a square, where a square's
+   * colour would not say which line is meant: the colours along it, in
+   * equal parts (the entry's own without any), and its dashes.
+   */
+  line?: { colors?: readonly string[]; dash?: readonly number[] };
 }
+
+/** How wide an entry's sample is, before its text. */
+const sampleWidth = (item: LegendItem) => (item.line ? LEGEND_LINE : LEGEND_SWATCH);
 
 export interface LegendLayout {
   items: (LegendItem & { x: number; y: number })[];
@@ -226,7 +260,7 @@ export function layoutLegend(items: readonly LegendItem[], maxWidth: number, mea
   let x = 0;
   let row = 0;
   for (const item of items) {
-    const width = LEGEND_SWATCH + LEGEND_GAP + measure(item.label, LABEL_SIZE);
+    const width = sampleWidth(item) + LEGEND_GAP + measure(item.label, LABEL_SIZE);
     if (x > 0 && (column || x + width > maxWidth)) {
       row++;
       x = 0;
@@ -245,11 +279,32 @@ export function drawLegend(ctx: CanvasRenderingContext2D, layout: LegendLayout, 
   ctx.textAlign = 'left';
   for (const item of layout.items) {
     const cy = oy + item.y + LEGEND_ROW / 2;
-    ctx.fillStyle = item.color;
-    ctx.fillRect(ox + item.x, cy - LEGEND_SWATCH / 2, LEGEND_SWATCH, LEGEND_SWATCH);
+    if (item.line) drawLegendLine(ctx, item, ox + item.x, cy);
+    else {
+      ctx.fillStyle = item.color;
+      ctx.fillRect(ox + item.x, cy - LEGEND_SWATCH / 2, LEGEND_SWATCH, LEGEND_SWATCH);
+    }
     ctx.fillStyle = theme.textSecondary;
-    ctx.fillText(item.label, ox + item.x + LEGEND_SWATCH + LEGEND_GAP, cy);
+    ctx.fillText(item.label, ox + item.x + sampleWidth(item) + LEGEND_GAP, cy);
   }
+  ctx.restore();
+}
+
+/** An entry's sample as the line it stands for: its colours one after another, dashed where the line is. */
+function drawLegendLine(ctx: CanvasRenderingContext2D, item: LegendItem, x: number, y: number): void {
+  const colors = item.line?.colors?.length ? item.line.colors : [item.color];
+  const part = LEGEND_LINE / colors.length;
+  ctx.save();
+  ctx.lineWidth = LEGEND_LINE_WIDTH;
+  ctx.setLineDash([...(item.line?.dash ?? [])]);
+  colors.forEach((color, i) => {
+    ctx.beginPath();
+    ctx.moveTo(x + part * i, y);
+    ctx.lineTo(x + part * (i + 1), y);
+    ctx.strokeStyle = color;
+    ctx.stroke();
+  });
+  ctx.setLineDash([]);
   ctx.restore();
 }
 
@@ -438,4 +493,68 @@ export function fitText(text: string, width: number, measure: Measure, size = LA
   let cut = text;
   while (cut.length > 1 && measure(`${cut}…`, size) > width) cut = cut.slice(0, -1);
   return cut.length > 1 ? `${cut}…` : '';
+}
+
+/**
+ * The lowest and the highest of `values`, by a loop: spread into `Math.min`
+ * they run out of stack past a hundred thousand or so. Null with none.
+ */
+export function extent(values: Iterable<number>): { min: number; max: number } | null {
+  let min = Infinity;
+  let max = -Infinity;
+  for (const value of values) {
+    if (value < min) min = value;
+    if (value > max) max = value;
+  }
+  return min <= max ? { min, max } : null;
+}
+
+/** A line down the plot at `x` (px), with `text` over the plot. */
+export interface TopMark {
+  x: number;
+  text: string;
+  color: string;
+}
+
+/** No more rows of texts than this go into a plot: a mark past them keeps its line and loses its text. */
+const MAX_MARK_ROWS = 3;
+/** The room the texts of drawTopMarks take over a plot, px. */
+export const TOP_MARK_ROOM = 16;
+
+/**
+ * Dashed lines down the plot, each with its text over it: a price now, a
+ * breakeven, a strike at the money. A text that would run into one already
+ * written goes a row lower, inside the plot, three rows at most.
+ */
+export function drawTopMarks(ctx: CanvasRenderingContext2D, plot: Rect, marks: readonly TopMark[], theme: Theme): void {
+  ctx.save();
+  ctx.font = fontOf(theme, LABEL_SIZE - 1);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.lineWidth = 1;
+  const taken: { from: number; to: number; row: number }[] = [];
+  for (const mark of marks) {
+    const x = Math.round(mark.x) + 0.5;
+    ctx.strokeStyle = mark.color;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.moveTo(x, plot.y);
+    ctx.lineTo(x, plot.y + plot.height);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    const half = ctx.measureText(mark.text).width / 2 + 4;
+    let row = 0;
+    while (row < MAX_MARK_ROWS && taken.some((t) => t.row === row && x - half < t.to && x + half > t.from)) row++;
+    if (row === MAX_MARK_ROWS) continue;
+    taken.push({ from: x - half, to: x + half, row });
+    const baseline = plot.y - 3 + row * (LABEL_SIZE + 3);
+    if (row > 0) {
+      // Inside the plot the text lies on its own line: a ground of its own keeps it readable.
+      ctx.fillStyle = theme.background;
+      ctx.fillRect(x - half + 2, baseline - LABEL_SIZE, half * 2 - 4, LABEL_SIZE + 1);
+    }
+    ctx.fillStyle = mark.color;
+    ctx.fillText(mark.text, x, baseline);
+  }
+  ctx.restore();
 }

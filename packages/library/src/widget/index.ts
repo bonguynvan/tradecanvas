@@ -35,9 +35,13 @@ export type {
   DockPageSpec,
   DockPageHandle,
   ChartSettingsState,
+  BrokerOrderKind,
+  BrokerOrderRules,
 } from './types.js';
 export { WIDGET_FEATURES } from './widgetFeatures.js';
 export type { WidgetFeature, WidgetFeatures } from './widgetFeatures.js';
+export type { TapeOptions } from './WidgetTape.js';
+export type { TapeSide } from './tapeRows.js';
 export { readWatchlists } from './WatchlistStore.js';
 export type { WatchlistList } from './WatchlistStore.js';
 export { ChartWidgetGrid, DEFAULT_GRID_SYNC, GRID_SHAPES, readGridLayout } from './ChartWidgetGrid.js';

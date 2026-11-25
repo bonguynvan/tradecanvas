@@ -1,7 +1,9 @@
 import type {
   ChartOptions,
   ChartType,
+  FootprintBar,
   OHLCBar,
+  Trade,
   DataSeries,
   Theme,
   ThemeName,
@@ -36,19 +38,21 @@ import type {
   TimeZoneSetting,
   SymbolInfo,
   OverlayScale,
+  Point,
   ViewportState,
   FeaturesConfig,
   ExecutionAdapter,
   ExecutionConfig,
   CrosshairCursor,
 } from '@tradecanvas/commons';
-import { isValidTimeZone, sessionMinute, symbolTimeZone, LayerType, setLocale as setGlobalLocale, computePriceLimits, createMarketTheme, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
+import { isValidTimeZone, sessionMinute, symbolTimeZone, tradingDayStart, LayerType, setLocale as setGlobalLocale, computePriceLimits, createMarketTheme, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import { CHART_SPACING } from '@tradecanvas/commons';
-import type { BarLayout, ChartDensity, ChartSpacing, ChartTypeOptions, DataUpdatePayload, FontConfig, IndicatorId, IndicatorParamsFor, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
+import type { BarLayout, ChartDensity, ChartImageOptions, ChartPdfOptions, ChartPrintOptions, ChartSpacing, ChartTypeOptions, DataUpdatePayload, FontConfig, IndicatorId, IndicatorParamsFor, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ResolvedLayout, ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorIntervals, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
 import { readChartTypeOptions, tickBarCount, barTimeUnit, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
 import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, CompareSymbolPaneIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, axisTimes, HiLoRenderer, PointAndFigureRenderer, isPriceLevelAlert, loadWebGL, gpuContextsLeft, whenGpuContextFree, idleCssCursor, isCrosshairCursor } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
+import { canCopyImage, canvasBlob, canvasDataURL, canvasReadable, canvasesToPdf, copyImage, downloadImage, imageFileName, imageRatio, picturePixels, pictureSize, printCanvas } from '@tradecanvas/core';
 import { indicatorWorkerPool, INDICATOR_WORKER_MIN_BARS, THEME_LOOK_KEYS, valuePlots, panelScale, panelScaleTexts, panelTagText, type IndicatorWorkerLease } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
@@ -91,6 +95,12 @@ import {
   VolumeProfileRenderer,
   MarketProfileRenderer,
   DepthHeatmapRenderer,
+  FootprintRenderer,
+  FootprintStore,
+  FOOTPRINT_IMBALANCE,
+  FOOTPRINT_MAX_SLOT,
+  FOOTPRINT_SLOT_GAP,
+  FOOTPRINT_TEXT_BAR_WIDTH,
   PeriodLevelsRenderer,
   PivotMarkersRenderer,
   AlertManager,
@@ -124,14 +134,18 @@ import {
   PRICE_AXIS_ADD_STRIP,
   findDominantSwing,
 } from '@tradecanvas/core';
-import type { ChartRendererInterface, CompareValue, RangePreset, SessionHoursConfig, DrawingPatch, DrawingOrderMove } from '@tradecanvas/core';
+import type { BracketDraft, BracketSize, ChartRendererInterface, CompareValue, RangePreset, SessionHoursConfig, DrawingPatch, DrawingOrderMove } from '@tradecanvas/core';
 import { timeframeToMs } from '@tradecanvas/commons';
 import { resolveRenderer, isReshapedChartType } from './charts/ChartTypeStrategy.js';
 import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
 import { isValidBar } from './DataManager.js';
 import { SeriesStore, isWholeBar, type LiveChange } from './SeriesStore.js';
 import { PriceFit, hasVolume } from './model/PriceFit.js';
+import { FootprintFeed, barOfTrade, barSpanOf, footprintRowSize } from './model/FootprintFeed.js';
+import { TradeStream } from './model/TradeStream.js';
+import { TradingBook, ofSymbol } from './model/TradingBook.js';
 import { DisplaySeries } from './model/DisplaySeries.js';
+import { ActivityLog, type ActivityEntry } from './model/ActivityLog.js';
 import { PaneLayout } from './model/PaneLayout.js';
 import { IndicatorHistory, INDICATOR_EDIT_MERGE_MS } from './model/IndicatorHistory.js';
 import { IndicatorPanes } from './model/IndicatorPanes.js';
@@ -140,7 +154,7 @@ import { SymbolRequests } from './model/SymbolRequests.js';
 import { drawingPaneAt, drawingPaneViewport, takesDrawing } from './model/DrawingPanes.js';
 import { HistoryPager, type HistoryLoader } from './HistoryPager.js';
 import { ThemeManager } from './ThemeManager.js';
-import { startOverrides } from './style/styleOptions.js';
+import { readFont, readShapes, startOverrides } from './style/styleOptions.js';
 import { LayoutManager } from './layout/LayoutManager.js';
 import { requiredPriceAxisWidth, nextPriceAxisWidth } from './layout/priceAxisWidth.js';
 import { LabelWidths } from './layout/labelWidths.js';
@@ -170,11 +184,33 @@ function assertTimeZone(tz: TimeZoneSetting): void {
 
 /** Room above and below the left scale's overlays, as a share of their range. */
 const LEFT_SCALE_PADDING = 0.08;
+/** How many of its recent trades a feed is asked for when a footprint starts. */
+const FOOTPRINT_RECENT_TRADES = 1000;
+/** The slot a chart turned into a footprint opens at: a little over the narrowest whose footprint carries both sides' numbers. */
+const FOOTPRINT_OPENING_SLOT = FOOTPRINT_TEXT_BAR_WIDTH + FOOTPRINT_SLOT_GAP + 8;
+/** How long the live trades are held for a feed's recent ones, ms: a feed that never answers must not hold them back for ever. */
+const RECENT_TRADES_WAIT_MS = 10_000;
+/** The feed whose trades the chart follows: the series it is of, what counts them into the footprint, how to stop listening, and the wait for its recent trades. */
+interface TradesLive {
+  key: string;
+  feed: FootprintFeed;
+  stop: () => void;
+  wait: ReturnType<typeof setTimeout> | null;
+}
+/** How many times a picture at a size of its own fits its bars and sizes its scales: a scale that changes width changes the plot once. */
+const PICTURE_FIT_ROUNDS = 3;
+/** The base an order's id writes its numbers in: digits and letters, short. */
+const ID_RADIX = 36;
+/** How many characters of chance mark one chart's order ids from another's. */
+const ID_MARK_LENGTH = 6;
 /** Fewest bars ahead of the view that trigger the next history page. */
 const HISTORY_AHEAD_MIN_BARS = 20;
 
 /** Narrowest box (px) the zoom-area tool zooms into. */
 const MIN_ZOOM_BOX_PX = 8;
+/** A picture for paper (`print`, `toPdf`) is drawn in this theme and with this many pixels to a CSS pixel, unless its options say otherwise. */
+const PAPER_THEME = 'light';
+const PAPER_PIXEL_RATIO = 2;
 /** Arrow keys on selected drawings: a bar across or a pixel up or down; Shift moves this many. */
 const NUDGE_SHIFT_STEPS = 10;
 /** Each arrow key's step for selected drawings: bars across, pixels down. */
@@ -188,6 +224,12 @@ const NUDGE_KEYS: Record<string, [bars: number, px: number]> = {
 /** Drawings drawn across the whole plot's width, or its height, whatever their anchors. */
 const FULL_WIDTH_DRAWINGS = new Set(['horizontalLine', 'crossLine']);
 const FULL_HEIGHT_DRAWINGS = new Set(['verticalLine', 'crossLine']);
+
+/** Whether a day's limits given whole are prices: three numbers, the reference between a floor above zero and its ceiling. */
+function soundLimits(limits: PriceLimitInfo): boolean {
+  const { ceiling, floor, reference } = limits;
+  return [ceiling, floor, reference].every(Number.isFinite) && floor > 0 && floor <= reference && reference <= ceiling;
+}
 
 export class Chart {
   static version = typeof __TC_VERSION__ !== 'undefined' ? __TC_VERSION__ : '0.0.0-dev';
@@ -213,13 +255,25 @@ export class Chart {
   private eventBus: EventBus;
   private streamManager: StreamManager | null = null;
   private executionAdapter: ExecutionAdapter | null = null;
-  /** What a confirmed bracket does with the adapter: `null` when `connectExecution` was not told. */
-  private executionBrackets: 'event' | 'place' | null = null;
-  /** The console was told once that a bracket did not reach the adapter. */
-  private bracketsWarned = false;
-  /** Waits for the first bracket confirmed with an adapter connected without `brackets`, to say so. */
-  private bracketWarner: (() => void) | null = null;
+  /** The time of the last price the adapter was given on a replay, ms; undefined while it runs on the clock. */
+  private markedAt: number | undefined;
+  /** What a confirmed bracket does with the adapter connected. */
+  private executionBrackets: 'event' | 'place' = 'place';
+  /** What happened to the orders: placed, moved, cancelled, filled, refused. */
+  private readonly activity = new ActivityLog();
+  /** The connected adapter's account, when it keeps one. */
+  private account: import('@tradecanvas/commons').AccountSummary | null = null;
   private execTeardown: (() => void) | null = null;
+  /** The orders, positions and fills the chart is told of, of every symbol: those of the symbol shown are drawn. */
+  private readonly book = new TradingBook();
+  /**
+   * The symbol whose orders, positions and fills are drawn: the stream's, or the one said for bars
+   * set by hand (`setSymbol`), whichever was told last. `''` with neither: all are drawn.
+   */
+  private tradedSymbol = '';
+  /** This chart's own mark in the ids it gives orders, and how many it has given. */
+  private readonly clientOrderMark = Math.random().toString(ID_RADIX).slice(2, 2 + ID_MARK_LENGTH).padEnd(ID_MARK_LENGTH, '0');
+  private clientOrderSeq = 0;
   private autoScrollOnNewBar = true;
   /** The drawn series (Renko bricks…) the indicators were last worked out on; null: the data bars. */
   private indicatorsOnDrawn: DataSeries | null = null;
@@ -348,6 +402,10 @@ export class Chart {
   private animator: Animator;
   private crosshairTooltip: CrosshairTooltip;
   private pinnedTooltip: PinnedTooltip;
+  /** Where the crosshair rests: the bar and the point the floating tooltip is shown for when a press is held there. */
+  private crosshairAt: { barIndex: number; point: Point } | null = null;
+  /** A mouse press is held still on the plot: the floating tooltip shows where it is asked for that way (`crosshairTooltip: 'hold'`). */
+  private tooltipHeld = false;
   private interactionManager: InteractionManager;
   private crosshairHandler: CrosshairHandler;
   private chartRenderer: ChartRendererInterface;
@@ -358,6 +416,24 @@ export class Chart {
   private disposed = false;
   /** Settings of the chart types that build their own bars. */
   private chartTypeOptions: ChartTypeOptions = {};
+  /** What traded at each price of each bar: what the footprint chart draws. */
+  private readonly footprint = new FootprintStore();
+  /** Trades given by hand (`addTrades`), those of bars still to come kept until the bars are there. */
+  private footprintByHand = new FootprintFeed(this.footprint, (time) => this.footprintBarOf(time));
+  /** The connected feed's trades, followed while the chart shows a footprint or someone asked for them. */
+  private tradesLive: TradesLive | null = null;
+  /** How many asked for the feed's trades (`followTrades`). */
+  private tradeFollowers = 0;
+  /** The symbol's trades told so far: each of the feed's is told once, however often it is asked for them. */
+  private tradesTold = new TradeStream();
+  /** The feed's trades counted into the footprint so far: each counted once, and anew once the footprint starts over. */
+  private footprintCounted = new TradeStream();
+  /** The row size the footprint was told to keep; 'auto': worked out from the rows given, or the price. */
+  private footprintRowSet: number | 'auto' = 'auto';
+  /** A footprint chosen: zoom in to where its numbers read, once its bars are there. */
+  private footprintZoomPending = false;
+  /** Up to when a replay has shown: the footprint draws no cells from there on. */
+  private footprintShownUntil: number | null = null;
   private mainSeriesVisible = true;
   /** The visible high and low, the bid and the ask. */
   private priceLines = new PriceLines();
@@ -375,6 +451,8 @@ export class Chart {
   private leftPriceAxis = new PriceAxis();
   private leftScaleRequested = false;
   private leftAxisWidth = PRICE_AXIS_WIDTH;
+  /** While a picture at a size of its own is drawn: the chart is laid out for the picture, not for the page. */
+  private picturing = false;
   /** The left scale's viewport this frame; null while it is hidden. */
   private leftViewport: ViewportState | null = null;
   private timeAxis: TimeAxis;
@@ -407,6 +485,12 @@ export class Chart {
   private announcedSymbol: string | null = null;
   private announcedTimeframe: TimeFrame | null = null;
   private streamAdapter: DataAdapter | null = null;
+  /** When the stream last told anything (bars, a bar's update or close, a trade, a quote, a price), by the clock; null before it has. */
+  private feedToldAt: number | null = null;
+  /** Asked before a button on the chart closes or reverses a position (`setPositionGuard`). */
+  private positionGuard: ((action: 'positionClose' | 'positionReverse', positionId: string, send: () => void) => void) | null = null;
+  /** Asked before a bracket or a draft order is sent on being confirmed (`setOrderGate`). */
+  private orderGate: (() => boolean) | null = null;
   /** Pages older bars in as the view nears the oldest one. */
   private history: HistoryPager;
   /** Whether the history loader is the connected stream's (and goes with it). */
@@ -593,8 +677,30 @@ export class Chart {
     this.depthLayer.setConfig({ enabled: this.features.depth, ...options.depthOverlay });
     this.tradingManager.setContainer(container);
     this.tradingManager.setRequestRender(() => this.engine.requestRender(LayerType.Overlay));
+    // A price set by hand (a line dragged, a bracket, the right-click menu) is a price of the market: on its step.
+    this.tradingManager.setPriceRounding((price) => this.roundPrice(price));
+    // And an order's own is one of today's: inside the day's ceiling and floor, where the market has them.
+    this.tradingManager.setOrderPriceBounds(() => this.getPriceLimits());
     this.tradingManager.setEventCallback((event, data) => {
-      this.eventBus.emit(event as ChartEventType, data);
+      // An order asked for on the chart itself (a draft confirmed, the engine's own menu) goes out with an id, as one asked for by code.
+      const payload = event === 'orderPlace' ? this.withClientOrderId(data as import('@tradecanvas/commons').OrderPlaceIntent) : data;
+      const send = () => this.eventBus.emit(event as ChartEventType, payload);
+      // A button on a position's line closes or reverses it in one press: whoever guards those is asked first.
+      if (this.positionGuard && (event === 'positionClose' || event === 'positionReverse')) {
+        this.positionGuard(event, (data as { positionId: string }).positionId, send);
+        return;
+      }
+      send();
+    });
+    // The profile's figures start in the legend's corner: they are written under it, however tall it is drawn.
+    this.eventBus.on('legendResize', () => this.clearProfileOfLegend());
+    // The activity log hears what the chart is told, whoever tells it: an adapter, or the app's own calls.
+    this.eventBus.on('ordersChange', (e) => this.activity.orders((e.payload as { orders: TradingOrder[] }).orders, this.activityTime()));
+    this.eventBus.on('executionFill', (e) => this.activity.fill(e.payload as import('@tradecanvas/commons').FillEvent));
+    this.eventBus.on('executionError', (e) => this.activity.error(e.payload as import('@tradecanvas/commons').ExecutionErrorPayload, this.activityTime()));
+    // With no adapter the orders are the app's to give, and it gives another symbol's for another symbol: those are no news.
+    this.eventBus.on('symbolChange', () => {
+      if (!this.executionAdapter) this.activity.rebase();
     });
 
     // Rendering
@@ -626,8 +732,7 @@ export class Chart {
     this.engine.onContainerResize = (newSize) => {
       if (newSize.width <= 0 || newSize.height <= 0) return;
       const wasAtEnd = this.viewport.isAtEnd();
-      this.viewport.resize(newSize.width, newSize.height);
-      this.layoutManager.resize(newSize.width, newSize.height);
+      this.takeSize(newSize);
       // wasAtEnd carries the user's intent: if they were tracking the live
       // edge before the resize, keep them there afterwards. Otherwise leave
       // their scroll position alone.
@@ -640,6 +745,7 @@ export class Chart {
 
     // Chart renderer
     this.chartRenderer = this.createChartRenderer(this.options.chartType);
+    this.useFootprintWidths('candlestick', this.options.chartType);
     this.gridRenderer = new GridRenderer();
     if (options.grid?.visible === false) this.gridRenderer.setVisible(false);
     this.priceAxis = new PriceAxis();
@@ -659,11 +765,19 @@ export class Chart {
       this.crosshairHandler.setMode(options.crosshair.mode);
     }
     if (isCrosshairCursor(options.crosshair?.cursor)) this.crosshairHandler.setCursor(options.crosshair.cursor);
+    // An order's line dragged to a price writes that price itself: the crosshair's would sit a few pixels from it.
+    this.crosshairHandler.setPriceHeld(() => this.tradingManager.isDraggingLine());
+    // The price it writes is the market's there: what the "+" beside it, or a right-click, places at.
+    this.crosshairHandler.setPriceRounding((price) => this.roundPrice(price));
+    // Where the theme says so, the price under the pointer says how far it is from the last.
+    // Not with the last price hidden: the change would be from a price the chart does not show.
+    this.crosshairHandler.setChangeBase(() => (this.currentPriceLine.isVisible() ? this.currentPriceLine.getPrice() : null));
     // Crosshair callback — fired via microtask AFTER render, only when the bar
     // changes: no extra render requests, and the tooltip's one measurement
     // happens once per bar, not per mouse move.
     this.crosshairHandler.setDataSource(() => this.crosshairSeries());
     this.crosshairHandler.setCallback((barIndex, point) => {
+      this.crosshairAt = barIndex !== null && point ? { barIndex, point } : null;
       if (barIndex !== null && point) {
         const data = this.crosshairSeries();
         const bar = barIndex >= 0 && barIndex < data.length ? data[barIndex] : undefined;
@@ -679,21 +793,7 @@ export class Chart {
         if (this.features.legend) this.engine.requestRender(LayerType.Hover);
 
         // Update tooltip (DOM, lightweight update only when bar changes).
-        // Over an indicator pane there is no price crosshair to sit beside.
-        const vs = this.viewport.getState();
-        const inPlot = point.y >= vs.chartRect.y && point.y <= vs.chartRect.y + vs.chartRect.height;
-        if (bar && inPlot && this.features.crosshairTooltip) {
-          const dated = time === bar.time ? bar : { ...bar, time: time ?? bar.time };
-          this.crosshairTooltip.show(point, dated, this.themeManager.getTheme(), this.cachedContainerSize(), {
-            prevClose,
-            priceRange: vs.priceRange,
-            plot: vs.chartRect,
-            barStepMs: barTimeStepMs(times),
-            timeUnit: barTimeUnit(times),
-          });
-        } else {
-          this.crosshairTooltip.hide();
-        }
+        this.placeCrosshairTooltip(barIndex, point, times);
 
         // Refresh the pinned tooltip's delta strip against the hovered bar.
         // Cheap when there's nothing pinned (early returns inside reposition).
@@ -777,6 +877,7 @@ export class Chart {
     this.pinnedTooltip.setLocale(this.numberLocale);
     if (options.priceFormat) this.applyPriceFormat(options.priceFormat);
     if (options.chartTypeOptions) this.chartTypeOptions = readChartTypeOptions(options.chartTypeOptions);
+    this.applyFootprintOptions();
     if (options.highLowLines) this.priceLines.setHighLow(true);
     if (options.shapes) this.themeManager.setShape(readShapes(options.shapes));
     if (options.font) this.themeManager.setFont(readFont(options.font));
@@ -1044,7 +1145,8 @@ export class Chart {
     });
     this.applyPriceAxisAdd();
     this.interactionManager.setPriceAxisAddButton(this.priceAxisAddButton, (pos) => {
-      const price = yToPrice(pos.y, this.viewport.getState());
+      // The price there on the market's grid: what is added at it (an order, an alert) is at a price the market has.
+      const price = this.roundPrice(yToPrice(pos.y, this.viewport.getState()));
       if (Number.isFinite(price)) this.eventBus.emit('priceAxisAdd', { price, x: pos.x, y: pos.y });
     });
     if (this.features.trading) {
@@ -1055,6 +1157,8 @@ export class Chart {
     }
     if (this.features.alerts) {
       const alertDrag = new AlertDragHandler(this.alertManager, () => this.viewport.getState());
+      // Dragged, an alert is at a price of the market, as one set from the "+" or the menu is.
+      alertDrag.setPriceRounding((price) => this.roundPrice(price));
       this.interactionManager.setAlertDragHandler(alertDrag);
     }
 
@@ -1087,6 +1191,7 @@ export class Chart {
       );
       this.engine.requestRender(LayerType.Overlay);
     });
+    this.applyTooltipHold();
 
     // A mark's badge reacts to the pointer always (it shows what it marks);
     // a signal marker when someone listens. A badge is over a marker under it.
@@ -1156,7 +1261,7 @@ export class Chart {
 
     this.interactionManager.setConfirmHandler(() => {
       if (this.features.trading && this.tradingManager.isBracketActive()) {
-        this.tradingManager.confirmBracket();
+        this.confirmBracket();
         return true;
       }
       return false;
@@ -1518,8 +1623,13 @@ export class Chart {
     this.scheduleRender();
   }
 
-  /** A trade's price into the forming bar (its high, low, close and volume): the live price, as with `updateLastBar`. */
-  updateLastBarFromTick(tick: { price: number; volume?: number; time: number }): void {
+  /**
+   * A trade's price into the forming bar (its high, low, close and volume):
+   * the live price, as with `updateLastBar`. With the trade's `side`, the
+   * bar's `buyVolume` counts it too; a trade with a volume and no side leaves
+   * the bar with none.
+   */
+  updateLastBarFromTick(tick: { price: number; volume?: number; time: number; side?: 'buy' | 'sell' }): void {
     if (!Number.isFinite(tick.price) || tick.price < 0) return;
     if (tick.volume !== undefined && !(Number.isFinite(tick.volume) && tick.volume >= 0)) return;
     // A tick outside regular hours, while they are hidden, moves the price line and what follows the price, not a bar.
@@ -1618,12 +1728,14 @@ export class Chart {
     // The series' own style keys for this type.
     this.themeManager.setChartType(type as ChartType);
     this.chartRenderer = this.createChartRenderer(type);
+    this.useFootprintWidths(previous, type);
     // A new renderer, even for the type set: it takes what the series is built on (the point & figure box) on the next build.
     this.display.invalidate();
     this.chartLegend.setChartType(type as ChartType);
     this.applyTimeSpacing();
     this.updateViewportAndRender(true);
     this.fitFewColumns();
+    this.syncTradeFeed();
     this.markStateChanged();
     // Bricks and boxes draw no marks: a badge under the pointer goes with the bars it stood on.
     if (!this.isTimeAligned()) this.dropMarkHover();
@@ -1639,6 +1751,7 @@ export class Chart {
    * are, as candles are.
    */
   private fitFewColumns(): void {
+    this.zoomIntoFootprint();
     const type = this.options.chartType;
     if (!isReshapedChartType(type) || this.pluginManager.getChartType(type)) return;
     const n = this.getDisplayData().length;
@@ -1664,6 +1777,8 @@ export class Chart {
    */
   setChartTypeOptions(options: ChartTypeOptions): void {
     this.chartTypeOptions = { ...this.chartTypeOptions, ...readChartTypeOptions(options) };
+    this.applyFootprintOptions();
+    this.syncTradeFeed();
     this.updateViewportAndRender(true);
     this.fitFewColumns();
     // New settings build other bars: a screen reader hears the new summary, as after a new type.
@@ -1825,6 +1940,7 @@ export class Chart {
   setBidAsk(quote: BidAsk | null): void {
     this.priceLines.setBidAsk(quote);
     this.engine.requestRender(LayerType.Overlay);
+    this.eventBus.emit('bidAskChange', quote ? { ...quote } : null);
   }
 
   getBidAsk(): BidAsk | null {
@@ -2354,6 +2470,7 @@ export class Chart {
       || (next !== null && this.legendStack !== null && next.width === this.legendStack.width && next.height === this.legendStack.height);
     if (same) return;
     this.legendStack = next;
+    this.clearProfileOfLegend();
     this.engine.requestRender();
   }
 
@@ -2820,7 +2937,8 @@ export class Chart {
   private contextAt(area: import('@tradecanvas/commons').ChartContextArea, pos: { x: number; y: number }): import('@tradecanvas/commons').ChartContextMenuPayload {
     const vs = { ...this.viewport.getState(), data: this.getDisplayData() };
     const payload: import('@tradecanvas/commons').ChartContextMenuPayload = { area, x: pos.x, y: pos.y };
-    if (area === 'plot' || area === 'priceAxis') payload.price = yToPrice(pos.y, vs);
+    // The price on the market's grid, as the "+" by the axis gives it.
+    if (area === 'plot' || area === 'priceAxis') payload.price = this.roundPrice(yToPrice(pos.y, vs));
     if ((area === 'plot' || area === 'timeAxis') && vs.data.length > 0) payload.time = xToTime(pos.x, vs);
     if (area === 'pane') {
       const pane = this.getIndicatorPanes().find((p) => pos.y >= p.rect.y && pos.y <= p.rect.y + p.rect.height);
@@ -2953,7 +3071,7 @@ export class Chart {
     for (const ind of this.indicatorEngine.getActiveIndicators()) {
       const series = this.indicatorEngine.getOutput(ind.instanceId)?.series;
       if (!series) continue;
-      const name = indicatorChipLabel(ind.id, ind.params, ind.descriptor.defaultConfig, ind.descriptor.shortName);
+      const name = indicatorChipLabel(ind.id, ind.params, ind.descriptor.defaultConfig, ind.descriptor.shortName, ind.descriptor.inputs);
       // Marks on some bars (`kind: 'markers'`) are no column: they are not values.
       const plots = ind.descriptor.plots ? valuePlots(ind.descriptor.plots) : Object.keys(series.find((p) => p) ?? {}).map((key) => ({ key, title: key }));
       for (const plot of plots) {
@@ -3104,33 +3222,126 @@ export class Chart {
 
   // --- Trading ---
 
+  /**
+   * The account's working orders, all of them. One that names its symbol
+   * (`symbol`) is drawn on the chart of that symbol and kept on another,
+   * where `getOrders` and `ordersChange` still give it; one that names none
+   * is drawn on whatever the chart shows.
+   */
   setOrders(orders: TradingOrder[]): void {
     if (!this.features.trading) return;
-    this.tradingManager.setOrders(orders);
+    this.book.setOrders(orders);
+    this.tradingManager.setOrders(ofSymbol(orders, this.tradedSymbol));
     this.eventBus.emit('ordersChange', { orders });
+  }
+
+  /**
+   * The symbol the chart shows, as it was given: its stream's (`connect`,
+   * `switchStream`), or the one said for bars set by hand (`setSymbol`); `''`
+   * with neither. The orders, positions and fills it draws are those of this
+   * symbol, and the orders it asks for name it.
+   */
+  getSymbol(): string {
+    return this.tradedSymbol;
+  }
+
+  /**
+   * Say which symbol the chart's bars are of, where they are set by hand
+   * (`setData`); a stream names its own. The chart then draws that symbol's
+   * orders, positions and fills, keeps those that name another, and names it
+   * on the orders it asks for. `''` takes it back: everything is drawn.
+   */
+  setSymbol(symbol: string): void {
+    this.showTradingOf(symbol);
+  }
+
+  /** Another symbol shown: its own orders, positions and fills are drawn, and the last one's are kept. */
+  private showTradingOf(symbol: string): void {
+    if (symbol === this.tradedSymbol) return;
+    this.tradedSymbol = symbol;
+    // The account is told what a price of this symbol is worth, as the market now set has it.
+    this.executionAdapter?.setMultiplier?.(this.marketConfig?.contractMultiplier, symbol);
+    if (!this.features.trading) return;
+    this.tradingManager.setOrders(ofSymbol(this.book.getOrders(), symbol));
+    this.tradingManager.setPositions(ofSymbol(this.book.getPositions(), symbol));
+    this.tradingManager.setFills(ofSymbol(this.book.getFills(), symbol));
+    this.engine.requestRender();
   }
 
   /**
    * Begin placing a draggable bracket order (entry + stop-loss + take-profit).
    * Defaults the entry to the latest close when `entry` is omitted. Drag the
    * three lines to adjust; confirm with Enter (emits `bracketPlace`) or cancel
-   * with Esc. Returns false if trading is disabled or no price is available.
+   * with Esc. `size` gives it its quantity: `{ quantity: 2 }`, or
+   * `{ risk: 50 }` for the quantity that loses 50 at the stop, which follows
+   * the lines as they are dragged. With no size it has no quantity, and a
+   * connected execution adapter is not sent it. Returns false if trading is
+   * disabled or no price is available.
    */
-  startBracket(side: import('@tradecanvas/commons').OrderSide, entry?: number): boolean {
+  startBracket(side: import('@tradecanvas/commons').OrderSide, entry?: number, size?: BracketSize): boolean {
     if (!this.features.trading) return false;
     const data = this.series.bars();
     const price = entry ?? (data.length > 0 ? data[data.length - 1].close : null);
     if (price === null) return false;
-    this.tradingManager.startBracket(side, price);
+    // A risk is money: the quantity it buys is counted by what a price is worth on the market, unless the host says.
+    const multiplier = this.marketConfig?.contractMultiplier;
+    const sized = size && size.risk !== undefined && size.multiplier === undefined && multiplier !== undefined ? { ...size, multiplier } : size;
+    this.tradingManager.startBracket(side, price, sized);
     return true;
+  }
+
+  /** Size the bracket being placed anew (a quantity typed in a field). With none being placed it does nothing. */
+  setBracketSize(size: BracketSize | undefined): void {
+    if (this.features.trading) this.tradingManager.setBracketSize(size);
+  }
+
+  /** The bracket being placed: its side, its three prices and the quantity its size gives it now. Null with none. */
+  getBracket(): BracketDraft | null {
+    return this.features.trading ? this.tradingManager.getBracket() : null;
   }
 
   cancelBracket(): void {
     if (this.features.trading) this.tradingManager.cancelBracket();
   }
 
+  /**
+   * Confirm the bracket being placed: `bracketPlace` goes out, and with an
+   * execution adapter connected it is sent as an order. A bracket the adapter
+   * would not be sent (it has no quantity) is not confirmed: `executionError`
+   * says why (`reason: 'noQuantity'`), and it stays to be given a size.
+   * Returns whether it was confirmed.
+   */
   confirmBracket(): boolean {
-    return this.features.trading ? this.tradingManager.confirmBracket() : false;
+    if (!this.features.trading) return false;
+    const bracket = this.tradingManager.getBracket();
+    if (bracket && bracket.quantity === undefined && this.placesBrackets()) {
+      this.eventBus.emit('executionError', { message: 'A bracket with no quantity is not sent to the adapter', command: 'bracketPlace', reason: 'noQuantity' });
+      return false;
+    }
+    if (this.orderGate && !this.orderGate()) return false;
+    return this.tradingManager.confirmBracket();
+  }
+
+  /**
+   * Ask before the chart sends an order it was only asked to confirm: a
+   * bracket or a draft order dragged on the plot (Enter, `confirmBracket`,
+   * `confirmOrderDraft`). Answered false, nothing is sent and the bracket or
+   * the draft stays as it is. `ChartWidget` holds them back while its feed is
+   * down; null asks no one.
+   */
+  setOrderGate(gate: (() => boolean) | null): void {
+    this.orderGate = gate;
+  }
+
+  /**
+   * Ask before a button on a position's line closes or reverses it: the guard
+   * is given what was pressed, the position's id and `send`, and calls `send`
+   * when it is to go ahead (after a confirmation, say), or never. Your own
+   * calls of `closePositionIntent` and `reversePositionIntent` are not asked
+   * about. `ChartWidget` confirms these presses with it; null asks no one.
+   */
+  setPositionGuard(guard: ((action: 'positionClose' | 'positionReverse', positionId: string, send: () => void) => void) | null): void {
+    this.positionGuard = guard;
   }
 
   isBracketActive(): boolean {
@@ -3158,7 +3369,8 @@ export class Chart {
   }
 
   confirmOrderDraft(): boolean {
-    return this.features.trading ? this.tradingManager.confirmOrderDraft() : false;
+    if (!this.features.trading || (this.orderGate && !this.orderGate())) return false;
+    return this.tradingManager.confirmOrderDraft();
   }
 
   isOrderDraftActive(): boolean {
@@ -3166,49 +3378,124 @@ export class Chart {
   }
 
   /**
-   * Emit an `orderPlace` intent (e.g. from a depth-ladder click). The chart
-   * does not create the order itself — the host listens via
-   * `chart.on('orderPlace', …)` and submits to its OMS.
+   * Ask for an order: the `orderPlace` event, which a connected execution
+   * adapter places; with none, the app listens (`chart.on('orderPlace', …)`)
+   * and sends it to its own order management.
+   *
+   * The order goes out with a `clientOrderId`, an id of its own: the one it
+   * came with, else one the chart gives it. A broker that takes it turns a
+   * repeat of the same order away, and what became of the order is told by
+   * it: `orderPlaced` once an adapter took it, or an `executionError` that
+   * names it. Returns the order as it was sent, or null with trading off.
    */
-  placeOrderIntent(intent: import('@tradecanvas/commons').OrderPlaceIntent): void {
-    if (!this.features.trading) return;
-    this.eventBus.emit('orderPlace', intent);
+  placeOrderIntent(intent: import('@tradecanvas/commons').OrderPlaceIntent): import('@tradecanvas/commons').OrderPlaceIntent | null {
+    if (!this.features.trading) return null;
+    const sent = this.withClientOrderId(intent);
+    this.eventBus.emit('orderPlace', sent);
+    return sent;
   }
 
+  /**
+   * An order as it goes out: with an id of its own (the one it has, else a new one), so that a
+   * broker can tell a press sent twice from two orders and what became of it be told by it; and
+   * with the symbol it is for, the one shown unless it names another, so that an account of many
+   * symbols knows which.
+   */
+  private withClientOrderId(intent: import('@tradecanvas/commons').OrderPlaceIntent): import('@tradecanvas/commons').OrderPlaceIntent {
+    const named = intent.symbol !== undefined || this.tradedSymbol === '' ? intent : { ...intent, symbol: this.tradedSymbol };
+    return named.clientOrderId ? named : { ...named, clientOrderId: this.nextClientOrderId() };
+  }
+
+  /** An id for one order asked for: this chart's own mark, the moment and a count, so that no two are alike on a page or across reloads. */
+  private nextClientOrderId(): string {
+    this.clientOrderSeq += 1;
+    return `tc-${this.clientOrderMark}-${Date.now().toString(ID_RADIX)}-${this.clientOrderSeq.toString(ID_RADIX)}`;
+  }
+
+  /** The account's open positions, all of them: one that names its symbol is drawn on the chart of that symbol and kept on another, as an order is (`setOrders`). */
   setPositions(positions: TradingPosition[]): void {
     if (!this.features.trading) return;
-    this.tradingManager.setPositions(positions);
+    this.book.setPositions(positions);
+    this.tradingManager.setPositions(ofSymbol(positions, this.tradedSymbol));
     this.eventBus.emit('positionsChange', { positions });
   }
 
-  /** The working orders on the chart (`setOrders`, or the execution adapter's). */
+  /** The account's working orders (`setOrders`, or the execution adapter's), of every symbol: the chart draws those of the one it shows (`getSymbol`). */
   getOrders(): TradingOrder[] {
-    return this.tradingManager.getOrders();
+    return this.book.getOrders();
   }
 
-  /** The open positions on the chart (`setPositions`, or the execution adapter's). */
+  /** The account's open positions (`setPositions`, or the execution adapter's), of every symbol: the chart draws those of the one it shows (`getSymbol`). */
   getPositions(): TradingPosition[] {
-    return this.tradingManager.getPositions();
+    return this.book.getPositions();
   }
 
-  /** Fills marked on the chart, oldest first: the execution adapter's, or `addFill`'s. */
+  /**
+   * What happened to the orders, oldest first, the latest 200: each placed,
+   * moved, cancelled or filled, and what was refused with why. Read from the
+   * orders, fills and errors the chart is told, from an execution adapter or
+   * from `setOrders` and `addFill`. The orders there when it began are not
+   * in it, nor those there when an adapter is connected or taken away, or
+   * (with no adapter) when the symbol changes. An order filled in part and
+   * then taken off is logged cancelled. `ordersChange`, `executionFill` and
+   * `executionError` follow it.
+   */
+  getActivityLog(): ActivityEntry[] {
+    return this.activity.entries();
+  }
+
+  /** Empty the activity log. */
+  clearActivityLog(): void {
+    this.activity.clear();
+  }
+
+  /**
+   * The moment an order placed now is placed at, in milliseconds: the clock's,
+   * or, while a paper account trades on a replay, the replay's (the time of
+   * the last price the account was given). It is what the account's fills are
+   * timed with, and what it holds the date of a good-till-date order against.
+   */
+  getTradingTime(): number {
+    return this.executionAdapter?.setMarkPrice !== undefined && this.markedAt !== undefined ? this.markedAt : Date.now();
+  }
+
+  /** When something that is no fill happened: now, or on a replay the bar it is at (as the paper account's fills are timed). */
+  private activityTime(): number {
+    if (this.replaySession === null) return Date.now();
+    return this.series.bars().at(-1)?.time ?? Date.now();
+  }
+
+  /**
+   * The account's fills, oldest first, of every symbol (the latest 1000): the
+   * execution adapter's, or `addFill`'s. Each has its `symbol`: its own, else
+   * its position's or its order's, else the one the chart showed as it came.
+   * The chart marks those of the symbol it shows.
+   */
   getFills(): import('@tradecanvas/commons').FillEvent[] {
-    return this.tradingManager.getFills();
+    return this.book.getFills();
   }
 
-  /** The P&L the fills realised since the last `clearFills`, all of them (the marks keep the latest 1000). */
+  /** The P&L the fills realised since the last `clearFills`, all of them, of every symbol (the marks keep the latest 1000). */
   getRealisedPnl(): number {
-    return this.tradingManager.getRealisedPnl();
+    return this.book.realisedPnl();
   }
 
-  /** Mark a fill on the chart (without an execution adapter, a host reports its own). */
+  /** A fill of the account (without an execution adapter, a host reports its own): marked on the chart of its symbol. */
   addFill(fill: import('@tradecanvas/commons').FillEvent): void {
     if (!this.features.trading) return;
-    this.tradingManager.addFill(fill);
-    this.eventBus.emit('executionFill', fill);
+    this.tellFill(fill);
   }
 
+  /** A fill kept with its symbol, marked where the chart shows that symbol, and told. */
+  private tellFill(fill: import('@tradecanvas/commons').FillEvent): void {
+    const told = this.book.addFill(fill, this.tradedSymbol);
+    if (ofSymbol([told], this.tradedSymbol).length > 0) this.tradingManager.addFill(told);
+    this.eventBus.emit('executionFill', told);
+  }
+
+  /** Forget the fills, of every symbol: their marks, and the profit they realised. */
   clearFills(): void {
+    this.book.setFills([], this.tradedSymbol);
     this.tradingManager.setFills([]);
   }
 
@@ -3287,6 +3574,8 @@ export class Chart {
 
   /** `dataUpdate` for the bars: the series is `length` bars now. */
   private emitBars(length: number): void {
+    // A trade made before its bar was there can be counted now.
+    this.settleFootprint();
     this.eventBus.emit('dataUpdate', { kind: 'bars', length } satisfies DataUpdatePayload);
     // A mirrored crosshair stays on its slot: the legend reads the bar there now, not the old series'.
     const synced = this.crosshairHandler.getSyncedSlot();
@@ -3365,7 +3654,9 @@ export class Chart {
     this.streamManager.setTimeZone(this.studyZoneHeld ? this.studyZone : this.getExchangeTimeZone());
 
     this.streamManager.on('snapshot', (bars) => {
+      this.feedToldAt = Date.now();
       const key = this.streamSeriesKey(config.adapter);
+      const reconnected = key === this.snapshotKey;
       if (key === this.snapshotKey && this.replaySession) {
         this.series.mergeSnapshot(bars); // a reconnect during a replay: into the live series kept aside
       } else if (key === this.snapshotKey && this.series.length() > 0) {
@@ -3377,13 +3668,20 @@ export class Chart {
       }
       this.snapshotKey = key;
       this.useStreamHistory(config.adapter, config.historyPageSize);
+      // The bars the trades are counted into are there now; after a reconnect, the trades made meanwhile are asked for.
+      this.syncTradeFeed(reconnected);
     });
 
     // Each bar lands by its time: the last bar again (its latest values, a
     // close included), a new one after it, or none when it is older. A
     // closed one older than the last is a correction of the bar loaded at
     // its time: final, even when the host's own bars run ahead of the stream.
+    // A trade at the price there was moves no bar and no price line: it is a word from the feed all the same.
+    this.streamManager.on('tick', () => {
+      this.feedToldAt = Date.now();
+    });
     this.streamManager.on('barClose', (bar) => {
+      this.feedToldAt = Date.now();
       if (!isValidBar(bar)) return;
       const write = this.series.placeStreamBar(bar);
       if (write.to === 'none') {
@@ -3406,10 +3704,12 @@ export class Chart {
 
     // The feed's last word on a bar already past: no live price.
     this.streamManager.on('barCorrection', (bar) => {
+      this.feedToldAt = Date.now();
       this.updateBar(bar);
     });
 
     this.streamManager.on('barUpdate', (bar) => {
+      this.feedToldAt = Date.now();
       if (!isValidBar(bar)) return;
       const write = this.series.placeStreamBar(bar);
       // A frame of a bar older than the last is stale: it moves nothing, the price line included.
@@ -3438,11 +3738,13 @@ export class Chart {
     this.setBidAsk(null); // the last symbol's quote
     // A tick may carry one side only: the other stays.
     this.streamManager.on('quote', (quote) => {
+      this.feedToldAt = Date.now();
       const now = this.priceLines.getBidAsk();
       this.setBidAsk({ bid: quote.bid ?? now?.bid, ask: quote.ask ?? now?.ask });
     });
 
     this.streamManager.on('priceChange', ({ price, previousClose }) => {
+      this.feedToldAt = Date.now();
       if (!Number.isFinite(price) || price < 0) return;
       // Orders and alerts keep tracking the live market during a replay; the
       // price line shows the replayed close instead.
@@ -3456,6 +3758,8 @@ export class Chart {
     });
 
     this.streamManager.on('connectionChange', (info) => {
+      // Connected again: it has the wait from now to tell something.
+      if (info.state === 'connected') this.feedToldAt = Date.now();
       this.eventBus.emit('dataUpdate', { kind: 'connection', connection: info } satisfies DataUpdatePayload);
     });
 
@@ -3507,7 +3811,12 @@ export class Chart {
   /** The stream's symbol and timeframe, told when they change. */
   private setStreamTarget(symbol: string, timeframe: TimeFrame): void {
     const previousSymbol = this.announcedSymbol;
+    // Another series: its bars are other bars, and the rows kept are not theirs.
+    if (symbol !== this.currentSymbol || timeframe !== this.streamTimeframe) this.forgetFootprint();
+    // Another symbol's trades are all new.
+    if (symbol !== this.currentSymbol) this.tradesTold = new TradeStream();
     this.currentSymbol = symbol;
+    this.showTradingOf(symbol);
     this.streamTimeframe = timeframe;
     this.tickStream = tickBarCount(timeframe) !== null;
     this.applyTimeSpacing();
@@ -3541,6 +3850,16 @@ export class Chart {
     if (timeframe === previous) return;
     this.announcedTimeframe = timeframe;
     if (timeframe) this.eventBus.emit('timeframeChange', { timeframe, previous });
+  }
+
+  /**
+   * When the connected stream last told anything: its bars, a bar's update,
+   * a quote or a price, by the clock (ms); null before it has, and with bars
+   * set by hand. A feed that is connected and tells nothing has stalled, or
+   * its market is shut: `ChartWidget` reads this to stop saying "Live".
+   */
+  getFeedTime(): number | null {
+    return this.feedToldAt;
   }
 
   /**
@@ -3590,6 +3909,8 @@ export class Chart {
    */
   disconnectStream(): void {
     this.symbolInfoSeq++; // a lookup still on its way no longer applies
+    // No stream: nothing is told, and nothing is waited for.
+    this.feedToldAt = null;
     this.releaseStudyZoneAfterCaller();
     this.priceLines.setBidAsk(null);
     if (this.streamManager) {
@@ -3603,6 +3924,7 @@ export class Chart {
     // A replay's finer bars came from this feed: the next one connected brings its own.
     this.replayLoader?.loader.dispose();
     this.replayLoader = null;
+    this.stopTradeFeed();
     this.streamAdapter = null;
     // Bars set by hand after this aren't tick bars.
     this.tickStream = false;
@@ -3622,8 +3944,12 @@ export class Chart {
       throw new Error('connectExecution requires features.trading to be enabled');
     }
     this.disconnectExecution();
+    // Another broker's orders are what is there, not orders placed now.
+    this.activity.rebase();
     this.executionAdapter = adapter;
-    this.executionBrackets = config.brackets ?? null;
+    // An adapter that counts money counts it as the chart's market does.
+    adapter.setMultiplier?.(this.marketConfig?.contractMultiplier, this.tradedSymbol ?? undefined);
+    this.executionBrackets = config.brackets ?? 'place';
     this.execTeardown = wireExecution(adapter, {
       onIntent: (type, handler) => {
         const wrapped = (e: ChartEvent) => handler(e.payload);
@@ -3633,55 +3959,47 @@ export class Chart {
       setOrders: (orders) => this.setOrders(orders),
       setPositions: (positions) => this.setPositions(positions),
       onError: (error) => this.eventBus.emit('executionError', error),
-      onFill: (fill) => {
-        this.tradingManager.addFill(fill);
-        this.eventBus.emit('executionFill', fill);
+      onOrderPlaced: (intent, order) => this.eventBus.emit('orderPlaced', { intent, order }),
+      newClientOrderId: () => this.nextClientOrderId(),
+      onFill: (fill) => this.tellFill(fill),
+      getPositions: () => this.book.getPositions(),
+      symbol: () => this.tradedSymbol || undefined,
+      multiplier: () => this.marketConfig?.contractMultiplier ?? 1,
+      // On the market's grid, as a bracket's entry is: one started at the market is a limit there, not a stop a step over it.
+      marketPrice: () => {
+        const close = this.series.bars().at(-1)?.close;
+        return close === undefined ? null : this.roundPrice(close);
       },
-      getPositions: () => this.tradingManager.getPositions(),
-      marketPrice: () => this.series.bars().at(-1)?.close ?? null,
       onBracketOrder: (order, bracket) => this.eventBus.emit('bracketOrder', { order, bracket }),
-    }, { brackets: config.brackets });
-    if (config.brackets === undefined) this.warnOfUnsentBrackets();
+      setAccount: (account) => {
+        // Read on wiring and told again on connecting: the same figures are one change.
+        if (this.account && JSON.stringify(this.account) === JSON.stringify(account)) return;
+        this.account = { ...account };
+        this.eventBus.emit('accountChange', { account: { ...account } });
+      },
+      onMarginCall: (call) => this.eventBus.emit('marginCall', { ...call }),
+    }, { brackets: this.executionBrackets });
+    this.eventBus.emit('executionChange', { connected: true });
     Promise.resolve(adapter.connect(config)).catch((cause) =>
       this.eventBus.emit('executionError', { message: 'Execution connect failed', cause }),
     );
   }
 
   /**
-   * Whether a confirmed bracket goes to the connected adapter as an order
-   * (`connectExecution(adapter, { brackets: 'place' })`), not only as the
-   * `bracketPlace` event.
+   * Whether a confirmed bracket goes to the connected adapter as an order,
+   * not only as the `bracketPlace` event: with an adapter connected, unless
+   * it was connected with `brackets: 'event'`.
    */
   placesBrackets(): boolean {
     return this.executionAdapter !== null && this.executionBrackets === 'place';
   }
 
-  /**
-   * An adapter connected without saying what a bracket does: the first one
-   * confirmed is said in the console not to have reached it, once a chart.
-   */
-  private warnOfUnsentBrackets(): void {
-    if (this.bracketsWarned || this.bracketWarner) return;
-    const warnOnce = () => {
-      this.stopBracketWarner();
-      this.bracketsWarned = true;
-      console.warn("[Chart] A bracket was confirmed with an execution adapter connected, and was not sent to it: only the bracketPlace event went out. connectExecution(adapter, { brackets: 'place' }) sends it as an order; { brackets: 'event' } keeps the event and says nothing. 'place' becomes the default in the next major version.");
-    };
-    this.bracketWarner = warnOnce;
-    this.eventBus.on('bracketPlace', warnOnce);
-  }
-
-  private stopBracketWarner(): void {
-    if (!this.bracketWarner) return;
-    this.eventBus.off('bracketPlace', this.bracketWarner);
-    this.bracketWarner = null;
-  }
-
   /** Tear down the active execution adapter (if any) and stop routing intents. */
   disconnectExecution(): void {
     this.returnMarkToLive();
-    this.executionBrackets = null;
-    this.stopBracketWarner();
+    // The next adapter starts on the clock, whatever this one was given.
+    this.markedAt = undefined;
+    this.executionBrackets = 'place';
     if (this.execTeardown) {
       this.execTeardown();
       this.execTeardown = null;
@@ -3689,7 +4007,22 @@ export class Chart {
     if (this.executionAdapter) {
       this.executionAdapter.disconnect();
       this.executionAdapter = null;
+      this.activity.rebase();
+      this.eventBus.emit('executionChange', { connected: false });
     }
+    if (this.account) {
+      this.account = null;
+      this.eventBus.emit('accountChange', { account: null });
+    }
+  }
+
+  /**
+   * The connected execution adapter's account: its balance, equity, margin
+   * and what trading cost. Null with no adapter, or one that keeps no money
+   * (the paper account without a `balance`). `accountChange` follows it.
+   */
+  getAccount(): import('@tradecanvas/commons').AccountSummary | null {
+    return this.account ? { ...this.account } : null;
   }
 
   /**
@@ -4393,6 +4726,7 @@ export class Chart {
 
   setMarketProfileVisible(visible: boolean): void {
     this.marketProfile.setVisible(visible);
+    this.clearProfileOfLegend();
     this.engine.requestRender(LayerType.Main);
   }
 
@@ -4400,7 +4734,7 @@ export class Chart {
     return this.marketProfile.isVisible();
   }
 
-  setMarketProfileConfig(config: { buckets?: number; widthRatio?: number; opacity?: number; valueAreaPct?: number; highlightPoC?: boolean; showStats?: boolean; splitBySession?: boolean; letters?: boolean }): void {
+  setMarketProfileConfig(config: { buckets?: number; widthRatio?: number; opacity?: number; valueAreaPct?: number; highlightPoC?: boolean; showStats?: boolean; splitBySession?: boolean; letters?: boolean; color?: string | null; valueAreaColor?: string | null }): void {
     if (config.buckets !== undefined) this.marketProfile.setBuckets(config.buckets);
     if (config.widthRatio !== undefined) this.marketProfile.setWidthRatio(config.widthRatio);
     if (config.opacity !== undefined) this.marketProfile.setOpacity(config.opacity);
@@ -4409,7 +4743,19 @@ export class Chart {
     if (config.showStats !== undefined) this.marketProfile.setShowStats(config.showStats);
     if (config.splitBySession !== undefined) this.marketProfile.setSplitBySession(config.splitBySession);
     if (config.letters !== undefined) this.marketProfile.setLetters(config.letters);
+    // Colours of its own (null: the theme's again), so that candles hidden or coloured otherwise leave the profile as it is.
+    this.marketProfile.setColors({ color: config.color, valueAreaColor: config.valueAreaColor });
     this.engine.requestRender(LayerType.Main);
+  }
+
+  /**
+   * The profile's figures are written under the legend's lines, which start in the same corner,
+   * and under what a host stacks beneath them (`setLegendStack`: the widget's rows of indicators).
+   */
+  private clearProfileOfLegend(): void {
+    const top = this.viewport.getState().chartRect.y;
+    const legend = this.isLegendVisible() ? Math.max(0, this.getLegendBottom() - top) : 0;
+    this.marketProfile.setClearTop(legend + (this.legendStack?.height ?? 0));
   }
 
   /** How the Market Profile is drawn, as `setMarketProfileConfig` left it. */
@@ -4433,13 +4779,19 @@ export class Chart {
     return this.depthHeatmap.isVisible();
   }
 
-  setDepthHeatmapConfig(config: { opacity?: number; capacity?: number }): void {
+  /**
+   * How the liquidity heatmap is drawn. `bidColor` and `askColor` are colours of its own (null:
+   * the theme's rising and falling candles again): a chart that hides its candles, or colours
+   * them for something else, keeps its heatmap with them.
+   */
+  setDepthHeatmapConfig(config: { opacity?: number; capacity?: number; bidColor?: string | null; askColor?: string | null }): void {
     if (config.opacity !== undefined) this.depthHeatmap.setOpacity(config.opacity);
     if (config.capacity !== undefined) this.depthHeatmap.setCapacity(config.capacity);
+    this.depthHeatmap.setColors({ bidColor: config.bidColor, askColor: config.askColor });
     this.engine.requestRender(LayerType.Main);
   }
 
-  getDepthHeatmapConfig(): { opacity: number; capacity: number } {
+  getDepthHeatmapConfig(): import('@tradecanvas/core').DepthHeatmapConfig {
     return this.depthHeatmap.getConfig();
   }
 
@@ -4461,6 +4813,275 @@ export class Chart {
   clearDepthHeatmap(): void {
     this.depthHeatmap.clear();
     this.engine.requestRender(LayerType.Main);
+  }
+
+  // --- Footprint ---
+
+  /**
+   * Trades into the footprint (`chartType: 'footprint'`): each is counted in
+   * the bar of its time and the row of its price, on the side that took it
+   * (`side`; one that does not say is told by the trade before it: bought
+   * when the price went up to it, sold when it went down). A trade of a bar
+   * that is not there yet is kept until it is; one from before the first
+   * bar is left out. A chart connected to a feed with trades asks for them
+   * itself while it shows a footprint (`chartTypeOptions.footprint.collect`).
+   * They are told as a `trades` event, as the feed's are.
+   */
+  addTrades(trades: readonly Trade[]): void {
+    this.resolveFootprintRow();
+    if (this.footprintByHand.live(trades)) this.footprintChanged();
+    this.tellTrades(this.tradesTold.byHand(trades), false);
+  }
+
+  /**
+   * The trades of the chart's symbol told lately, oldest first: up to 2,000
+   * of them, the feed's and those given by hand. For a listener that comes
+   * after trades were told (a chart that shows a footprint follows them
+   * from the start): read these, then listen for `trades`.
+   */
+  getTrades(): Trade[] {
+    return this.tradesTold.trades();
+  }
+
+  /**
+   * Follow the trades of the chart's symbol until the function it returns is
+   * called: the connected feed's recent trades, then its live ones, as
+   * `trades` events (a feed with `fetchTrades` and `subscribeTrades`; any
+   * other tells none). The feed is asked once for any number of followers
+   * and let go when the last one stops, unless the chart shows a footprint,
+   * which follows them by itself. Followed before a feed is connected, it
+   * starts with the connection.
+   */
+  followTrades(): () => void {
+    this.tradeFollowers++;
+    this.syncTradeFeed();
+    let following = true;
+    return () => {
+      if (!following) return;
+      following = false;
+      this.tradeFollowers--;
+      this.syncTradeFeed();
+    };
+  }
+
+  /**
+   * Rows of the footprint as given, for a host that keeps them itself: each
+   * bar's rows (its `time` in milliseconds) replace the ones it had; a bar
+   * with no rows has no footprint. With no row size set
+   * (`chartTypeOptions.footprint.rowSize`), the first rows given set it: the
+   * smallest step between their prices.
+   */
+  setFootprint(bars: readonly FootprintBar[]): void {
+    this.resolveFootprintRow(bars);
+    for (const bar of bars) this.footprint.set(bar);
+    this.footprintChanged();
+  }
+
+  /** The footprint of the bar at `time` (ms), null when it has none; with no time, every bar's, oldest first. */
+  getFootprint(): FootprintBar[];
+  getFootprint(time: number): FootprintBar | null;
+  getFootprint(time?: number): FootprintBar[] | FootprintBar | null {
+    // Copies: the rows kept are the ones drawn, and are not the host's to change.
+    const copy = (bar: FootprintBar): FootprintBar => ({ time: bar.time, levels: bar.levels.map((level) => ({ ...level })) });
+    if (time === undefined) return this.footprint.bars().map(copy);
+    const bar = this.footprint.get(time);
+    return bar ? copy(bar) : null;
+  }
+
+  /** Forget every bar's footprint: for a host that gave the rows and now shows another series. */
+  clearFootprint(): void {
+    this.forgetFootprint();
+    this.syncTradeFeed();
+    this.footprintChanged();
+  }
+
+  /** The rows kept and the trades waiting for their bars are another series': gone, the feed's included. */
+  private forgetFootprint(): void {
+    this.stopTradeFeed();
+    this.footprint.reset();
+    // Nothing is counted any more: the feed's recent trades are all to count again.
+    this.footprintCounted = new TradeStream();
+    this.footprintByHand = new FootprintFeed(this.footprint, (time) => this.footprintBarOf(time));
+  }
+
+  /** The bar of the live series a trade made at `time` is of. */
+  private footprintBarOf(time: number): number | 'later' | null {
+    const bars = this.series.liveBars();
+    return barOfTrade(bars, time, barSpanOf(this.streamTimeframe ?? this.announcedTimeframe, bars));
+  }
+
+
+  /**
+   * The row size, once: the one set; else the step of the rows given by
+   * hand; else about a ten-thousandth of the last price, in whole steps of
+   * the market's price step where it has one.
+   */
+  private resolveFootprintRow(given?: readonly FootprintBar[]): void {
+    if (this.footprint.getRowSize() > 0) return;
+    const bars = this.series.liveBars();
+    const price = bars[bars.length - 1]?.close ?? 0;
+    const size = footprintRowSize(this.footprintRowSet, given, price, this.stepAt(price));
+    if (size > 0) this.footprint.setRowSize(size);
+  }
+
+  /** The footprint's settings into its renderer; another row size starts the footprint again. */
+  private applyFootprintOptions(): void {
+    const options = this.chartTypeOptions.footprint ?? {};
+    if (this.chartRenderer instanceof FootprintRenderer) {
+      this.chartRenderer.setCells(options.cells ?? 'bidAsk');
+      this.chartRenderer.setImbalance(options.imbalance ?? FOOTPRINT_IMBALANCE);
+      this.chartRenderer.setTotals(options.totals !== false);
+    }
+    const rowSize = typeof options.rowSize === 'number' ? options.rowSize : 'auto';
+    if (rowSize === this.footprintRowSet) return;
+    this.footprintRowSet = rowSize;
+    // The rows kept cannot be cut into rows of another size.
+    this.forgetFootprint();
+  }
+
+  /** Whether the feed's trades are counted into the footprint: not where the host gives its rows itself. */
+  private collectsFootprint(): boolean {
+    return this.chartTypeOptions.footprint?.collect !== false;
+  }
+
+  /**
+   * Follow the feed's trades while the chart shows a footprint or someone
+   * asked for them (`followTrades`), of a connected series whose bars are
+   * in, and stop when no one does: its recent trades once, then its live
+   * ones.
+   */
+  private syncTradeFeed(reconnected = false): void {
+    const adapter = this.streamAdapter;
+    const symbol = this.currentSymbol;
+    const collects = this.collectsFootprint();
+    const wanted = ((this.options.chartType === 'footprint' && collects) || this.tradeFollowers > 0)
+      && !!adapter?.fetchTrades && !!adapter.subscribeTrades
+      && this.snapshotKey !== null && this.snapshotKey === this.streamSeriesKey(adapter);
+    // Counted into the footprint or not is part of what the feed is followed for: a change starts it again.
+    const key = wanted ? `${this.snapshotKey}|${collects ? 'counted' : 'told'}` : null;
+    if (key === (this.tradesLive?.key ?? null)) {
+      // The same series after a dropped connection: the trades made while it was down are in the feed's recent ones.
+      if (reconnected && this.tradesLive) this.fetchRecentTrades(this.tradesLive, adapter, symbol, collects);
+      return;
+    }
+    this.stopTradeFeed();
+    if (key === null || !adapter?.subscribeTrades) return;
+    const feed = new FootprintFeed(this.footprint, (time) => this.footprintBarOf(time));
+    const live: TradesLive = { key, feed, stop: () => {}, wait: null };
+    this.tradesLive = live;
+    // Live trades wait for the recent ones, so each is told, and counted, in its turn.
+    this.tradesTold.hold();
+    if (collects) this.footprintCounted.hold();
+    live.stop = adapter.subscribeTrades(symbol, (trades) => {
+      if (this.tradesLive !== live) return;
+      if (collects) this.countTrades(live, this.footprintCounted.live(trades));
+      this.tellTrades(this.tradesTold.live(trades), false);
+    });
+    this.fetchRecentTrades(live, adapter, symbol, collects);
+  }
+
+  /** Trades into the footprint, by the feed followed. */
+  private countTrades(live: TradesLive, trades: readonly Trade[]): void {
+    if (trades.length === 0) return;
+    this.resolveFootprintRow();
+    if (live.feed.live(trades)) this.footprintChanged();
+  }
+
+  /** The live trades held for the feed's recent ones, which are not coming: counted and told as they are. */
+  private releaseHeldTrades(live: TradesLive, collects: boolean): void {
+    if (collects) this.countTrades(live, this.footprintCounted.noRecent());
+    this.tellTrades(this.tradesTold.noRecent(), false);
+  }
+
+  /** Trades as a `trades` event, to whoever listens; none, no event. */
+  private tellTrades(trades: Trade[], recent: boolean): void {
+    if (trades.length > 0) this.eventBus.emit('trades', { trades, recent });
+  }
+
+  /** The feed's recent trades, while `live` is still the feed followed: into the footprint where they are counted, and told, those it has left out. */
+  private fetchRecentTrades(live: TradesLive, adapter: DataAdapter | null, symbol: string, collects: boolean): void {
+    if (!adapter?.fetchTrades) return;
+    const mine = (): boolean => this.tradesLive === live;
+    const answered = (): void => {
+      if (live.wait !== null) clearTimeout(live.wait);
+      live.wait = null;
+    };
+    // A feed that never answers: the live trades held for its recent ones go on without them.
+    answered();
+    live.wait = setTimeout(() => {
+      live.wait = null;
+      if (mine()) this.releaseHeldTrades(live, collects);
+    }, RECENT_TRADES_WAIT_MS);
+    adapter.fetchTrades(symbol, FOOTPRINT_RECENT_TRADES).then(
+      (trades) => {
+        if (!mine()) return;
+        answered();
+        if (collects) {
+          const counted = this.footprintCounted.recent(trades, FOOTPRINT_RECENT_TRADES);
+          this.resolveFootprintRow();
+          const recent = live.feed.recent(counted.fresh, counted.begins, counted.before);
+          const held = live.feed.live(counted.held);
+          if (recent || held) this.footprintChanged();
+        }
+        const told = this.tradesTold.recent(trades, FOOTPRINT_RECENT_TRADES);
+        this.tellTrades(told.fresh, true);
+        this.tellTrades(told.held, false);
+      },
+      (error: unknown) => {
+        if (!mine()) return;
+        answered();
+        // No recent trades: the live ones count from the first.
+        this.releaseHeldTrades(live, collects);
+        const message = error instanceof Error ? error.message : String(error);
+        this.eventBus.emit('dataUpdate', { kind: 'error', error: message } satisfies DataUpdatePayload);
+      },
+    );
+  }
+
+  private stopTradeFeed(): void {
+    const live = this.tradesLive;
+    if (!live) return;
+    if (live.wait !== null) clearTimeout(live.wait);
+    live.wait = null;
+    live.stop();
+    this.tradesLive = null;
+  }
+
+  /** Trades kept for bars that were still to come: counted when the bars are there. */
+  private settleFootprint(): void {
+    // Trades kept for want of a row size too: the bars that are there now say the price it is worked out from.
+    this.resolveFootprintRow();
+    const byHand = this.footprintByHand.settle();
+    const live = this.tradesLive?.feed.settle() ?? false;
+    if (byHand || live) this.footprintChanged();
+  }
+
+  private footprintChanged(): void {
+    if (this.options.chartType === 'footprint') this.engine.requestRender(LayerType.Main);
+  }
+
+  private setFootprintShownUntil(until: number | null): void {
+    this.footprintShownUntil = until;
+    if (this.chartRenderer instanceof FootprintRenderer) this.chartRenderer.setShownUntil(until);
+  }
+
+  /**
+   * A footprint's bars carry numbers: they may get much wider than candles
+   * do, and a chart that turns into one zooms in to where they read. Any
+   * other type keeps the usual limit, and bars wider than it are narrowed.
+   */
+  private useFootprintWidths(previous: ChartType | string, type: ChartType | string): void {
+    const footprint = type === 'footprint';
+    this.viewport.setMaxBarSlot(footprint ? FOOTPRINT_MAX_SLOT : null);
+    this.footprintZoomPending = footprint && (previous !== 'footprint' || this.footprintZoomPending);
+  }
+
+  /** Once the footprint has bars: to the narrowest bars that carry both sides' numbers, at the newest ones. */
+  private zoomIntoFootprint(): void {
+    if (!this.footprintZoomPending || this.series.bars().length === 0) return;
+    this.footprintZoomPending = false;
+    this.viewport.setBarSlot(FOOTPRINT_OPENING_SLOT);
+    this.updateViewportAndRender(true);
   }
 
   // --- Prior-period levels (PDH / PDL / PDC) ---
@@ -4534,28 +5155,37 @@ export class Chart {
     this.crosshairHandler.setExchangeTimeZone(zone);
     this.crosshairTooltip.setExchangeTimeZone(zone);
     this.pinnedTooltip.setExchangeTimeZone(zone);
+    // The day lines follow the clock shown and the symbol's sessions, also while the indicators hold the last zone.
+    this.applyDayBreaks();
     if (!this.studyZoneHeld) this.applyStudyZone(zone);
   }
 
   /**
    * The zone the indicators, the prior-day lines, the market profile and the
-   * bars built from trades count their days in. Held through a switch, the
+   * bars built from trades count their days in, and the minute the trading
+   * day starts at for the first three (`tradingDayStart` of the symbol's
+   * sessions; the bars built from trades keep the zone's midnight). Held through a switch, the
    * next symbol's trades go on building the day its history ends on when it
    * trades on the same exchange, rather than starting UTC's day beside it.
    */
   private applyStudyZone(zone: string | null): void {
     this.studyZone = zone;
     this.streamManager?.setTimeZone(zone);
+    // A session that runs past midnight (CME's 17:00 to 16:00) starts the trading day at its open.
+    const dayStart = tradingDayStart(this.symbolInfo?.sessions);
     this.periodLevels.setExchangeTimeZone(zone);
+    this.periodLevels.setDayStart(dayStart);
     this.marketProfile.setExchangeTimeZone(zone);
+    this.marketProfile.setDayStart(dayStart);
+    this.applyDayBreaks();
     const bars = this.series.bars();
     // With no bars yet, the data that comes computes them. Otherwise only
     // the indicators that count days in the zone, before the next read, not
     // now: the bars the symbol's hours filter again follow in setSymbolInfo,
     // and computing them computes everything once.
-    if (this.indicatorEngine.setExchangeTimeZone(zone, bars.length > 0 ? bars : undefined) && bars.length > 0) {
-      this.announceIndicatorUpdate(0);
-    }
+    const zoneMoved = this.indicatorEngine.setExchangeTimeZone(zone, bars.length > 0 ? bars : undefined);
+    const startMoved = this.indicatorEngine.setSessionStart(dayStart, bars.length > 0 ? bars : undefined);
+    if ((zoneMoved || startMoved) && bars.length > 0) this.announceIndicatorUpdate(0);
   }
 
   /**
@@ -4623,7 +5253,19 @@ export class Chart {
     this.crosshairTooltip.setTimezoneOffset(tz);
     this.pinnedTooltip.setTimezone(tz);
     this.sessionBreaks.setTimezone(tz);
+    this.applyDayBreaks();
     this.engine.requestRender();
+  }
+
+  /**
+   * The day lines start the trading day where the indicators do (a session
+   * that runs past midnight, `tradingDayStart`), while the chart shows the
+   * exchange's time; on any other clock a day there runs midnight to midnight.
+   */
+  private applyDayBreaks(): void {
+    const exchange = this.getExchangeTimeZone();
+    const onExchangeClock = exchange !== null && this.displayTz === exchange;
+    this.sessionBreaks.setDayStart(onExchangeClock ? tradingDayStart(this.symbolInfo?.sessions) : null);
   }
 
   // --- Symbol info ---
@@ -4778,6 +5420,53 @@ export class Chart {
 
   // --- Tooltip ---
 
+  /**
+   * The floating tooltip for the bar at `barIndex`, beside `point`: under a
+   * pointer that hovers (`crosshairTooltip: true`), or only while a press is
+   * held still (`'hold'`). Hidden otherwise, and over an indicator pane, where
+   * there is no price crosshair to sit beside.
+   */
+  private placeCrosshairTooltip(barIndex: number, point: Point, times = axisTimes(this.crosshairSeries())): void {
+    const data = this.crosshairSeries();
+    const bar = barIndex >= 0 && barIndex < data.length ? data[barIndex] : undefined;
+    const vs = this.viewport.getState();
+    const inPlot = point.y >= vs.chartRect.y && point.y <= vs.chartRect.y + vs.chartRect.height;
+    const asked = this.features.crosshairTooltip === 'hold' ? this.tooltipHeld : this.features.crosshairTooltip;
+    if (!bar || !inPlot || !asked) {
+      this.crosshairTooltip.hide();
+      return;
+    }
+    // A brick's own time only counts bricks: the tooltip gets the date the axis gives it.
+    const time = times[barIndex]?.time ?? bar.time;
+    this.crosshairTooltip.show(point, time === bar.time ? bar : { ...bar, time }, this.themeManager.getTheme(), this.cachedContainerSize(), {
+      prevClose: barIndex > 0 ? data[barIndex - 1]?.close : undefined,
+      priceRange: vs.priceRange,
+      plot: vs.chartRect,
+      barStepMs: barTimeStepMs(times),
+      timeUnit: barTimeUnit(times),
+    });
+  }
+
+  /**
+   * A mouse press held still asks for the tooltip only where the feature says
+   * so (`crosshairTooltip: 'hold'`, with a crosshair to sit beside): elsewhere
+   * a press held stays the pan it was, and a click when let go.
+   */
+  private applyTooltipHold(): void {
+    const asked = this.features.crosshair && this.features.crosshairTooltip === 'hold';
+    this.interactionManager.setHoldHandler(asked ? (held, pos) => this.holdTooltip(held, pos) : null);
+    if (!asked) this.tooltipHeld = false;
+  }
+
+  /** The press is held still (the tooltip shows for the bar the crosshair rests on), or let go (it goes). */
+  private holdTooltip(held: boolean, pos: Point): void {
+    this.tooltipHeld = held;
+    const at = this.crosshairAt;
+    // Beside the press itself: the crosshair's own point is where the pointer came onto this bar.
+    if (held && at) this.placeCrosshairTooltip(at.barIndex, pos);
+    else this.crosshairTooltip.hide();
+  }
+
   setTooltipVisible(visible: boolean): void {
     if (!visible) this.crosshairTooltip.hide();
   }
@@ -4886,55 +5575,212 @@ export class Chart {
 
   // --- Screenshot ---
 
-  screenshot(filename?: string): void {
-    if (!this.features.screenshot) return;
-    this.freshFrame();
-    Screenshot.download(this.container, filename, this.themeManager.getTheme().background);
+  /**
+   * The chart as a canvas, for a picture of it. With nothing asked that the
+   * screen cannot give, it is read off the chart's own canvases as they are
+   * now. For more pixels than the screen's (`pixelRatio`) or another theme
+   * (`theme`), the frame is drawn again on the picture's canvas, in Canvas
+   * 2D whatever the chart itself draws with: the chart on the page is left
+   * as it is. Null with screenshots switched off or a chart with no size.
+   */
+  toCanvas(options: ChartImageOptions = {}): HTMLCanvasElement | null {
+    if (!this.features.screenshot) return null;
+    const own = this.engine.dprManager.readContainerSize();
+    const size = pictureSize(own, options);
+    const sized = size.width !== own.width || size.height !== own.height;
+    if (options.pixelRatio === undefined && options.theme === undefined && !sized) {
+      this.freshFrame();
+      const read = Screenshot.compose(this.container, this.themeManager.getTheme().background);
+      // Canvases of no size make a picture of none.
+      return read && read.width > 0 && read.height > 0 ? read : null;
+    }
+    // A chart with no size has no layout to draw at another, and a picture asked for
+    // while one is being drawn (by a plugin, as it draws) would lay the chart out under it.
+    if (!(own.width > 0) || !(own.height > 0) || this.picturing) return null;
+    const ratio = imageRatio(size.width, size.height, options.pixelRatio, this.engine.dprManager.getDpr());
+    const canvas = document.createElement('canvas');
+    const pixels = picturePixels(size, ratio);
+    canvas.width = pixels.width;
+    canvas.height = pixels.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    // A paused chart hasn't taken in what changed since it stopped drawing: the
+    // scales are fitted for the picture, quietly. The frame it owes the page
+    // stays owed, and resuming draws it and says what moved.
+    if (this.isSuspended() && this.renderDeferred) {
+      this.panes.invalidateScales();
+      this.fitDataAndAxes();
+      this.syncRenderContext();
+    }
+    const paint = (): void => {
+      ctx.setTransform(canvas.width / size.width, 0, 0, canvas.height / size.height, 0, 0);
+      // The plot's ground is the container's on the page: the picture needs its own.
+      ctx.fillStyle = this.themeManager.getTheme().background;
+      ctx.fillRect(0, 0, size.width, size.height);
+      this.engine.renderTo(ctx);
+    };
+    // At another size or in another font the legend is another size: worked out before the frame, whose
+    // drawings keep clear of it, and the page's put back after.
+    const frame = (): void => {
+      if (this.features.legend) this.chartLegend.measure(ctx, this.viewport.getState(), this.themeManager.getTheme(), this.getDisplayData());
+      paint();
+    };
+    // False where the size leaves no room for a plot: there is nothing to draw of the chart.
+    const draw = sized ? (): boolean => this.atSize(size, frame) : (): boolean => (frame(), true);
+    if (options.theme === undefined && !sized) {
+      paint();
+    } else {
+      // The chart in the other theme, at the other size, for as long as the picture takes: nothing on the page is told or changed.
+      let drawn = false;
+      try {
+        this.chartLegend.keepSize(() => {
+          if (options.theme === undefined) drawn = draw();
+          else {
+            this.themeManager.withTheme(options.theme, () => {
+              this.syncRenderContext();
+              drawn = draw();
+            });
+          }
+        });
+      } finally {
+        this.syncRenderContext();
+        // A frame notes where its labels and tags are as it draws them, and what is pressed on the page is
+        // found by those notes: the page's own frame is drawn again before anything can be. A paused chart
+        // draws when it is shown again.
+        if (this.isSuspended()) this.engine.requestRender();
+        else this.engine.renderNow();
+      }
+      if (!drawn) return null;
+    }
+    // A host's canvas is laid over the chart where the chart is on the page: it has no place at another size.
+    if (!sized) this.drawGuestCanvases(ctx);
+    return canvas;
   }
 
-  /** Copy the chart image to the clipboard. Returns false if unsupported/blocked. */
-  async copyScreenshot(): Promise<boolean> {
-    if (!this.features.screenshot) return false;
-    const ClipboardItemCtor = (globalThis as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
-    // A runtime with no navigator has no clipboard either: that is a false, not an error.
-    const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
-    if (!clipboard?.write || !ClipboardItemCtor) return false;
+  /**
+   * Runs `draw` with the chart laid out at `size`, the bars now on view on
+   * view there, and puts the page's layout back: a picture at a size of its
+   * own. Nothing is told, and no canvas of the chart's is touched. The bars
+   * are as wide as the size makes them, within what a bar can be: past
+   * that, more or fewer of them are on view, about the same middle. What
+   * follows the pointer is left out, the pointer being at a place on the
+   * page. False, with nothing drawn, where the size leaves the plot no room.
+   */
+  private atSize(size: { width: number; height: number }, draw: () => void): boolean {
+    const own = this.engine.dprManager.readContainerSize();
+    const kept = { viewport: this.viewport.snapshot(), fit: this.priceFit.snapshot(), priceAxisWidth: this.priceAxisWidth, leftAxisWidth: this.leftAxisWidth };
+    const { offset, barWidth, barSpacing, chartRect } = this.viewport.getState();
+    const unit = barWidth + barSpacing;
+    const first = unit > 0 ? offset / unit : 0;
+    const last = unit > 0 ? first + chartRect.width / unit - 1 : 0;
+    /** The bars that are on view on the page, fitted to the plot the picture's layout leaves. */
+    const place = (): void => {
+      this.panes.invalidate();
+      this.viewport.setChartRect(this.getResolvedLayout().mainChartRect);
+      this.viewport.zoomToBarRange(first, last);
+    };
+    this.picturing = true;
     try {
-      this.freshFrame();
-      const png = Screenshot.toBlob(this.container, this.themeManager.getTheme().background).then((blob) => {
-        if (!blob) throw new Error('No chart image to copy');
-        return blob;
-      });
-      // The write reports a missing image; this keeps it from also showing as an unhandled rejection.
-      png.catch(() => {});
-      // The item is made, and written, before anything is awaited, while the
-      // image still encodes: Safari lets a page write the clipboard only while
-      // the click that asked for it is being handled.
-      let item: ClipboardItem;
-      try {
-        item = new ClipboardItemCtor({ 'image/png': png });
-      } catch (err) {
-        // Older browsers take only a Blob here, so they wait for the encoding.
-        if (!(err instanceof TypeError)) throw err;
-        item = new ClipboardItemCtor({ 'image/png': await png });
+      // With no crosshair on the picture to say which bar, its legend reads the latest (`keepSize` puts the page's back).
+      this.chartLegend.setHoverBar(null);
+      this.layoutManager.resize(size.width, size.height);
+      // The bars are fitted to the plot, and the plot is what the scales leave: again, should a scale change width.
+      for (let round = 1; round <= PICTURE_FIT_ROUNDS; round++) {
+        place();
+        if (!this.fitDataAndAxes()) break;
+        // Still changing at the last round: the bars are placed in the plot as it now is, and their prices fitted there.
+        if (round === PICTURE_FIT_ROUNDS) {
+          place();
+          this.applyDataToViewport();
+        }
       }
-      await clipboard.write([item]);
+      const plot = this.viewport.getState().chartRect;
+      if (!(plot.width > 0) || !(plot.height > 0)) return false;
+      this.syncRenderContext();
+      draw();
       return true;
-    } catch {
-      return false;
+    } finally {
+      this.picturing = false;
+      this.layoutManager.resize(own.width, own.height);
+      this.priceAxisWidth = kept.priceAxisWidth;
+      this.leftAxisWidth = kept.leftAxisWidth;
+      this.layoutManager.setPriceAxisWidth(kept.priceAxisWidth);
+      this.layoutManager.setLeftAxisWidth(this.isLeftPriceScaleShown() ? kept.leftAxisWidth : 0);
+      this.viewport.restore(kept.viewport);
+      this.priceFit.restore(kept.fit);
+      this.panes.invalidate();
+      this.leftViewport = this.computeLeftViewport();
     }
   }
 
-  screenshotDataURL(): string | null {
-    if (!this.features.screenshot) return null;
-    this.freshFrame();
-    return Screenshot.toDataURL(this.container, this.themeManager.getTheme().background);
+  /**
+   * The canvases in the chart's container that are not the chart's own (a
+   * layer a host laid over it), each where it is: a picture read off the
+   * screen has them, so one drawn again has them too. One that is not shown
+   * is left out, and so is one the page may not read (it holds a picture
+   * from another site): drawn on the picture, it would make the whole
+   * picture one nobody can read.
+   */
+  private drawGuestCanvases(ctx: CanvasRenderingContext2D): void {
+    const own = new Set(this.engine.layerManager.ownCanvases());
+    const guests = [...this.container.querySelectorAll('canvas')].filter((canvas) => !own.has(canvas));
+    if (guests.length === 0) return;
+    const box = this.container.getBoundingClientRect();
+    for (const guest of guests) {
+      const at = guest.getBoundingClientRect();
+      if (!(at.width > 0) || !(at.height > 0) || getComputedStyle(guest).visibility === 'hidden' || !canvasReadable(guest)) continue;
+      ctx.drawImage(guest, at.left - box.left, at.top - box.top, at.width, at.height);
+    }
   }
 
-  async screenshotBlob(): Promise<Blob | null> {
-    if (!this.features.screenshot) return null;
-    this.freshFrame();
-    return Screenshot.toBlob(this.container, this.themeManager.getTheme().background);
+  /** Saves the chart as a picture file: `filename` (`chart` with none), ending as the format does. `options`: see `toCanvas`. */
+  screenshot(filename?: string, options: ChartImageOptions = {}): void {
+    const url = this.screenshotDataURL(options);
+    if (url) downloadImage(url, imageFileName(filename, options.type ?? 'png'));
+  }
+
+  /** Copy the chart image to the clipboard, as a PNG. Returns false if unsupported/blocked. `options`: see `toCanvas`. */
+  async copyScreenshot(options: Omit<ChartImageOptions, 'type' | 'quality'> = {}): Promise<boolean> {
+    if (!this.features.screenshot) return false;
+    // Nothing is drawn where there is no clipboard to put it on.
+    if (!canCopyImage()) return false;
+    const canvas = this.toCanvas(options);
+    return copyImage(canvas ? canvasBlob(canvas) : Promise.resolve(null));
+  }
+
+  /** The chart as a picture in a data URL. `options`: its format, and see `toCanvas`. */
+  screenshotDataURL(options: ChartImageOptions = {}): string | null {
+    const canvas = this.toCanvas(options);
+    return canvas ? canvasDataURL(canvas, options) : null;
+  }
+
+  /** The chart as a picture file's bytes. `options`: its format, and see `toCanvas`. */
+  async screenshotBlob(options: ChartImageOptions = {}): Promise<Blob | null> {
+    const canvas = this.toCanvas(options);
+    return canvas ? canvasBlob(canvas, options) : null;
+  }
+
+  /**
+   * Opens the browser's print dialog for the chart alone: a page that holds
+   * its picture and nothing of the page it is on. Drawn again for paper: in
+   * the light theme and at twice the pixels unless `options` say otherwise.
+   * False when there was no picture to print (screenshots off, a chart with
+   * no size, a picture the page may not read).
+   */
+  print(options: ChartPrintOptions = {}): boolean {
+    const canvas = this.toCanvas({ ...options, theme: options.theme ?? PAPER_THEME, pixelRatio: options.pixelRatio ?? PAPER_PIXEL_RATIO });
+    return canvas !== null && printCanvas(canvas, { title: options.title });
+  }
+
+  /**
+   * The chart as a PDF of one page: its picture, kept without loss, as
+   * large as fits within the margins. A4 on its side, in the light theme
+   * and at twice the pixels unless `options` say otherwise. Null with
+   * screenshots switched off or a chart with no size.
+   */
+  async toPdf(options: ChartPdfOptions = {}): Promise<Blob | null> {
+    const canvas = this.toCanvas({ ...options, theme: options.theme ?? PAPER_THEME, pixelRatio: options.pixelRatio ?? PAPER_PIXEL_RATIO });
+    return canvas ? canvasesToPdf([canvas], options) : null;
   }
 
   // --- Alerts ---
@@ -5385,6 +6231,9 @@ export class Chart {
       if (this.replaySession) this.replaySession.until = until;
       // The books of the bars the replay has shown, not those of the bars still to come.
       this.depthHeatmap.setShownUntil(until);
+      // A bar's footprint is its whole one: a bar still forming from finer steps shows none until it has closed.
+      const whole = !steps || closesBar(steps, coarse, index, barIndex);
+      this.setFootprintShownUntil(whole ? until * barTimeUnit(series) : coarse[barIndex].time * barTimeUnit(coarse));
       // Markers and trades as far as the replay has shown, in the same frame as its bars.
       if (this.replayRevealMarks) this.revealReplayMarks(until);
       // The replay's bars are a series of their own: what was kept is of no use.
@@ -5503,9 +6352,12 @@ export class Chart {
   private feedReplayMarks(marks: readonly ReplayMark[]): void {
     const adapter = this.executionAdapter;
     if (!adapter?.setMarkPrice) return;
-    for (const [price, time] of marks) adapter.setMarkPrice(price, time);
-    const price = marks[marks.length - 1]?.[0];
-    if (price !== undefined) this.tradingManager.setCurrentPrice(price);
+    // Each a price of the symbol shown: it works no order of another.
+    for (const [price, time] of marks) adapter.setMarkPrice(price, time, this.tradedSymbol || undefined);
+    const last = marks[marks.length - 1];
+    if (last === undefined) return;
+    this.markedAt = this.markTimeOf(last[1]);
+    this.tradingManager.setCurrentPrice(last[0]);
   }
 
   /** The store says the live series changed during a replay: the replay follows it, by time. */
@@ -5652,11 +6504,17 @@ export class Chart {
     this.replaySeek(Math.max(0, positionAt(this.replayStepsSeries ?? this.replayCoarse, time)));
   }
 
+  /** A mark's time as the paper account takes it: one that is no number is none, and the account runs on the clock. */
+  private markTimeOf(time: number | undefined): number | undefined {
+    return time !== undefined && Number.isFinite(time) ? time : undefined;
+  }
+
   /** A replay step's price to an adapter that takes a mark (a paper account), and to the orders on the chart. */
   private feedReplayPrice(price: number, time?: number): void {
     const adapter = this.executionAdapter;
     if (!adapter?.setMarkPrice) return;
-    adapter.setMarkPrice(price, time);
+    adapter.setMarkPrice(price, time, this.tradedSymbol || undefined);
+    this.markedAt = this.markTimeOf(time);
     this.tradingManager.setCurrentPrice(price);
   }
 
@@ -5796,6 +6654,7 @@ export class Chart {
     const live = this.series.endReplay();
     this.replaySession = null;
     this.depthHeatmap.setShownUntil(null);
+    this.setFootprintShownUntil(null);
     this.replayStepsSeries = null;
     this.replayCoarse = null;
     this.replayBarUnsub?.();
@@ -6220,6 +7079,11 @@ export class Chart {
 
     // Apply price precision to trading, alerts, and price line
     if (config.pricePrecision !== undefined) this.applyPricePrecision(config.pricePrecision);
+    // What a price is worth on this market, for the amounts on the trading tags, the quantity a
+    // position drawing's risk buys and the account connected: none given is none kept.
+    this.tradingManager.setConfig({ amountMultiplier: config.contractMultiplier });
+    this.drawingManager.setAmountMultiplier(config.contractMultiplier);
+    this.executionAdapter?.setMultiplier?.(config.contractMultiplier, this.tradedSymbol ?? undefined);
 
     // Longer price labels may need a wider axis.
     this.updateViewportAndRender();
@@ -6255,16 +7119,37 @@ export class Chart {
   getPriceLimits(): PriceLimitInfo | null {
     const market = this.marketConfig;
     if (!market?.priceLimits?.enabled || !market.priceLimits.referencePrice) return null;
-    return computePriceLimits(market.priceLimits.referencePrice, market);
+    const { referencePrice, ceiling, floor } = market.priceLimits;
+    // Given as they are for the day: they stand over what the percentages make.
+    if (ceiling !== undefined && floor !== undefined) return { ceiling, floor, reference: referencePrice };
+    return computePriceLimits(referencePrice, market);
   }
 
-  /** The day's reference price, for the limits; a later `setMarket` starts without one. */
-  setPriceLimits(referencePrice: number): void {
-    if (!this.marketConfig?.priceLimits) return;
+  /**
+   * The day's limits; a later `setMarket` starts without them. A number is the
+   * reference price: the ceiling and the floor are the market's percentages of
+   * it. An object is the three as the broker or the exchange gives them for
+   * the symbol, which is what to pass where it does: a special band, or a
+   * stock's first session on another exchange, is no percentage of the
+   * reference. They are taken as given, not put on the market's price step,
+   * and they are the day's limits on a market whose preset has none. Ones
+   * that are no prices (not numbers, a ceiling under its floor, a reference
+   * outside the two) are not taken.
+   */
+  setPriceLimits(limits: number | PriceLimitInfo): void {
+    if (!this.marketConfig) return;
+    const given = typeof limits === 'number' ? null : limits;
+    // A reference alone needs the market's percentages; the three given need nothing of the market.
+    if (!given && !this.marketConfig.priceLimits) return;
+    if (given && !soundLimits(given)) return;
+    const { ceiling: _ceiling, floor: _floor, ...kept } = this.marketConfig.priceLimits ?? { enabled: true };
     // A copy: the market given may be a preset other charts share.
     this.marketConfig = {
       ...this.marketConfig,
-      priceLimits: { ...this.marketConfig.priceLimits, referencePrice },
+      priceLimits: given
+        // Given for the day, they are the day's limits on a market whose preset has none too.
+        ? { ...kept, enabled: true, referencePrice: given.reference, ceiling: given.ceiling, floor: given.floor }
+        : { ...kept, referencePrice: limits as number },
     };
     // The lines are drawn from the render context, not read each frame: give it the new ones.
     this.syncRenderContext();
@@ -6290,8 +7175,10 @@ export class Chart {
     }
 
     // Apply immediate side-effects
-    if (patch.crosshair === false || patch.crosshairTooltip === false) {
-      this.crosshairTooltip.hide();
+    if (patch.crosshair !== undefined || patch.crosshairTooltip !== undefined) {
+      this.applyTooltipHold();
+      // No longer under a hovering pointer: it shows again when it is asked for.
+      if (!this.features.crosshair || this.features.crosshairTooltip !== true) this.crosshairTooltip.hide();
     }
     if (patch.priceAxisAddButton !== undefined || patch.crosshair !== undefined) {
       this.applyPriceAxisAdd();
@@ -6313,6 +7200,9 @@ export class Chart {
       this.drawingManager.setActiveTool(null);
     }
     if (patch.trading === false) {
+      // Of every symbol: none is kept to come back on another.
+      this.book.setOrders([]);
+      this.book.setPositions([]);
       this.tradingManager.setOrders([]);
       this.tradingManager.setPositions([]);
     }
@@ -6335,10 +7225,22 @@ export class Chart {
     this.engine.layerManager.resize(size, dpr, this.engine.dprManager.getDeviceSize());
     // Check if viewport was at the end before resize
     const wasAtEnd = this.viewport.isAtEnd();
-    this.viewport.resize(size.width, size.height);
-    this.layoutManager.resize(size.width, size.height);
+    this.takeSize(size);
     this.updateViewportAndRender(wasAtEnd);
     this.eventBus.emit('resize', size);
+  }
+
+  /**
+   * The container's new size, taken into the layout and the viewport. The
+   * viewport is given the plot the layout leaves, not the container less
+   * the price scale: a left scale, or a pane beside the plot, is room the
+   * bars do not have, and bars fitted below the usual slot would be widened
+   * to that room and stay so.
+   */
+  private takeSize(size: { width: number; height: number }): void {
+    this.layoutManager.resize(size.width, size.height);
+    this.panes.invalidate();
+    this.viewport.setChartRect(this.getResolvedLayout().mainChartRect);
   }
 
   destroy(): void {
@@ -6364,6 +7266,7 @@ export class Chart {
     this.a11y?.destroy();
     this.a11y = null;
     this.interactionManager.detach();
+    this.stopTradeFeed();
     this.tradingManager.destroy();
     this.animator.dispose();
     this.crosshairTooltip.destroy();
@@ -6383,6 +7286,14 @@ export class Chart {
   private createChartRenderer(type: ChartType | string): ChartRendererInterface {
     const renderer = resolveRenderer(type, (t) => this.pluginManager.getChartType(t));
     if (renderer instanceof HiLoRenderer) renderer.setPriceText((p) => this.formatPrice(p));
+    if (renderer instanceof FootprintRenderer) {
+      const options = this.chartTypeOptions.footprint ?? {};
+      renderer.setStore(this.footprint);
+      renderer.setCells(options.cells ?? 'bidAsk');
+      renderer.setImbalance(options.imbalance ?? FOOTPRINT_IMBALANCE);
+      renderer.setTotals(options.totals !== false);
+      renderer.setShownUntil(this.footprintShownUntil);
+    }
     return renderer;
   }
 
@@ -6546,6 +7457,8 @@ export class Chart {
       compareRange: (data, state) => (this.features.compareSymbols && this.comparesDrawn() ? this.compareRenderer.getPriceRange(data, state) : null),
       volumeRatio: (data, from, to) =>
         (this.features.volume && this.volumeRenderer.isVisible() && hasVolume(data, from, to) ? this.volumeRenderer.getHeightRatio() : null),
+      // A footprint's totals stand under its bars.
+      footRoom: (data, state) => (this.chartRenderer instanceof FootprintRenderer ? this.chartRenderer.totalsRoom(state, this.themeManager.getTheme(), data) : 0),
     });
   }
 
@@ -6571,15 +7484,18 @@ export class Chart {
   /**
    * Fit the data to the plot, then size both price scales to their labels. A
    * scale that changes width changes the plot, so the data is fit again —
-   * before anything reads the layout for this frame.
+   * before anything reads the layout for this frame. True when a scale
+   * changed width.
    */
-  private fitDataAndAxes(scrollToEnd = false): void {
+  private fitDataAndAxes(scrollToEnd = false): boolean {
     const shown = this.applyDataToViewport(scrollToEnd);
     const priceResized = this.fitPriceAxisWidth();
     this.leftViewport = this.computeLeftViewport();
-    if (this.fitLeftAxisWidth() || priceResized) this.applyDataToViewport(scrollToEnd);
+    const resized = this.fitLeftAxisWidth() || priceResized;
+    if (resized) this.applyDataToViewport(scrollToEnd);
     // The new series' prices are on the axis: auto-scale off holds them from here.
     this.priceFit.settle(this.viewport.getState(), shown.length);
+    return resized;
   }
 
   /**
@@ -6644,6 +7560,7 @@ export class Chart {
       format: this.priceFormatter,
       scaleLabel: (price) => this.priceAxis.labelText(price, this.viewport.getState()),
       ...this.paneAxisTexts(),
+      crosshairChange: theme.style?.crosshair.labelChange ?? false,
       fontFamily: theme.font.family,
       fontSizeSmall: theme.font.sizeSmall,
       measure: (text, font) => this.measureText(text, font),
@@ -6769,7 +7686,8 @@ export class Chart {
       gridRenderer: this.features.grid ? this.gridRenderer : null,
       priceAxis: this.features.priceAxis ? this.priceAxis : null,
       timeAxis: this.features.timeAxis ? this.timeAxis : null,
-      crosshairHandler: this.features.crosshair ? this.crosshairHandler : null,
+      // A picture at a size of its own has nothing that follows the pointer: the pointer is at a place on the page.
+      crosshairHandler: this.features.crosshair && !this.picturing ? this.crosshairHandler : null,
       indicatorEngine: this.features.indicators ? this.indicatorEngine : null,
       drawingRenderer: this.features.drawings ? this.drawingRenderer : null,
       tradingRenderer: this.features.trading ? this.tradingRenderer : null,
@@ -6789,9 +7707,9 @@ export class Chart {
       sessionShading: this.sessionShading,
       compareRenderer: this.comparesDrawn() ? this.compareRenderer : null,
       alertManager: this.features.alerts ? this.alertManager : null,
-      measureOverlay: this.measureOverlay,
-      selectionBoxOverlay: this.selectionBoxOverlay,
-      priceAxisAddButton: this.priceAxisAddButton,
+      measureOverlay: this.picturing ? null : this.measureOverlay,
+      selectionBoxOverlay: this.picturing ? null : this.selectionBoxOverlay,
+      priceAxisAddButton: this.picturing ? null : this.priceAxisAddButton,
       signalMarkerManager: this.signalMarkerManager,
       chartMarkManager: this.features.marks ? this.chartMarkManager : null,
       tradeZoneManager: this.tradeZoneManager,
@@ -6855,29 +7773,6 @@ function measureWith(ctx: CanvasRenderingContext2D, text: string, font: string):
   const width = ctx.measureText(text).width;
   ctx.font = drawing;
   return width;
-}
-
-/** The longest family list `setFont` takes, characters. */
-const MAX_FONT_FAMILY = 300;
-
-/** A font the chart can draw with: a family that isn't empty, sizes above zero. */
-function readFont(font: Partial<FontConfig>): Partial<FontConfig> {
-  const out: Partial<FontConfig> = {};
-  // A list of faces, nothing a style sheet could read more into (the family also reaches CSS text).
-  const face = (v: unknown): v is string => typeof v === 'string' && v.trim() !== '' && v.length <= MAX_FONT_FAMILY && !/[;{}<>\\]|\/\*/.test(v);
-  if (face(font.family)) out.family = font.family;
-  if (face(font.textFamily)) out.textFamily = font.textFamily;
-  for (const key of ['sizeSmall', 'sizeMedium', 'sizeLarge'] as const) {
-    const size = font[key];
-    if (typeof size === 'number' && Number.isFinite(size) && size > 0) out[key] = size;
-  }
-  return out;
-}
-
-/** Shapes the chart can draw: a corner radius from 0 to 999 px. */
-function readShapes(shapes: ShapeConfig): ShapeConfig {
-  const r = shapes.tagRadius;
-  return typeof r === 'number' && Number.isFinite(r) && r >= 0 ? { tagRadius: Math.min(r, 999) } : {};
 }
 
 /** An alert as its events carry it. */
@@ -7098,7 +7993,7 @@ function legendSpacing(spacing: ChartSpacing): { inset: number; top: number; lin
 
 /** `bar` with one more step in it. */
 function mergeBar(bar: OHLCBar, step: OHLCBar): OHLCBar {
-  return {
+  const merged: OHLCBar = {
     time: bar.time,
     open: bar.open,
     high: Math.max(bar.high, step.high),
@@ -7106,4 +8001,7 @@ function mergeBar(bar: OHLCBar, step: OHLCBar): OHLCBar {
     close: step.close,
     volume: (bar.volume ?? 0) + (step.volume ?? 0),
   };
+  // What the buyers took adds up too, while both say.
+  if (bar.buyVolume !== undefined && step.buyVolume !== undefined) merged.buyVolume = bar.buyVolume + step.buyVolume;
+  return merged;
 }

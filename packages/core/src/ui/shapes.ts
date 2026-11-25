@@ -47,7 +47,8 @@ export const AXIS_TAG_TEXT_INSET = 7;
  * is sharp at any zoom of the page and takes no dash left on the context.
  */
 export function outlineTag(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, theme: Theme, edge: string, ground: string): void {
-  const scale = ctx.getTransform?.().a || 1;
+  // A context that cannot say how it is scaled (an older one, a stand-in) is taken as not scaled.
+  const scale = ctx.getTransform?.()?.a || 1;
   const line = Math.max(1, Math.round(scale)) / scale;
   ctx.fillStyle = edge;
   fillTag(ctx, x, y, w, h, theme);

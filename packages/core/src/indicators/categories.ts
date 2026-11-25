@@ -16,7 +16,7 @@ const BUILT_IN: Record<Exclude<IndicatorCategory, 'other'>, readonly string[]> =
     'chopzone', 'vhf', 'trendstrength', 'lrslope', 'rsquared', 'rwi', 'majority', 'asi',
   ],
   oscillators: [
-    'rsi', 'macd', 'stochastic', 'williamsR', 'cci', 'roc', 'tsi', 'ao', 'uo', 'crsi', 'coppock', 'kst',
+    'rsi', 'rsidiv', 'macd', 'stochastic', 'williamsR', 'cci', 'roc', 'tsi', 'ao', 'uo', 'crsi', 'coppock', 'kst',
     'elderray', 'stc', 'fisher', 'dpo', 'bop', 'cmo', 'trix', 'rvi', 'stochrsi', 'ppo', 'ac', 'rmi',
     'disparity', 'qstick', 'pgo', 'bbpb', 'mom', 'smi', 'smiergodic', 'po', 'psy', 'newpsy', 'sonar',
     'binarywave', 'sroc', 'abratio', 'advdecline',
@@ -26,12 +26,12 @@ const BUILT_IN: Record<Exclude<IndicatorCategory, 'other'>, readonly string[]> =
     'sigma', 'tr', 'massindex',
   ],
   volume: [
-    'vwap', 'avwap', 'svwap', 'volumeProfile', 'obv', 'mfi', 'cmf', 'ad', 'vroc', 'chaikinOsc', 'voldelta',
+    'vwap', 'avwap', 'svwap', 'volumeProfile', 'svp', 'obv', 'mfi', 'cmf', 'ad', 'vroc', 'chaikinOsc', 'voldelta',
     'fi', 'kvo', 'emv', 'pvt', 'wad', 'vo', 'netvolume', 'vr', 'nvi', 'pvi', 'iii', 'volpct', 'volchange',
     'tradevalue',
   ],
   bands: ['bb', 'keltner', 'donchian', 'envelope', 'lrc', 'seb', 'machannel'],
-  patterns: ['pivots', 'zigzag', 'fractals', 'candlepatterns', 'demark', 'avgprice', 'medprice', 'typprice', 'wclose'],
+  patterns: ['pivots', 'zigzag', 'fractals', 'candlepatterns', 'fvg', 'orderblocks', 'demark', 'avgprice', 'medprice', 'typprice', 'wclose'],
 };
 
 const KINDS = new Set<IndicatorCategory>(INDICATOR_CATEGORIES);

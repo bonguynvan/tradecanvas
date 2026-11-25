@@ -128,7 +128,15 @@ export class RiskRewardTool extends DrawingBase {
     this.outcomes.clear();
   }
 
-  private geometry(state: DrawingState) {
+  /** What a move of one in price is worth for one unit on the chart's market: its contract multiplier. */
+  private amountMultiplier = 1;
+
+  /** The chart's market's multiplier, which the quantity a risk buys is counted by; none is 1. */
+  setAmountMultiplier(multiplier: number | undefined): void {
+    this.amountMultiplier = worth(multiplier);
+  }
+
+  private geometry(state: DrawingState, multiplier = this.amountMultiplier) {
     const entry = state.anchors[0].price;
     const stop = state.anchors[1].price;
     const ratio = this.option<number>(state, 'rewardRatio');
@@ -139,8 +147,10 @@ export class RiskRewardTool extends DrawingBase {
     const riskAmount = this.option<string>(state, 'riskMode') === 'amount'
       ? risk
       : (this.option<number>(state, 'accountSize') * risk) / 100;
-    const qty = riskPerUnit > 0 ? riskAmount / riskPerUnit : 0;
-    return { entry, stop, target, ratio, isLong, qty, riskAmount, rewardAmount: qty * riskPerUnit * ratio };
+    // The risk is money and so is what a unit loses at the stop: its distance, by what a price is worth.
+    const lossPerUnit = riskPerUnit * multiplier;
+    const qty = lossPerUnit > 0 ? riskAmount / lossPerUnit : 0;
+    return { entry, stop, target, ratio, isLong, qty, riskAmount, rewardAmount: qty * lossPerUnit * ratio, multiplier };
   }
 
   /**
@@ -163,19 +173,19 @@ export class RiskRewardTool extends DrawingBase {
     const to = state.anchors[1].time;
     // The forming bar changes in place: its prices are part of the key.
     const key = [this.dataRevision(), n, first.time, last.time, last.open, last.high, last.low, last.close, from, to,
-      levels.entry, levels.stopLoss, levels.takeProfit, levels.quantity];
+      levels.entry, levels.stopLoss, levels.takeProfit, levels.quantity, this.amountMultiplier];
     const kept = this.outcomes.get(state.id);
     if (kept && kept.key.length === key.length && kept.key.every((v, i) => v === key[i])) return kept.result;
-    const result = positionOutcome(levels, data, from, to);
+    const result = positionOutcome(levels, data, from, to, this.amountMultiplier);
     if (this.outcomes.size >= MAX_KEPT_OUTCOMES) this.outcomes.clear();
     this.outcomes.set(state.id, { key, result });
     return result;
   }
 
   /** The trade the drawing stands for (`positionLevels`), worked out as its tags are. */
-  levels(state: DrawingState): PositionLevels | null {
+  levels(state: DrawingState, multiplier?: number): PositionLevels | null {
     if (state.type !== 'riskReward' || state.anchors.length < 2) return null;
-    const g = this.geometry(state);
+    const g = this.geometry(state, multiplier === undefined ? this.amountMultiplier : worth(multiplier));
     // A stop on the entry (while the position is being placed) or no risk set
     // (an account of 0) buys nothing, and a price that is not a number can't
     // be ordered at: no trade, rather than one a broker would be sent wrong.
@@ -395,11 +405,19 @@ let positionTool: RiskRewardTool | null = null;
  * stop-loss, take-profit and the quantity its risk buys, as its tags show
  * them. `null` for any other drawing, for a position whose stop is still on
  * its entry, for one with no risk set (so no quantity), and for prices that
- * are not finite. For an app that places an order from the drawing:
- * `positionLevels(chart.getDrawings().find((d) => d.id === id))`.
+ * are not finite. `multiplier` is what a move of one in price is worth for
+ * one unit on the drawing's market (`chart.getMarket()?.contractMultiplier`:
+ * 1,000 on HOSE, 100,000 on VN30F), which the quantity is counted by; without
+ * it the price is the money. For an app that places an order from the drawing:
+ * `positionLevels(chart.getDrawings().find((d) => d.id === id), chart.getMarket()?.contractMultiplier)`.
  */
-export function positionLevels(drawing: DrawingState | null | undefined): PositionLevels | null {
+export function positionLevels(drawing: DrawingState | null | undefined, multiplier?: number): PositionLevels | null {
   if (!drawing) return null;
   positionTool ??= new RiskRewardTool();
-  return positionTool.levels(drawing);
+  return positionTool.levels(drawing, worth(multiplier));
+}
+
+/** A market's multiplier as it counts: 1 for none given, or one that is no multiplier. */
+function worth(multiplier: number | undefined): number {
+  return multiplier !== undefined && Number.isFinite(multiplier) && multiplier > 0 ? multiplier : 1;
 }

@@ -1,9 +1,12 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { DataAdapter, OHLCBar } from '@tradecanvas/commons';
-import { MARKET_HOSE } from '@tradecanvas/commons';
-import { HiLoRenderer, PointAndFigureRenderer } from '@tradecanvas/core';
+import { CHART_TYPE_ICONS as ICONS, MARKET_HOSE } from '@tradecanvas/commons';
+import { CandlestickRenderer, ColumnsRenderer, DotsRenderer, HLCBarRenderer, HiLoRenderer, PointAndFigureRenderer, SplineRenderer, StepAreaRenderer, toSmoothedHeikinAshi } from '@tradecanvas/core';
 import { Chart } from '../Chart.js';
+import { isReshapedChartType, isTransformedChartType } from '../charts/ChartTypeStrategy.js';
+import { CHART_TYPES } from '../widget/widgetConfig.js';
+import { EN_MESSAGES } from '../widget/locales/en.js';
 import { installChartStubs, sizedHost } from './chartTestEnv.js';
 import { secondBars } from './secondBars.js';
 
@@ -322,5 +325,38 @@ describe('a raised size on a live chart', () => {
     const quiet = zigzag.map((b, i) => (i < 200 ? { ...b, open: 100, high: 100, low: 100, close: 100 } : { ...b, open: 100, close: 1_100 }));
     chart.setData(quiet);
     expect(spans()).toEqual(new Set([1]));
+  });
+});
+
+describe('the chart types drawn from the closes, and the smoothed Heikin-Ashi', () => {
+  it('each draws with its own renderer', () => {
+    const renderers = { columns: ColumnsRenderer, hlcBars: HLCBarRenderer, dots: DotsRenderer, stepArea: StepAreaRenderer, spline: SplineRenderer } as const;
+    for (const [type, renderer] of Object.entries(renderers)) {
+      chart.setChartType(type as keyof typeof renderers);
+      expect(probe().chartRenderer, type).toBeInstanceOf(renderer);
+      expect(probe().getDisplayData(), type).toBe(chart.getData());
+    }
+  });
+
+  it('draws the smoothed Heikin-Ashi as candles, a candle a bar, and takes its period', () => {
+    chart.setChartType('smoothedHeikinAshi');
+    expect(probe().chartRenderer).toBeInstanceOf(CandlestickRenderer);
+    const byDefault = probe().getDisplayData();
+    expect(byDefault).toHaveLength(chart.getData().length);
+    expect(byDefault).toEqual(toSmoothedHeikinAshi(chart.getData(), 10));
+    chart.setChartTypeOptions({ smoothedHeikinAshi: { period: 3 } });
+    expect(probe().getDisplayData()).toEqual(toSmoothedHeikinAshi(chart.getData(), 3));
+    expect(isReshapedChartType('smoothedHeikinAshi')).toBe(false);
+    expect(isTransformedChartType('smoothedHeikinAshi')).toBe(true);
+  });
+
+  it('are in the widget’s list, each with a name and an icon', () => {
+    const listed = CHART_TYPES.map((entry) => entry.value);
+    for (const type of ['columns', 'hlcBars', 'dots', 'stepArea', 'spline', 'smoothedHeikinAshi'] as const) {
+      expect(listed, type).toContain(type);
+      expect(EN_MESSAGES[`chartType.${type}`], type).toBeTruthy();
+      expect(ICONS[type], type).toBeTruthy();
+    }
+    expect(listed).toHaveLength(25);
   });
 });

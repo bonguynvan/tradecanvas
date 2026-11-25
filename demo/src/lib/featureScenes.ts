@@ -593,7 +593,7 @@ new ChartWidget(host, {
   },
   {
     id: 'looks',
-    code: `new ChartWidget(host, { ui: 'terminal' })   // 'modern' (default) · 'print' · 'studio' · 'terminal' · 'capsule' · 'desk'
+    code: `new ChartWidget(host, { ui: 'terminal' })   // 'graphite' (default) · 'modern' · 'print' · 'studio' · 'terminal' · 'capsule' · 'desk'
 
 widget.setUI({
   preset: 'studio',
@@ -794,6 +794,29 @@ await chart.setRenderer('webgl')  // cells on the GPU`,
       chart.setDepthHeatmapConfig({ capacity: HEATMAP_BOOKS });
       for (const bar of bars) chart.pushDepthSnapshot(book(bar.close), bar.time);
       chart.setDepthHeatmapVisible(true);
+    },
+  },
+  {
+    id: 'orderflow',
+    code: `const widget = new ChartWidget(host, {
+  adapter: new BinanceAdapter(),               // a feed with trades, each with who took it
+  chartOptions: { chartType: 'footprint' },    // what traded at each price of a bar
+  tape: true,                                  // time and sales, a page of the dock
+})
+widget.openPanel('tape')
+const chart = widget.getChart()
+chart.on('trades', (e) => e.payload.trades)    // the feed's trades, for your own use`,
+    options: (env) => ({
+      symbol: 'BTCUSDT',
+      symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
+      // A feed keeps few trades: on a minute's bars the newest of them fill at once.
+      timeframe: '1m',
+      adapter: env.binance(),
+      chartOptions: { chartType: 'footprint' },
+      tape: true,
+    }),
+    setup: (widget) => {
+      widget.openPanel('tape');
     },
   },
   {

@@ -2,6 +2,7 @@ import type { DrawingState, Point, ViewportState, DataSeries } from '@tradecanva
 import { DrawingBase } from '../DrawingBase.js';
 import { barIndexToX, priceToY, resolveBarIndex } from '../../viewport/ScaleMapping.js';
 import { fillTextWithHalo, formatDrawingPrice } from './labels.js';
+import { growValueArea } from '../../indicators/valueArea.js';
 import { dashFor, hasOwnFill, keepOnPlot, readableText, roleFont } from '../drawingLook.js';
 
 /** The point of control's colour, unless the drawing has a fill of its own. */
@@ -134,14 +135,8 @@ export class VolumeProfileRangeTool extends DrawingBase {
     }
     if (bins[poc] === 0) return null;
 
-    // The value area: out from the point of control, the bigger neighbour first, to 70% of the volume.
-    let valueLow = poc, valueHigh = poc, held = bins[poc];
-    while (held < total * VALUE_AREA && (valueLow > 0 || valueHigh < BINS - 1)) {
-      const below = valueLow > 0 ? bins[valueLow - 1] : -1;
-      const above = valueHigh < BINS - 1 ? bins[valueHigh + 1] : -1;
-      if (above >= below) held += bins[++valueHigh];
-      else held += bins[--valueLow];
-    }
+    // The value area: out from the point of control two rows at a time toward the heavier pair, to 70% of the volume.
+    const [valueLow, valueHigh] = growValueArea(bins, poc, total * VALUE_AREA);
 
     return { start, end, pMin, pMax, binSize, bins, maxBin: bins[poc], poc, valueLow, valueHigh };
   }

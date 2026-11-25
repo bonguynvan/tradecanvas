@@ -25,6 +25,13 @@ class FakeChart {
   }
   paneTitles: boolean[] = [];
   setPaneTitlesVisible(on: boolean): void { this.paneTitles.push(on); }
+  // The feed's trades: how many times they were asked for, and let go of.
+  follows = 0;
+  unfollows = 0;
+  followTrades(): () => void {
+    this.follows++;
+    return () => { this.unfollows++; };
+  }
   resizes = 0;
   resize(): void { this.resizes++; }
   setFeatures(patch: Partial<FeaturesConfig>): void { this.features = { ...this.features, ...patch }; }
@@ -127,7 +134,7 @@ describe('ChartWidget dock', () => {
     const body = host.querySelector('.tcw-body')!;
     const order = [...body.children].map((el) => el.className.split(' ')[0]);
     expect(order.indexOf('tcw-chart-container')).toBeLessThan(order.indexOf('tcw-dock'));
-    expect(railPages()).toEqual(['watchlist', 'alerts', 'objectTree', 'dataWindow', 'symbolInfo']);
+    expect(railPages()).toEqual(['watchlist', 'alerts', 'objectTree', 'dataWindow', 'symbolInfo', 'orderTicket']);
     expect(panel().hidden).toBe(true);
     expect(railButton('watchlist').getAttribute('aria-pressed')).toBe('false');
     widget.openPanel('watchlist');
@@ -137,7 +144,7 @@ describe('ChartWidget dock', () => {
 
   it('holds the depth ladder as a page of its own when the widget has one, its rail button under a switch', () => {
     make({ watchlist: true, depthLadder: true });
-    expect(railPages()).toEqual(['watchlist', 'alerts', 'objectTree', 'dataWindow', 'symbolInfo', 'depthLadder']);
+    expect(railPages()).toEqual(['watchlist', 'alerts', 'objectTree', 'dataWindow', 'symbolInfo', 'orderTicket', 'depthLadder']);
     expect(widget.openPanel('depthLadder')).toBe(true);
     expect(visible(inPanel('.tcw-ladder'))).toBe(true);
     widget.closePanel();
@@ -145,6 +152,187 @@ describe('ChartWidget dock', () => {
     expect(railButton('depthLadder').hidden || getComputedStyle(railButton('depthLadder')).display === 'none').toBe(true);
     widget.setFeatures({ depthLadder: false });
     expect(widget.openPanel('depthLadder')).toBe(false);
+  });
+
+  it('holds the tape as a page of its own when the widget has one, and follows the feed’s trades while it is open', () => {
+    make({ tape: true });
+    expect(railPages()).toEqual(['alerts', 'objectTree', 'dataWindow', 'symbolInfo', 'orderTicket', 'tape']);
+    expect(FakeChart.last.follows).toBe(0);
+    expect(widget.openPanel('tape')).toBe(true);
+    expect(visible(inPanel('.tcw-tape'))).toBe(true);
+    expect(FakeChart.last.follows).toBe(1);
+    // Shut, it lets go of them.
+    widget.closePanel();
+    expect(FakeChart.last.unfollows).toBe(1);
+    widget.openPanel('tape');
+    expect(FakeChart.last.follows).toBe(2);
+    // Its rail button under one switch, the whole tape under another: off, an open tape shuts.
+    widget.setFeatures({ 'dock.tape': false });
+    expect(railButton('tape').hidden || getComputedStyle(railButton('tape')).display === 'none').toBe(true);
+    widget.setFeatures({ tape: false });
+    expect(FakeChart.last.unfollows).toBe(2);
+    expect(widget.openPanel('tape')).toBe(false);
+  });
+
+  it('lists the chart’s trades on the tape, and starts again for another symbol', () => {
+    make({ tape: { minSize: 2 } });
+    widget.openPanel('tape');
+    const rows = () => [...host.querySelectorAll('.tcw-tape-row')];
+    FakeChart.last.emit('trades', { trades: [{ time: 1000, price: 100, volume: 1, side: 'buy' }, { time: 2000, price: 101, volume: 5, side: 'sell' }], recent: true });
+    // Shut and opened again: what it took in is there, the trade under the least size left out.
+    widget.closePanel();
+    widget.openPanel('tape');
+    expect(rows()).toHaveLength(1);
+    expect((rows()[0] as HTMLElement).dataset.side).toBe('sell');
+    expect(rows()[0].children[1].textContent).toBe('101.00');
+    FakeChart.last.emit('symbolChange', { symbol: 'BBB', previous: 'AAA' });
+    expect(rows()).toHaveLength(0);
+  });
+
+  describe('what a reader chose on the tape', () => {
+    const least = () => host.querySelector<HTMLInputElement>('.tcw-tape-min')!;
+    const type = (text: string) => {
+      least().value = text;
+      least().dispatchEvent(new Event('input'));
+    };
+    const choices = () => host.querySelector<HTMLButtonElement>('.tcw-tape-more')!;
+    const pick = (label: string) => {
+      choices().click();
+      [...host.querySelectorAll<HTMLElement>('.tcw-context-menu:not([hidden]) [role^="menuitem"]')].find((entry) => entry.querySelector('.tcw-context-label')?.textContent === label)!.click();
+    };
+    const checked = () => {
+      choices().click();
+      const marks = [...host.querySelectorAll<HTMLElement>('.tcw-context-menu:not([hidden]) [role^="menuitem"]')].map((entry) => entry.getAttribute('aria-checked'));
+      choices().click();
+      return marks;
+    };
+
+    it('is there the next time a widget is made in this browser: the side, the grouping, the symbol’s least size', () => {
+      make({ tape: true });
+      widget.openPanel('tape');
+      pick('Sold');
+      pick('Group trades made together');
+      type('3');
+      widget.destroy();
+      make({ tape: true });
+      widget.openPanel('tape');
+      expect(least().value).toBe('3');
+      expect(checked()).toEqual(['false', 'false', 'true', 'true']);
+    });
+
+    it('keeps a least size for each symbol: another symbol starts with its own, or with none', () => {
+      make({ tape: true });
+      widget.openPanel('tape');
+      type('3');
+      FakeChart.last.emit('symbolChange', { symbol: 'BBB', previous: 'AAA' });
+      expect(least().value).toBe('');
+      type('500');
+      FakeChart.last.emit('symbolChange', { symbol: 'AAA', previous: 'BBB' });
+      expect(least().value).toBe('3');
+      FakeChart.last.emit('symbolChange', { symbol: 'BBB', previous: 'AAA' });
+      expect(least().value).toBe('500');
+    });
+
+    it('starts from the options where the reader has chosen nothing, and from the reader’s choice where they have', () => {
+      make({ tape: { minSize: 0.5, side: 'buy' } });
+      widget.openPanel('tape');
+      expect(least().value).toBe('0.5');
+      expect(checked()).toEqual(['false', 'true', 'false', 'false']);
+      // A symbol with no least size of its own starts from the option too.
+      FakeChart.last.emit('symbolChange', { symbol: 'BBB', previous: 'AAA' });
+      expect(least().value).toBe('0.5');
+      // Cleared by the reader, it stays clear; all trades chosen, they stay chosen.
+      type('');
+      pick('All trades');
+      widget.destroy();
+      make({ symbol: 'BBB', tape: { minSize: 0.5, side: 'buy' } });
+      widget.openPanel('tape');
+      expect(least().value).toBe('');
+      expect(checked()).toEqual(['true', 'false', 'false', 'false']);
+    });
+
+    it('keeps only what the reader chose: the rest is still the host’s to set', () => {
+      make({ tape: { minSize: 5 } });
+      widget.openPanel('tape');
+      pick('Group trades made together');
+      expect(JSON.parse(localStorage.getItem('tcw:tape')!)).toEqual({ group: true, minSizes: [] });
+      widget.destroy();
+      // The host starts its tape otherwise the next time: where the reader chose nothing, it does.
+      make({ tape: { minSize: 10, side: 'sell' } });
+      widget.openPanel('tape');
+      expect(least().value).toBe('10');
+      expect(checked()).toEqual(['false', 'false', 'true', 'true']);
+    });
+
+    it('keeps a least size under the symbol it was typed on, and nothing of the symbols a reader only looked at', () => {
+      make({ tape: true });
+      widget.openPanel('tape');
+      FakeChart.last.emit('symbolChange', { symbol: 'BBB', previous: 'AAA' });
+      pick('Sold');
+      FakeChart.last.emit('symbolChange', { symbol: 'CCC', previous: 'BBB' });
+      type('7');
+      expect(JSON.parse(localStorage.getItem('tcw:tape')!)).toEqual({ side: 'sell', minSizes: [['CCC', 7]] });
+    });
+
+    it('keeps nothing when told not to, and starts from its options every time', () => {
+      localStorage.setItem('tcw:tape', JSON.stringify({ side: 'sell', group: true, minSizes: [['AAA', 9]] }));
+      make({ tape: { persist: false, minSize: 2 } });
+      widget.openPanel('tape');
+      expect(least().value).toBe('2');
+      expect(checked()).toEqual(['true', 'false', 'false', 'false']);
+      pick('Bought');
+      type('4');
+      expect(JSON.parse(localStorage.getItem('tcw:tape')!)).toEqual({ side: 'sell', group: true, minSizes: [['AAA', 9]] });
+      FakeChart.last.emit('symbolChange', { symbol: 'BBB', previous: 'AAA' });
+      expect(least().value).toBe('2');
+    });
+
+    it('lists the trades as chosen: a kept least size leaves the smaller ones out from the first', () => {
+      make({ tape: true });
+      widget.openPanel('tape');
+      type('2');
+      widget.destroy();
+      make({ tape: true });
+      widget.openPanel('tape');
+      FakeChart.last.emit('trades', { trades: [{ time: 1000, price: 100, volume: 1, side: 'buy' }, { time: 2000, price: 101, volume: 5, side: 'sell' }], recent: false });
+      widget.closePanel();
+      widget.openPanel('tape');
+      expect(host.querySelectorAll('.tcw-tape-row')).toHaveLength(1);
+    });
+  });
+
+  it('writes every size on the tape to the decimals the finest of them needs, so the column lines up', () => {
+    make({ tape: true });
+    widget.openPanel('tape');
+    const sizes = () => [...host.querySelectorAll('.tcw-tape-row .tcw-tape-size')].map((el) => el.textContent);
+    FakeChart.last.emit('trades', { trades: [{ time: 1000, price: 100, volume: 3, side: 'buy' }], recent: false });
+    widget.closePanel();
+    widget.openPanel('tape');
+    expect(sizes()).toEqual(['3']);
+    FakeChart.last.emit('trades', { trades: [{ time: 2000, price: 100, volume: 0.25, side: 'buy' }, { time: 3000, price: 100, volume: 1500, side: 'sell' }], recent: false });
+    widget.closePanel();
+    widget.openPanel('tape');
+    // A size of a thousand and over is shortened, as volumes are.
+    expect(sizes()).toEqual(['1.50K', '0.25', '3.00']);
+    // Another symbol's sizes are its own.
+    FakeChart.last.emit('symbolChange', { symbol: 'BBB', previous: 'AAA' });
+    FakeChart.last.emit('trades', { trades: [{ time: 4000, price: 100, volume: 7, side: 'buy' }], recent: false });
+    widget.closePanel();
+    widget.openPanel('tape');
+    expect(sizes()).toEqual(['7']);
+  });
+
+  it('makes no tape unless asked, whatever its switch says, and lets go of the feed when the widget goes', () => {
+    make({ features: { tape: true } });
+    expect(railPages()).not.toContain('tape');
+    expect(widget.openPanel('tape')).toBe(false);
+    widget.destroy();
+    make({ tape: true });
+    widget.openPanel('tape');
+    const chart = FakeChart.last;
+    widget.destroy();
+    expect(chart.unfollows).toBe(1);
+    make();
   });
 
   // A switch only hides: switches restored from getFeatures() (all on) must not add a ladder.
@@ -221,7 +409,7 @@ describe('ChartWidget dock', () => {
 
   it('starts shut without a watchlist', () => {
     make();
-    expect(railPages()).toEqual(['alerts', 'objectTree', 'dataWindow', 'symbolInfo']);
+    expect(railPages()).toEqual(['alerts', 'objectTree', 'dataWindow', 'symbolInfo', 'orderTicket']);
     expect(panel().hidden).toBe(true);
   });
 
@@ -367,7 +555,7 @@ describe('ChartWidget dock, pages of the host’s own', () => {
     const { spec, element, shown } = page();
     const handle = widget.addDockPage(spec);
     expect(handle).not.toBeNull();
-    expect(railPages()).toEqual(['watchlist', 'alerts', 'objectTree', 'dataWindow', 'symbolInfo', 'fundamentals']);
+    expect(railPages()).toEqual(['watchlist', 'alerts', 'objectTree', 'dataWindow', 'symbolInfo', 'orderTicket', 'fundamentals']);
     expect(railButton('fundamentals').getAttribute('aria-label')).toBe('Key figures');
     expect(railButton('fundamentals').querySelector('svg')).not.toBeNull();
     const shownPage = () => visible(element.closest('.tcw-dock-page')) && !panel().hidden;
@@ -464,5 +652,102 @@ describe('ChartWidget dock, pages of the host’s own', () => {
     widget.openPanel('fundamentals');
     widget.closePanel();
     expect(changes).toEqual(['fundamentals', 'watchlist', null, 'fundamentals', null]);
+  });
+});
+
+// The ticket was a dialog over the chart: it hid the price it was filled in for, and a press outside lost it.
+describe('ChartWidget: the order ticket in the dock', () => {
+  const ticketForm = () => host.querySelector<HTMLElement>('.tcw-order-ticket');
+  const backdropShown = () => [...host.querySelectorAll<HTMLElement>('.tcw-modal-backdrop')].some((b) => !b.hidden && b.contains(ticketForm()));
+
+  it('is a page of the dock, its button on the rail, where the widget trades', () => {
+    make();
+    expect(railPages()).toContain('orderTicket');
+    widget.trading.openOrderTicket();
+    expect(widget.getOpenPanel()).toBe('orderTicket');
+    expect(panel().contains(ticketForm())).toBe(true);
+    expect(backdropShown()).toBe(false);
+    expect(widget.trading.orderTicket!.isOpen()).toBe(true);
+    expect(railButton('orderTicket').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('opens from its rail button and from openPanel with a ticket at the market, and shuts with its page', () => {
+    make();
+    railButton('orderTicket').click();
+    expect(widget.trading.orderTicket!.isOpen()).toBe(true);
+    railButton('orderTicket').click();
+    expect(widget.getOpenPanel()).toBeNull();
+    expect(widget.trading.orderTicket!.isOpen()).toBe(false);
+    expect(widget.openPanel('orderTicket')).toBe(true);
+    expect(widget.trading.orderTicket!.isOpen()).toBe(true);
+    // Another panel in its place: the ticket goes with its page.
+    widget.openPanel('alerts');
+    expect(widget.trading.orderTicket!.isOpen()).toBe(false);
+  });
+
+  it('shuts its page when it is shut by its own Cancel', () => {
+    make();
+    widget.trading.openOrderTicket();
+    host.querySelector<HTMLButtonElement>('.tcw-order-ticket .tcw-footer-cancel')!.click();
+    expect(widget.getOpenPanel()).toBeNull();
+    expect(widget.trading.orderTicket!.isOpen()).toBe(false);
+  });
+
+  it('is the dialog where the widget asks for it, has no dock, or is a phone', () => {
+    make({ ticketPlace: 'dialog' });
+    expect(railPages()).not.toContain('orderTicket');
+    expect(widget.openPanel('orderTicket')).toBe(false);
+    widget.trading.openOrderTicket();
+    expect(backdropShown()).toBe(true);
+    expect(widget.getOpenPanel()).toBeNull();
+    widget.destroy();
+    host.replaceChildren();
+
+    make({ features: { dock: false } });
+    widget.trading.openOrderTicket();
+    expect(backdropShown()).toBe(true);
+    widget.destroy();
+    host.replaceChildren();
+
+    width = 390;
+    make();
+    resize(390);
+    widget.trading.openOrderTicket();
+    expect(backdropShown()).toBe(true);
+    expect(widget.getOpenPanel()).toBeNull();
+  });
+
+  it('keeps an order half typed when the widget is made too narrow for a dock: the ticket goes on as the dialog', () => {
+    make();
+    widget.trading.openOrderTicket();
+    const quantity = host.querySelector<HTMLInputElement>('.tcw-order-ticket input[type=number]')!;
+    quantity.value = '7';
+    quantity.dispatchEvent(new Event('input'));
+    resize(390);
+    expect(widget.getOpenPanel()).toBeNull();
+    expect(widget.trading.orderTicket!.isOpen()).toBe(true);
+    expect(backdropShown()).toBe(true);
+    expect(host.querySelector<HTMLInputElement>('.tcw-order-ticket input[type=number]')!.value).toBe('7');
+  });
+
+  it('is no panel to open while the dock does not show: openPanel says so, and opens nothing', () => {
+    width = 390;
+    const changes: (string | null)[] = [];
+    make({ onPanelChange: (panel) => changes.push(panel) });
+    resize(390);
+    changes.length = 0;
+    expect(widget.openPanel('orderTicket')).toBe(false);
+    expect(widget.trading.orderTicket!.isOpen()).toBe(false);
+    expect(changes).toEqual([]);
+  });
+
+  it('has no page where the widget does not trade, or the ticket is switched off', () => {
+    make({ trading: false });
+    expect(railPages()).not.toContain('orderTicket');
+    widget.destroy();
+    host.replaceChildren();
+    make({ features: { orderTicket: false } });
+    expect(visible(railButton('orderTicket'))).toBe(false);
+    expect(widget.openPanel('orderTicket')).toBe(false);
   });
 });

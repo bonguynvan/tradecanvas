@@ -1,10 +1,16 @@
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const { href } = useI18n();
+</script>
+
 <svelte:head>
   <title>チャートタイプ — TradeCanvas ドキュメント</title>
-  <meta name="description" content="18 種類の組み込みチャートタイプ：ローソク足、OHLC、高値-安値、平均足、練行足、カギ足、ポイント・アンド・フィギュア、エクイボリュームなど。" />
+  <meta name="description" content="25 種類の組み込みチャートタイプ：ローソク足、OHLC バーと HLC バー、カラム、スプライン、ステップエリア、高値-安値、平均足とその平滑化版、練行足、カギ足、ポイント・アンド・フィギュア、エクイボリュームなど。" />
 </svelte:head>
 
 <h1>チャートタイプ</h1>
-<p>18 種類の組み込みチャートタイプがあり、<code>chart.setChartType(type)</code> で実行時に切り替えられます。</p>
+<p>25 種類の組み込みチャートタイプがあり、<code>chart.setChartType(type)</code> で実行時に切り替えられます。</p>
 
 <h2>標準</h2>
 <table>
@@ -20,6 +26,11 @@
     <tr><td><code>hollowCandle</code></td><td>終値が前のバーの終値を上回ると、実体を中空で描きます。</td></tr>
     <tr><td><code>hlcArea</code></td><td>高値と安値の帯に終値のラインを重ねます。</td></tr>
     <tr><td><code>hiLo</code></td><td>各バーの安値から高値までを 1 本の棒で描き、上昇・下落で色分けします。幅の広いバーには高値と安値が表示されます。</td></tr>
+    <tr><td><code>hlcBars</code></td><td>各バーの安値から高値までの縦線と、終値の位置の短い横線。始値はありません。終値を 1 つ前の終値と比べて色分けします。</td></tr>
+    <tr><td><code>columns</code></td><td>各終値までの柱。終値を 1 つ前の終値と比べて色分けします。柱は表示範囲の最も低い終値のすぐ下から立ち、出来高には重なりません。</td></tr>
+    <tr><td><code>stepArea</code></td><td>階段状のラインと、その下を塗りつぶしたエリア。</td></tr>
+    <tr><td><code>spline</code></td><td>各終値を通る滑らかな曲線。高い終値より上にも、低い終値より下にも出ません。</td></tr>
+    <tr><td><code>dots</code></td><td>各終値にドット。</td></tr>
   </tbody>
 </table>
 
@@ -28,6 +39,7 @@
   <thead><tr><th>タイプ</th><th>説明</th></tr></thead>
   <tbody>
     <tr><td><code>heikinAshi</code></td><td>平均足の変換で平滑化したローソク足の系列。</td></tr>
+    <tr><td><code>smoothedHeikinAshi</code></td><td>先に <code>period</code> 本で平均した価格の平均足（既定 10、1〜500 の整数。ウィジェットの設定では「平滑化の期間」）：ローソク足の転換が遅く、少なくなるので、トレンドは 1 色の連なりとして読めます。<code>{`chart.setChartTypeOptions({ smoothedHeikinAshi: { period: 20 } })`}</code>。</td></tr>
     <tr><td><code>renko</code></td><td>一定の値幅のブロックで描くチャート。時間に依存しません。</td></tr>
     <tr><td><code>kagi</code></td><td>陽 / 陰のライン。反転幅はパーセント（既定 4）または価格で指定します。</td></tr>
     <tr><td><code>lineBreak</code></td><td>終値が直近のライン（既定 3 本）を抜けると新しいラインを引く新値足。</td></tr>
@@ -43,6 +55,16 @@
     <tr><td><code>volumeCandles</code></td><td>出来高に比例した幅のローソク足。</td></tr>
     <tr><td><code>equivolume</code></td><td>
       全値幅を表すボックスで、幅は出来高の比率に比例します。色は終値と前の終値の比較で決まります（Richard Arms 方式）。
+    </td></tr>
+  </tbody>
+</table>
+
+<h2>オーダーフロー</h2>
+<table>
+  <thead><tr><th>タイプ</th><th>説明</th></tr></thead>
+  <tbody>
+    <tr><td><code>footprint</code></td><td>
+      各バーの横に、そのバーの中のすべての価格で約定したものを描きます：売り手がビッドで取った量と買い手がアスクで取った量で、フィードの約定または自前の約定から作ります。<a href={href('/docs/realtime#footprint')}>フットプリントチャート</a>を参照してください。
     </td></tr>
   </tbody>
 </table>

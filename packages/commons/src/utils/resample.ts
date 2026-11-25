@@ -8,7 +8,8 @@ const MINUTE_MS = 60_000;
 /**
  * Aggregate bars (ascending, times in ms) into a coarser timeframe: per
  * bucket (see `timeframeBucketStart`) the first open, the extremes, the last
- * close and the summed volume. The input bars are not changed.
+ * close and the summed volume (and buy volume, where every bar of the bucket
+ * has one). The input bars are not changed.
  *
  * With a `timeZone`, days, weeks, months and the hour frames that divide a
  * day start at its midnight. Daily-or-longer bars stamped at 00:00 UTC are
@@ -23,12 +24,16 @@ export function resampleBars(bars: readonly OHLCBar[], target: TimeFrame, option
     const key = timeframeBucketStart(bar.time, target, bucket);
     if (current === null || key !== current.time) {
       current = { time: key, open: bar.open, high: bar.high, low: bar.low, close: bar.close, volume: bar.volume };
+      // What the buyers took is summed too, while every bar of the bucket says.
+      if (bar.buyVolume !== undefined) current.buyVolume = bar.buyVolume;
       out.push(current);
     } else {
       if (bar.high > current.high) current.high = bar.high;
       if (bar.low < current.low) current.low = bar.low;
       current.close = bar.close;
       current.volume += bar.volume;
+      if (current.buyVolume !== undefined && bar.buyVolume !== undefined) current.buyVolume += bar.buyVolume;
+      else delete current.buyVolume;
     }
   }
   return out;

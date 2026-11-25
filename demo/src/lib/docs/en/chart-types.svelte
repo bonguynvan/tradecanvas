@@ -1,10 +1,16 @@
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const { href } = useI18n();
+</script>
+
 <svelte:head>
   <title>Chart types — TradeCanvas docs</title>
-  <meta name="description" content="18 built-in chart types: candlestick, OHLC, High-Low, Heikin-Ashi, Renko, Kagi, Point & Figure, Equivolume, and more." />
+  <meta name="description" content="25 built-in chart types: candlestick, OHLC and HLC bars, columns, spline, step area, High-Low, Heikin-Ashi and its smoothed kind, Renko, Kagi, Point & Figure, Equivolume, and more." />
 </svelte:head>
 
 <h1>Chart types</h1>
-<p>18 built-in chart types. Switch at runtime via <code>chart.setChartType(type)</code>.</p>
+<p>25 built-in chart types. Switch at runtime via <code>chart.setChartType(type)</code>.</p>
 
 <h2>Standard</h2>
 <table>
@@ -20,6 +26,11 @@
     <tr><td><code>hollowCandle</code></td><td>Hollow body when close &gt; previous close.</td></tr>
     <tr><td><code>hlcArea</code></td><td>High-low band with a close line.</td></tr>
     <tr><td><code>hiLo</code></td><td>A bar from each low to its high, coloured by direction; wide bars carry their high and low.</td></tr>
+    <tr><td><code>hlcBars</code></td><td>A stem from each low to its high and a tick at the close, with no open; coloured by the close against the one before.</td></tr>
+    <tr><td><code>columns</code></td><td>A column up to each close, coloured by the close against the one before. The columns stand just under the lowest close in view, clear of the volume.</td></tr>
+    <tr><td><code>stepArea</code></td><td>The step line with the area under it filled.</td></tr>
+    <tr><td><code>spline</code></td><td>A smooth curve through the closes that never goes above a high close or below a low one.</td></tr>
+    <tr><td><code>dots</code></td><td>A dot at each close.</td></tr>
   </tbody>
 </table>
 
@@ -28,6 +39,7 @@
   <thead><tr><th>Type</th><th>Description</th></tr></thead>
   <tbody>
     <tr><td><code>heikinAshi</code></td><td>Smoothed candle series via Heikin-Ashi transform.</td></tr>
+    <tr><td><code>smoothedHeikinAshi</code></td><td>Heikin-Ashi of prices averaged over <code>period</code> bars first (10, a whole number from 1 to 500; Smoothing length in the widget's settings): its candles turn later and less often, so a trend reads as one run of a colour. <code>{`chart.setChartTypeOptions({ smoothedHeikinAshi: { period: 20 } })`}</code>.</td></tr>
     <tr><td><code>renko</code></td><td>Fixed price-brick chart; time-independent.</td></tr>
     <tr><td><code>kagi</code></td><td>Yang/yin reversal lines; the reversal is a percent (4) or an amount of price.</td></tr>
     <tr><td><code>lineBreak</code></td><td>A new line once the close breaks the last lines (3 by default).</td></tr>
@@ -43,6 +55,16 @@
     <tr><td><code>volumeCandles</code></td><td>Candle width proportional to volume.</td></tr>
     <tr><td><code>equivolume</code></td><td>
       Full-range boxes with width proportional to volume share; color tracks close vs prior close (Richard Arms style).
+    </td></tr>
+  </tbody>
+</table>
+
+<h2>Order flow</h2>
+<table>
+  <thead><tr><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>footprint</code></td><td>
+      By each bar, what traded at every price inside it: what the sellers took at the bid and what the buyers took at the ask, from the feed's trades or your own. See <a href={href('/docs/realtime#footprint')}>the footprint chart</a>.
     </td></tr>
   </tbody>
 </table>

@@ -1,0 +1,196 @@
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const { href } = useI18n();
+</script>
+
+<svelte:head>
+  <title>迁移到 3.0 — TradeCanvas 文档</title>
+  <meta name="description" content="从 TradeCanvas 2.x 到 3.0，你的代码需要注意的变化：每一处发生变化的行为，以及保留旧行为的选项。3.0 已发布到 npm。" />
+</svelte:head>
+
+<h1>迁移到 3.0</h1>
+<p>
+  3.0 已发布到 npm（<code>npm i @tradecanvas/chart</code>）。这里列出每一处可能破坏 2.x 代码的变化，
+  以及相应的处理方法。从 1.x 升级到 2.0，请见 <a href={href('/docs/migration')}>迁移到 2.0</a>。
+</p>
+
+<h2 id="behaviour">发生变化的行为</h2>
+
+<h3 id="brackets">已确认的括号单会发送给执行适配器</h3>
+<p>
+  连接了执行适配器（<code>chart.connectExecution(adapter)</code>）时，已确认的括号单现在会作为一个订单发送给适配器：
+  入场及其数量、止损和止盈。在 2.x 中，除非适配器以 <code>brackets: 'place'</code> 连接，否则它只是
+  <code>bracketPlace</code> 事件，并且图表会在控制台警告一次，说明括号单没有被发送。
+</p>
+<ul>
+  <li>
+    <strong>你的代码自行根据事件下括号单。</strong>请以 <code>brackets: 'event'</code> 连接，否则括号单会被下两次：
+    图表一次，你一次。
+  </li>
+  <li>
+    <strong>你已传入 <code>brackets: 'place'</code>。</strong>无需处理；该选项可以去掉。
+  </li>
+  <li>
+    <strong>没有连接适配器。</strong>没有变化：括号单仍是 <code>bracketPlace</code> 事件。
+  </li>
+</ul>
+<pre><code>{`// 2.x：是事件，除非另行指定            // 3.0：是订单，除非另行指定
+chart.connectExecution(broker)             chart.connectExecution(broker, { brackets: 'event' })
+chart.connectExecution(broker, { brackets: 'place' })   →   chart.connectExecution(broker)`}</code></pre>
+<p>
+  括号单按其规模对应的数量发送。没有数量的括号单不会被确认：它会留在图表上，<code>executionError</code> 会说明原因
+  （<code>reason: 'noQuantity'</code>）。组件的括号单操作栏现在有数量输入框，因此从工具栏开始的括号单都带有数量；
+  由你的代码开始的括号单通过第三个参数指定规模（见 <a href={href('/docs/trading')}>交易</a>）：
+</p>
+<pre><code>{`chart.startBracket('buy', undefined, { quantity: 2 })
+chart.startBracket('buy', undefined, { risk: 50 })   // 在止损处亏损 50 的数量`}</code></pre>
+
+<h3 id="trade-buttons">连接执行适配器后，图表上显示卖出和买入</h3>
+<p>
+  连接了执行适配器并且下单窗口开启时，组件现在会在图表图例下方显示卖出和买入。只为画出自己的订单和持仓而连接适配器的宿主，可以把它们关掉：
+</p>
+<pre><code>{`new ChartWidget(el, { features: { tradeButtons: false } });`}</code></pre>
+<p>
+  关闭 <code>orderTicket</code>，或没有适配器时，这两个按钮不会出现。逐个按名称关闭下单开关的宿主多了一个要写的名称：<code>tradeButtons</code> 是新开关，不设置时为开启。
+</p>
+
+<h3 id="stop-limit">模拟账户在限价内成交止损限价单</h3>
+<p>
+  <code>PaperExecutionAdapter</code> 以前在止损价处成交 <code>stopLimit</code> 订单，与止损单相同。现在，价格到达止损价后，
+  它会变为以其 <code>price</code> 为限价的限价单：订单继续挂着（类型变为 <code>'limit'</code>），直到价格进入限价范围。
+  如果测试期望价格一到止损价就产生持仓，请先把价格移到限价范围内，或改用 <code>'stop'</code> 订单。
+</p>
+
+<h3 id="hand-prices">手动设定的价格落在市场的价格网格上</h3>
+<p>
+  <code>orderModify</code>、<code>positionModify</code>、<code>bracketPlace</code>、草稿订单或右键菜单发出的 <code>orderPlace</code>、
+  <code>priceAxisAdd</code> 和 <code>chartContextMenu</code> 以前携带的是指针下按像素算出的价格（<code>62549.71592675613</code>）。
+  现在它们携带的是落在市场最小变动价位上的价格，没有时则取价格轴显示的小数位数：即 <code>chart.roundPrice</code> 给出的值。
+  括号单和草稿订单无论从什么价格开始，也都落在网格上；被拖动的提醒同样如此。松开时仍在原来价位上的线不会发出任何事件。自己做过取整的代码可以去掉这一步。
+  在有当日涨停价和跌停价的市场上，订单自身的价格也被限制在其间：拖过界时，事件携带的是涨停价或跌停价。
+</p>
+
+<h3 id="finger">在手指下，没有小于 32 px 的控件</h3>
+<p>
+  在主指针为粗略指针的设备上（手机、平板），无论哪种外观和 <code>density</code>，组件的控件现在每个方向至少 32 px：
+  平板上的 <code>compact</code> 组件不再有 24 px 的按钮，指标图例的每一行高 32 px，而不是原来的 20 px。
+  在鼠标下，图形保持原样，变化的只是点按区域：每个方向至少 20 px。在触摸屏上测量组件各部分（图例的高度、对话框的高度）的页面，会读到更大的数值。
+</p>
+
+<h3 id="order-answer">下单窗口发出的订单会等待适配器的答复</h3>
+<p>
+  连接了执行适配器时，下单窗口不再在下单的同时关闭：它会一直等到适配器的 <code>placeOrder</code> resolve（窗口关闭）或 reject（窗口保留并说明原因）。
+  <code>placeOrder</code> 永不结束的适配器会让窗口一直等待：请以订单 resolve，或带着原因 reject。另有三处随之改变。
+  每个 <code>orderPlace</code> 负载现在都带有 <code>clientOrderId</code>，<code>placeOrderIntent</code> 返回实际发出的订单（以前不返回任何值）。
+  数据源同时给出买价和卖价时，下单窗口发出的市价单以卖价（买入）或买价（卖出）作为 <code>price</code>（以前是最新价）。
+  一次按下发出的订单（来自右键菜单或盘口深度面板）在市场有交易单位时数量为一手（以前是 1，而深度面板的订单没有数量）。
+</p>
+
+<h3 id="orders-by-symbol">订单、持仓和成交画在各自的品种上</h3>
+<p>
+  写明了 <code>symbol</code> 的订单、持仓或成交，只在图表显示该品种时绘制。在其他品种上它会被保留：
+  <code>getOrders()</code>、<code>getPositions()</code> 和 <code>getFills()</code> 返回整个账户，
+  <code>chart.getSymbol()</code> 说明其中哪些被绘制。图表现在会在每个 <code>orderPlace</code> 负载上写明当前显示的品种，
+  模拟账户会保留它，因此在一个品种上开出的持仓不会再像以前那样画到下一个品种上，并按错误的价格计算盈亏。
+  没有写明品种的仍像以前一样画在每个品种上：你自己为多品种账户写的适配器，要在它的订单、持仓和成交上写明品种。
+</p>
+<p>
+  随之改变的有三处。只要图表显示着某个品种，<code>executionFill</code> 和 <code>getFills()</code> 给出的每笔成交都带有
+  <code>symbol</code>，<code>ChartWidget</code> 在品种改变时不再清除成交：历史和已实现盈亏属于账户，标记会随它们的品种
+  一起回来。<code>setMarkPrice</code> 接受品种作为第三个参数，图表在回放时会传入它：提供的价格写明了品种时，
+  模拟账户按各品种自己的价格撮合和估值；提供的价格没有写明品种时，它和以前一样是一个市场。另外，K 线由手动设置时，
+  图表在被告知之前不知道品种：<code>chart.setSymbol(symbol)</code>，<code>ChartWidget</code> 会自己调用它。
+</p>
+<h3 id="hold-tooltip">在图表上按住鼠标显示价格弹窗</h3>
+<p>
+  在 <code>ChartWidget</code> 中，在绘图区按住鼠标不动半秒，会显示鼠标所在K线的浮动 OHLCV 提示，直到松开按钮：
+  提示跟随鼠标，期间图表不平移。因此按住这么久不再算一次点击，也不会开始平移。组件的 <code>crosshairTooltip</code>
+  功能现在是 <code>'hold'</code>，以前是 <code>false</code>：传入
+  <code>{`chartOptions: { features: { crosshairTooltip: false } }`}</code> 可像以前一样不显示弹窗，传入
+  <code>true</code> 则在鼠标悬停时显示。无界面的 <code>Chart</code> 没有改变：除非另行指定，它的提示仍跟随鼠标，
+  它同样接受 <code>'hold'</code>。
+</p>
+
+<h3 id="live-price">一键下单要等实时价格</h3>
+<p>
+  有自己的数据源（<code>adapter</code>）时，在该数据源断开期间，<code>ChartWidget</code> 不再发送一键下单（右键菜单、
+  盘口深度）的订单，也不发送已确认的括号单或草稿订单：它会说明原因。数据源断开，或一分钟内没有任何推送
+  （<code>feedQuietAfter</code>）期间，下单窗口不发送市价单；数据流停滞时，状态栏显示“没有价格更新”，而以前显示“Live”。
+  <code>feedQuietAfter: 0</code> 表示已连接的数据源永远不会被视为静默；断开的数据源仍然会拦下订单。
+</p>
+
+<h3 id="confirmations">一键交易会先确认，盘口深度上的买价是买入价</h3>
+<p>
+  <code>ChartWidget</code> 现在会在平仓或反手（账户面板、图表上的按钮）之前，以及在右键菜单或盘口深度下单之前先询问：
+  以前它们一次点击就发出。<code>confirmOrders: false</code> 保留一次点击。在盘口深度上，点击买价现在会在该价格挂出
+  <strong>买入</strong>限价单，点击卖价会挂出<strong>卖出</strong>限价单，而以前是卖给买价、买入卖价：
+  同一个单元格发出的 <code>orderPlace</code> 方向与以前相反。点击这些单元格或期望订单立即发出的测试或脚本，
+  需要点击确认对话框的按钮（<code>.tcw-confirm .tcw-done-btn</code>）或使用该选项。
+</p>
+
+<h3 id="graphite">组件的默认外观是 Graphite</h3>
+<p>
+  没有 <code>ui</code> 的 <code>ChartWidget</code> 现在以 Graphite 外观绘制，以前是 Modern：中性底色、3 px 圆角、
+  40 px 工具栏，选中的项显示在较亮的底色上，而不是琥珀色上。图表自身的颜色随之改变
+  （<code>GRAPHITE_DARK_THEME</code>、<code>GRAPHITE_LIGHT_THEME</code>），除非 <code>theme</code> 是你自己的对象。
+  <code>ui: 'modern'</code> 保留之前的外观和配色。样式表的默认令牌是 Graphite 的，因此原先在 Modern 之上设置少量
+  <code>--tcw-*</code> 令牌的 CSS，现在是设置在 Graphite 之上。在所有外观中，下单面板的按钮现在写明订单
+  （<code>Buy 100 HPG</code>），订单金额是按钮上方的最后一行，持仓的反手和平仓按钮在账户面板中紧跟盈亏之后：
+  读取按钮文字或按位置读取列的测试需要相应修改。
+</p>
+
+<h3 id="money">越南股票的价值以越南盾计算</h3>
+<p>
+  <code>MARKET_HOSE</code>、<code>MARKET_HOSE_ETF</code>、<code>MARKET_HNX</code> 和 <code>MARKET_UPCOM</code>
+  的价格以千越南盾为单位（26.40 即 26,400 越南盾），现在明确声明了这一点：它们的 <code>contractMultiplier</code>
+  为 1,000。下单面板中的订单金额、账户面板中的持仓盈亏以及图表标签上的金额都按它计算，因此 26.40 的 100 股
+  显示为 2,640,000，而不是 2,640。在所有市场上，图表标签上的金额（持仓盈亏、止损或止盈的金额）现在都按市场的
+  乘数计算，与账户面板一致：VN30F 持仓的标签以越南盾显示，而不是点数。<code>scaleMarketPrices</code>
+  会把乘数除以它的系数，因此价格以越南盾计的 <code>scaleMarketPrices(MARKET_HOSE, 1000)</code> 乘数为 1。
+  如果你自己乘过 1,000（在 <code>formatAmount</code> 中，或在图表旁显示的内容中），请去掉。
+  没有传入自己的 <code>multiplier</code> 的 <code>PaperExecutionAdapter</code> 现在会从所连接的图表取得市场的乘数
+  （图表在连接时和市场改变时调用适配器可选的 <code>setMultiplier</code>），因此它的保证金、余额和成交盈亏使用
+  同一种金额；传入了 <code>multiplier</code> 的则保持不变。多头/空头持仓画线和按 <code>risk</code> 定量的括号单
+  也按乘数计算数量：风险 5,000,000 越南盾、止损相距 1.00 时为 5,000 股，以前是 5,000,000 股。
+  <code>positionLevels(drawing, multiplier)</code> 的第二个参数接收市场的乘数。持仓保留开仓时的乘数（<code>TradingPosition.multiplier</code>，由模拟账户设置）：图表切换到其他市场或其他品种时，
+  不会重新估值已开的持仓，面板和图表标签按每个持仓自己的乘数计算。通过展开预设得到的市场会保留预设的乘数：
+  用于越南盾价格的 <code>{'{'} ...MARKET_HOSE, pricePrecision: 0, priceStep: 10 {'}'}</code> 仍是 1,000，金额会大一千倍。
+  请使用 <code>scaleMarketPrices(MARKET_HOSE, 1000)</code>，或在展开中设置 <code>contractMultiplier: 1</code>。
+  发送给券商的内容与之前相同，只有如上所述由风险算出的数量不同。
+</p>
+
+<h3 id="mark">持仓的 <code>markPrice</code> 就是它的估值价格</h3>
+<p>
+  如果你的执行适配器给持仓提供 <code>markPrice</code>，账户面板中的行和图表上的标签现在按该价格为持仓估值，
+  图表自身品种的持仓也是如此；此前只有其他品种的持仓读取该价格，其余按图表的最新价格计算。因此请保持它是最新的：
+  标记价格变动时再次发送持仓。只设置一次的适配器会得到静止不动的一行。不提供该字段则仍按图表的最新价格计算。
+  <code>markPrice</code> 为 0 时视为没有。
+</p>
+
+<h3 id="ticket-dock">下单面板在停靠栏中打开，位于图表旁边</h3>
+<p>
+  组件的下单面板原先是覆盖在图表上的对话框，正好挡住要填写的价格。现在它是停靠栏中的一页，位于图表旁边：不遮挡价格，点击图表不会关闭它，发送一笔订单后它会留下等待下一笔，方向、类型和数量保持不变。它的按钮在停靠栏的侧条上，<code>widget.openPanel('orderTicket')</code> 以市价打开一张新单。
+</p>
+<p>
+  <code>'orderTicket'</code> 是新增的一个 <code>WidgetPanel</code>：<code>getOpenPanel()</code> 和 <code>onPanelChange</code> 会报告它，你自己的页面不能使用这个 id。在手机上，或关闭停靠栏（<code>features: {'{'} dock: false {'}'}</code>）时，下单面板仍是原来的对话框。希望在任何宽度都使用对话框的宿主可以这样声明：
+</p>
+<pre><code>{`new ChartWidget(el, { ticketPlace: 'dialog' });`}</code></pre>
+
+<h2 id="types">扩充的类型</h2>
+<p>
+  <code>TimeInForce</code> 现在是 <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>。处理全部成员的代码
+  （没有 default 的 <code>switch</code>、<code>Record&lt;TimeInForce, …&gt;</code>）需要补上三个新成员；
+  你自己的执行适配器可以拒绝它不支持的类型。
+</p>
+<p>
+  <code>FillReason</code> 也多了 <code>'liquidation'</code>，用于模拟账户在强制平仓中平掉的持仓，
+  <code>ExecutionEventType</code> 多了 <code>'marginCall'</code>。只有给模拟账户设置了
+  <code>stopOutLevel</code> 或 <code>marginCallLevel</code>，这两者才会出现，但处理全部成员的代码需要补上它们。
+</p>
+
+<h2 id="unchanged">没有变化的部分</h2>
+<ul>
+  <li>数据、2.x 保存的布局和设置照常加载。</li>
+  <li>指标、绘图、主题和样式键的名称保持不变。</li>
+</ul>

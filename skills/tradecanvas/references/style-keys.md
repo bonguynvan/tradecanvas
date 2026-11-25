@@ -2,7 +2,7 @@
 
 # Style keys
 
-107 keys, each one part of the chart's look apart from its theme:
+128 keys, each one part of the chart's look apart from its theme:
 `chart.applyOverrides({ 'grid.vertical.visible': false })`, `overrides` in the chart's options, or the
 React/Vue/Svelte `overrides` prop. A value sets a key and `null` takes it away. `CHART_STYLE_KEYS`, exported
 from `@tradecanvas/chart`, holds them with their kinds; `chart.getStyleValue(key)` is what one resolves to now.
@@ -56,6 +56,7 @@ from `@tradecanvas/chart`, holds them with their kinds; `chart.getStyleValue(key
 | `crosshair.vertical.width` | width |
 | `crosshair.labelBackground` | color |
 | `crosshair.labelTextColor` | color |
+| `crosshair.labelChange` | boolean |
 
 ## axis
 
@@ -93,6 +94,7 @@ from `@tradecanvas/chart`, holds them with their kinds; `chart.getStyleValue(key
 | `lastPrice.width` | width |
 | `lastPrice.labelBackground` | color |
 | `lastPrice.labelTextColor` | color |
+| `lastPrice.limitColors` | boolean |
 
 ## volume
 
@@ -165,6 +167,15 @@ from `@tradecanvas/chart`, holds them with their kinds; `chart.getStyleValue(key
 | `series.heikinAshi.wickUpColor` | color |
 | `series.heikinAshi.wickDownColor` | color |
 
+## series.smoothedHeikinAshi
+
+| Key | Kind |
+|---|---|
+| `series.smoothedHeikinAshi.upColor` | color |
+| `series.smoothedHeikinAshi.downColor` | color |
+| `series.smoothedHeikinAshi.wickUpColor` | color |
+| `series.smoothedHeikinAshi.wickDownColor` | color |
+
 ## series.hollowCandle
 
 | Key | Kind |
@@ -190,6 +201,15 @@ from `@tradecanvas/chart`, holds them with their kinds; `chart.getStyleValue(key
 | `series.equivolume.wickUpColor` | color |
 | `series.equivolume.wickDownColor` | color |
 
+## series.footprint
+
+| Key | Kind |
+|---|---|
+| `series.footprint.upColor` | color |
+| `series.footprint.downColor` | color |
+| `series.footprint.wickUpColor` | color |
+| `series.footprint.wickDownColor` | color |
+
 ## series.bar
 
 | Key | Kind |
@@ -203,6 +223,20 @@ from `@tradecanvas/chart`, holds them with their kinds; `chart.getStyleValue(key
 |---|---|
 | `series.hiLo.upColor` | color |
 | `series.hiLo.downColor` | color |
+
+## series.hlcBars
+
+| Key | Kind |
+|---|---|
+| `series.hlcBars.upColor` | color |
+| `series.hlcBars.downColor` | color |
+
+## series.columns
+
+| Key | Kind |
+|---|---|
+| `series.columns.upColor` | color |
+| `series.columns.downColor` | color |
 
 ## series.renko
 
@@ -268,6 +302,19 @@ from `@tradecanvas/chart`, holds them with their kinds; `chart.getStyleValue(key
 | `series.lineWithMarkers.color` | color |
 | `series.lineWithMarkers.lineWidth` | width |
 
+## series.spline
+
+| Key | Kind |
+|---|---|
+| `series.spline.color` | color |
+| `series.spline.lineWidth` | width |
+
+## series.dots
+
+| Key | Kind |
+|---|---|
+| `series.dots.color` | color |
+
 ## series.area
 
 | Key | Kind |
@@ -276,6 +323,15 @@ from `@tradecanvas/chart`, holds them with their kinds; `chart.getStyleValue(key
 | `series.area.lineWidth` | width |
 | `series.area.topColor` | color |
 | `series.area.bottomColor` | color |
+
+## series.stepArea
+
+| Key | Kind |
+|---|---|
+| `series.stepArea.lineColor` | color |
+| `series.stepArea.lineWidth` | width |
+| `series.stepArea.topColor` | color |
+| `series.stepArea.bottomColor` | color |
 
 ## series.hlcArea
 

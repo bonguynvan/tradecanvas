@@ -595,4 +595,115 @@ describe('ChartWidget order ticket', () => {
     // A buy at the fake chart's 100 with its stop 1% under: one unit risks 1, written as the step's one decimal.
     expect(host.querySelector('.tcw-ticket-away')!.textContent).toBe('-1.00% · -1.0');
   });
+
+  it('counts an order good till a date from the moment the chart trades at, a replay’s on a replay', () => {
+    make({ trading: true, symbol: 'AAA' });
+    // A paper account trading on a replay of March 2024: the clock on the wall is years on.
+    (FakeChart.last as unknown as { getTradingTime: () => number }).getTradingTime = () => Date.UTC(2024, 2, 1, 14, 30);
+    (widget as unknown as { trading: { openOrderTicket(price?: number): void } }).trading.openOrderTicket(95);
+    host.querySelector<HTMLElement>('[data-ticket-field="timeInForce-gtd"]')!.click();
+    const field = (name: string) => host.querySelector<HTMLInputElement>(`[data-ticket-field="${name}"]`)!;
+    expect([field('expireDate').value, field('expireTime').value]).toEqual(['2024-03-02', '14:30']);
+    expect(host.querySelector<HTMLButtonElement>('.tcw-ticket-place')!.disabled).toBe(false);
+    // The day before the replay's is past, though it is to come by no clock on the wall.
+    field('expireDate').value = '2024-02-29';
+    field('expireDate').dispatchEvent(new Event('change', { bubbles: true }));
+    expect(host.querySelector<HTMLButtonElement>('.tcw-ticket-place')!.disabled).toBe(true);
+  });
 });
+
+describe('ChartWidget — the chart on paper', () => {
+  type Commands = { commands: { buildCommandItems(): { id: string; label: string; category: string }[]; handleAction(id: string): void } };
+  const commands = () => (widget as unknown as Commands).commands;
+  const actions = () => commands().buildCommandItems().filter((i) => i.category === 'action');
+  /** Lets what a command started, and the toast it ends in, come to pass. */
+  const settled = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  it('offers to print the chart and to save it as a PDF, with the screenshot switch', () => {
+    make();
+    expect(actions().filter((a) => a.id === 'printChart' || a.id === 'savePdf').map((a) => a.label)).toEqual(['Print chart', 'Save chart as PDF']);
+    widget.destroy();
+    make({ features: { screenshot: false } });
+    expect(actions().map((a) => a.id)).not.toEqual(expect.arrayContaining(['printChart']));
+    expect(actions().map((a) => a.id)).not.toEqual(expect.arrayContaining(['savePdf']));
+  });
+
+  it('prints the chart under its symbol and interval', () => {
+    make({ timeframe: '1h' });
+    const print = vi.fn();
+    Object.assign(FakeChart.last, { print });
+    commands().handleAction('printChart');
+    expect(print).toHaveBeenCalledWith({ title: 'AAA, 1h' });
+    // The widget's own method does the same.
+    widget.printChart();
+    expect(print).toHaveBeenCalledTimes(2);
+  });
+
+  it('saves the PDF the chart makes as a file named after the symbol and interval, and lets go of it', async () => {
+    make({ timeframe: '1h' });
+    const pdf = new Blob(['%PDF'], { type: 'application/pdf' });
+    const toPdf = vi.fn(async () => pdf);
+    Object.assign(FakeChart.last, { toPdf });
+    const made: Blob[] = [];
+    const freed: string[] = [];
+    const createObjectURL = vi.fn((blob: Blob) => { made.push(blob); return 'blob:chart'; });
+    const revokeObjectURL = vi.fn((url: string) => { freed.push(url); });
+    Object.assign(URL, { createObjectURL, revokeObjectURL });
+    const saved: string[] = [];
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      saved.push(`${this.download} <- ${this.href}`);
+    });
+    vi.useFakeTimers();
+    commands().handleAction('savePdf');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(toPdf).toHaveBeenCalledWith({ title: 'AAA, 1h' });
+    expect(made).toEqual([pdf]);
+    expect(saved).toEqual(['AAA-1h.pdf <- blob:chart']);
+    // Not in the click's own task: a browser may not have begun to save yet.
+    expect(freed).toEqual([]);
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(freed).toEqual(['blob:chart']);
+    expect(host.querySelector('.tcw-toast')).toBeNull();
+    vi.useRealTimers();
+    click.mockRestore();
+  });
+
+  it('says so when the chart could not be printed', () => {
+    make();
+    Object.assign(FakeChart.last, { print: () => false });
+    widget.printChart();
+    expect(host.querySelector('.tcw-toast')!.textContent).toContain('Could not print the chart');
+    widget.destroy();
+    // A chart that says nothing has asked for the dialog: no toast.
+    make();
+    Object.assign(FakeChart.last, { print: () => true });
+    widget.printChart();
+    expect(host.querySelector('.tcw-toast')).toBeNull();
+  });
+
+  it('keeps a symbol’s own letters in the PDF’s name', async () => {
+    make({ symbol: '삼성전자' });
+    const names: string[] = [];
+    const clicked = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      names.push(this.download);
+    });
+    Object.assign(URL, { createObjectURL: () => 'blob:pdf', revokeObjectURL: () => undefined });
+    Object.assign(FakeChart.last, { toPdf: async () => new Blob(['%PDF'], { type: 'application/pdf' }) });
+    await widget.saveChartPdf();
+    expect(names).toEqual(['삼성전자-5m.pdf']);
+    clicked.mockRestore();
+  });
+
+  it('says so when no PDF could be made', async () => {
+    make();
+    Object.assign(FakeChart.last, { toPdf: async () => null });
+    await widget.saveChartPdf();
+    expect(host.querySelector('.tcw-toast')!.textContent).toContain('Could not make the PDF');
+    widget.destroy();
+    make();
+    Object.assign(FakeChart.last, { toPdf: async () => { throw new Error('no room'); } });
+    await widget.saveChartPdf();
+    expect(host.querySelector('.tcw-toast')!.textContent).toContain('Could not make the PDF');
+  });
+});
+

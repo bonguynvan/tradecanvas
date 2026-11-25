@@ -395,3 +395,48 @@ describe('Chart VWAP', () => {
     expect(vwapAt(id, 24)).toBeCloseTo((24 * 100 + 200) / 25, 9);
   });
 });
+
+describe('Chart starts the trading day at the open of a session that runs past midnight', () => {
+  const CHICAGO = 'America/Chicago';
+  /** 15:00, 17:00 and 23:00 in Chicago on 19 October 2026 (UTC-5): 15 then 30 then 50. */
+  const globex = (): OHLCBar[] => [flat(Date.UTC(2026, 9, 19, 20), 15), flat(Date.UTC(2026, 9, 19, 22), 30), flat(Date.UTC(2026, 9, 20, 4), 50)];
+
+  it('from the symbol’s sessions: 17:00 to 16:00 starts the day at 17:00', () => {
+    chart.setData(globex());
+    const id = chart.addIndicator('vwap')!;
+    chart.setSymbolInfo({ symbol: 'ES', timeZone: CHICAGO, sessions: [{ start: '09:30', end: '16:00' }] });
+    // Inside a day: midnight in Chicago, so 15:00 and 17:00 are one day.
+    expect(vwapAt(id, 1)).toBe(22.5);
+    chart.setSymbolInfo({ symbol: 'ES', timeZone: CHICAGO, sessions: [{ start: '17:00', end: '16:00' }] });
+    // The 17:00 bar starts the next trading day, and 23:00 is in it.
+    expect(vwapAt(id, 1)).toBe(30);
+    expect(vwapAt(id, 2)).toBe(40);
+    // An indicator added after takes it too.
+    const later = chart.addIndicator('svwap')!;
+    expect(vwapAt(later, 1)).toBe(30);
+    // A symbol with no such session goes back to midnight.
+    chart.setSymbolInfo({ symbol: 'AAPL', timeZone: CHICAGO });
+    expect(vwapAt(id, 1)).toBe(22.5);
+  });
+
+});
+
+describe('Chart’s day lines on a trading day that starts in the evening', () => {
+  const dayStartOfBreaks = (c: Chart) => (c as unknown as { sessionBreaks: { dayStart: number | null } }).sessionBreaks.dayStart;
+
+  it('fall at the session’s open when the chart shows the exchange’s time, and at midnight on any other clock', () => {
+    chart.setData(hourlyDays(D1, 2));
+    chart.setSymbolInfo({ symbol: 'ES', timeZone: 'America/Chicago', sessions: [{ start: '17:00', end: '16:00' }] });
+    chart.setTimeZone('exchange');
+    expect(dayStartOfBreaks(chart)).toBe(17 * 60);
+    // Shown in another zone, a day there is midnight to midnight.
+    chart.setTimeZone('Asia/Ho_Chi_Minh');
+    expect(dayStartOfBreaks(chart)).toBeNull();
+    // The exchange's zone named outright is the exchange's clock too.
+    chart.setTimeZone('America/Chicago');
+    expect(dayStartOfBreaks(chart)).toBe(17 * 60);
+    // A symbol with no such session: midnight.
+    chart.setSymbolInfo({ symbol: 'AAPL', timeZone: 'America/Chicago' });
+    expect(dayStartOfBreaks(chart)).toBeNull();
+  });
+});

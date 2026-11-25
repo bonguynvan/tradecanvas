@@ -14,7 +14,7 @@
   위젯의 외관은 토큰의 묶음입니다. 부품 종류별 모서리, 컨트롤과 바의 크기, 글꼴, 테두리, 그림자, 선택된 버튼의 표시
   방식, 그리고 도구 모음과 그리기 도구를 가장자리에 붙일지 띄울지까지 정합니다. 프리셋에서 시작해 원하는 부분만
   바꾸세요. 색상은 테마(<code>dark</code> / <code>light</code>, <a href={href('/docs/api')}>API 레퍼런스</a> 참고)가
-  맡으며, 어떤 외관이든 두 테마 모두와 함께 쓸 수 있습니다. 기본값인 Modern은 자체 dark와 light를 가지며, 다른
+  맡으며, 어떤 외관이든 두 테마 모두와 함께 쓸 수 있습니다. 기본값인 Graphite와 Modern은 각자 dark와 light를 가지며, 다른
   외관은 Modern 이전에 위젯이 쓰던 색을 함께 씁니다.
 </p>
 
@@ -22,7 +22,16 @@
 <table>
   <thead><tr><th>프리셋</th><th>외관</th></tr></thead>
   <tbody>
-    <tr><td><code>modern</code> (기본값)</td><td>
+    <tr><td><code>graphite</code> (기본값)</td><td>
+      트레이딩 데스크의 틀로, 자체 색조가 없습니다. 바탕은 한 단계씩 다르고(<code>#131416</code> /
+      <code>#ffffff</code>) 가는 선으로 나눕니다. 크기는 일부러 적게 두었습니다. 컨트롤 높이는 20, 24, 28, 36,
+      40 px, 모든 모서리는 3 px, 떠 있는 층의 그림자는 한 가지이며 그 밖에는 그림자가 없습니다. 선택된 것(주기,
+      도구, 탭)은 더 밝은 바탕에 본문 색으로 표시하고, 앰버는 실행하는 것에만 씁니다. 스위치는 체크 상자이고,
+      계좌 표의 열은 숫자 너비에 맞춥니다. 글꼴은 페이지가 불러온 경우 IBM Plex Sans, 아니면 시스템 글꼴입니다.
+      차트에서는 테마 객체를 주지 않으면 색이 <code>GRAPHITE_DARK_THEME</code>와
+      <code>GRAPHITE_LIGHT_THEME</code>입니다.
+    </td></tr>
+    <tr><td><code>modern</code></td><td>
       코드 편집기의 창을, 그 Dark Modern과 Light Modern 색으로. 차트는 편집기의 바탕
       (<code>#1f1f1f</code> / <code>#ffffff</code>) 위에 있고, 주위의 바는 바탕에서 한 단계 벗어난 색이며 사이는 가는 선입니다.
       38 px 도구 모음에 28 px 버튼과 16 px 아이콘, 4 px 컨트롤, 6 px 메뉴, 8 px 대화 상자. 로고의 호박색
@@ -171,7 +180,8 @@ chart.setFont(null)                         // the theme's own font again`}</cod
   font: {
     family: "'Manrope', system-ui, sans-serif",
     mono: "'JetBrains Mono', monospace",
-    size: 13, weight: 500, strongWeight: 600,
+    size: 13, smallSize: 12,                          // body; figures in tables, field names
+    weight: 500, strongWeight: 600,
     labelCase: 'uppercase', labelTracking: 0.06,      // small labels
   },
   borders: { width: 1, separators: true },           // rules between toolbar groups
@@ -326,7 +336,9 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>크로스헤어 선에도 같은 네 가지(기본은 가는 실선).</td></tr>
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>축과 패널 눈금의 가격·시간 라벨.</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>각 축의 선과 라벨(패널 눈금은 가격 축을 따름).</td></tr>
-    <tr><td><code>axis.price.valueTagsOutlined</code></td><td><code>true</code>면 가격 축에 있는 지표의 값 태그를 선의 색으로 채우는 대신 윤곽선으로 그림(선 색의 테두리 안에 차트 배경 또는 패널 자체의 배경, 글자는 선의 색): 가격 패널, 지표 패널, 왼쪽 눈금에서. 배경과 너무 비슷해 그 위에서 읽을 수 없는 선은 값을 눈금의 글자 색으로 적음.</td></tr>
+    <tr><td><code>lastPrice.limitColors</code></td><td><code>true</code>면 가격이 그날의 제한가에 있는 동안 현재가의 선과 태그를 그 제한가의 색으로 그림: 상한가 이상이면 상한가 색, 하한가 이하이면 하한가 색, 기준가와 같으면 기준가 색. 그 사이에서는, 그리고 제한가가 없을 때는 그날의 상승/하락 색을 유지함. 가격제한폭이 있고 시세판이 그에 따라 색을 입히는 시장을 위한 것; 기본은 꺼짐.</td></tr>
+    <tr><td><code>crosshair.labelChange</code></td><td><code>true</code>면 가격 축에서 크로스헤어가 가리키는 가격 아래에, 그 가격이 현재가에서 얼마나 떨어져 있는지를 퍼센트로 적음(<code>+1.25%</code>, 차트의 로케일로). 현재가가 없거나 눈금이 이미 퍼센트나 지수일 때는 적지 않음. 축은 그만큼의 너비를 확보함. Graphite 테마에서는 기본으로 켜져 있고(테마 자체의 <code>crosshairChange</code>), 다른 테마에서는 꺼져 있음.</td></tr>
+    <tr><td><code>axis.price.valueTagsOutlined</code></td><td><code>true</code>면 가격 축에 있는 지표의 값 태그를 선의 색으로 채우는 대신 윤곽선으로 그림(선 색의 테두리 안에 차트 배경 또는 패널 자체의 배경, 글자는 선의 색): 가격 패널, 지표 패널, 왼쪽 눈금에서. 배경과 너무 비슷해 그 위에서 읽을 수 없는 선은 값을 그 색을 더 짙게 한 색으로 적음(4.5:1로 읽힐 때까지). Graphite 테마는 이 키가 <code>false</code>가 아니면 윤곽선으로 그림. 매수호가, 매도호가와 고가, 저가의 태그도 함께 윤곽선으로 그려짐.</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>범례의 값과 라벨(O, H, L, Vol).</td></tr>
     <tr><td><code>legend.upColor</code>, <code>.downColor</code></td><td>봉의 값을 읽는 곳의 상승과 하락: 범례의 종가와 변동, 크로스헤어 툴팁과 고정한 툴팁, 측정 도구. 정하지 않으면 시리즈의 색을 따르므로, 캔들을 숨기는 차트(자체 캔들을 그리는 오버레이)는 이 키를 정해 그 색을 유지함.</td></tr>
     <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>최근 가격 선과 태그. 정하지 않으면 색은 메인 시리즈를 따름. 봉의 남은 시간(<code>features.barCountdown</code>)은 태그 아래에 붙음.</td></tr>

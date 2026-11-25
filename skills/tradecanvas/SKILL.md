@@ -1,6 +1,6 @@
 ---
 name: tradecanvas
-description: Build trading and financial charts with TradeCanvas (@tradecanvas/chart) — candlesticks and 17 other chart types, 134 indicators, drawing tools, live exchange data, orders and positions on the chart, signals and trade zones, alerts, replay, a full trading widget. Use when a project imports @tradecanvas/*, or when asked to add a price, candlestick or trading chart to a web app (vanilla TS/JS, React, Vue, Svelte).
+description: Build trading and financial charts with TradeCanvas (@tradecanvas/chart) — candlesticks and 24 other chart types, 138 indicators, drawing tools, live exchange data, orders and positions on the chart, signals and trade zones, alerts, replay, a full trading widget. Use when a project imports @tradecanvas/*, or when asked to add a price, candlestick or trading chart to a web app (vanilla TS/JS, React, Vue, Svelte).
 ---
 
 # TradeCanvas
@@ -163,6 +163,9 @@ chart.removeAll('indicators'); // or 'drawings', or 'all': everything of that ki
 - Panel indicators may share a pane: `addIndicator('stochastic', {}, 'bottom', { pane: rsi })`.
 - The legend shows each line's latest value; tag it on the axis too with
   `features.indicatorValueLabels: true` (off by default).
+- The floating OHLCV tooltip: `features.crosshairTooltip: true` follows the pointer
+  (`Chart`'s default), `'hold'` shows it only while a mouse press is held still on the
+  plot (`ChartWidget`'s default, set there through `chartOptions.features`), `false` never.
 - Price axis tags that would cover one another (last price, bid/ask, high/low,
   limits, orders, positions) are moved apart, the last price's staying on its line
   (`features.alignAxisLabels`, on by default; `chart.setAxisLabelsAligned(false)`

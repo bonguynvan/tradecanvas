@@ -227,6 +227,138 @@ await chart.setTimeframe('500T')
 const builder = new TickBarBuilder(100)
 builder.push([{ time, price, volume }])   // → [{ bar, closed }]`}</code></pre>
 
+<h2 id="order-flow">Quién tomó las operaciones</h2>
+<p>
+  Un feed puede decir qué lado tomó cada operación, el que cruzó el spread: <code>side</code> en una
+  operación (<code>'buy'</code> cuando el comprador tomó el ask, <code>'sell'</code> cuando el vendedor
+  golpeó el bid) y <code>buyVolume</code> en una barra, la parte de su <code>volume</code> que tomaron
+  los compradores. Ambos son opcionales. Con <code>buyVolume</code> una barra tiene un delta, lo comprado
+  menos lo vendido: <code>barDelta(bar)</code> lo da, o <code>null</code> para una barra que no lo dice, y
+  el indicador Volume Delta (<code>voldelta</code>) lo dibuja, con su suma acumulada, en lugar de su
+  estimación. <code>BinanceAdapter</code> rellena ambos, a partir del volumen de compra taker del exchange
+  y de sus operaciones agregadas; <code>MockAdapter</code> los inventa.
+</p>
+<pre><code>{`chart.setData([{ time, open, high, low, close, volume: 1200, buyVolume: 700 }])
+chart.addIndicator('voldelta', { mode: 1, anchor: 'session' })   // the cumulative delta, from each session's start
+
+barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</code></pre>
+<p>
+  El gráfico lleva <code>buyVolume</code> allí donde lleva el volumen. Las barras hechas de otras barras
+  (<code>resampleBars</code>, una temporalidad que el feed no tiene) lo suman; las barras de ticks, y las
+  agregadas a partir de ticks, lo cuentan de las operaciones que dicen su <code>side</code>; una barra en
+  replay lo tiene al paso de su volumen; las exportaciones CSV y JSON lo escriben en una columna propia
+  (<code>Buy Volume</code>), que la importación vuelve a leer. Una barra con una parte que no lo dice no
+  lo tiene: medio reparto no es un reparto.
+</p>
+<p>
+  Tres cosas a saber. Una operación enviada con <code>chart.updateLastBarFromTick</code> también cuenta
+  cuando lleva su <code>side</code>; una con volumen y sin side deja la barra en formación sin
+  <code>buyVolume</code>. Renko, Kagi, line break, punto y figura y las barras de rango son barras
+  dibujadas, no las del feed: los indicadores de esos gráficos leen las barras dibujadas, que no tienen
+  reparto, así que allí el delta es la estimación. Y cuando solo algunas barras de una serie lo dicen, el
+  delta acumulado suma deltas reales con estimaciones, cada una de las cuales es todo el volumen de una
+  barra: da un escalón donde se encuentran. Los puentes JS API y UDF no tienen un campo para ello.
+</p>
+
+<h2 id="footprint">El gráfico footprint</h2>
+<p>
+  <code>chartType: 'footprint'</code> dibuja, junto a cada barra, lo que se negoció en cada precio dentro de
+  ella: a la izquierda lo que los vendedores tomaron en el bid, a la derecha lo que los compradores tomaron en el
+  ask. Una fila en la que un lado superó al otro va en negrita sobre un tinte más fuerte, la fila más negociada
+  lleva una línea alrededor, y una vela delgada se alza a la izquierda de cada barra. En el widget es Footprint
+  en el menú de tipos de gráfico, con su configuración en Chart Settings.
+</p>
+<pre><code>{`const chart = new Chart(el, { chartType: 'footprint' })
+await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1m' })`}</code></pre>
+<p>
+  Eso es todo lo que necesita un feed con operaciones (<code>fetchTrades</code> y <code>subscribeTrades</code>,
+  como tienen <code>BinanceAdapter</code> y <code>MockAdapter</code>): mientras el gráfico muestra un footprint
+  pide al feed sus operaciones recientes, mil de ellas, y sigue las que llegan en vivo, y se detiene cuando cambia
+  el tipo de gráfico. Un feed conserva pocas operaciones, así que al principio solo las barras más nuevas tienen
+  footprint: la barra en la que las operaciones recientes empezaron a medias se deja fuera, las barras anteriores
+  son velas delgadas, y desde ahí el footprint crece con las operaciones en vivo. Otro símbolo u otro marco
+  temporal lo empieza de nuevo.
+</p>
+<p>
+  Un host con operaciones propias las da con <code>chart.addTrades(trades)</code>, en cualquier tipo de
+  gráfico: cada una se cuenta en la barra de su tiempo y en la fila de su precio, en el lado que la tomó. Una
+  operación sin <code>side</code> se deduce de la operación anterior (comprada cuando el precio subió hasta ella,
+  vendida cuando bajó): una estimación, como lo es el delta de una barra sin <code>buyVolume</code>. Un host que
+  guarda las filas da esas, barra por barra, y <code>footprintOf</code> las crea a partir de operaciones en una
+  sola llamada.
+</p>
+<pre><code>{`import { footprintOf, footprintStats } from '@tradecanvas/chart'
+
+chart.setChartTypeOptions({ footprint: { rowSize: 0.5, collect: false } })   // las filas son del host
+chart.setFootprint([
+  { time: bar.time, levels: [{ price: 100, buy: 12, sell: 30 }, { price: 100.5, buy: 41, sell: 9 }] },
+])
+chart.setFootprint(footprintOf(trades, '1m', 0.5))    // o creadas a partir de operaciones
+
+const rows = chart.getFootprint(bar.time)             // { time, levels }, o null para una barra sin ninguno
+if (rows) footprintStats(rows.levels)                 // { buy, sell, volume, delta, poc, … }
+chart.clearFootprint()                                // antes de las filas de otra serie`}</code></pre>
+<table>
+  <thead><tr><th>Ajuste</th><th>Por defecto</th><th>Qué hace</th></tr></thead>
+  <tbody>
+    <tr><td><code>rowSize</code></td><td><code>'auto'</code></td><td>La altura de una fila en precio. Auto es aproximadamente una diezmilésima del último precio, redondeada a 1, 2 o 5 (5 en 60.000), en pasos enteros del paso de precio del símbolo; con filas dadas a mano, el paso más pequeño entre sus precios. Otro tamaño empieza el footprint de nuevo.</td></tr>
+    <tr><td><code>cells</code></td><td><code>'bidAsk'</code></td><td><code>'bidAsk'</code>: los dos lados por separado. <code>'delta'</code>: lo comprado menos lo vendido. <code>'volume'</code>: ambos juntos.</td></tr>
+    <tr><td><code>imbalance</code></td><td><code>3</code></td><td>Cuántas veces un lado tiene que superar al otro, a una fila de distancia, para quedar marcado: lo comprado en un precio frente a lo vendido una fila más abajo, y lo vendido frente a lo comprado una fila más arriba. 0 no marca ninguna.</td></tr>
+    <tr><td><code>collect</code></td><td><code>true</code></td><td>false: el gráfico no pide operaciones a su feed.</td></tr>
+    <tr><td><code>totals</code></td><td><code>true</code></td><td>Bajo cada barra, lo que suman sus filas: lo comprado menos lo vendido en el color de su signo, y debajo ambos juntos. Se escriben donde una barra es lo bastante ancha para un número; la escala de precios les deja sitio bajo la barra más baja. false: ninguno.</td></tr>
+  </tbody>
+</table>
+<p>
+  El zoom decide qué lleva una barra. Elegir el footprint acerca el zoom hasta donde los números se leen, y
+  sus barras pueden hacerse mucho más anchas que las velas; al alejar, los números dan paso a una barra por cada
+  lado, y luego a velas normales. Las filas demasiado finas para leerse se dibujan de 2, 5, 10… en una, en precios
+  redondos. El footprint se conserva para las 500 barras más nuevas y no se guarda con el estado del gráfico.
+  Durante un replay, las barras aún no mostradas no llevan celdas, ni tampoco una que aún se forma a
+  partir de barras más finas. En un gráfico de ticks, una operación se cuenta en la última barra que se
+  había abierto cuando llegó, así que la primera operación de una barra puede caer en la anterior. Se dibuja en Canvas 2D, también con el
+  renderizador WebGL. <code>renderPriceChart</code> lo dibuja a partir de <code>footprint</code>, las filas tal
+  como las da <code>chart.getFootprint()</code>.
+</p>
+
+<h2 id="tape">La cinta, y las operaciones mismas</h2>
+<p>
+  <code>chart.followTrades()</code> sigue las operaciones del símbolo del gráfico hasta que se llama a la
+  función que devuelve: las operaciones recientes del feed y después las que llegan en vivo, como eventos
+  <code>trades</code>. Al feed se le pide una sola vez sea cual sea el número de seguidores, y un gráfico que
+  muestra un footprint las sigue por sí mismo. Las operaciones dadas con <code>chart.addTrades()</code> se
+  comunican del mismo modo. Ninguna operación del feed se comunica dos veces: ni en otro marco temporal del
+  símbolo, ni tras una reconexión, cuando solo se comunican las que se perdieron, aunque otras
+  posteriores se hayan comunicado antes. <code>chart.getTrades()</code> da las operaciones comunicadas
+  últimamente, hasta dos mil, para un oyente que llega después de que se comunicaron.
+</p>
+<pre><code>{`const stop = chart.followTrades()
+chart.on('trades', (e) => {
+  // e.payload.trades: de la más antigua a la más nueva
+  // e.payload.recent: las operaciones recientes del feed, no operaciones hechas ahora mismo
+  for (const trade of e.payload.trades) log(trade.time, trade.price, trade.volume, trade.side)
+})
+stop()   // el feed se suelta cuando nadie lo sigue y el gráfico no es un footprint`}</code></pre>
+<p>
+  En el widget, <code>tape: true</code> añade la cinta (time and sales) al dock: las operaciones más nuevas
+  arriba, cada una con su hora, su precio y su tamaño, el precio en el color de quien la tomó. Una barra sobre
+  la lista dice cuánto de las filas tomaron los compradores y cuánto los vendedores, una operación de diez veces
+  el tamaño habitual destaca, y las operaciones por debajo de un tamaño mínimo pueden dejarse fuera
+  (<code>{`tape: { minSize: 0.5 }`}</code>, o escrito en el panel). El widget sigue las operaciones del feed
+  solo mientras la cinta está abierta. <code>widget.openPanel('tape')</code> la abre; sus interruptores son
+  <code>tape</code> y <code>dock.tape</code>.
+</p>
+<p>
+  Un menú en la cabecera de la cinta lista solo las operaciones de un lado (compradas o vendidas), y hace una
+  sola fila de las operaciones hechas a la vez: las de un mismo instante, un mismo precio y un mismo lado, con
+  sus tamaños sumados, de modo que una orden de mercado que tomó varias órdenes en espera se lee como la única
+  operación que fue. Esa fila se compara con el tamaño mínimo, y se considera grande, por lo que suma. Ambos
+  pueden fijarse desde el principio (<code>{`tape: { side: 'buy', group: true }`}</code>). Lo que el lector
+  elige en el panel se guarda en el navegador y sigue ahí la próxima vez: el lado y la agrupación para todos
+  los símbolos, el tamaño mínimo para el símbolo en que se eligió, pues un tamaño significa una cosa en un
+  instrumento y otra en el siguiente.
+  Lo que el lector eligió se usa en lugar de la opción de partida, cada elección por separado; <code>persist: false</code> no guarda nada.
+</p>
+
 <h2>Estado del mercado y noticias</h2>
 <p>
   <code>marketStatus(info, now)</code> indica si el mercado de un símbolo está abierto en un momento dado, a partir de su
@@ -389,7 +521,7 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // todas las marcas
 
 <h3>Trading simulado en una repetición</h3>
 <p>
-  Un adaptador de ejecución con <code>setMarkPrice(price, time)</code> (como
+  Un adaptador de ejecución con <code>setMarkPrice(price, time, symbol)</code> (como
   <code>PaperExecutionAdapter</code>) opera sobre la repetición: durante una repetición, el
   gráfico le pasa cada precio y hora repetidos, así que las órdenes y los stops se ejecutan
   cuando la repetición pasa por ellos y las ejecuciones quedan sobre las barras repetidas.
@@ -399,6 +531,8 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // todas las marcas
   cuando termina la repetición vuelve al precio en vivo, y las ejecuciones, a la hora real.
   Las alertas de precio siguen vigilando el mercado en vivo todo el tiempo; las alertas
   sobre líneas de indicador esperan a que termine la repetición.
+  <code>chart.getTradingTime()</code> es el momento en que se coloca una orden enviada ahora: el de la repetición mientras la
+  cuenta opera sobre ella; si no, el del reloj. El ticket de orden del widget cuenta desde él la fecha de una orden válida hasta una fecha.
 </p>
 <pre><code>{`chart.connectExecution(new PaperExecutionAdapter())
 chart.replayStart({ startIndex: 300, paused: true })

@@ -203,6 +203,118 @@ await chart.setTimeframe('500T')
 const builder = new TickBarBuilder(100)
 builder.push([{ time, price, volume }])   // → [{ bar, closed }]`}</code></pre>
 
+<h2 id="order-flow">谁是主动方</h2>
+<p>
+  数据源可以说明每笔成交由哪一方主动成交，即越过价差的一方：成交上的 <code>side</code>
+  （买方吃掉卖价时为 <code>'buy'</code>，卖方砸向买价时为 <code>'sell'</code>），以及K线上的
+  <code>buyVolume</code>，即其 <code>volume</code> 中由买方主动成交的部分。两者都是可选的。有了
+  <code>buyVolume</code>，K线就有 delta，即买入减卖出：<code>barDelta(bar)</code> 返回它，
+  K线没有说明时返回 <code>null</code>；Volume Delta 指标（<code>voldelta</code>）会画出它及其累计值，
+  而不再用估算值。<code>BinanceAdapter</code> 会填入这两项，取自交易所的主动买入成交量和归集成交；
+  <code>MockAdapter</code> 则自行生成。
+</p>
+<pre><code>{`chart.setData([{ time, open, high, low, close, volume: 1200, buyVolume: 700 }])
+chart.addIndicator('voldelta', { mode: 1, anchor: 'session' })   // the cumulative delta, from each session's start
+
+barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</code></pre>
+<p>
+  图表在携带成交量的地方都会携带 <code>buyVolume</code>。由其他K线合成的K线
+  （<code>resampleBars</code>、数据源没有的周期）会把它累加；Tick K线以及由 tick 聚合的K线，
+  根据带有 <code>side</code> 的成交来统计它；回放中的K线按与成交量相同的比例带有它；CSV 和 JSON
+  导出会把它写入单独的一列（<code>Buy Volume</code>），导入时可以读回。只要有一部分没有说明，
+  这根K线就没有该值：只知道一半不算知道。
+</p>
+<p>
+  有三点需要了解。通过 <code>chart.updateLastBarFromTick</code> 推入的成交，只要带有
+  <code>side</code> 也会被统计；有成交量却没有 side 的成交会让正在形成的K线失去
+  <code>buyVolume</code>。Renko、Kagi、Line Break、Point &amp; Figure 和 Range Bars 是图表绘制出来的K线，
+  而不是数据源的K线：这些图表上的指标读取的是绘制出的K线，它们没有这一拆分，所以那里的 delta 是估算值。
+  另外，当一个序列中只有部分K线说明了主动方时，累计 delta 会把真实 delta 与估算值相加，而每个估算值都是
+  一根K线的全部成交量：两者相接处会出现台阶。JS API 和 UDF 桥接没有对应的字段。
+</p>
+
+<h2 id="footprint">足迹图</h2>
+<p>
+  <code>chartType: 'footprint'</code> 在每根K线旁画出其内部每个价位的成交：左边是卖方在买价主动成交的量，
+  右边是买方在卖价主动成交的量。一方明显压过另一方的行会加粗并加深底色，成交最多的行带有边框，
+  每根K线的左侧立着一根细蜡烛。在组件中，它是图表类型菜单里的 Footprint，其设置位于 Chart Settings。
+</p>
+<pre><code>{`const chart = new Chart(el, { chartType: 'footprint' })
+await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1m' })`}</code></pre>
+<p>
+  对于带成交的数据源，这样就够了（需要 <code>fetchTrades</code> 和 <code>subscribeTrades</code>，
+  <code>BinanceAdapter</code> 和 <code>MockAdapter</code> 都有）：图表显示足迹图期间，会向数据源请求最近的成交，
+  一千笔，然后跟随实时成交；图表类型改变时即停止。数据源保留的成交不多，所以一开始只有最新的几根K线有足迹：
+  最近成交从中途开始的那根K线会被略去，它之前的K线是细蜡烛，之后足迹随实时成交逐渐增长。
+  切换交易品种或周期会重新开始。
+</p>
+<p>
+  自己有成交数据的宿主用 <code>chart.addTrades(trades)</code> 传入，任何图表类型下都可以：每笔成交按时间计入对应的K线、
+  按价格计入对应的行，记在主动成交的一方。没有 <code>side</code> 的成交由它前一笔成交来判断（价格上涨到它为买入，
+  下跌到它为卖出）：这是估算，就像没有 <code>buyVolume</code> 的K线的 delta 一样。自己保存各行的宿主可以逐根K线传入这些行，
+  <code>footprintOf</code> 则可一次调用从成交生成它们。
+</p>
+<pre><code>{`import { footprintOf, footprintStats } from '@tradecanvas/chart'
+
+chart.setChartTypeOptions({ footprint: { rowSize: 0.5, collect: false } })   // 各行由宿主提供
+chart.setFootprint([
+  { time: bar.time, levels: [{ price: 100, buy: 12, sell: 30 }, { price: 100.5, buy: 41, sell: 9 }] },
+])
+chart.setFootprint(footprintOf(trades, '1m', 0.5))    // 或由成交生成
+
+const rows = chart.getFootprint(bar.time)             // { time, levels }，没有足迹的K线为 null
+if (rows) footprintStats(rows.levels)                 // { buy, sell, volume, delta, poc, … }
+chart.clearFootprint()                                // 在传入另一序列的行之前`}</code></pre>
+<table>
+  <thead><tr><th>设置</th><th>默认值</th><th>作用</th></tr></thead>
+  <tbody>
+    <tr><td><code>rowSize</code></td><td><code>'auto'</code></td><td>一行的价格高度。Auto 约为最新价的万分之一，取整到 1、2 或 5（60,000 时为 5），并为品种最小价格变动的整数倍；手动传入各行时，取其价位之间的最小间距。改用另一大小会让足迹重新开始。</td></tr>
+    <tr><td><code>cells</code></td><td><code>'bidAsk'</code></td><td><code>'bidAsk'</code>：两侧分开显示。<code>'delta'</code>：买入减卖出。<code>'volume'</code>：两者相加。</td></tr>
+    <tr><td><code>imbalance</code></td><td><code>3</code></td><td>相隔一行的两侧，一方须达到另一方的多少倍才被标记：某价位的买入量与下一行的卖出量相比，卖出量与上一行的买入量相比。0 表示不标记。</td></tr>
+    <tr><td><code>collect</code></td><td><code>true</code></td><td>false：图表不向数据源请求成交。</td></tr>
+    <tr><td><code>totals</code></td><td><code>true</code></td><td>每根K线下方是各行的合计：买入减卖出，按正负着色，其下是两者之和。只有K线宽到能写下一个数字时才显示；价格轴会在最低的K线下方为它们留出空间。false：不显示。</td></tr>
+  </tbody>
+</table>
+<p>
+  缩放决定一根K线显示什么。选择足迹图时，图表会放大到数字可读的程度，其K线可以比蜡烛宽得多；
+  缩小时，数字让位于每侧一根条形，再缩小则变回普通蜡烛。太薄而无法阅读的行会按 2、5、10… 行合并为一行，对齐到整数价位。
+  足迹只保留最新的 500 根K线，且不随图表状态保存。回放期间，尚未显示的K线没有单元格，仍在由更细的K线形成的那根也没有。
+  在 tick 图上，每笔成交计入它到达时最后开出的那根K线，因此一根K线的第一笔成交可能落在前一根里。它用 Canvas 2D 绘制，
+  使用 WebGL 渲染器时也是如此。<code>renderPriceChart</code> 根据 <code>footprint</code> 绘制它，
+  即 <code>chart.getFootprint()</code> 返回的各行。
+</p>
+
+<h2 id="tape">逐笔成交，以及成交本身</h2>
+<p>
+  <code>chart.followTrades()</code> 会跟随图表品种的成交，直到调用它返回的函数为止：先是数据源最近的成交，
+  然后是实时成交，以 <code>trades</code> 事件发出。无论有多少个跟随者，数据源只被请求一次；显示足迹图的图表会自行跟随。
+  用 <code>chart.addTrades()</code> 传入的成交也以同样方式发出。数据源的成交不会被发出两次：切换到同一品种的另一周期时不会，
+  重新连接之后也不会，那时只发出错过的那些，即使更晚的成交已先发出。
+  <code>chart.getTrades()</code> 返回最近发出的成交，最多两千笔，供在它们发出之后才来的监听者使用。
+</p>
+<pre><code>{`const stop = chart.followTrades()
+chart.on('trades', (e) => {
+  // e.payload.trades：最早的在前
+  // e.payload.recent：数据源最近的成交，而不是刚刚发生的成交
+  for (const trade of e.payload.trades) log(trade.time, trade.price, trade.volume, trade.side)
+})
+stop()   // 当不再有人跟随且图表不是足迹图时，数据源被释放`}</code></pre>
+<p>
+  在组件中，<code>tape: true</code> 会把逐笔成交（time and sales）加入停靠栏：最新的成交在最上面，
+  每笔带有时间、价格和数量，价格的颜色表示主动成交的一方。列表上方的一条横条显示所列各行中买方和卖方各占多少，
+  达到通常大小十倍的成交会被突出显示，小于最小数量的成交可以不列出
+  （<code>{`tape: { minSize: 0.5 }`}</code>，或直接在面板中输入）。只有在逐笔成交面板打开时，组件才跟随数据源的成交。
+  <code>widget.openPanel('tape')</code> 可打开它；它的开关是 <code>tape</code> 和 <code>dock.tape</code>。
+</p>
+<p>
+  逐笔成交标题栏里的菜单可以只列出一方的成交（买入或卖出），并把同时发生的成交合并为一行：同一时刻、同一价格、
+  同一方向的成交数量相加，这样一笔吃掉多个挂单的市价单就显示为它原本的那一笔。合并后的行按合计数量与最小数量比较，
+  也按合计数量判断是否为大单。两者都可以一开始就设置（<code>{`tape: { side: 'buy', group: true }`}</code>）。
+  用户在面板里的选择会保存在浏览器中，下次仍然有效：方向和合并对所有品种生效，最小数量则按品种分别保存，
+  因为同一个数量在不同品种上意义不同。
+  用户的选择优先于初始选项，各项分别计算；<code>persist: false</code> 不保存任何内容。
+</p>
+
 <h2>市场状态与新闻</h2>
 <p>
   <code>marketStatus(info, now)</code> 根据品种在其交易所时区内的交易时段（包括夏令时切换），判断某一时刻市场是否开放，
@@ -346,12 +458,14 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // 从一开始就�
 
 <h3>在回放中模拟交易</h3>
 <p>
-  带有 <code>setMarkPrice(price, time)</code> 的执行适配器（如
+  带有 <code>setMarkPrice(price, time, symbol)</code> 的执行适配器（如
   <code>PaperExecutionAdapter</code>）可以在回放中交易：回放期间，图表会把每个回放出的价格和时间交给它，
   因此订单和止损会在回放经过时成交，成交也会落在回放的K线上。每一步的最低价和最高价都会计入，
   向前跳转会经过途中的每一步。它只会向前推进：向后跳转后，它会等到回放越过它见过的最远位置。
   这期间实时价格不会影响它；回放结束后，它会回到实时价格，成交时间也回到实际时钟。
   价格提醒在整个过程中始终监控实时行情；基于指标线的提醒则会等到回放结束。
+  <code>chart.getTradingTime()</code> 是此刻下单的时间：账户在回放中交易时为回放的时间，否则为实际时钟。
+  组件的下单窗口据此计算“指定日期前有效”订单的日期。
 </p>
 <pre><code>{`chart.connectExecution(new PaperExecutionAdapter())
 chart.replayStart({ startIndex: 300, paused: true })

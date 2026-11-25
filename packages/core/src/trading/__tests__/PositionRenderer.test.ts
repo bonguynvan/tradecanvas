@@ -28,6 +28,43 @@ describe('PositionRenderer', () => {
   });
 });
 
+describe('PositionRenderer: what a position is worth', () => {
+  const amount = (pos: TradingPosition) => new PositionRenderer().tags([pos], 70, unitViewport, {})
+    .flatMap((tag) => tag.cells).filter((cell): cell is { kind: 'text'; text: string } => cell.kind === 'text').map((cell) => cell.text);
+  const long: TradingPosition = { id: 'p1', side: 'buy', entryPrice: 60, quantity: 2 };
+
+  it('is counted on its tag at the adapter’s own price for it, where it gives one, as the account counts it', () => {
+    expect(amount(long)).toEqual(['Long', '+20.00']);
+    expect(amount({ ...long, markPrice: 75 })).toEqual(['Long', '+30.00']);
+    for (const bad of [Number.NaN, 0]) expect(amount({ ...long, markPrice: bad }), String(bad)).toEqual(['Long', '+20.00']);
+    expect(amount({ id: 'p2', side: 'sell', entryPrice: 60, quantity: 5, closedQuantity: 2, multiplier: 10, markPrice: 58 })).toEqual(['Short', '+60.00']);
+  });
+
+  it('is on its tag with no price from the chart yet, where the adapter gives its own', () => {
+    const texts = (pos: TradingPosition) => new PositionRenderer().tags([pos], null, unitViewport, {})
+      .flatMap((tag) => tag.cells).filter((cell): cell is { kind: 'text'; text: string } => cell.kind === 'text').map((cell) => cell.text);
+    expect(texts(long)).toEqual(['Long']);
+    expect(texts({ ...long, markPrice: 75 })).toEqual(['Long', '+30.00']);
+  });
+
+  it('colours the band to the price by the same count as the tag: a loss at the mark is no profit’s green', () => {
+    const fills = (pos: TradingPosition) => {
+      const base = recordingCtx().ctx as unknown as Record<string, unknown>;
+      const filled: string[] = [];
+      const ctx = new Proxy(base, {
+        get: (target, key: string) => (key === 'fillRect' ? () => { filled.push(String(target.fillStyle)); } : target[key]),
+        set: (target, key: string, value) => { target[key] = value; return true; },
+      }) as unknown as CanvasRenderingContext2D;
+      new PositionRenderer().renderLines(ctx, [pos], 70, unitViewport, {});
+      return filled[0];
+    };
+    // Long from 60 with the chart at 70: a profit's colour; at a mark of 55, a loss's.
+    expect(fills(long)).toBeDefined();
+    expect(fills({ ...long, markPrice: 55 })).not.toBe(fills(long));
+    expect(fills({ ...long, markPrice: 75 })).toBe(fills(long));
+  });
+});
+
 describe('TradingManager and the plot', () => {
   it('draws everything clipped to the plot', () => {
     const manager = new TradingManager();

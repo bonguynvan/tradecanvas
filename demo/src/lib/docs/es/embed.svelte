@@ -28,7 +28,7 @@
     <tr><td><code>symbol</code></td><td><code>BTCUSDT</code></td><td>Símbolo de Binance.</td></tr>
     <tr><td><code>timeframe</code></td><td><code>5m</code></td><td><code>1m</code>, <code>5m</code>, <code>15m</code>, <code>1h</code>, <code>4h</code>, <code>1d</code>.</td></tr>
     <tr><td><code>theme</code></td><td><code>dark</code></td><td><code>dark</code>, <code>light</code>, <code>darkTerminal</code>.</td></tr>
-    <tr><td><code>chartType</code></td><td><code>candlestick</code></td><td>Cualquiera de los 18 tipos.</td></tr>
+    <tr><td><code>chartType</code></td><td><code>candlestick</code></td><td>Cualquiera de los 25 tipos.</td></tr>
     <tr><td><code>indicators</code></td><td><em>ninguno</em></td><td>Ids separados por comas, p. ej. <code>indicators=sma,rsi</code>.</td></tr>
     <tr><td><code>trading</code></td><td><code>false</code></td><td>Muestra el panel de trading.</td></tr>
   </tbody>
@@ -38,6 +38,7 @@
 <p>
   El gráfico y el widget funcionan en cualquier WebView: React Native (<code>react-native-webview</code>), Capacitor, Tauri o el de una app nativa. Por debajo de 641 px de ancho, el widget se organiza para un móvil: la barra conserva el símbolo, el intervalo, el tipo de gráfico y los indicadores y deja el resto bajo «más»; las herramientas de dibujo esperan tras un botón sobre el gráfico; los menús se abren como hojas desde abajo; una cuadrícula muestra un gráfico a la vez, con una pestaña para cada uno. Más ancho, una barra que no cabe hace lo mismo. Desde unos 320 px de ancho, o mucho menos sin elementos propios en ella, la barra de estado mantiene el reloj entero: sin espacio, los botones de rango visible se pliegan bajo «más», el más largo primero, luego ir a fecha, y por último el estado del mercado se reduce a una palabra («Cerrado»). Un dedo hace lo que hace un ratón.
 </p>
+<p>Bajo un dedo (un dispositivo cuyo puntero principal es grueso: un teléfono, una tableta de cualquier ancho) ningún control del widget mide menos de 32 px por lado, en cualquier aspecto y <code>density</code>: los botones, los campos y las filas de los menús crecen hasta ahí, cada fila de la leyenda de indicadores tiene la altura de un dedo, y los botones de un panel y los nombres de su leyenda toman 32 px de pulsación alrededor de su dibujo. Bajo un ratón, un control toma al menos 20 px de una pulsación. Solo una cosa queda más pequeña: la esquina de una herramienta de dibujo que abre su menú; más grande, se llevaría la pulsación de la propia herramienta.</p>
 <p>Dé a la página un viewport que cubra la pantalla. El widget mantiene sus hojas lejos de la muesca y la barra de inicio, y por encima del teclado en pantalla.</p>
 <pre><code>{`<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">`}</code></pre>
 <p>La mayoría de los WebView avisan de que la página está oculta cuando la app pasa a segundo plano: el gráfico deja de dibujar por sí solo (<code>pauseWhenHidden</code>) y un flujo callado demasiado tiempo se reconecta cuando la app vuelve. Si el suyo no avisa, páuselo desde la app.</p>

@@ -45,6 +45,13 @@ function toolLabel(groups: SidebarConfig['drawingToolGroups'], tool: string): st
 /** The custom property that tells the drawing button's stylesheet where the plot starts. */
 const FAB_PLOT_LEFT = '--tcw-fab-plot-left';
 const FAB_PLOT_BOTTOM = '--tcw-fab-plot-bottom';
+/**
+ * How far in from the plot's left edge the drawing button starts, and above its foot it ends
+ * (px), as `.tcw-sidebar-fab`'s `left` and `bottom` in WidgetStyles.css have it: change both together.
+ */
+const FAB_INSET = 10;
+/** Kept between the drawing button and what waits beside it at the plot's foot (px). */
+const FAB_GAP = 6;
 
 
 export class WidgetDrawingSidebar {
@@ -146,6 +153,17 @@ export class WidgetDrawingSidebar {
     this.setFabPx(FAB_PLOT_BOTTOM, px);
   }
 
+  /**
+   * The drawing button at the plot's foot, on a phone: how far in from the plot's left edge it
+   * reaches, with the gap kept beside it, how far above the foot its middle is, and how tall it
+   * is (px). What waits at the foot starts after it, level with it (the toolbar of a selected
+   * drawing lay over it). Null where the button does not show.
+   */
+  buttonAtFoot(): { reach: number; middle: number; height: number } | null {
+    const { offsetWidth: width, offsetHeight: height } = this.fab;
+    return width > 0 ? { reach: FAB_INSET + width + FAB_GAP, middle: FAB_INSET + height / 2, height } : null;
+  }
+
   private setFabPx(name: string, px: number): void {
     const value = `${Math.max(0, Math.round(px))}px`;
     if (this.fab.style.getPropertyValue(name) !== value) this.fab.style.setProperty(name, value);
@@ -218,7 +236,7 @@ export class WidgetDrawingSidebar {
     config.drawingToolGroups.forEach((group, idx) => {
       if (!group.tools[0]) return;
       if (group.section !== undefined && lastSection !== undefined && group.section !== lastSection) {
-        this.appendDivider();
+        this.appendDivider(true);
       }
       lastSection = group.section;
       const wrap = document.createElement('div');
@@ -959,9 +977,12 @@ export class WidgetDrawingSidebar {
   }
 
   /** A divider, unless the sidebar already ends in one: never two in a row. */
-  private appendDivider(): void {
+  private appendDivider(section = false): void {
     if (this.el.lastElementChild?.classList.contains('tcw-sidebar-divider')) return;
-    this.el.appendChild(this.divider());
+    const divider = this.divider();
+    // Between two sections of the drawing tools: a look may leave it as room alone.
+    if (section) divider.classList.add('tcw-sidebar-divider--section');
+    this.el.appendChild(divider);
   }
 
   private divider(): HTMLDivElement {

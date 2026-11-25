@@ -148,3 +148,242 @@ describe('Chart trading state and fills', () => {
     expect(chart.getFills().at(-1)).toMatchObject({ reason: 'close' });
   });
 });
+
+describe('Chart crosshair while an order is dragged', () => {
+  /** How many lines the crosshair draws now, and whether it writes a price on the axis. */
+  const crosshairNow = () => {
+    let lines = 0;
+    const texts: string[] = [];
+    const ctx = new Proxy({}, {
+      get: (_, key) => {
+        if (key === 'lineTo') return () => { lines++; };
+        if (key === 'fillText') return (text: string) => { texts.push(text); };
+        if (key === 'measureText') return (text: string) => ({ width: text.length * 6 });
+        return () => undefined;
+      },
+      set: () => true,
+    }) as unknown as CanvasRenderingContext2D;
+    const handler = (chart as unknown as { crosshairHandler: { render(...a: unknown[]): void; renderAxisLabels(...a: unknown[]): void } }).crosshairHandler;
+    const theme = (chart as unknown as { themeManager: { getTheme(): unknown } }).themeManager.getTheme();
+    handler.render(ctx, state(), theme);
+    // The labels' pills draw lines of their own: only the crosshair's count.
+    const drawn = lines;
+    handler.renderAxisLabels(ctx, state(), theme, chart.getData());
+    return { lines: drawn, labels: texts.length };
+  };
+
+  it('draws no horizontal line and no price beside the line dragged, and both again once it is let go', () => {
+    chart.setOrders([{ id: 'o1', side: 'buy', type: 'limit', price: 100, quantity: 1, draggable: true }]);
+    const moved: unknown[] = [];
+    chart.on('orderModify', (e) => moved.push(e.payload));
+    const plot = state().chartRect;
+    const { min, max } = state().priceRange;
+    const y = plot.y + ((max - 100) / (max - min)) * plot.height;
+    const x = plot.x + plot.width / 2;
+    mouse('mousemove', x, y);
+    expect(crosshairNow()).toEqual({ lines: 2, labels: 2 });
+    mouse('mousedown', x, y);
+    mouse('mousemove', x, y - 30);
+    // The vertical line and the time, not the price: the order's own tag has it.
+    expect(crosshairNow()).toEqual({ lines: 1, labels: 1 });
+    mouse('mouseup', x, y - 30);
+    expect(moved).toHaveLength(1);
+    expect(crosshairNow()).toEqual({ lines: 2, labels: 2 });
+  });
+});
+
+describe('Chart: a price set by hand is a price of the market', () => {
+  /** A market whose prices go in halves. */
+  const halves = (price: number) => Math.abs(price * 2 - Math.round(price * 2)) < 1e-9;
+  /** The y of `price` on the page. */
+  const yOf = (price: number) => {
+    const { chartRect: plot, priceRange } = state();
+    return plot.y + ((priceRange.max - price) / (priceRange.max - priceRange.min)) * plot.height;
+  };
+
+  beforeEach(() => chart.setMarket({ type: 'stock', priceStep: 0.5 }));
+
+  it('an order dragged lands on the market’s step, and so does its stop', () => {
+    chart.setOrders([{ id: 'o1', side: 'buy', type: 'stopLimit', price: 100, stopPrice: 99, quantity: 1, draggable: true }]);
+    const moved: { newPrice: number; newStopPrice?: number }[] = [];
+    chart.on('orderModify', (e) => moved.push(e.payload as { newPrice: number; newStopPrice?: number }));
+    const x = state().chartRect.x + state().chartRect.width / 2;
+    mouse('mousemove', x, yOf(100));
+    mouse('mousedown', x, yOf(100));
+    mouse('mousemove', x, yOf(100) - 37);
+    mouse('mouseup', x, yOf(100) - 37);
+    expect(moved).toHaveLength(1);
+    expect(moved[0].newPrice).not.toBe(100);
+    expect(halves(moved[0].newPrice)).toBe(true);
+    expect(moved[0].newStopPrice).toBe(moved[0].newPrice - 1);
+  });
+
+  it('the price of a right-click and of the "+" by the axis are on it too', () => {
+    const menus: ChartContextMenuPayload[] = [];
+    chart.on('chartContextMenu', (e) => menus.push(e.payload as ChartContextMenuPayload));
+    const adds: { price: number }[] = [];
+    chart.on('priceAxisAdd', (e) => adds.push(e.payload as { price: number }));
+    const plot = state().chartRect;
+    mouse('contextmenu', plot.x + plot.width / 2, plot.y + 71, 2);
+    mouse('contextmenu', plot.x + plot.width + 20, plot.y + 43, 2);
+    mouse('mousemove', plot.x + plot.width / 2, plot.y + 97);
+    mouse('mousedown', plot.x + plot.width - 8, plot.y + 97);
+    mouse('mouseup', plot.x + plot.width - 8, plot.y + 97);
+    expect(menus).toHaveLength(2);
+    expect(menus.every((menu) => halves(menu.price!))).toBe(true);
+    expect(adds).toHaveLength(1);
+    expect(halves(adds[0].price)).toBe(true);
+  });
+
+  it('the crosshair writes the price under the pointer on the market’s step, as the "+" beside it gives it', () => {
+    const plot = state().chartRect;
+    const adds: { price: number }[] = [];
+    chart.on('priceAxisAdd', (e) => adds.push(e.payload as { price: number }));
+    mouse('mousemove', plot.x + plot.width / 2, plot.y + 97);
+    const texts: string[] = [];
+    const ctx = new Proxy({}, {
+      get: (_, key) => (key === 'fillText' ? (text: string) => { texts.push(text); } : key === 'measureText' ? (text: string) => ({ width: text.length * 6 }) : () => undefined),
+      set: () => true,
+    }) as unknown as CanvasRenderingContext2D;
+    const handler = (chart as unknown as { crosshairHandler: { renderAxisLabels(...a: unknown[]): void } }).crosshairHandler;
+    const theme = (chart as unknown as { themeManager: { getTheme(): unknown } }).themeManager.getTheme();
+    handler.renderAxisLabels(ctx, state(), theme, chart.getData());
+    const written = Number(texts[0].replace(/,/g, ''));
+    expect(halves(written)).toBe(true);
+    mouse('mousedown', plot.x + plot.width - 8, plot.y + 97);
+    mouse('mouseup', plot.x + plot.width - 8, plot.y + 97);
+    expect(adds[0].price).toBe(written);
+  });
+
+  it('an alert dragged lands on the market’s step', () => {
+    const id = chart.addAlert(100.2, 'crossing');
+    const before = chart.getAlerts().find((a) => a.id === id)!.price;
+    const x = state().chartRect.x + state().chartRect.width / 2;
+    mouse('mousemove', x, yOf(before));
+    mouse('mousedown', x, yOf(before));
+    mouse('mousemove', x, yOf(before) - 33);
+    mouse('mouseup', x, yOf(before) - 33);
+    const after = chart.getAlerts().find((a) => a.id === id)!.price;
+    expect(after).not.toBe(before);
+    expect(halves(after)).toBe(true);
+  });
+
+  it('follows the market set later, and the decimals the axis shows with none', () => {
+    chart.setOrders([{ id: 'o1', side: 'buy', type: 'limit', price: 100, quantity: 1, draggable: true }]);
+    const moved: { newPrice: number }[] = [];
+    chart.on('orderModify', (e) => moved.push(e.payload as { newPrice: number }));
+    const x = state().chartRect.x + state().chartRect.width / 2;
+    const pull = (by: number) => {
+      const from = yOf(chart.getOrders()[0].price);
+      mouse('mousemove', x, from);
+      mouse('mousedown', x, from);
+      mouse('mousemove', x, from - by);
+      mouse('mouseup', x, from - by);
+    };
+    chart.setMarket({ type: 'stock', priceStep: 0.25 });
+    pull(41);
+    expect(moved[0].newPrice * 4).toBeCloseTo(Math.round(moved[0].newPrice * 4), 9);
+    expect(moved[0].newPrice).toBe(chart.roundPrice(moved[0].newPrice));
+  });
+});
+
+describe('Chart: an order set by hand keeps inside the day’s limits', () => {
+  const yOf = (price: number) => {
+    const { chartRect: plot, priceRange } = state();
+    return plot.y + ((priceRange.max - price) / (priceRange.max - priceRange.min)) * plot.height;
+  };
+
+  it('an order dragged past the day’s ceiling stops at it', () => {
+    // Prices in tenths, a per cent either side of a reference of 100: from 99 to 101.
+    chart.setMarket({ type: 'stock', priceStep: 0.1, priceLimits: { enabled: true, ceilingPercent: 1, floorPercent: 1 } });
+    chart.setPriceLimits(100);
+    const limits = chart.getPriceLimits()!;
+    expect([limits.floor, limits.ceiling]).toEqual([99, 101]);
+    chart.setOrders([{ id: 'o1', side: 'sell', type: 'limit', price: 100.5, quantity: 1, draggable: true }]);
+    const moved: { newPrice: number }[] = [];
+    chart.on('orderModify', (e) => moved.push(e.payload as { newPrice: number }));
+    const x = state().chartRect.x + state().chartRect.width / 2;
+    mouse('mousemove', x, yOf(100.5));
+    mouse('mousedown', x, yOf(100.5));
+    mouse('mousemove', x, yOf(101.6));
+    mouse('mouseup', x, yOf(101.6));
+    expect(moved).toEqual([expect.objectContaining({ newPrice: 101 })]);
+  });
+
+  it('holds an order on the grid inside limits that are no prices of it: a market with limits and no price step', () => {
+    // One per cent either side of 100.3, to two decimals: the ceiling is 101.303, which the grid has not.
+    chart.setMarket({ type: 'stock', pricePrecision: 2, priceLimits: { enabled: true, ceilingPercent: 1, floorPercent: 1 } });
+    chart.setPriceLimits(100.3);
+    const { ceiling } = chart.getPriceLimits()!;
+    expect(ceiling).toBeCloseTo(101.303, 6);
+    chart.setOrders([{ id: 'o1', side: 'sell', type: 'limit', price: 100.5, quantity: 1, draggable: true }]);
+    const moved: { newPrice: number }[] = [];
+    chart.on('orderModify', (e) => moved.push(e.payload as { newPrice: number }));
+    const x = state().chartRect.x + state().chartRect.width / 2;
+    mouse('mousemove', x, yOf(100.5));
+    mouse('mousedown', x, yOf(100.5));
+    mouse('mousemove', x, yOf(101.6));
+    mouse('mouseup', x, yOf(101.6));
+    // The highest price of the grid not over the ceiling: not the ceiling's own 101.303.
+    expect(moved).toEqual([expect.objectContaining({ newPrice: 101.3 })]);
+  });
+
+  it('holds nothing with no limits for the day', () => {
+    chart.setMarket({ type: 'stock', priceStep: 0.1 });
+    chart.setOrders([{ id: 'o1', side: 'sell', type: 'limit', price: 100.5, quantity: 1, draggable: true }]);
+    const moved: { newPrice: number }[] = [];
+    chart.on('orderModify', (e) => moved.push(e.payload as { newPrice: number }));
+    const x = state().chartRect.x + state().chartRect.width / 2;
+    mouse('mousemove', x, yOf(100.5));
+    mouse('mousedown', x, yOf(100.5));
+    mouse('mousemove', x, yOf(101.6));
+    mouse('mouseup', x, yOf(101.6));
+    expect(moved[0].newPrice).toBeCloseTo(101.6, 5);
+  });
+});
+
+describe('Chart: a right-click past the day’s limits, with the engine’s order menu on', () => {
+  let menuHost: HTMLDivElement;
+  let menuChart: Chart;
+
+  beforeEach(() => {
+    menuHost = sizedHost(800, 500);
+    menuChart = new Chart(menuHost, { chartType: 'candlestick', features: { trading: true, tradingContextMenu: true } });
+    menuChart.setData(hourly(200));
+    menuChart.setMarket({ type: 'stock', priceStep: 0.1, priceLimits: { enabled: true, ceilingPercent: 1, floorPercent: 1 } });
+    menuChart.setPriceLimits(100);
+  });
+
+  afterEach(() => {
+    menuChart.destroy();
+    menuHost.remove();
+  });
+
+  const rightClick = (y: number) => {
+    const plot = (menuChart as unknown as { viewport: { getState(): ViewportState } }).viewport.getState().chartRect;
+    return menuHost.dispatchEvent(new MouseEvent('contextmenu', { clientX: plot.x + plot.width / 2, clientY: y, button: 2, bubbles: true, cancelable: true }));
+  };
+  const yOfPrice = (price: number) => {
+    const { chartRect: plot, priceRange } = (menuChart as unknown as { viewport: { getState(): ViewportState } }).viewport.getState();
+    return plot.y + ((priceRange.max - price) / (priceRange.max - priceRange.min)) * plot.height;
+  };
+
+  it('keeps the browser’s own menu shut, though it has no order to offer there', () => {
+    const menu = (menuChart as unknown as { tradingManager: { contextMenu: { show(...args: unknown[]): void } } }).tradingManager.contextMenu;
+    const shown = vi.spyOn(menu, 'show');
+    // Inside the limits its menu opens, and the click is taken.
+    expect(rightClick(yOfPrice(100.4))).toBe(false);
+    expect(shown).toHaveBeenCalledTimes(1);
+    // Past the ceiling it opens for nothing, and the click is still the chart's: no menu of the browser's.
+    expect(rightClick(yOfPrice(101.6))).toBe(false);
+    expect(shown).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets an app’s own menu have the click there', () => {
+    const menus: ChartContextMenuPayload[] = [];
+    menuChart.on('chartContextMenu', (e) => menus.push(e.payload as ChartContextMenuPayload));
+    expect(rightClick(yOfPrice(101.6))).toBe(false);
+    expect(menus).toHaveLength(1);
+    expect(menus[0].price).toBeGreaterThan(101);
+  });
+});

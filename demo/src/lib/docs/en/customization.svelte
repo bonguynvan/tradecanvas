@@ -62,7 +62,7 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
 <p>
   Switches show and hide the widget's own parts. To stop something on the chart itself — drawing, trading,
   zooming, a timeframe — use the chart's features (<code>chartOptions.features</code>). The parts that bring data
-  or storage with them stay options: <code>trading</code>, <code>watchlist</code>, <code>depthLadder</code> and
+  or storage with them stay options: <code>trading</code>, <code>watchlist</code>, <code>depthLadder</code>, <code>tape</code> and
   <code>layouts</code> decide whether they are there at all, and switches hide their buttons. A switch turned on adds none of them: <code>features: &#123; depthLadder: true &#125;</code> alone makes no ladder.
 </p>
 <p>The older on/off options are the same switches, kept as they were:</p>
@@ -88,7 +88,7 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
       <code>indicatorSettings</code> <code>drawingSettings</code> <code>dataWindow</code> <code>commandPalette</code>
       <code>hotkeySheet</code> <code>goToDate</code> <code>replay</code> <code>screenshot</code> <code>copyImage</code>
       <code>shareView</code> <code>autoFib</code> <code>themeToggle</code> <code>fullscreen</code> <code>accountPanel</code>
-      <code>orderTicket</code> <code>bracketOrders</code> <code>depthLadder</code> <code>layouts</code>
+      <code>orderTicket</code> <code>tradeButtons</code> <code>bracketOrders</code> <code>depthLadder</code> <code>tape</code> <code>layouts</code>
       <code>indicatorTemplates</code> <code>compare</code> <code>indicatorLegend</code> <code>navigation</code>
       <code>customTimeframes</code> <code>marks</code> <code>intervalTyping</code> <code>symbolTyping</code> <code>dragDropImport</code> <code>hotkeys</code>
       <code>toasts</code> <code>favoritesBar</code>
@@ -104,7 +104,7 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
     </td></tr>
     <tr><td>Dock</td><td>
       <code>dock.watchlist</code> <code>dock.alerts</code> <code>dock.objectTree</code> <code>dock.dataWindow</code>
-      <code>dock.symbolInfo</code> <code>dock.depthLadder</code>
+      <code>dock.symbolInfo</code> <code>dock.depthLadder</code> <code>dock.tape</code>
     </td></tr>
     <tr><td>Drawing sidebar</td><td>
       <code>sidebar.cursor</code> <code>sidebar.favorites</code> <code>sidebar.lines</code> <code>sidebar.fibonacci</code>
@@ -145,6 +145,7 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
   <code>menu.chart.*</code> covers the "+" by the price axis as well as the right-click menu; <code>compare</code>
   takes the add button of the object tree, and comparisons already on stay listed; <code>toasts</code> silences the
   widget's own notices (its errors still show), while yours through <code>widget.toast()</code> show as well.
+  One toast shows at a time: a new one takes the place of the one showing, and a long one goes on a second line.
   <code>selectionToolbar</code> off hides the toolbar of a selected drawing; the right-click menu stays.
   <code>statusBar.rangeTimeframe</code> off keeps the timeframe when a range on the range bar is longer than its bars fit; on, it switches to weeks or months and back.
   The trading tools are one Trade menu on the toolbar: <code>toolbar.bracketOrders</code>, <code>toolbar.depthLadder</code>,

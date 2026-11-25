@@ -54,6 +54,10 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   least 1% beyond the price now, so neither is hit the moment it is set. Letting go sends
   <code>positionModify</code>, as dragging a stop does, so a connected execution adapter applies it.
   <code>lineButtons: {'{'} addStops: false {'}'}</code> leaves the buttons out.
+  While a line is dragged to a price, the crosshair draws no horizontal line and no price on the axis: the
+  line's own tag has the price.
+  A price set by hand keeps to the market's grid: an order, a stop, a target or a level dragged, a bracket's and a draft order's lines, an alert dragged, the price a right-click or the “+” by the axis gives. It is on the market's price step (<code>setMarket</code>, or the symbol's <code>minTick</code>), else to the decimals the price axis shows: <code>chart.roundPrice</code>. The crosshair writes the price under the pointer on the same grid, so what it reads is what the “+” beside it places at.
+  On a market with a ceiling and a floor for the day (<code>setPriceLimits</code>), an order's own price keeps inside them too: its line stops at the limit when dragged past it, a bracket's entry and a draft order start and stay inside, and the menu offers no order past them, nor does the depth ladder place one. A position's stop, target and levels are not held: they are no orders of today's.
 </p>
 <p>
   The positions, the orders and their fills can be hidden, and their lines locked. Hidden, none is drawn and none
@@ -98,7 +102,7 @@ chart.setIndicatorsVisible(ids, false)   // several indicators at once, one undo
 chart.connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
 
 chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.command: the intent that failed
-// chart.connectExecution(adapter, { brackets: 'place' })   // a confirmed bracket goes to it too: see Bracket orders
+// A confirmed bracket goes to it too: see Bracket orders
 // chart.disconnectExecution()`}</code></pre>
 <p>
   Implement <code>ExecutionAdapter</code> (it mirrors <code>DataAdapter</code>) to wire a
@@ -107,6 +111,301 @@ chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.comma
   <code>positions</code> / <code>fill</code> / <code>error</code> events.
   <code>PaperExecutionAdapter</code> is a virtual-fill sandbox for demos and tests.
 </p>
+
+<h3 id="order-outcome">What became of an order</h3>
+<p>
+  Every order asked for goes out with a <code>clientOrderId</code>, an id of its own: the one it came with, else one
+  the chart gives it, and <code>placeOrderIntent</code> returns the order as it was sent. Until the adapter answers,
+  the order is on its way. <code>orderPlaced</code> says the adapter took it, with the order it made of it;
+  <code>executionError</code> with <code>command: 'orderPlace'</code> and the same <code>clientOrderId</code> says it
+  was refused. An adapter's <code>placeOrder</code> must settle either way: resolve with the order, or reject with
+  why. Send the id on to a broker that takes one, and answer a repeat of it with the order already made, so that a
+  press sent twice is one order (the paper account does).
+</p>
+<pre><code>{`const sent = chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1 })
+chart.on('orderPlaced', (e) => { if (e.payload.intent.clientOrderId === sent?.clientOrderId) done(e.payload.order) })
+chart.on('executionError', (e) => { if (e.payload.clientOrderId === sent?.clientOrderId) failed(e.payload.cause) })`}</code></pre>
+
+<h3 id="order-kinds">Orders that work together, and for how long</h3>
+<p>
+  An order's intent (<code>chart.placeOrderIntent</code>, the adapter's <code>placeOrder</code>) says more than
+  its price:
+</p>
+<ul>
+  <li>
+    <strong><code>ocoGroup</code></strong>: a name shared by orders of which one cancels the others, as a target
+    and a stop for the same exit. When one fills, the rest of the group are cancelled. Their tags on the chart read
+    OCO.
+  </li>
+  <li>
+    <strong><code>timeInForce</code></strong>: <code>'gtc'</code> (good till cancelled), <code>'day'</code>,
+    <code>'gtd'</code> (good till a date: <code>expireTime</code>, in milliseconds), and <code>'ioc'</code> or
+    <code>'fok'</code> for an order that fills at once or not at all.
+  </li>
+  <li>
+    <strong><code>type: 'stopLimit'</code></strong>: <code>stopPrice</code> is where it starts working and
+    <code>price</code> the limit it then works at. Its line on the chart is its limit, and its stop has a line of its own in dashes and dots, tagged STOP, with its price on the
+    axis. Dragging the order's line moves both, the room between them kept; dragging the stop's, or its tag, moves the stop alone.
+    <code>orderModify</code> then carries <code>newStopPrice</code> beside <code>newPrice</code>, which the paper account follows.
+  </li>
+</ul>
+<pre><code>{`// A target and a stop for one exit: whichever fills first takes the other off
+chart.placeOrderIntent({ side: 'sell', type: 'limit', price: 66_000, quantity: 1, ocoGroup: 'exit' })
+chart.placeOrderIntent({ side: 'sell', type: 'stop', price: 63_000, stopPrice: 63_000, quantity: 1, ocoGroup: 'exit' })
+
+// Works until midnight UTC
+chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1, timeInForce: 'gtd', expireTime: Date.UTC(2027, 0, 1) })`}</code></pre>
+<p>
+  The paper account does what a broker would with each. Of a group, the first to fill cancels the rest. A
+  stop-limit becomes a limit order at its <code>price</code> once the price reaches its stop, and fills only
+  within that limit (at the price that reached the stop, when that is within it). A <code>'gtd'</code> order
+  comes off when the time given with <code>setMarkPrice</code> reaches its date (the clock's, with no time
+  given), and one whose date has passed is refused. An <code>'ioc'</code> or <code>'fok'</code> limit fills at
+  once, at the price there is, when that is within it, and is refused when it is not (<code>executionError</code>). The paper market has no size of its own, so the two are the
+  same there, unless it is given one (<a href="#partial-fills">below</a>). The widget's order ticket offers both for a limit order, and its account panel writes OCO beside
+  an order of a group and a dated order's date. It leaves <code>'day'</code> to the app, which knows when its market's day ends.
+  The ticket offers good till a date for a limit and a stop order: a date and a time on the chart's own clock, a day from now to start with, and it places no order that would end in the past.
+  A limit that fills at once or not at all may be priced through the market: it fills at the market, and the ticket counts its value, its risk and its targets from there.
+  The ticket takes a stop-limit order too, with a stop price and a limit price, good till cancelled, for the day or till a date. It may fill anywhere from its stop to its limit, so its stop-loss goes beyond its stop and its take-profit beyond its limit; the account panel names it and writes both prices, the stop first.
+</p>
+<p>
+  <strong>One net position.</strong> By default the paper account opens a position for each filled order, a buy
+  beside a sell (<code>positions: 'hedge'</code>). <code>{`new PaperExecutionAdapter({ positions: 'net' })`}</code>
+  keeps one position, as a futures account does: a fill the same way adds to it at the average of their prices, a
+  fill the other way takes from it and realises that part (<code>pnl</code> on the fill), and a larger one turns
+  it round, the rest opening at the fill's price. A fill that adds to it brings its stops when it has them; one
+  that takes from it leaves the position's stops as they are; one that turns it round brings its own.
+</p>
+<h3 id="partial-fills">Orders that fill in parts</h3>
+<p>
+  A limit order rests in the market and is filled as others come to it, often a part at a time. Given a
+  <code>fillSize</code>, the paper account fills no more than that of a limit order at one price: a larger one
+  fills a part at each price that reaches its limit (each <code>setMarkPrice</code>), and works on for the
+  rest. The order stays in <code>chart.getOrders()</code> with its <code>filledQuantity</code>; each part is a
+  fill of its own (<code>executionFill</code>), whose <code>remaining</code> is what it left working, and the
+  last part takes the order off. The chart writes what has filled on the order's tag (<code>2/5</code>), and
+  the widget's account panel in its row; the tags on the order's stop and target say what the rest of it would
+  make, since what has filled is a position with tags of its own.
+</p>
+<pre><code>{`const broker = new PaperExecutionAdapter({ fillSize: 2 })   // two of a limit order at each price
+chart.connectExecution(broker)
+chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 95, quantity: 5 })
+
+chart.on('executionFill', (e) => console.log(e.payload.quantity, e.payload.remaining))   // 2 3, then 2 1, then 1 undefined
+chart.on('ordersChange', (e) => console.log(e.payload.orders[0]?.filledQuantity))        // 2, 4, then no order`}</code></pre>
+<p>
+  The parts of one order build one position, at the average of their prices; on a net account they add to its
+  position, or take from it. The position has the order's stop-loss, take-profit and levels from its first
+  part, and a later part brings them no second time: a stop you moved since, or took off, stays as you left
+  it. A part that fills after its position was closed opens another, with the order's stops again. A level is
+  a size of the whole plan, so the first parts may not fill it: it takes no more than is open. A stop-limit
+  fills in parts too, once it works as a limit. A part pays its own commission, and one the account can no longer carry cancels what is left of the
+  order (<code>executionError</code>). What is left can be moved, cancelled, or end at its date, and the first
+  part cancels the rest of the order's group. Of an <code>'ioc'</code> order what fills at once fills and the
+  rest is dropped (its fill says how much: its <code>dropped</code>, beside a <code>quantity</code> of less than was asked, and the
+  order that <code>placeOrder</code> gives back has its <code>filledQuantity</code>; the activity log writes the
+  rest as cancelled, and the widget says how much filled); a <code>'fok'</code> order larger than the size is refused. A market order and
+  a stop fill whole, as do closes: the paper market takes them at the price there is, and models no slippage.
+  An adapter of your own reports its broker's parts the same way: the order with its
+  <code>filledQuantity</code> in <code>orders</code>, and a <code>fill</code> for each.
+</p>
+
+<h3 id="take-profit-levels">Taking profit in parts</h3>
+<p>
+  A position can be taken off in parts. <code>takeProfits</code> on an order's intent, or on a position
+  (<code>chart.modifyPositionIntent</code>), is a list of levels, each a <code>price</code> and the
+  <code>quantity</code> that closes there. As the price reaches a level, its part is closed at the level's price
+  and the level goes; what the levels leave stays open for <code>takeProfit</code> to close, or the stop-loss.
+  The stop-loss closes all that is left whatever levels were waiting, a level past the take-profit is never
+  reached, and a level takes no more than is still open.
+  The chart draws a line and a tag for each (TP1 is the nearest), with its part and what that would make, and
+  the widget's account panel writes the nearest level and how many more there are.
+</p>
+<pre><code>{`chart.placeOrderIntent({
+  side: 'buy', type: 'market', price: 64_000, quantity: 3,
+  stopLoss: 63_000,
+  takeProfits: [{ price: 65_000, quantity: 1 }, { price: 66_000, quantity: 1 }],   // a third at each
+  takeProfit: 67_000,                                                              // the rest
+})
+
+chart.modifyPositionIntent({ positionId: 'pos-1', takeProfits: [{ price: 65_500, quantity: 2 }] })   // all of them, anew
+chart.modifyPositionIntent({ positionId: 'pos-1', takeProfits: null })                               // none`}</code></pre>
+<p>
+  The paper account closes the parts (a fill each, with <code>reason: 'takeProfit'</code> and what it
+  realised) and counts them in the position's <code>closedQuantity</code>. It takes only levels that are a
+  profit from the entry, and on a net account an order that brings levels gives the position its levels, as it
+  gives it its stops. TP1 on the chart is the nearest level still waiting. An adapter of your own reports its
+  broker's. In the widget's order ticket, a take-profit can be reached in one, two or three
+  <strong>Targets</strong>: with more than one, an even part of the quantity comes off at each target on the
+  way, evenly spaced from the entry, and the take-profit closes what is left. The ticket lists what comes off
+  where before it is placed.
+</p>
+<p>
+  A position's level is dragged on the chart as its stop-loss and take-profit are, by its line or by its tag:
+  the line follows the pointer, with where it was left faint behind it, and letting go raises
+  <code>positionModify</code> with all the position's <code>takeProfits</code>, that one moved, the nearest
+  first. A level is a profit, so one let go at the entry or past it the losing way goes back where it was, and
+  nothing is raised. Of two levels within reach of a press the nearer is taken; an order's line, the stop-loss
+  or the take-profit at the same place is taken before a level, which its tag still moves. The levels of an
+  order that still waits are a plan the order brings and are not handles; nor is any while the lines are
+  locked.
+</p>
+
+<h3 id="account">An account with money</h3>
+<p>
+  Given a <code>balance</code>, the paper account keeps its money as a broker does. What a close makes or loses
+  goes into the balance, open positions hold margin (their value, over <code>leverage</code>), and each fill
+  pays its <code>commission</code>. An order the free margin cannot carry is refused
+  (<code>executionError</code>), and so is a reverse; a waiting order whose money has gone by the time its
+  price comes is cancelled, which <code>executionError</code> says too. <code>multiplier</code> is what a move
+  of one in price is worth for one unit (a futures contract's money per point, or 1,000 where a share's
+  price is in thousands, as on HOSE). Without one the account takes the market's
+  <code>contractMultiplier</code> from the chart it is connected to, which the widget's panel counts the positions' profit by. The account is told
+  before the fill that changed it, so <code>chart.getAccount()</code> in an <code>executionFill</code> listener
+  reads it as the fill left it. Without a <code>balance</code> there is no account, and any order is taken, as
+  before.
+</p>
+<p>
+  While positions hold margin the account says how its equity stands to it: <code>marginLevel</code>, the
+  equity as a part of the margin used (<code>1.5</code> is 150%). Two levels act on it, each left out unless
+  given. Under <code>marginCallLevel</code> the account warns once, the <code>marginCall</code> event, and
+  again only after the equity has been back over the level; it closes nothing. Under
+  <code>stopOutLevel</code> it closes positions at the price there is, the one losing most first, until it is
+  back over the level or holds none: closing one frees its margin, which may be enough. Each is a fill with
+  <code>reason: 'liquidation'</code>. Both are counted as each price comes, after the orders and the stops it
+  reached, so a stop-loss closes its position first, and a fill that brings the equity under a level is acted
+  on at the next price. A position's margin is held at its entry's price, so the level moves with the equity
+  alone. A stop-out leaves the orders that wait working: one whose money has gone is cancelled when its price
+  comes. With neither level, nothing is closed and a balance can go below zero.
+</p>
+<pre><code>{`const broker = new PaperExecutionAdapter({
+  balance: 10_000,
+  leverage: 10,                                 // a position holds a tenth of its value
+  commission: { rate: 0.0004, min: 0.1 },       // 0.04% of each fill's value, no less than 0.1; perUnit: an amount a unit
+  positions: 'net',
+  marginCallLevel: 1,                           // warn when the equity falls under the margin held
+  stopOutLevel: 0.5,                            // close positions when it falls under half of it
+})
+chart.connectExecution(broker)
+
+chart.getAccount()   // { balance, equity, unrealisedPnl, realisedPnl, marginUsed, freeMargin, commission, marginLevel? } or null
+chart.on('accountChange', (e) => console.log(e.payload.account?.equity))
+chart.on('executionFill', (e) => console.log(e.payload.commission, e.payload.reason))   // 'liquidation' for a stop-out
+chart.on('marginCall', (e) => warn(e.payload))   // { marginLevel: 0.9, level: 1, equity, marginUsed }`}</code></pre>
+<p>
+  The widget's account panel heads its totals with the balance, the equity and the free margin, and the margin
+  level while there is one; it shows a margin call as a warning, and names a stop-out's fill in its history. An
+  adapter of your own does the same by implementing <code>getAccount()</code> and emitting <code>account</code>
+  with an <code>AccountSummary</code> as its money changes, and <code>marginCall</code> when its broker warns.
+</p>
+
+<h3 id="symbols">An account of more than one symbol</h3>
+<p>
+  A chart shows one symbol, and an account may hold many. An order, a position and a fill can each name the symbol
+  it is of (<code>symbol</code>). The chart draws those of the symbol it shows, and those that name none; what
+  names another symbol it keeps, and draws again when that symbol is shown. <code>getOrders()</code>,
+  <code>getPositions()</code> and <code>getFills()</code> give the whole account, as <code>ordersChange</code> and
+  <code>positionsChange</code> do; <code>chart.getSymbol()</code> says which of it is on the chart. An order the
+  chart asks for names the symbol shown (<code>symbol</code> in <code>orderPlace</code>), and the paper account
+  keeps it on the order, on the position it opens and on their fills. An adapter of your own for an account of
+  several symbols names it on each. The chart never guesses: what names no symbol is drawn on every symbol, as
+  before. Two names are one symbol in any case of letters, and by their ticker where one alone names its venue
+  (<code>BTCUSDT</code> and <code>BINANCE:BTCUSDT</code>); two that each name a venue must name the same.
+</p>
+<p>
+  A fill is a mark on one symbol's bars, so the chart gives each a symbol: its own, else its position's or its
+  order's, else the one shown as it came. The widget's account panel lists every symbol's rows and names the
+  symbol once one is of another; a position of another symbol shows the adapter's own price for it
+  (<code>markPrice</code> on the position) and the profit at that price, or neither: the chart's price is not its
+  own. The depth ladder marks the orders of the symbol whose book it shows.
+</p>
+<p>
+  A broker counts a position at its mark, which is not always the last trade the chart shows. Where the adapter
+  gives a position its <code>markPrice</code>, the panel's row and the chart's tag count the profit at it, for a
+  position of the chart's own symbol too, so the rows agree with the account's Open P&amp;L. Send the positions
+  again as the mark moves. Without one, a position of the chart's symbol is counted at the chart's latest price.
+</p>
+<p>
+  With a stream (<code>connect</code>, <code>switchStream</code>) the chart knows its symbol. With bars you set
+  yourself, say it as you change them; <code>ChartWidget</code> does when its symbol is picked.
+</p>
+<pre><code>{`chart.setData(barsOf('ETHUSDT'))
+chart.setSymbol('ETHUSDT')        // draws ETHUSDT's orders and positions; '' draws all again
+chart.getSymbol()                 // 'ETHUSDT'
+
+chart.setPositions([
+  { id: 'p1', symbol: 'BTCUSDT', side: 'buy', entryPrice: 64_000, quantity: 1, markPrice: 64_250 },   // kept, not drawn
+  { id: 'p2', symbol: 'ETHUSDT', side: 'sell', entryPrice: 3_150, quantity: 2 },                      // drawn
+])`}</code></pre>
+<p>
+  A price is of one symbol too. Name it as you feed the paper account, and each price works only that symbol's
+  orders and stops and values its positions alone; a position is closed, reversed and stopped out at its own
+  symbol's latest price, and a net account keeps one position a symbol. A price that names no symbol is the price
+  of everything the account holds, as before. Name it on every price you feed, or on none: one that names none makes
+  the account one market again. In a replay the chart names the symbol on the prices it feeds.
+</p>
+<pre><code>{`feed.onTrade((trade) => broker.setMarkPrice(trade.price, trade.time, trade.symbol))`}</code></pre>
+
+<h3 id="live-price">A price that is no longer live</h3>
+<p>
+  The price on the chart is live while the widget's feed is connected and telling. A feed that is not connected, or
+  that is connected and has told nothing for a minute (<code>feedQuietAfter</code>, seconds), leaves the last price
+  standing: the status bar then says so in place of “Live”, and the ticket sends no market order and warns on any
+  other, whose price is the trader's own. While the feed is not connected, an order asked for in one press (the
+  right-click menu, the depth ladder) and a bracket or a draft order confirmed on the chart are held back too, with a
+  note (<code>chart.setOrderGate</code> is what holds the last two). Closing a position and cancelling an order are
+  never held back. A market that is shut (the symbol's <code>sessions</code>) is quiet by nature and is not judged,
+  and neither are a replay or bars of your own (no <code>adapter</code>): hold orders back there in your own
+  <code>orderPlace</code> handler.
+</p>
+<pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, feedQuietAfter: 30 })   // seconds; 0: never
+chart.getFeedTime()   // when the stream last told anything, ms; null before it has`}</code></pre>
+
+<h3 id="confirmations">Confirmations</h3>
+<p>
+  A trade that one press would make is confirmed first in <code>ChartWidget</code>: a position closed or reversed
+  (its row in the account panel, its buttons on the chart), and an order from the right-click menu or the depth
+  ladder. The dialog says the trade in full (the side, the quantity, the price, the symbol); Enter does it, Escape
+  leaves it undone. <code>confirmOrders: false</code> is one-click trading, for a broker whose traders ask for it.
+  The order ticket is not asked about twice: its Place is the confirmation. On the depth ladder a press on a bid
+  places a buy limit at that price, joining the bids there, and a press on an ask a sell limit; each cell says so,
+  with the quantity, before it is pressed.
+</p>
+<pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, confirmOrders: false })   // one-click trading
+chart.setPositionGuard((action, positionId, send) => ask(action, positionId).then((yes) => yes && send()))   // your own, on a headless Chart`}</code></pre>
+
+<h3 id="broker-rules">The broker's order rules</h3>
+<p>
+  An exchange's preset (<code>setMarket</code>) has its price steps and its lot. What a broker takes for a symbol in a
+  session is the broker's own, and changes with no release of the library: give it as <code>orderRules</code>, and
+  again with <code>widget.setOrderRules</code> as the symbol or the session changes. <code>orderKinds</code> are the
+  kinds of order the ticket offers in place of Market, Limit, Stop and Stop-limit, each by the exchange's name
+  (<code>code</code>) and the kind the chart knows it as (<code>type</code>): that decides whether the ticket asks a
+  price for it and how it is drawn, and the name goes with the order as <code>exchangeType</code>, for the broker.
+  <code>timesInForce</code> are those taken (a kind may have its own), and <code>lot</code> stands over the market's.
+  The paper account keeps the name on the order and trades it as its <code>type</code>: an opening or a closing
+  auction is not simulated. An order from the right-click menu or the depth ladder goes out as the broker's kind of
+  its type, with a time in force it takes, or not at all where the broker has none (a stop on HOSE). A bracket, a
+  draft order dragged on the chart, and a position closed or reversed are not named: your adapter gives those the
+  exchange's kind. An order at the market never carries a time in force.
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  adapter, symbol: 'VNM', trading: true,
+  orderRules: {
+    orderKinds: [
+      { code: 'LO', type: 'limit' },
+      { code: 'ATO', type: 'market' },
+      { code: 'ATC', type: 'market' },
+      { code: 'MP', type: 'market' },
+    ],
+    timesInForce: ['day'],
+    lot: 100,
+  },
+})
+// Another session, another list: an open ticket takes it at once
+widget.setOrderRules({ orderKinds: [{ code: 'ATC', type: 'market' }, { code: 'LO', type: 'limit' }], timesInForce: ['day'], lot: 100 })
+
+chart.on('orderPlace', (e) => send(e.payload.exchangeType ?? e.payload.type, e.payload))   // 'ATO', and type: 'market'`}</code></pre>
 
 <h2>Act on orders and positions from the chart</h2>
 <p>
@@ -130,8 +429,7 @@ chart.modifyPositionIntent({ positionId: 'pos-1', trailingStop: 150 }) // the st
   An adapter that can reverse in one step implements <code>reversePosition</code>;
   without it the chart closes the position and sends a market order the other way.
   Orders take a <code>stopLoss</code>, a <code>takeProfit</code> and a
-  <code>timeInForce</code> (<code>'gtc'</code> or <code>'day'</code>) that carry over to
-  the position they open.
+  trailing distance that carry over to the position they open.
 </p>
 <p>
   <strong>For adapter authors:</strong> in <code>PositionModifyIntent</code>,
@@ -203,15 +501,25 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
 <h2>Order ticket and account panel (ChartWidget)</h2>
 <p>
   <strong>Account</strong> in the toolbar's <strong>Trade</strong> menu opens an account panel under the chart: open positions
-  with their profit and loss, working orders, and the fills so far with the P&amp;L
-  realised. Each row closes, reverses or cancels. <strong>New order</strong> opens an
+  with their profit and loss, working orders, the fills so far with the P&amp;L
+  realised, and a log of what happened to the orders. Each row closes, reverses or cancels. <strong>New order</strong> opens an
   order ticket: buy or sell, market, limit or stop, quantity, price, an optional
   stop-loss and take-profit, and time in force. It checks the order as you fill it in
   (a buy limit goes below the market, a stop-loss on the losing side of the entry…)
-  and shows the reward:risk. Placing it sends an <code>orderPlace</code> intent. With a
+  and shows the reward:risk, and over the order's value what the account has free to pay for it
+  (<code>freeMargin</code>), followed by the account's <code>currency</code> where the adapter names one.
+  Placing it sends an <code>orderPlace</code> intent. With a
   market set (<code>chart.setMarket</code>), it also keeps its prices on the market's step and
   the order's price inside the day's ceiling and floor, starts at one lot, and takes whole lots above one
   (fewer shares are an odd-lot order of their own).
+</p>
+<p>
+  Where the feed gives a bid and an ask, the ticket values, checks and sends a Buy at the ask and a Sell at the bid;
+  else both at the last price. With an execution adapter connected it waits for the adapter's answer: it stays open
+  with <strong>Sending…</strong> in place of its button and nothing to be changed, shuts once the order is taken, and
+  when the order is refused it keeps what was typed and says why until the order is changed. After ten seconds with no answer it says so, and waits on: check your orders before sending again. A press outside the
+  ticket does not shut it; Escape, Cancel and the cross do. An order asked for in one press, from the right-click menu
+  or a rung of the depth ladder, is for the market's lot (<code>volumeUnit</code>) where it has one, else for one.
 </p>
 <p>
   The ticket names the symbol beside its title. The type and the time in force are choices in a row
@@ -233,13 +541,40 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   set right in the mono type, money to the price step's decimals in the number locale; on a phone each row is a card
   of named figures.
 </p>
+<p>
+  The widget says what became of an order it sent: one the adapter refused, in the adapter's own words, and one
+  that filled in part with the rest dropped, how much of it filled.
+</p>
+<p>
+  <strong>The Log tab</strong> lists what happened to the orders, the newest first: each one placed, moved,
+  cancelled or filled, and what the broker refused with its reason. The chart keeps it, for a chart of your own
+  too: <code>chart.getActivityLog()</code> gives the latest 200 entries, oldest first, each
+  <code>{`{ time, kind, orderId, side, type, quantity, price, reason, pnl, message }`}</code> with what its
+  <code>kind</code> has (<code>'placed'</code>, <code>'moved'</code>, <code>'cancelled'</code>,
+  <code>'filled'</code>, <code>'rejected'</code>). It is read from the orders, fills and errors the chart is told,
+  by an execution adapter or by <code>setOrders</code> and <code>addFill</code>. The orders there when it began
+  are not in it, nor those there when an adapter is connected or taken away, or (with no adapter) when the symbol
+  changes: they are what is there, not orders placed. An order filled in part and then taken off is logged
+  cancelled. <code>chart.clearActivityLog()</code> empties it.
+</p>
+<p>
+  <strong>Sell and Buy on the chart.</strong> While an execution adapter is connected, the widget shows two
+  buttons under the chart's legend, each with the price it would trade at: the best bid on Sell and the best ask
+  on Buy with the spread between them (<code>chart.setBidAsk</code>, or a feed whose ticks carry them), else the
+  last price on both, as on a replay or when the feed gives one side only. A press opens the order ticket on that
+  side. <code>executionChange</code> says when an adapter is connected or taken away, <code>bidAskChange</code>
+  when the bid and the ask change, and the <code>tradeButtons</code> switch turns the buttons off.
+</p>
 <pre><code>{`const widget = new ChartWidget(host, {
   trading: true,         // default
   accountPanel: true,    // default when trading is on
+  features: { tradeButtons: true },   // default: Sell and Buy under the legend, with a broker connected
 })
 widget.getChart().connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
 widget.toggleAccountPanel(true)
-// The panel follows ordersChange, positionsChange, executionFill and each tick.`}</code></pre>
+// The panel follows ordersChange, positionsChange, executionFill and each tick.
+
+widget.getChart().getActivityLog().at(-1)   // { time, kind: 'filled', side: 'buy', quantity: 1, price: 64_000, reason: 'order' }`}</code></pre>
 <p>
   Fill marks belong to the symbol on the chart: switching symbol in the widget starts
   the next one with none.
@@ -261,35 +596,50 @@ chart.cancelOrderDraft()`}</code></pre>
   drag the three lines to tune entry, risk, and reward. Confirm with
   <kbd>Enter</kbd> (or the Place button), cancel with <kbd>Esc</kbd>. In the
   widget, the green/red toolbar arrows start a long/short bracket. The chart
-  emits a single <code>bracketPlace</code> event for your backend to act on.
+  emits a single <code>bracketPlace</code> event, and sends the bracket to a connected
+  execution adapter (below); with none, the event is for your backend to act on.
 </p>
 <p>
-  With an execution adapter connected with <code>brackets: 'place'</code>, the chart also sends it to the
+  <strong>Its size.</strong> A bracket is for the quantity it is sized with. <code>{`{ quantity: 2 }`}</code> is
+  that quantity. <code>{`{ risk: 50 }`}</code> is the money lost at the stop: the quantity is then 50 over the
+  stop's distance from the entry (times <code>multiplier</code>, what a move of one in price is worth for one
+  unit), rounded down to <code>quantityStep</code>, and follows the lines as they are dragged. The quantity is
+  written on the entry's tag, and <code>bracketPlace</code> carries it. In the widget it is typed in a field
+  on the bracket's bar, which starts at the quantity last typed, else at the market's lot, and
+  <code>widget.startBracket(side, size)</code> takes a size too: a bracket sized by its risk has no field.
+  <code>bracketQuantity(bracket, size)</code> is the same sum for your own code.
+</p>
+<p>
+  With an execution adapter connected, the chart also sends a confirmed bracket to the
   adapter as one order: the entry, a limit when the price has to come back to it and a stop when it has to
   run on to it, its quantity, and its stop-loss and take-profit on it. Once the adapter took it, the chart
   sends <code>bracketOrder</code> with the order. If the adapter refuses it, it sends
   <code>executionError</code> with <code>command: 'bracketPlace'</code>. The widget says "placed" only then,
-  and says why when it was refused. A bracket with no quantity is not sent, since no one saw a size to
-  place; nor is one confirmed before the chart has a price to tell a limit entry from a stop.
-  <code>executionError</code> gives the <code>reason</code> (<code>'noQuantity'</code>, <code>'noPrice'</code>).
-  The brackets the toolbar's arrows and <code>startBracket</code> start have no quantity yet, so with
-  <code>'place'</code> they are not sent, and the widget says so. Without it, a confirmed bracket stays an event, and
-  the widget says it was confirmed. An adapter connected without saying (no <code>brackets</code>) keeps the
-  event and warns once in the console. <code>'place'</code> becomes the default in the next major version,
-  so an app that places the event's bracket itself passes <code>brackets: 'event'</code>.
+  and says why when it was refused. A bracket with no quantity is not confirmed, since no one saw a size to
+  place: <code>confirmBracket()</code> returns false, and the bracket stays on the chart to be given one. One
+  confirmed before the chart has a price to tell a limit entry from a stop is not sent.
+  <code>executionError</code> gives the <code>reason</code> (<code>'noQuantity'</code>, <code>'noPrice'</code>),
+  and the widget says so. An app that places the event's bracket itself connects with
+  <code>brackets: 'event'</code>: the bracket then stays an event, and the widget says it was confirmed.
+  Before 3.0 that was the default (see <a href={href('/docs/migration-3')}>Moving to 3.0</a>).
 </p>
 <pre><code>{`chart.startBracket('buy')          // entry defaults to the latest close
 chart.startBracket('sell', 64_800) // or pin the entry price
+chart.startBracket('buy', undefined, { quantity: 2 })                   // for two
+chart.startBracket('buy', undefined, { risk: 50, quantityStep: 0.001 }) // for what loses 50 at the stop
+chart.setBracketSize({ quantity: 3 })   // while it is placed
+chart.getBracket()                      // { side, entry, stopLoss, takeProfit, quantity } or null
 
 chart.on('bracketPlace', (e) => {
-  const { side, entry, stopLoss, takeProfit, riskReward } = e.payload
-  // submit to your OMS, then reflect fills back via chart.setOrders/setPositions
+  const { side, entry, stopLoss, takeProfit, quantity, riskReward } = e.payload
+  // with no adapter (or brackets: 'event'): submit to your OMS, then reflect fills back via chart.setOrders/setPositions
 })
 
-// Or let the connected adapter place it
-chart.connectExecution(broker, { brackets: 'place' })
+// The connected adapter places it
+chart.connectExecution(broker)
 chart.placesBrackets()   // true
 chart.on('bracketOrder', (e) => console.log(e.payload.order.id))
+// chart.connectExecution(broker, { brackets: 'event' })   // only the event: your code places it
 
 chart.confirmBracket()  // same as Enter
 chart.cancelBracket()   // same as Esc`}</code></pre>
@@ -360,6 +710,7 @@ chart.setDepthOverlay({ mode: 'cumulative' })       // change the look later`}</
 </p>
 <pre><code>{`chart.setDepthHeatmapVisible(true)
 chart.setDepthHeatmapConfig({ opacity: 0.7, capacity: 240 })
+chart.setDepthHeatmapConfig({ bidColor: '#1e88e5', askColor: '#fb8c00' })   // colours of its own; null: the theme's candles'
 
 // each book update both draws the overlay/ladder and records a heatmap column
 widget.setDepth(orderBook)

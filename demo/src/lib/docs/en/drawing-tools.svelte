@@ -174,6 +174,9 @@ chart.addDrawing({ type: 'horizontalLine', anchors: [{ time: t, price: 100 }], i
 <p>
   In the widget, clicking a drawing shows a small toolbar right over it: colour, line width and line style, then settings, an alert on its line, lock, the full drawing menu (the same as a right-click) and delete. With several drawings selected it sits over all of them, and its changes go to each. It follows the drawing while it is moved, panned or zoomed, steps aside while a drawing tool, the eraser or the zoom area is on, and is one tab stop that the arrow keys move along.
 </p>
+<p>
+  On a chart too narrow for all of its buttons (a phone) it stays on one line and gives up buttons instead: first those the drawing's menu holds too (the alert, the lock, the words, the settings, each only while the menu has its entry), then the figure beside the line width, then the colours the settings hold. The line's colour, width and style, the menu and delete stay. On a phone it waits at the foot of the plot, beside the drawing tools' button. Menus and panels open over it.
+</p>
 <pre><code>{`new ChartWidget(host, { features: { selectionToolbar: false } })  // turn it off
 widget.setFeatures({ selectionToolbar: true })
 

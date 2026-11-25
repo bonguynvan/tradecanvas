@@ -4,7 +4,7 @@ const de: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Canvas-Trading-Charts fürs Web',
     description:
-      'TradeCanvas ist eine Trading-Chart-Bibliothek für das Web, gezeichnet mit Canvas 2D oder WebGL: 18 Charttypen, 134 Indikatoren, 76 Zeichenwerkzeuge, Live-Daten von Börsen, Orders im Chart, Replay und Backtesting, in 30 Sprachen. Keine Abhängigkeiten, MIT.',
+      'TradeCanvas ist eine Trading-Chart-Bibliothek für das Web, gezeichnet mit Canvas 2D oder WebGL: 18 Charttypen, 138 Indikatoren, 76 Zeichenwerkzeuge, Live-Daten von Börsen, Orders im Chart, Replay und Backtesting, in 30 Sprachen. Keine Abhängigkeiten, MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const de: SiteMessages = {
     release: 'WebGL-Renderer, 30 Sprachen',
     title: 'Die Chart-Engine für Trading-Apps.',
     ledeHtml:
-      'Von Kerzen bis Renko, 134 Indikatoren, 76 Zeichenwerkzeuge, Live-Daten von Börsen und Orders direkt im Chart. Gezeichnet mit Canvas 2D oder WebGL, ohne Abhängigkeiten. Binden Sie das komplette <code>ChartWidget</code> ein oder bauen Sie Ihre eigene Oberfläche auf dem Headless-<code>Chart</code>.',
+      'Von Kerzen bis Renko, 138 Indikatoren, 76 Zeichenwerkzeuge, Live-Daten von Börsen und Orders direkt im Chart. Gezeichnet mit Canvas 2D oder WebGL, ohne Abhängigkeiten. Binden Sie das komplette <code>ChartWidget</code> ein oder bauen Sie Ihre eigene Oberfläche auf dem Headless-<code>Chart</code>.',
     getStarted: 'Loslegen',
     browseExamples: 'Beispiele ansehen',
     specsLabel: 'Kennzahlen',
@@ -71,7 +71,7 @@ const de: SiteMessages = {
           title: 'Den Markt lesen',
           text: 'Bänder, Durchschnitte und Oszillatoren über den Kerzen, Fibonacci-Niveaus und Trendlinien darüber, jedes mit eigenen Einstellungen und Alarmen.',
           points: [
-            '134 Indikatoren, jeder auf jedem anderen, etwa ein Durchschnitt des RSI',
+            '138 Indikatoren, jeder auf jedem anderen, etwa ein Durchschnitt des RSI',
             '76 Zeichenwerkzeuge mit Magnet, Gruppen und Rückgängig',
             'Alarme auf Kurse, Linien und Indikator-Kreuzungen',
           ],
@@ -218,11 +218,11 @@ const de: SiteMessages = {
     },
     indicators: {
       title: 'Indikatoren',
-      stat: '134 integriert',
+      stat: '138 integriert',
       blurb:
         'Overlays und eigene Bereiche, selbst berechnet, ohne Mathe-Abhängigkeiten. Live-Ticks berechnen nur die laufende Kerze neu – 0,001 ms pro Tick mit vier Indikatoren auf 100k Kerzen.',
       tryThis: [
-        'Klicken Sie auf „Indikatoren“ (oder Ctrl+K) und durchsuchen Sie alle 134',
+        'Klicken Sie auf „Indikatoren“ (oder Ctrl+K) und durchsuchen Sie alle 138',
         'Klicken Sie in der Legende auf einen Indikatornamen: Parameter, Farben und Niveaus',
         'Setzen Sie bei einem gleitenden Durchschnitt das Feld „Source“ auf die Linie eines anderen Indikators',
         'Ziehen Sie die Trennlinie zwischen zwei Bereichen, um ihre Größe zu ändern; mit den Schaltflächen oben rechts in einem Bereich können Sie ihn verschieben, einklappen oder maximieren',
@@ -381,7 +381,7 @@ const de: SiteMessages = {
     },
     overrides: {
       title: 'Style-Overrides',
-      stat: '107 Schlüssel',
+      stat: '122 Schlüssel',
       blurb:
         'Jeder Teil des Chart-Aussehens per Schlüssel, unabhängig vom Theme: das Raster je Richtung, das Fadenkreuz, die Achsen, die Panes, die Legende, der letzte Kurs, das Volumen und die Farben jedes Charttyps. Hier ist das vertikale Raster aus, das horizontale gepunktet, das Fadenkreuz durchgezogen und die Signallinie des MACD gestrichelt in einem Pane mit eigenem Trenner.',
       tryThis: [
@@ -435,6 +435,17 @@ const de: SiteMessages = {
         'Über dem Chart zwischen Canvas 2D und WebGL wechseln: jeder Wechsel misst ein kurzes Verschieben',
         'Suchen Sie die hellen Zeilen: Wände, die über die Zeit auf einem Preis stehen bleiben',
         'Zoomen Sie auf eine Wand und verschieben Sie hin und her: Die Zellen halten mit den Kerzen Schritt',
+      ],
+    },
+    orderflow: {
+      title: 'Orderflow',
+      stat: 'Footprint + Tape',
+      blurb:
+        'Jeder Trade des Feeds, mit der Seite, die ihn genommen hat. Der Footprint-Chart schreibt zu jeder Kerze, was die Verkäufer am Bid und was die Käufer am Ask auf jedem Preis darin genommen haben, markiert die Zeilen, in denen eine Seite die andere überwog, und summiert jede Kerze darunter: Gekauft minus Verkauft, und beides zusammen. Daneben listet das Tape die Trades, sobald sie entstehen, die neuesten oben, in der Farbe der Seite, die sie genommen hat.',
+      tryThis: [
+        'Sehen Sie zu, wie sich die neueste Kerze Zeile für Zeile füllt und sich ihre Summen darunter ändern',
+        'Öffnen Sie das Menü im Kopf des Tapes: nur Gekauftes oder Verkauftes auflisten, oder gleichzeitige Trades zu einer Zeile zusammenfassen',
+        'Geben Sie im Tape eine Mindestgröße ein, um nur große Trades zu behalten, und zoomen Sie dann heraus: Aus den Zeilen werden Balken, die Summen bleiben',
       ],
     },
     switching: {
@@ -493,6 +504,23 @@ const de: SiteMessages = {
     counterClock: 'Gegenuhrzeigerkurve: Kurs gegen Volumen, 25-Tage-Durchschnitte',
     avgVolume: 'Volumen, Durchschnitt',
     avgPrice: 'Kurs, Durchschnitt',
+    payoff: 'Iron Condor: Gewinn und Verlust bei Verfall',
+    smile: 'Implizite Volatilität nach Basispreis',
+    weekdayReturns: 'Tagesrenditen nach Wochentag',
+    scorecard: 'Strategie gegenüber Benchmark',
+    strategy: 'Strategie',
+    benchmark: 'Benchmark',
+    allocationRings: 'Allokation nach Anlageklasse und Sektor',
+    allocationOverTime: 'Allokation im Jahresverlauf',
+    volSurface: 'Implizite Volatilität nach Basispreis und Laufzeit',
+    strike: 'Basispreis',
+    expiry: 'Laufzeit',
+    depthOverTime: 'Orderbuchtiefe im Zeitverlauf',
+    quarterReturns: 'Rendite nach Quartal und Anlageklasse',
+    turnHint: 'Ziehen dreht ein Diagramm, ein Doppelklick stellt die Ausgangsansicht wieder her.',
+    exportLabel: 'Portfolio-Chart speichern',
+    print: 'Drucken',
+    reportPdf: 'Alle Charts in einem PDF',
     waterfall: {
       start: 'Start',
       btcLong: 'BTC Long',
@@ -704,7 +732,7 @@ const de: SiteMessages = {
         { name: 'Keine Laufzeitabhängigkeiten von Drittanbietern', detail: 'Nichts weiter zu installieren oder zu prüfen' },
       ],
       indicators: [
-        { name: '134 eingebaute Indikatoren', detail: 'Pivot-Punkte in sechs Varianten, MA Cross, Korrelation mit einem anderen Symbol' },
+        { name: '138 eingebaute Indikatoren', detail: 'Pivot-Punkte in sechs Varianten, MA Cross, Korrelation mit einem anderen Symbol' },
         { name: 'Preisquelle', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: 'Ein Indikator auf einem Indikator', detail: 'Etwa ein gleitender Durchschnitt des RSI, bei jedem Tick aktualisiert' },
         { name: 'Mehrere Indikatoren in einem Bereich, zwischen Bereichen verschoben', detail: 'moveIndicatorToPane' },
@@ -775,7 +803,7 @@ const de: SiteMessages = {
       ],
       customization: [
         { name: 'Drei Erscheinungsbilder für das Widget', detail: 'Studio, Terminal, Capsule; ui und setUI; CSS-Variablen --tcw-*' },
-        { name: 'Das Aussehen des Charts per Schlüssel', detail: 'applyOverrides über 107 typisierte Schlüssel, auf einer Host- und einer Nutzerebene' },
+        { name: 'Das Aussehen des Charts per Schlüssel', detail: 'applyOverrides über 122 typisierte Schlüssel, auf einer Host- und einer Nutzerebene' },
         { name: 'Einstellungen, die jeden Schlüssel erreichen', detail: 'Ein Stil-Tab für den gezeigten Charttyp, ein Trading-Tab' },
         { name: '114 Feature-Schalter', detail: 'features, setFeatures, isFeatureOn; im laufenden Betrieb änderbar' },
         { name: 'Eigene Teile im Widget', detail: 'Buttons und Dropdowns in der Werkzeugleiste, Buttons in der Seitenleiste, Statuseinträge, Slots, Menüeinträge' },
@@ -927,6 +955,7 @@ const de: SiteMessages = {
       frameworks: 'Frameworks',
       embed: 'Einbettbares Widget',
       migration: 'Umstieg auf 2.0',
+      'migration-3': 'Umstieg auf 3.0',
       'from-tradingview': 'Umstieg von TradingView',
       'how-it-works': 'So funktioniert es',
       api: 'API-Referenz',

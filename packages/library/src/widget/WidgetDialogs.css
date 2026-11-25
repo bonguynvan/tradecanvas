@@ -875,7 +875,7 @@
   border-radius: var(--tcw-tag-radius);
   background: color-mix(in srgb, var(--tcw-ss-kind) 16%, transparent);
   color: var(--tcw-ss-kind);
-  font-size: var(--tcw-font-size-xs);
+  font-size: var(--tcw-font-size-glyph);
   font-weight: var(--tcw-weight-strong);
   line-height: 1;
 }
@@ -1736,6 +1736,19 @@ img.tcw-ss-badge {
   flex-wrap: wrap;
   gap: var(--tcw-space-3) var(--tcw-space-5);
 }
+/* When an order good till a date ends: its date and its time side by side, the date taking what room is left;
+   under each other where the ticket is too narrow for both. */
+.tcw-ticket-expiry {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--tcw-space-2);
+  min-width: 0;
+}
+.tcw-ticket-expiry > input {
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
 .tcw-ticket-market {
   color: var(--tcw-text-dim);
   font-family: var(--tcw-font-mono);
@@ -1793,6 +1806,22 @@ img.tcw-ss-badge {
   font-family: var(--tcw-font-mono);
   font-variant-numeric: tabular-nums;
 }
+/* The order's value: the last line before the button that sends it, and the one read first. */
+.tcw-ticket-summary-row[data-row='value'] {
+  align-items: baseline;
+  color: var(--tcw-text-dim);
+}
+.tcw-ticket-summary-row[data-row='value'] .tcw-ticket-figure {
+  font-size: var(--tcw-font-size-lg);
+  font-weight: var(--tcw-weight-strong);
+}
+/* The account's currency after its money: a unit, quieter and smaller than the figure it follows. */
+.tcw-ticket-unit {
+  color: var(--tcw-text-dim);
+  font-size: var(--tcw-font-size-sm);
+  font-weight: 400;
+}
+
 .tcw-ticket-figure.tcw-ticket-up { color: var(--tcw-green); }
 .tcw-ticket-figure.tcw-ticket-down { color: var(--tcw-red); }
 
@@ -1840,4 +1869,224 @@ img.tcw-ss-badge {
   .tcw-ticket-place { border: 1px solid ButtonText; }
   .tcw-ticket-side-btn:focus-visible,
   .tcw-ticket-place:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
+  /* A limit has no box in Graphite: here it has one again, and an outline on focus. */
+  .tcw-root .tcw-order-ticket .tcw-ticket-limit.tcw-ticket-limit { border: 1px solid ButtonText; }
+  .tcw-ticket-limit:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
+}
+
+/* What a confirmation asks: one sentence, the trade in full. */
+.tcw-confirm-text {
+  margin: 0;
+  color: var(--tcw-text);
+  font-size: var(--tcw-font-size);
+  line-height: var(--tcw-line-height);
+  overflow-wrap: anywhere;
+}
+
+/* Its two buttons at a control's height, which a finger's press raises. */
+.tcw-confirm .tcw-modal-footer > button {
+  height: var(--tcw-control-h);
+  padding-block: 0;
+}
+
+/* The day's ceiling, reference and floor over the ticket's price: each a press that sets the price. */
+.tcw-ticket-limits {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--tcw-space-2);
+}
+
+.tcw-ticket-limit {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tcw-space-2);
+  height: var(--tcw-control-h-sm);
+  padding: 0 var(--tcw-space-4);
+  border: var(--tcw-border-w) solid var(--tcw-border);
+  border-radius: var(--tcw-control-radius);
+  background: transparent;
+  color: var(--tcw-text);
+  font: inherit;
+  font-size: var(--tcw-font-size-sm);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background var(--tcw-dur-fast) var(--tcw-ease), border-color var(--tcw-dur-fast) var(--tcw-ease);
+}
+
+.tcw-ticket-limit:hover { background: var(--tcw-hover-bg); border-color: var(--tcw-border-strong); }
+.tcw-ticket-limit:focus-visible { outline: none; box-shadow: var(--tcw-ring); }
+.tcw-ticket-limit-name { color: var(--tcw-text-dim); }
+
+/*
+ * Graphite's ticket, on the look's five heights: a side and a field 36, a segment 28, the
+ * buttons that send and leave 40. Its title is the order's value's size, not a page's heading.
+ */
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-modal-header h3 {
+  font-size: var(--tcw-font-size-lg);
+  font-weight: var(--tcw-weight-strong);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-side-btn { height: 36px; font-size: var(--tcw-font-size); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-stepper { height: 36px; }
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-segment { height: 28px; }
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-modal-footer button { height: 40px; }
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-modal-footer .tcw-ticket-place { flex: 1; }
+/*
+ * Its rows have no rules between them: their room tells them apart, and the one line left is the
+ * one over the order's value. The day's limits are figures to press, with no box until the
+ * pointer is over one. The side not picked is in the plain weight. The button that sends is as
+ * wide as the ticket leaves it, Cancel beside it.
+ */
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-settings-row + .tcw-settings-row { border-top: 0; }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-limits { gap: var(--tcw-space-3); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-limit { padding-inline: var(--tcw-space-3); border: 0; }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-side-btn[aria-pressed='false'] { font-weight: var(--tcw-weight); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-footer-end { flex: 1; }
+/*
+ * By DESIGN.md: the one line of the ticket, over the order's value, is solid like every other;
+ * and the day's limits stand by the price they set, not by the quantity over them.
+ */
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-summary:not(:empty) {
+  border-top-style: solid;
+  border-top-color: var(--tcw-divider);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-limits { margin-top: var(--tcw-space-3); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-limits + .tcw-ticket-row { padding-top: var(--tcw-space-1); }
+
+/*
+ * Graphite's buttons that buy and sell. A side's colour on the chart (a candle, a figure) is too
+ * light a ground for white type, so what is pressed to trade has fills of its own, a shade deeper,
+ * with white on them at 4.5:1 or more; over the pointer they go deeper still, never lighter. A
+ * filled button has no border: its ground is its edge. What is not picked, and what leaves, is a
+ * neutral ground with no border either. A field keeps its line, to show where it is typed in.
+ */
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket[data-side='buy'],
+.tcw-root[data-tcw-ui='graphite'] .tcw-quote-buy { --tcw-side-fill: var(--tcw-buy-fill); --tcw-side-fill-hover: var(--tcw-buy-fill-hover); --tcw-side-fill-active: var(--tcw-buy-fill-active); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket[data-side='sell'],
+.tcw-root[data-tcw-ui='graphite'] .tcw-quote-sell { --tcw-side-fill: var(--tcw-sell-fill); --tcw-side-fill-hover: var(--tcw-sell-fill-hover); --tcw-side-fill-active: var(--tcw-sell-fill-active); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-side-btn {
+  border: none;
+  background: var(--tcw-active-bg);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-buy[aria-pressed='true'] { background: var(--tcw-buy-fill); color: var(--tcw-fill-ink); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-sell[aria-pressed='true'] { background: var(--tcw-sell-fill); color: var(--tcw-fill-ink); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-place {
+  background: var(--tcw-side-fill, var(--tcw-accent-fill));
+  color: var(--tcw-fill-ink);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-place:hover:not(:disabled) { background: var(--tcw-side-fill-hover, var(--tcw-accent-fill)); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-footer-cancel {
+  border: none;
+  background: var(--tcw-active-bg);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-stepper-btn { background: var(--tcw-active-bg); }
+/* One edge and one ring to a field: the stepper's, not its input's inside it. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-stepper .tcw-indi-input,
+.tcw-root[data-tcw-ui='graphite'] .tcw-stepper .tcw-indi-input:focus {
+  border: none;
+  outline: none;
+  box-shadow: none;
+}
+/* The quotes on the chart: a tint of their side with no border, the side's fill under the pointer. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-quote-btn {
+  border: none;
+  background: color-mix(in srgb, var(--tcw-side) 20%, var(--tcw-bg));
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-quote-btn:hover:not(:disabled) {
+  background: var(--tcw-side-fill);
+  color: var(--tcw-fill-ink);
+}
+/*
+ * Each has a state under the pointer and one pressed: a fill goes a step deeper each time, a
+ * neutral ground a step lighter.
+ */
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-buy[aria-pressed='true']:hover { background: var(--tcw-buy-fill-hover); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-sell[aria-pressed='true']:hover { background: var(--tcw-sell-fill-hover); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-buy[aria-pressed='true']:active { background: var(--tcw-buy-fill-active); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-sell[aria-pressed='true']:active { background: var(--tcw-sell-fill-active); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-place:active:not(:disabled),
+.tcw-root[data-tcw-ui='graphite'] .tcw-quote-btn:active:not(:disabled) { background: var(--tcw-side-fill-active, var(--tcw-accent-fill)); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-side-btn[aria-pressed='false']:hover,
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-footer-cancel:hover,
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-stepper-btn:hover { background: var(--tcw-border-strong); color: var(--tcw-text); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-ticket-side-btn[aria-pressed='false']:active,
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-footer-cancel:active,
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-stepper-btn:active { background: color-mix(in srgb, var(--tcw-border-strong) 78%, var(--tcw-text)); }
+/* On a light chart the quotes' tint is lighter, to keep their words at 4.5:1. */
+.tcw-root[data-tcw-ui='graphite'][data-tcw-theme='light'] .tcw-quote-btn { background: color-mix(in srgb, var(--tcw-side) 12%, var(--tcw-bg)); }
+/*
+ * The ticket opens in its quantity, and a field focused by the widget shows a ring as if a key
+ * had found it: here a field in focus has a quiet edge, a line in the muted text's colour.
+ */
+.tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-stepper:focus-within {
+  border-color: var(--tcw-text-muted);
+  box-shadow: none;
+}
+/* With the system's colours a ground is no edge: the buttons without a border get one back. */
+@media (forced-colors: active) {
+  .tcw-root[data-tcw-ui='graphite'] .tcw-ticket-side-btn,
+  .tcw-root[data-tcw-ui='graphite'] .tcw-order-ticket .tcw-footer-cancel,
+  .tcw-root[data-tcw-ui='graphite'] .tcw-quote-btn {
+    border: var(--tcw-border-w) solid ButtonText;
+  }
+}
+
+/*
+ * Graphite: the chart's dialogs (Indicators, Symbol search, Chart Settings, an indicator's and a
+ * drawing's settings) by DESIGN.md.
+ */
+/* A dialog's title is 15 px: at 21 it was the largest thing on the screen, over the chart it is about. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-modal-header h3 {
+  font-size: var(--tcw-font-size-lg);
+  letter-spacing: 0;
+}
+/* A heading of a column or of a group is not strong: its place says what it is. */
+.tcw-root[data-tcw-ui='graphite'] :is(.tcw-ip-heading, .tcw-ss-head, .tcw-ss-heading) { font-weight: var(--tcw-weight); }
+/* A colour's code is a figure, in the figures' face (its digits of one width), not a line of code. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-color-hex {
+  font-family: var(--tcw-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+/* How many of an indicator are on the chart is a plain number, not a badge in the accent. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-ip-count {
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  margin-inline-start: var(--tcw-space-3);
+  background: none;
+  /* The text's own colour: beside the kind, in the muted one, it read as part of it. */
+  color: var(--tcw-text);
+  font-family: var(--tcw-font-mono);
+}
+/* The symbol on the chart is marked as a picked thing is: its row's ground and a tick, in the text's colour. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-ss-row.tcw-current .tcw-ss-symbol,
+.tcw-root[data-tcw-ui='graphite'] .tcw-ss-check { color: var(--tcw-text); }
+/* The other choice beside the filled button is neutral, with no border; a menu's button is quiet. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-footer-cancel {
+  border: none;
+  background: var(--tcw-active-bg);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-footer-cancel:hover { background: var(--tcw-border-strong); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-footer-cancel:active { background: color-mix(in srgb, var(--tcw-border-strong) 78%, var(--tcw-text)); }
+.tcw-root[data-tcw-ui='graphite'] .tcw-footer-menu { border-color: transparent; }
+.tcw-root[data-tcw-ui='graphite'] .tcw-footer-menu[aria-expanded='true'] { background: var(--tcw-active-bg); }
+/* On a phone the tabs run in a row: quiet buttons there too, the picked one on its ground, none outlined. */
+.tcw-root[data-tcw-ui='graphite'] :is(.tcw-ip-tab, .tcw-set-tab) { border-color: transparent; }
+/* The button that gives a colour back to the part is neutral too: no outline, and no accent on it under the pointer. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-color-auto-btn {
+  border-color: transparent;
+  background: var(--tcw-active-bg);
+}
+.tcw-root[data-tcw-ui='graphite'] .tcw-color-auto-btn:is(:hover, :focus-visible) {
+  border-color: transparent;
+  background: var(--tcw-border-strong);
+  color: var(--tcw-text);
+}
+/* A colour left to the part itself is the swatch faded: a dashed edge said nothing more. */
+.tcw-root[data-tcw-ui='graphite'] .tcw-color-auto input[type='color'] { border-style: solid; }
+@media (forced-colors: active) {
+  .tcw-root[data-tcw-ui='graphite'] .tcw-footer-cancel,
+  .tcw-root[data-tcw-ui='graphite'] .tcw-footer-menu,
+  .tcw-root[data-tcw-ui='graphite'] .tcw-color-auto-btn { border: var(--tcw-border-w) solid ButtonText; }
 }

@@ -28,7 +28,7 @@
     <tr><td><code>symbol</code></td><td><code>BTCUSDT</code></td><td>Mã trên Binance.</td></tr>
     <tr><td><code>timeframe</code></td><td><code>5m</code></td><td><code>1m</code>, <code>5m</code>, <code>15m</code>, <code>1h</code>, <code>4h</code>, <code>1d</code>.</td></tr>
     <tr><td><code>theme</code></td><td><code>dark</code></td><td><code>dark</code>, <code>light</code>, <code>darkTerminal</code>.</td></tr>
-    <tr><td><code>chartType</code></td><td><code>candlestick</code></td><td>Một trong 18 loại.</td></tr>
+    <tr><td><code>chartType</code></td><td><code>candlestick</code></td><td>Một trong 25 loại.</td></tr>
     <tr><td><code>indicators</code></td><td><em>không có</em></td><td>Các id cách nhau bằng dấu phẩy, ví dụ <code>indicators=sma,rsi</code>.</td></tr>
     <tr><td><code>trading</code></td><td><code>false</code></td><td>Hiện panel giao dịch.</td></tr>
   </tbody>
@@ -38,6 +38,7 @@
 <p>
   Biểu đồ và widget chạy trong WebView bất kỳ: React Native (<code>react-native-webview</code>), Capacitor, Tauri, hoặc WebView riêng của ứng dụng native. Khi rộng dưới 641 px, widget chuyển sang bố cục cho điện thoại: toolbar giữ mã, khung thời gian, loại biểu đồ và chỉ báo, phần còn lại đưa vào “Thêm”; công cụ vẽ nằm sau một nút trên biểu đồ; menu mở dạng sheet từ dưới lên; grid hiện từng biểu đồ một, mỗi biểu đồ một tab. Ở độ rộng lớn hơn, toolbar không đủ chỗ cũng xử lý như vậy. Từ khoảng 320 px trở lên, hoặc hẹp hơn nhiều nếu không có item riêng của bạn, thanh trạng thái giữ đồng hồ hiển thị đầy đủ: khi thiếu chỗ, các preset khoảng thời gian thu vào “Thêm”, preset dài nhất trước, rồi đến nút đi tới ngày, cuối cùng trạng thái thị trường rút còn một từ (“Đóng cửa”). Ngón tay làm được những gì chuột làm.
 </p>
+<p>Dưới ngón tay (thiết bị có con trỏ chính là coarse: điện thoại, tablet ở mọi độ rộng), không control nào của widget nhỏ hơn 32 px mỗi chiều, ở mọi look và <code>density</code>: nút, ô nhập và hàng menu được nâng lên mức đó, mỗi hàng của legend indicator cao bằng một ngón tay, còn các nút của pane và tên trong legend của pane nhận 32 px vùng bấm quanh hình vẽ của chúng. Dưới chuột, một control nhận ít nhất 20 px vùng bấm. Chỉ một thứ nhỏ hơn: góc của một drawing tool, nơi mở menu của nó; lớn hơn thì nó lấy mất vùng bấm của chính tool.</p>
 <p>Đặt cho trang một viewport phủ toàn màn hình. Widget giữ các sheet tránh tai thỏ và thanh home, và nằm trên bàn phím ảo.</p>
 <pre><code>{`<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">`}</code></pre>
 <p>Phần lớn WebView báo trang bị ẩn khi ứng dụng chạy nền: khi đó biểu đồ tự ngừng vẽ (<code>pauseWhenHidden</code>), và một stream im lặng quá lâu sẽ kết nối lại khi ứng dụng quay lại. Nếu WebView của bạn không làm vậy, tạm dừng biểu đồ từ phía ứng dụng.</p>

@@ -32,6 +32,14 @@
     <tr><td><code>WaterfallChart</code></td><td>始点から終点までの段階：損益の要因分解、キャッシュフロー。</td></tr>
     <tr><td><code>DepthChart</code></td><td>オーダーブックの買いと売りの累積。</td></tr>
     <tr><td><code>EquityCurveChart</code></td><td>口座の価値の推移。ドローダウンとベンチマーク付き。</td></tr>
+    <tr><td><code>PayoffChart</code></td><td>原資産の価格ごとに見た、オプションのポジションの満期時の損益：スプレッド、ストラドル、コンドル。</td></tr>
+    <tr><td><code>CurveChart</code></td><td>権利行使価格や期間に対する値を、系列ごとに 1 本の線で：ボラティリティ・スマイル、期間構造、イールドカーブ。</td></tr>
+    <tr><td><code>BoxPlotChart</code></td><td>グループごとの値の散らばり：曜日別、月別、戦略別のリターン。</td></tr>
+    <tr><td><code>RadarChart</code></td><td>複数の指標を一度に、指標ごとに 1 本の軸で：戦略のスコアカードをベンチマークのものと並べて。</td></tr>
+    <tr><td><code>SunburstChart</code></td><td>全体の内訳と、その内訳の中の内訳：資産クラス、次にセクター、次に保有銘柄ごとの配分。</td></tr>
+    <tr><td><code>StackedAreaChart</code></td><td>時間に沿って積み重ねた複数の系列：合計が何でできているか、またはその構成がどう変わるか。</td></tr>
+    <tr><td><code>SurfaceChart</code></td><td>2 つの軸にまたがる値を、ドラッグで回せる 3D の箱の中の面として：権利行使価格と満期ごとのインプライド・ボラティリティ、価格と日ごとの利益、またはスライスとして、時間に沿ったオーダーブックの厚み。</td></tr>
+    <tr><td><code>Bar3DChart</code></td><td>同じ箱の中に、値ごとに 1 本の柱を、系列ごとに 1 列ずつ奥へ並べて：四半期と資産クラスごとのリターン、時間帯と曜日ごとの出来高。</td></tr>
     <tr><td><code>PerformanceDashboard</code></td><td>バックテストから作る戦略レポート：統計、エクイティ、ドローダウン、月次リターン。</td></tr>
   </tbody>
 </table>
@@ -41,7 +49,8 @@
 
 chart.setOptions({ mode: 'stacked' })   // どのオプションでも、マージされる
 chart.setTheme('light')                 // 'dark' | 'light' | Theme
-chart.destroy()                         // キャンバスとそのリスナーを取り除く`}</code></pre>
+chart.screenshot('flows', { pixelRatio: 2 })   // 画像：下記を参照
+chart.destroy()                       // キャンバスとそのリスナーを取り除く`}</code></pre>
 <p>
   タッチ画面では、タップするとツールチップが表示され、別の場所をタップするまで残ります。ドラッグすればページはそのままスクロールします。チャートは画面そのもののピクセルに合わせて描画されるため、どの拡大率でも線がくっきり表示されます。デプス、エクイティ、ウォーターフォールの各チャートは、新しいチャートと同じく、ラベルに合わせて余白を決めます。
 </p>
@@ -54,6 +63,48 @@ chart.destroy()                         // キャンバスとそのリスナー�
   スクリーンリーダーに伝えます（キャンバスに image ロールとラベルが付きます）。<code>ariaLabel</code> を使うと、
   たとえばページの言語で、その内容を自分の言葉にできます。数値は <code>valueFormat</code>（または
   <code>xFormat</code> / <code>yFormat</code>）で表示し、指定がなければ 1,234.5、1 万を超えると 12.3K のように表示します。
+</p>
+
+<h2 id="pictures">画像、紙、ページなしでの描画</h2>
+<p>
+  どのチャートも、価格チャートと同じく自分の画像を返します：<code>screenshot(filename, options)</code> は画像を保存し、
+  <code>copyScreenshot()</code> は PNG をクリップボードに置き、<code>screenshotDataURL()</code>、
+  <code>screenshotBlob()</code>、<code>toCanvas()</code> は画像を渡します。チャートは画像のために描き直され、
+  ポインターに追従するものは入りません：自身の大きさに画面のピクセル比を掛けて描くか、オプションで指定した
+  <code>pixelRatio</code>、<code>theme</code>、<code>width</code> と <code>height</code> で描きます（別の大きさではレイアウトし直します）。
+  <code>print()</code> はチャートだけを対象に印刷ダイアログを開き、<code>toPdf()</code> は 1 ページの PDF を返します。
+  どちらも、指定しない限りライトテーマで 2 倍のピクセル数です。<code>chartsToPdf</code> は複数のチャートから 1 つの PDF を作ります
+  （オプションは<a href={href('/docs/api')}>画像、印刷、PDF</a>にあります）。
+</p>
+<pre><code>{`import { chartsToPdf } from '@tradecanvas/chart'
+
+equity.screenshot('equity', { pixelRatio: 3 })                 // equity.png
+const wide = flows.screenshotDataURL({ width: 1200, height: 400, type: 'jpeg' })
+allocation.print({ title: 'Allocation' })
+const report = await chartsToPdf([equity, flows, allocation], { title: 'March' })`}</code></pre>
+<p>
+  <code>renderFinanceChart</code> は、ページなしで、あなたが用意した 2D コンテキストにチャートを描きます：
+  メール、レポート、ボットのメッセージに入れる画像のために Node で作ったキャンバスや、ワーカー内の
+  <code>OffscreenCanvas</code> です。2 番目の引数でチャートを指定します。クラス名から <code>Chart</code> を除き、
+  先頭を小文字にした名前です（<code>'bar'</code>、<code>'equityCurve'</code>、<code>'boxPlot'</code>、
+  <code>'surface'</code>、<code>'bar3d'</code>。<code>FINANCE_CHART_KINDS</code> に一覧があります）。
+  3 番目の引数はそのチャート自身のオプションです。指定した大きさを、コンテキスト自身の単位で、テーマの背景の上に描きます：
+  ピクセル数を増やすには、先にコンテキストをスケールしてください。
+</p>
+<pre><code>{`import { createCanvas } from '@napi-rs/canvas'        // または別の Node 用キャンバス
+import { renderFinanceChart } from '@tradecanvas/chart'
+
+const canvas = createCanvas(1600, 800)
+const ctx = canvas.getContext('2d')
+ctx.scale(2, 2)                                        // 800 × 400 のチャートを 2 倍のピクセル数で
+renderFinanceChart(ctx, 'equityCurve', { data: equity, theme: 'light', font: { family: 'Inter' } }, { width: 800, height: 400 })
+const png = canvas.toBuffer('image/png')`}</code></pre>
+<p>
+  コンテキストには、ブラウザーのコンテキストが持つものが必要です：パス、テキストとその計測、
+  <code>getTransform</code>。テキストはテーマのフォントで描かれるので、キャンバスが持っているフォントを
+  <code>font</code> で指定してください。ポインターに追従するものはなく、動くものもありません：ゲージはその値の位置にあります。
+  パフォーマンスダッシュボードはページの要素で作られているため、この方法では描かれません。その中のチャートは描かれます。
+  価格チャートには専用のものがあります：API ページの <code>renderPriceChart</code> です。
 </p>
 
 <h2>棒グラフ</h2>
@@ -182,7 +233,7 @@ new MatrixChart(el, {
 
 new HeatmapChart(el, {
   data: [
-    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: '銀行' },
+    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: '銀行', logo: '/logos/vcb.png' },
     { id: 'hpg', label: 'HPG', value: 1.9, weight: 160, group: '鉄鋼' },
     { id: 'vhm', label: 'VHM', value: -2.4, weight: 170, group: '不動産' },
   ],
@@ -191,6 +242,14 @@ new HeatmapChart(el, {
 })`}</code></pre>
 <p>
   各セクターは銘柄のウェイトの合計に応じた広さを占め、収まるときはタイルの上部にセクター名と加重平均の騰落を表示します。ヒートマップの色は <code>colorScale</code> で <code>min</code> と <code>max</code> を指定しない限り -5 から 5 です。
+</p>
+<p>
+  <code>logo</code> を持つセルは、収まるときに名前の上の白いプレートにロゴを描きます。セルが小さくなると、
+  名前と値より先にロゴがなくなります。アドレスはシンボルの <code>logo</code> と同じもの（<code>https:</code> のアドレス、
+  サイト内のパス、<code>blob:</code> または <code>data:image/…</code> の URL）を受け付け、読み込みは一度だけで、
+  ロゴの読み込みに失敗したセルはロゴなしのセルとして描かれます。ほかのサイトのロゴは CORS ヘッダー付きで配信されている
+  必要があります。チャートを画像として保存できるようにするためで、付いていないものは描かれません。
+  <code>showLogos: false</code> でロゴを描かなくなります。ページなしで描く場合（<code>renderFinanceChart</code>）、ヒートマップにロゴはありません。
 </p>
 
 <h2>逆ウォッチ曲線</h2>
@@ -250,6 +309,232 @@ new EquityCurveChart(el, { data: equity, benchmark, drawdown: true })`}</code></
   ],
 })
 chart.setOptions({ levels: [{ value: 42_000, label: 'CHoCH' }] })`}</code></pre>
+
+<h2>オプションのペイオフ</h2>
+<p>
+  <code>PayoffChart</code> は、オプションのポジションが満期に生む損益を、原資産の価格に対して描きます：
+  ゼロより上の利益とゼロより下の損失に色を付け、各損益分岐点と、現在の価格である <code>spot</code> に破線を引きます。
+  レッグは <code>'call'</code> または <code>'put'</code> で、買い（<code>'long'</code>）か売り（<code>'short'</code>）、
+  それに <code>strike</code> と 1 単位あたりの <code>premium</code> を持ちます。
+  <code>'underlying'</code> のレッグは、それらと並べて保有する原資産で、<code>entry</code> の価格で持ちます。
+  <code>multiplier</code> は 1 枚の契約が対象とする単位数です。描かれる価格は権利行使価格の周辺、または指定した
+  <code>range</code> です。ポインターは、その位置の価格での損益を読み取ります。
+</p>
+<pre><code>{`import { PayoffChart, payoffStats, optionPayoff } from '@tradecanvas/chart'
+
+const condor = [
+  { type: 'put', side: 'long', strike: 90, premium: 1 },
+  { type: 'put', side: 'short', strike: 95, premium: 2.5 },
+  { type: 'call', side: 'short', strike: 105, premium: 2.5 },
+  { type: 'call', side: 'long', strike: 110, premium: 1 },
+]
+const chart = new PayoffChart(el, { legs: condor, multiplier: 100, spot: 101.4, spotLabel: 'Spot' })
+chart.update(otherLegs)
+
+payoffStats(condor, 100)    // { maxProfit: 300, maxLoss: -200, breakevens: [92, 108] }
+optionPayoff(condor, 100, 100)   // 300：原資産が 100 のときにレッグ全体が生む損益
+
+// 満期前：モデルによる 2 本目の破線
+chart.setOptions({ model: { daysToExpiry: 30, volatility: 0.25, rate: 0.03 } })
+positionValue(condor, 100, { daysToExpiry: 30, volatility: 0.25 }, 100)   // 満期まで 30 日のときにレッグ全体が生む損益
+optionPrice('call', 100, 105, { years: 30 / 365, volatility: 0.25 })      // オプション 1 つの価格`}</code></pre>
+<p>
+  <code>payoffStats</code> は、レッグ全体の満期時の最大利益と最大損失（限度がない場合は <code>null</code>：
+  コールの買い、単独のコールの売り）、および損益分岐点の価格を返します。権利行使価格のないレッグや、
+  エントリーのない原資産は、計算に入りません。
+</p>
+<p>
+  <code>model</code> を指定すると、チャートは、満期までその日数が残っているときのポジションの損益を、
+  ペイオフに重ねて破線で描き、プロットの上に 2 本の線の名前を、それぞれ自分の線の一部の横に書き（<code>expiryLabel</code> と
+  <code>model.label</code> で自分の言葉にできます）、ポインターの位置で両方を読み取ります。
+  各オプションは、ヨーロピアン・オプションとしてブラック・ショールズで、
+  モデルの <code>volatility</code>（年率、割合で指定：<code>0.25</code> は 25%）で評価され、指定があれば <code>rate</code> と
+  <code>dividendYield</code> も使います。レッグ自身の <code>volatility</code> と <code>daysToExpiry</code> は、
+  スキューやカレンダー・スプレッドのために、モデルの値の代わりになります。これはモデルの答えであり、気配値ではありません：
+  アメリカン・オプションや、ボラティリティが価格とともに動くオプションの価値は、別の値になります。
+  <code>positionValue</code> と <code>optionPrice</code> がその計算で、価格の約 100 万分の 1 まで正確です。
+  残り日数がなければ <code>positionValue</code> は <code>optionPayoff</code> になり、原資産が 0 のとき、
+  プットの価値は割り引いた権利行使価格です。
+</p>
+
+<h2>カーブ：ボラティリティ・スマイル、期間構造</h2>
+<p>
+  <code>CurveChart</code> は、権利行使価格、期間、満期に対する値を、系列ごとに 1 本の線で描きます。
+  線は各点を通る滑らかな曲線で、点が達していない値を通ることはありません（<code>smooth: false</code> で直線で結びます）。
+  <code>dashed</code> を付けた系列は、今日のものの横に並べる昨日のもので、<code>markers</code> はある x の位置に引くラベル付きの線です。
+  <code>ticks</code> を指定すると、x 軸の名前を自分で付けられ、日数ごとに期間を書けます。
+  ポインターは値のある最も近い x に吸着し、そこでのすべてのカーブを、描かれている線に沿って読み取ります。
+  <code>curveValueAt(points, x)</code> はコードからカーブを読み取ります。点と点の間は直線で、
+  3 番目の引数に <code>true</code> を渡すと滑らかな線に沿って読み取ります。
+</p>
+<pre><code>{`import { CurveChart } from '@tradecanvas/chart'
+
+// スマイル：権利行使価格に対するインプライド・ボラティリティ、満期ごとに 1 本の線。
+new CurveChart(el, {
+  series: [
+    { name: '1M', points: [{ x: 90, y: 31 }, { x: 100, y: 24 }, { x: 110, y: 27 }] },
+    { name: '3M', points: [{ x: 90, y: 28 }, { x: 100, y: 25 }, { x: 110, y: 26 }] },
+  ],
+  markers: [{ x: 101.4, label: 'ATM' }],
+  valueFormat: (v) => v.toFixed(1) + '%',
+})
+
+// 期間構造：x に沿って期間を、日数で。
+new CurveChart(el, {
+  series: [
+    { name: 'Today', points: [{ x: 30, y: 26 }, { x: 90, y: 25 }, { x: 365, y: 27 }] },
+    { name: 'A week ago', points: [{ x: 30, y: 24 }, { x: 90, y: 25 }, { x: 365, y: 26 }], dashed: true },
+  ],
+  ticks: [{ x: 30, label: '1M' }, { x: 90, label: '3M' }, { x: 365, label: '1Y' }],
+})`}</code></pre>
+
+<h2>箱ひげ図</h2>
+<p>
+  <code>BoxPlotChart</code> は、グループごとの値の散らばりを示します：第 1 四分位数から第 3 四分位数までの箱と中央値の線、
+  箱から箱の高さの <code>whiskers</code> 倍以内にある最も遠い値までのひげ（省略時は 1.5。<code>Infinity</code> で
+  最小値と最大値まで）、そしてそれより外にある値ごとの輪です。グループは生の <code>values</code> を渡すか、
+  別の場所で計算済みなら、その数値を <code>stats</code> で渡します。<code>boxPlotStats(values)</code> は
+  同じ計算をコードで行い、<code>labels</code> で読み取り表示の言葉を別の言語にできます。
+  <code>onBoxClick</code> は、クリックが当たったグループとその 5 つの数値を返します：
+  プロットを横切るそのグループの位置であれば上下のどこでもよく、読み取り表示がグループを選ぶのと同じです。
+</p>
+<pre><code>{`import { BoxPlotChart, boxPlotStats } from '@tradecanvas/chart'
+
+new BoxPlotChart(el, {
+  data: [{ label: 'Mon', values: mondayReturns }, { label: 'Tue', values: tuesdayReturns }],
+  colorBySign: true,                     // 各箱の中央値で
+  valueFormat: (v) => v.toFixed(1) + '%',
+  onBoxClick: (group, stats) => openDay(group.label, stats.median),
+})
+
+boxPlotStats([1, 2, 3, 4, 5, 6, 7, 8, 9, 100])
+// { min: 1, q1: 3.25, median: 5.5, q3: 7.75, max: 9, outliers: [100] }`}</code></pre>
+
+<h2>レーダーチャート</h2>
+<p>
+  <code>RadarChart</code> は、複数の指標を中心のまわりの軸に、12 時の位置から時計回りに並べ、
+  各系列の値を結んで図形にします。軸は中心の <code>min</code>（省略時は 0、その軸の最小値がゼロ未満ならその値）から
+  縁の <code>max</code> まで伸び、指定がなければその軸の最大値が縁になります：
+  指標の大きさが異なるときは、軸ごとに指定してください。軸は 3 本必要です。ポインターは最も近い軸のすべての系列を読み取り、
+  <code>onAxisClick</code> はクリックに対してその軸を返します：ラベル、
+  <code>axes</code> の中での位置、その軸での各系列の値です。
+</p>
+<pre><code>{`import { RadarChart } from '@tradecanvas/chart'
+
+new RadarChart(el, {
+  axes: [{ label: 'Sharpe', max: 3 }, { label: 'Sortino', max: 3 }, { label: 'Calmar', max: 3 }, { label: 'Win rate', max: 100 }],
+  series: [{ name: 'Strategy', values: [1.8, 2.4, 1.5, 58] }, { name: 'Benchmark', values: [1.0, 1.3, 0.7, 51] }],
+  onAxisClick: ({ axis, index, values }) => explain(axis, values),   // 'Sortino', 1, [{ series: 'Strategy', value: 2.4 }, …]
+})`}</code></pre>
+
+<h2>サンバースト</h2>
+<p>
+  <code>SunburstChart</code> は、全体の内訳と、その内訳の中の内訳を、階層ごとに 1 つのリングで描きます。
+  <code>children</code> を持つ部分の大きさは子の合計で、持たない部分は自身の <code>value</code> です。
+  最初のリングはパレットの色を使い、その外側の各リングは親の色を薄くした色を使います。描かれるリングは最大 4 つで
+  （<code>maxDepth</code> で減らすか増やせます）、<code>innerRadius: 0</code> で穴を閉じ、
+  <code>centerLabel</code> と <code>centerValue</code> は穴の中に書かれます。クリックすると、その部分と、
+  そこに至るまでのラベルが返ります。名前は、収まる場合にリングに沿って書かれます。
+</p>
+<pre><code>{`import { SunburstChart } from '@tradecanvas/chart'
+
+new SunburstChart(el, {
+  data: [
+    { label: 'Stocks', children: [{ label: 'Banks', value: 22 }, { label: 'Technology', value: 14 }] },
+    { label: 'Bonds', value: 23 },
+    { label: 'Cash', value: 18 },
+  ],
+  centerLabel: 'Total', centerValue: '1.2B',
+  onNodeClick: (node, path) => openHoldings(path),   // ['Stocks', 'Banks']
+})`}</code></pre>
+
+<h2>積み上げ面グラフ</h2>
+<p>
+  <code>StackedAreaChart</code> は、同じ点の上に複数の系列を積み重ね、最初の系列がいちばん下になります：
+  時間に沿って、合計が何でできているかを示します。<code>normalized</code> を指定すると、各点の値は合計に対する割合になり、
+  面が高さいっぱいを埋めます：構成がどう変わるかを示します。ゼロ未満の値は、値がないものとして数えます。
+  ポインターは、最も近い点でのすべての系列とその合計を読み取ります。
+</p>
+<pre><code>{`import { StackedAreaChart } from '@tradecanvas/chart'
+
+const chart = new StackedAreaChart(el, {
+  categories: ['Jan', 'Feb', 'Mar', 'Apr'],
+  series: [{ name: 'Stocks', values: [40, 44, 47, 52] }, { name: 'Bonds', values: [30, 29, 27, 25] }, { name: 'Cash', values: [30, 27, 26, 23] }],
+  normalized: true,
+})
+chart.update(nextSeries, nextCategories)`}</code></pre>
+
+<h2>3D サーフェス</h2>
+<p>
+  <code>SurfaceChart</code> は、2 つの軸にまたがる値を、箱の中の面として描きます：<code>x</code> は横方向、
+  <code>y</code> は奥行き方向、<code>values[yIndex][xIndex]</code> は高さ方向です。軸に沿った数値はその値に応じた位置に置かれ、
+  渡した順序に関係なく値の小さい順に描かれます。名前は渡した順に等間隔で並ぶので、期間のリスト
+  （<code>'1W'</code>、<code>'1M'</code>、<code>'1Y'</code>）が短い側に詰まることはありません。
+  欠けている値や数値でない値は穴になり、軸に沿った位置が数値でない場合は、その値ごと除外されます。
+</p>
+<pre><code>{`import { SurfaceChart } from '@tradecanvas/chart'
+
+const chart = new SurfaceChart(el, {
+  x: [80, 90, 100, 110, 120],              // 権利行使価格
+  y: ['1W', '1M', '3M', '6M', '1Y'],       // 満期
+  values: impliedVolatility,               // values[expiry][strike]
+  xLabel: 'Strike', yLabel: 'Expiry', valueLabel: 'IV',
+  valueFormat: (v) => (v * 100).toFixed(1) + '%',
+  onPointClick: (point) => openChain(point.x, point.y),
+})
+chart.update(nextValues)                   // 軸も変わったときは update(values, { x, y })`}</code></pre>
+<p>
+  ドラッグするとチャートが回ります：マウスでは回転と傾きの両方、指では回転だけなので、その下のページはそのままスクロールします。
+  キーボードでは、Tab でチャートまで移動すると、矢印キーで 5 度ずつ（Shift を押しながらだと 15 度ずつ）回転と傾きを変え、
+  Home で元に戻ります。スクリーンリーダーにはこれらのキーが伝えられ、キーを押すたびに、チャートをどこから見ているかが伝えられます
+  （<code>describeView</code> で自分の言葉にできます）。ダブルクリックすると、オプションで指定した <code>view</code> に戻ります
+  （指定がなければ <code>{'{'} yaw: -35, pitch: 28 {'}'}</code>：<code>yaw</code> はチャートを垂直軸のまわりに回し、
+  <code>pitch</code> は視点が床からどれだけ上にあるかで、0 から 90 度です）。
+  <code>getView()</code> は現在どこから見ているかを読み取り、<code>setView()</code> はそれを設定し、
+  <code>onViewChange</code> はそれを追い、<code>rotate: false</code> で固定します。チャートは遠近法なしで描かれるので、
+  データ上で平行な線は画面上でも平行のままで、回しても大きさは変わりません。
+</p>
+<p>
+  <code>style</code> は <code>'surface'</code>（陰影の付いた面、既定）、<code>'wireframe'</code>（その線だけ）、
+  <code>'slices'</code>（<code>y</code> ごとに塗りつぶした 1 本の線を、前後に並べる）のいずれかです。
+  値は <code>colorRamp</code> で色分けされます：既定では、値の範囲にわたって、チャートの背景に近い色から最も濃い色までの 1 つの色相です。
+  独自の色分けには、<code>colors</code>（2 色以上、最小値の色が最初）と <code>min</code>、<code>max</code> を渡します。
+  たとえば、ゼロの両側に損失の色、中間色、利益の色を置けます。ポインターは、それが乗っているセルの最も近い点を読み取り、
+  面が自身の上に折り重なる場所では手前の点を読み取ります。軸に沿って 120 点を超えるグリッドは、両端を保ったまま 120 点に間引かれ、
+  回している間は 60 点に間引かれるので、大きなグリッドも滑らかに回ります。
+</p>
+<p>
+  <code>depthSurface(snapshots, {'{'} levels {'}'})</code> は、一連のオーダーブックをサーフェスの
+  <code>x</code>、<code>y</code>、<code>values</code> に変換します：横方向に価格、奥行き方向に各オーダーブックの時刻、
+  そして各位置に、デプスチャートと同じく、最良価格からその価格までに待っている数量です。
+  <code>levels</code> は価格の数（省略時は 48、最大 1,000）で、<code>from</code> と <code>to</code> で価格の範囲を絞れます。
+</p>
+<pre><code>{`import { SurfaceChart, depthSurface } from '@tradecanvas/chart'
+
+// books: { time, bids: [{ price, volume }], asks: [...] }[]、古い順
+const chart = new SurfaceChart(el, {
+  ...depthSurface(books, { levels: 48 }),
+  style: 'slices',
+  xLabel: 'Price', yLabel: 'Time', valueLabel: 'Depth',
+  yFormat: (ms) => new Date(ms).toISOString().slice(11, 16),
+})`}</code></pre>
+
+<h2>3D 棒グラフ</h2>
+<p>
+  <code>Bar3DChart</code> は、値ごとに 1 本の柱を立て、系列ごとに 1 列ずつ奥へ並べます：横方向に <code>categories</code>、
+  <code>series</code> の各系列に 1 列で、最初の系列が <code>y</code> 軸の手前になります。柱はゼロから始まります。
+  ゼロ未満の柱はゼロの高さからぶら下がり、ゼロの高さは箱を横切る面として描かれます。
+  回転については、<code>view</code>、<code>rotate</code> など、サーフェスが受け取るものをそのまま受け取り、
+  <code>onBarClick</code> はカテゴリ、系列、値を返します。描かれるのは 120 カテゴリ、120 系列までです。
+</p>
+<pre><code>{`import { Bar3DChart } from '@tradecanvas/chart'
+
+const chart = new Bar3DChart(el, {
+  categories: ['Q1', 'Q2', 'Q3', 'Q4'],
+  series: [{ name: 'Stocks', values: [4.2, 6.1, -2.4, 5.3] }, { name: 'Bonds', values: [1.1, 0.8, 1.6, -0.5] }],
+  valueFormat: (v) => v.toFixed(1) + '%',
+})
+chart.update(nextSeries, nextCategories)`}</code></pre>
 
 <h2>パフォーマンスダッシュボード</h2>
 <p>

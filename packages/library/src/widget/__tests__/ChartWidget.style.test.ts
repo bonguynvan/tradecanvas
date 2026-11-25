@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, beforeAll, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { preloadDialogs } from '../widgetDialogs.js';
-import { DARK_THEME, LIGHT_THEME, MODERN_DARK_THEME, MODERN_LIGHT_THEME, type ChartOptions, type Theme } from '@tradecanvas/commons';
+import { DARK_THEME, LIGHT_THEME, GRAPHITE_DARK_THEME, GRAPHITE_LIGHT_THEME, MODERN_DARK_THEME, MODERN_LIGHT_THEME, type ChartOptions, type Theme } from '@tradecanvas/commons';
 
 type Step = { undo: () => void; redo: () => void; subject?: string };
 
@@ -101,13 +101,24 @@ afterEach(() => {
 beforeAll(preloadDialogs);
 
 describe('ChartWidget colours of its look', () => {
-  it('draws the chart in Modern’s colours by default, dark and light', () => {
+  it('draws the chart in Graphite’s colours by default, dark and light', () => {
     make();
+    expect(FakeChart.last.options.theme).toEqual(GRAPHITE_DARK_THEME);
+    inner().handleToggleTheme();
+    expect(FakeChart.last.themes.at(-1)).toEqual(GRAPHITE_LIGHT_THEME);
+    widget.destroy();
+    make({ theme: 'light' });
+    expect(FakeChart.last.options.theme).toEqual(GRAPHITE_LIGHT_THEME);
+    widget.destroy();
+  });
+
+  it('draws the chart in Modern’s colours in the Modern look, dark and light', () => {
+    make({ ui: 'modern' });
     expect(FakeChart.last.options.theme).toEqual(MODERN_DARK_THEME);
     inner().handleToggleTheme();
     expect(FakeChart.last.themes.at(-1)).toEqual(MODERN_LIGHT_THEME);
     widget.destroy();
-    make({ theme: 'light' });
+    make({ theme: 'light', ui: 'modern' });
     expect(FakeChart.last.options.theme).toEqual(MODERN_LIGHT_THEME);
   });
 
@@ -259,7 +270,7 @@ describe('ChartWidget colours in the settings', () => {
     const brand: Theme = { ...LIGHT_THEME, name: 'brand', background: '#fdfaf3' };
     make({ theme: brand });
     inner().handleToggleTheme();
-    expect(FakeChart.last.themes.at(-1)).toEqual(MODERN_DARK_THEME);
+    expect(FakeChart.last.themes.at(-1)).toEqual(GRAPHITE_DARK_THEME);
     inner().handleToggleTheme();
     expect(FakeChart.last.themes.at(-1)).toEqual(brand);
   });
@@ -279,7 +290,7 @@ describe('ChartWidget colours in the settings', () => {
     const night: Theme = { ...DARK_THEME, name: 'night', background: '#000000' };
     widget.setTheme(night);
     inner().handleToggleTheme();
-    expect(FakeChart.last.themes.at(-1)).toEqual(MODERN_LIGHT_THEME);
+    expect(FakeChart.last.themes.at(-1)).toEqual(GRAPHITE_LIGHT_THEME);
     inner().handleToggleTheme();
     expect(FakeChart.last.themes.at(-1)).toEqual(night);
   });

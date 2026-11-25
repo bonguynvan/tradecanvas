@@ -213,6 +213,124 @@ await chart.setTimeframe('500T')
 const builder = new TickBarBuilder(100)
 builder.push([{ time, price, volume }])   // → [{ bar, closed }]`}</code></pre>
 
+<h2 id="order-flow">どちらが約定を取ったか</h2>
+<p>
+  フィードは、各約定をどちら側が取ったか、つまりスプレッドを越えた側を伝えられます：約定の
+  <code>side</code>（買い手がアスクを取ったとき <code>'buy'</code>、売り手がビッドを叩いたとき
+  <code>'sell'</code>）と、バーの <code>buyVolume</code>、つまりその <code>volume</code> のうち買い手が取った分です。
+  どちらも省略できます。<code>buyVolume</code> があればバーにはデルタ（買いから売りを引いたもの）があります：
+  <code>barDelta(bar)</code> がそれを返し、示さないバーには <code>null</code> を返します。Volume Delta
+  インジケーター（<code>voldelta</code>）は、推定値の代わりにそのデルタと累計を描きます。
+  <code>BinanceAdapter</code> は取引所のテイカー買い出来高と集約約定から両方を埋め、
+  <code>MockAdapter</code> は作り出します。
+</p>
+<pre><code>{`chart.setData([{ time, open, high, low, close, volume: 1200, buyVolume: 700 }])
+chart.addIndicator('voldelta', { mode: 1, anchor: 'session' })   // the cumulative delta, from each session's start
+
+barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</code></pre>
+<p>
+  チャートは、出来高を運ぶところならどこへでも <code>buyVolume</code> を運びます。ほかのバーから作るバー
+  （<code>resampleBars</code>、フィードにない時間足）はそれを合計し、ティックバーとティックから集計するバーは
+  <code>side</code> を示す約定からそれを数え、リプレイ中のバーは出来高と同じ割合でそれを持ち、CSV と JSON の
+  エクスポートはそれを専用の列（<code>Buy Volume</code>）に書き、インポートはその列を読み戻します。
+  示さない部分が 1 つでもあるバーにはありません：半分だけ分かっても分かったことにはなりません。
+</p>
+<p>
+  知っておくべきことが 3 つあります。<code>chart.updateLastBarFromTick</code> で渡した約定も、
+  <code>side</code> があれば数えられます。出来高があって side のない約定は、形成中のバーから
+  <code>buyVolume</code> をなくします。練行足、カギ足、新値足、ポイント・アンド・フィギュア、レンジバーは
+  チャートが描くバーで、フィードのバーではありません：これらのチャートのインジケーターは描かれたバーを読み、
+  そこには内訳がないので、デルタは推定値になります。また、系列の一部のバーだけが示す場合、累積デルタは
+  本当のデルタと推定値を足し合わせ、推定値はどれもバーの出来高すべてなので、両者の境目で段差ができます。
+  JS API と UDF のブリッジには、これを運ぶフィールドがありません。
+</p>
+
+<h2 id="footprint">フットプリントチャート</h2>
+<p>
+  <code>chartType: 'footprint'</code> は、各バーの横に、そのバーの中のすべての価格で約定したものを描きます：
+  左に売り手がビッドで取った量、右に買い手がアスクで取った量です。一方がもう一方を大きく上回った行は濃い色の上に太字で表示され、
+  最も多く約定した行は線で囲まれ、各バーの左には細いローソク足が立ちます。ウィジェットでは、チャートタイプのメニューの
+  Footprint で、設定は Chart Settings にあります。
+</p>
+<pre><code>{`const chart = new Chart(el, { chartType: 'footprint' })
+await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1m' })`}</code></pre>
+<p>
+  約定を持つフィードならこれだけで足ります（<code>fetchTrades</code> と <code>subscribeTrades</code>。
+  <code>BinanceAdapter</code> と <code>MockAdapter</code> にあります）：フットプリントを表示している間、チャートはフィードに
+  直近の約定を千件求め、その後はライブの約定を追い、チャートタイプが変わると止めます。フィードが保持する約定は少ないので、
+  最初にフットプリントを持つのは最新のバーだけです：直近の約定が途中から始まったバーは除かれ、それより前のバーは細いローソク足になり、
+  そこからライブの約定とともにフットプリントが増えていきます。別のシンボルや時間足では最初からやり直します。
+</p>
+<p>
+  自前の約定を持つホストは、どのチャートタイプでも <code>chart.addTrades(trades)</code> で渡します：各約定は、
+  その時刻のバーとその価格の行に、取った側として数えられます。<code>side</code> のない約定は直前の約定から判断されます
+  （価格がそこまで上がったら買い、下がったら売り）：これは推定で、<code>buyVolume</code> のないバーのデルタと同じです。
+  行を自分で保持するホストは、その行をバーごとに渡します。<code>footprintOf</code> は約定からそれらを一度の呼び出しで作ります。
+</p>
+<pre><code>{`import { footprintOf, footprintStats } from '@tradecanvas/chart'
+
+chart.setChartTypeOptions({ footprint: { rowSize: 0.5, collect: false } })   // 行はホストのもの
+chart.setFootprint([
+  { time: bar.time, levels: [{ price: 100, buy: 12, sell: 30 }, { price: 100.5, buy: 41, sell: 9 }] },
+])
+chart.setFootprint(footprintOf(trades, '1m', 0.5))    // または約定から作る
+
+const rows = chart.getFootprint(bar.time)             // { time, levels }、フットプリントのないバーは null
+if (rows) footprintStats(rows.levels)                 // { buy, sell, volume, delta, poc, … }
+chart.clearFootprint()                                // 別の系列の行を渡す前に`}</code></pre>
+<table>
+  <thead><tr><th>設定</th><th>既定値</th><th>働き</th></tr></thead>
+  <tbody>
+    <tr><td><code>rowSize</code></td><td><code>'auto'</code></td><td>行ひとつの価格の高さ。Auto は直近価格のおよそ一万分の一を 1、2、5 に丸めた値（60,000 では 5）で、シンボルの呼び値の整数倍です。行を手で渡した場合は、その価格の間の最小の刻みです。別の大きさにするとフットプリントは最初からやり直します。</td></tr>
+    <tr><td><code>cells</code></td><td><code>'bidAsk'</code></td><td><code>'bidAsk'</code>：両側を別々に。<code>'delta'</code>：買いから売りを引いたもの。<code>'volume'</code>：両方の合計。</td></tr>
+    <tr><td><code>imbalance</code></td><td><code>3</code></td><td>一行ずれた位置で、一方がもう一方の何倍になればマークするか：ある価格の買いを一行下の売りと比べ、売りを一行上の買いと比べます。0 はどれもマークしません。</td></tr>
+    <tr><td><code>collect</code></td><td><code>true</code></td><td>false：チャートはフィードに約定を求めません。</td></tr>
+    <tr><td><code>totals</code></td><td><code>true</code></td><td>各バーの下に、その行の合計を表示します。買いから売りを引いた値を符号の色で、その下に両方の合計を書きます。数字ひとつが入る幅のバーにだけ書かれ、価格スケールは最も低いバーの下にその分の余白を取ります。false：表示しません。</td></tr>
+  </tbody>
+</table>
+<p>
+  バーが何を載せるかはズームで決まります。フットプリントを選ぶと、チャートは数字が読めるところまでズームインし、
+  そのバーはローソク足よりずっと広くなれます。ズームアウトすると、数字は各側一本ずつのバーに、さらに普通のローソク足に変わります。
+  読めないほど薄い行は 2、5、10… 行をひとつにまとめ、切りのよい価格にそろえて描かれます。フットプリントは最新の 500 本のバーについて保持され、
+  チャートの状態と一緒には保存されません。リプレイ中、まだ表示されていないバーにはセルがなく、より細かいバーから形成中のバーにもありません。
+  ティックチャートでは、約定は届いた時点で最後に開いていたバーに数えられるため、バーの最初の約定が前のバーに入ることがあります。描画は Canvas 2D で、
+  WebGL レンダラーでも同じです。<code>renderPriceChart</code> は <code>footprint</code> から、つまり
+  <code>chart.getFootprint()</code> が返す行から描きます。
+</p>
+
+<h2 id="tape">歩み値と、約定そのもの</h2>
+<p>
+  <code>chart.followTrades()</code> は、返す関数が呼ばれるまで、チャートのシンボルの約定を追います：
+  フィードの直近の約定、続いてライブの約定を、<code>trades</code> イベントとして伝えます。フォローする側がいくつあっても
+  フィードに求めるのは一度だけで、フットプリントを表示しているチャートは自分で追います。<code>chart.addTrades()</code>
+  で渡した約定も同じように伝えられます。フィードの約定が二度伝えられることはありません：同じシンボルの別の時間足でも、
+  再接続のあとでも同じで、そのときは取りこぼした分だけが、それより後の約定が先に伝えられていても伝えられます。
+  <code>chart.getTrades()</code> は、最近伝えられた約定を最大二千件まで返します。伝えられたあとに来たリスナーのためのものです。
+</p>
+<pre><code>{`const stop = chart.followTrades()
+chart.on('trades', (e) => {
+  // e.payload.trades：古い順
+  // e.payload.recent：フィードの直近の約定で、たった今の約定ではない
+  for (const trade of e.payload.trades) log(trade.time, trade.price, trade.volume, trade.side)
+})
+stop()   // 誰も追わなくなり、チャートがフットプリントでもなければ、フィードは解放される`}</code></pre>
+<p>
+  ウィジェットでは、<code>tape: true</code> で歩み値（time and sales）がドックに加わります：最新の約定が一番上に並び、
+  それぞれに時刻、価格、数量があり、価格は取った側の色になります。一覧の上のバーは、表示中の行のうち買い手と売り手が
+  それぞれどれだけ取ったかを示し、通常の大きさの十倍の約定は目立つように表示され、最小数量に満たない約定は省けます
+  （<code>{`tape: { minSize: 0.5 }`}</code>、またはパネルに入力）。ウィジェットがフィードの約定を追うのは、
+  歩み値が開いている間だけです。<code>widget.openPanel('tape')</code> で開きます。スイッチは
+  <code>tape</code> と <code>dock.tape</code> です。
+</p>
+<p>
+  歩み値のヘッダーにあるメニューで、片方の約定だけ（買い、または売り）を一覧にでき、同時の約定を 1 行にまとめられます。
+  同じ時刻、同じ価格、同じ側の約定は数量を合計するので、複数の指値注文を取った成行注文は、もとの 1 件の約定として読めます。
+  まとめた行は、合計の数量で最小数量と比べられ、大口かどうかも合計で判断されます。どちらも最初から設定できます
+  （<code>{`tape: { side: 'buy', group: true }`}</code>）。パネルで選んだ内容はブラウザーに保存され、次回もそのままです。
+  側とまとめる設定はすべてのシンボルに、最小数量は選んだシンボルごとに保存されます。同じ数量でも銘柄によって意味が違うためです。
+  選んだ内容は最初のオプションより優先され、項目ごとに扱われます。<code>persist: false</code> では何も保存しません。
+</p>
+
 <h2>市場の状態とニュース</h2>
 <p>
   <code>marketStatus(info, now)</code> は、取引所のタイムゾーンでの取引時間（夏時間の切り替えを含む）から、ある時点で
@@ -361,7 +479,7 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // 最初からす�
 
 <h3>リプレイ中のペーパー取引</h3>
 <p>
-  <code>PaperExecutionAdapter</code> のように <code>setMarkPrice(price, time)</code> を持つ実行アダプターは、
+  <code>PaperExecutionAdapter</code> のように <code>setMarkPrice(price, time, symbol)</code> を持つ実行アダプターは、
   リプレイ上で取引します。リプレイ中、チャートはリプレイされる価格と時刻を順に渡すので、注文や損切りは
   リプレイがその価格を通過したときに約定し、約定はリプレイ中のバーの上に記録されます。各ステップの安値と高値が
   考慮され、先へジャンプすると途中のステップをすべて通過します。進むのは前方向だけで、後ろへシークした後は、
@@ -369,6 +487,8 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // 最初からす�
   その間、ライブ価格の影響は受けません。リプレイが終わるとライブ価格に戻り、約定時刻も実際の時計に戻ります。
   価格アラートは、その間もずっとライブの市場を監視し続けます。インジケーターのラインに対するアラートは、
   リプレイが終わるまで待機します。
+  <code>chart.getTradingTime()</code> は、いま出す注文が発注される時刻です。口座がリプレイ上で取引している間はリプレイの時刻、
+  それ以外は実際の時計です。ウィジェットの注文チケットは、期日指定の注文の期日をこの時刻から数えます。
 </p>
 <pre><code>{`chart.connectExecution(new PaperExecutionAdapter())
 chart.replayStart({ startIndex: 300, paused: true })

@@ -10,7 +10,7 @@ const en = {
   meta: {
     title: 'TradeCanvas · Canvas trading charts for the web',
     description:
-      'TradeCanvas is a trading chart library for the web, drawn with Canvas 2D or WebGL: 18 chart types, 134 indicators, 76 drawing tools, live exchange feeds, orders on the chart, replay and backtesting, in 30 languages. Zero dependencies, MIT.',
+      'TradeCanvas is a trading chart library for the web, drawn with Canvas 2D or WebGL: 25 chart types, 138 indicators, 76 drawing tools, live exchange feeds, orders on the chart, replay and backtesting, in 30 languages. Zero dependencies, MIT.',
   },
 
   nav: {
@@ -53,7 +53,7 @@ const en = {
     release: 'WebGL renderer, 30 languages',
     title: 'The chart engine for trading apps.',
     ledeHtml:
-      'Candlesticks to Renko, 134 indicators, 76 drawing tools, live exchange feeds and orders on the chart. Drawn with Canvas 2D or WebGL, with zero dependencies. Drop in the full <code>ChartWidget</code> or build your own UI on the headless <code>Chart</code>.',
+      'Candlesticks to Renko, 138 indicators, 76 drawing tools, live exchange feeds and orders on the chart. Drawn with Canvas 2D or WebGL, with zero dependencies. Drop in the full <code>ChartWidget</code> or build your own UI on the headless <code>Chart</code>.',
     getStarted: 'Get started',
     browseExamples: 'Browse examples',
     specsLabel: 'Key numbers',
@@ -77,7 +77,7 @@ const en = {
           title: 'Read the market',
           text: 'Bands, averages and oscillators over the bars, Fibonacci levels and trend lines on top, each with its own settings and alerts.',
           points: [
-            '134 indicators, any one on another, such as an average of the RSI',
+            '138 indicators, any one on another, such as an average of the RSI',
             '76 drawing tools with magnet, groups and undo',
             'Alerts on prices, lines and indicator crossings',
           ],
@@ -225,11 +225,11 @@ const en = {
     },
     indicators: {
       title: 'Indicators',
-      stat: '134 built-in',
+      stat: '138 built-in',
       blurb:
         'Overlays and panes computed in-house, zero math dependencies. Live ticks recompute only the forming bar — 0.001 ms per tick with four indicators on 100k bars.',
       tryThis: [
-        'Press the Indicators button (or Ctrl+K) and search any of the 134',
+        'Press the Indicators button (or Ctrl+K) and search any of the 138',
         'Click an indicator name in the legend: inputs, colours and levels',
         'Set a moving average’s Source to another indicator’s line',
         'Drag the line between panes to resize them; the buttons at a pane’s top right move, fold or maximise it',
@@ -388,7 +388,7 @@ const en = {
     },
     overrides: {
       title: 'Style overrides',
-      stat: '107 keys',
+      stat: '122 keys',
       blurb:
         'Any part of the chart’s look by key, apart from the theme: the grid each way, the crosshair, the axes, the panes, the legend, the last price, the volume and each chart type’s colours. Here the vertical grid is off, the horizontal one dotted, the crosshair solid, and MACD’s signal line dashed in a pane with a separator of its own.',
       tryThis: [
@@ -442,6 +442,17 @@ const en = {
         'Switch between Canvas 2D and WebGL above the chart: each switch times a short pan',
         'Look for the bright rows: walls of size that stay at one price over time',
         'Zoom in on a wall, then pan back and forth: the cells keep pace with the bars',
+      ],
+    },
+    orderflow: {
+      title: 'Order flow',
+      stat: 'Footprint + tape',
+      blurb:
+        'Every trade of the feed, with who took it. The footprint chart writes, by each bar, what the sellers took at the bid and what the buyers took at the ask at every price inside it, marks the rows where one side outdid the other, and adds each bar up underneath: bought less sold, and both together. Beside it the tape lists the trades as they are made, newest on top, in the colour of who took them.',
+      tryThis: [
+        'Watch the newest bar fill in row by row as trades come, and its totals change under it',
+        'Open the menu in the header of the tape: list only what was bought or sold, or make one row of trades made together',
+        'Type a least size on the tape to keep the large trades, then zoom the chart out: the numbers of each row give way to a small bar for each side, and the totals stay',
       ],
     },
     switching: {
@@ -500,6 +511,23 @@ const en = {
     counterClock: 'Counter-clock: price against volume, 25-day averages',
     avgVolume: 'Volume, average',
     avgPrice: 'Price, average',
+    payoff: 'Iron condor: profit and loss at expiry',
+    smile: 'Implied volatility by strike',
+    weekdayReturns: 'Daily returns by weekday',
+    scorecard: 'Strategy against benchmark',
+    strategy: 'Strategy',
+    benchmark: 'Benchmark',
+    allocationRings: 'Allocation by asset class and sector',
+    allocationOverTime: 'Allocation over the year',
+    volSurface: 'Implied volatility by strike and expiry',
+    strike: 'Strike',
+    expiry: 'Expiry',
+    depthOverTime: 'Order book depth over time',
+    quarterReturns: 'Returns by quarter and asset class',
+    turnHint: 'Drag a chart to turn it, double-click to turn it back.',
+    exportLabel: 'Save the portfolio chart',
+    print: 'Print',
+    reportPdf: 'All charts in one PDF',
     waterfall: {
       start: 'Start',
       btcLong: 'BTC long',
@@ -698,7 +726,7 @@ const en = {
       chartTypes: [
         { name: 'Candles, OHLC bars, line, area, baseline, Heikin-Ashi, hollow candles', detail: 'candlestick, bar, line, area, baseline, heikinAshi, hollowCandle' },
         { name: 'Renko, line break, Kagi, point & figure, range bars', detail: 'Box size or ATR, lines to break, reversal in percent or price, range per bar' },
-        { name: 'Volume candles, Equivolume, HLC area, step line, line with markers, high-low', detail: '18 chart types in all' },
+        { name: 'Volume candles, Equivolume, HLC area, step line, line with markers, high-low', detail: '25 chart types in all' },
         { name: 'The main series hidden', detail: 'Only the indicators and drawings stay' },
         { name: 'Charts for dashboards', detail: 'Bars (grouped, stacked, sideways), donut and pie, scatter and bubbles, histograms, calendars, correlation matrices, sector maps, counter-clock charts, sparklines, gauges, heatmaps and treemaps, waterfalls, depth, equity curves' },
       ],
@@ -712,7 +740,7 @@ const en = {
         { name: 'No third-party runtime dependencies', detail: 'Nothing else to install or audit' },
       ],
       indicators: [
-        { name: '134 built-in indicators', detail: 'Pivot points in six kinds, MA Cross, correlation with another symbol' },
+        { name: '138 built-in indicators', detail: 'Pivot points in six kinds, MA Cross, correlation with another symbol' },
         { name: 'Price source', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: 'An indicator on an indicator', detail: 'Such as a moving average of RSI, updated on every tick' },
         { name: 'Several indicators in one pane, moved between panes', detail: 'moveIndicatorToPane' },
@@ -783,7 +811,7 @@ const en = {
       ],
       customization: [
         { name: 'Three looks for the widget', detail: 'Studio, Terminal, Capsule; ui and setUI; --tcw-* CSS variables' },
-        { name: 'The chart’s look by key', detail: 'applyOverrides over 107 typed keys, on a host layer and a user layer' },
+        { name: 'The chart’s look by key', detail: 'applyOverrides over 122 typed keys, on a host layer and a user layer' },
         { name: 'Settings that reach every key', detail: 'A style tab for the chart type on view, a trading tab' },
         { name: '114 feature switches', detail: 'features, setFeatures, isFeatureOn; changed while running' },
         { name: 'Your own parts in the widget', detail: 'Toolbar buttons and dropdowns, sidebar buttons, status items, slots, menu items' },
@@ -935,6 +963,7 @@ const en = {
       frameworks: 'Frameworks',
       embed: 'Embeddable Widget',
       migration: 'Moving to 2.0',
+      'migration-3': 'Moving to 3.0',
       'from-tradingview': 'Moving from TradingView',
       'how-it-works': 'How It Works',
       api: 'API Reference',

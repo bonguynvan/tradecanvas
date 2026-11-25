@@ -27,6 +27,10 @@
     <tr><td><code>appendBars(bars)</code></td><td>まとめて追加します。インジケーターの再計算は 1 回だけです。</td></tr>
     <tr><td><code>updateLastBar(bar)</code></td><td>形成中の現在のバーを更新します。</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>ティックを最後のバーに統合します。</td></tr>
+    <tr><td><code>addTrades(trades)</code></td><td>約定を<a href={href('/docs/realtime#footprint')}>フットプリント</a>に入れます：各約定を、その時刻のバーとその価格の行に、取った側として数えます。</td></tr>
+    <tr><td><code>followTrades()</code></td><td>フィードの約定を、直近のものに続いてライブのものを、<code>trades</code> イベントとして、返す関数が呼ばれるまで追います。<a href={href('/docs/realtime#tape')}>歩み値</a>を参照してください。</td></tr>
+    <tr><td><code>getTrades()</code></td><td>最近伝えられた約定を古い順に：フィードのものと手で渡したもの。約定が伝えられたあとに来たリスナーのためのものです。</td></tr>
+    <tr><td><code>setFootprint(bars)</code> / <code>getFootprint(time?)</code> / <code>clearFootprint()</code></td><td>フットプリントの行をバーごとに：手で渡す、読み返す（ひとつのバーの、またはすべてのバーの）、消す。</td></tr>
     <tr><td><code>updateBar(bar)</code></td><td>読み込み済みのバーを修正します。系列のどこにあっても、時刻が同じバーです。表示位置はそのままで、その時刻のバーがなければ false を返します。</td></tr>
     <tr><td><code>getData()</code></td><td>元の OHLC 系列を取得します。</td></tr>
   </tbody>
@@ -48,7 +52,7 @@
 <table>
   <thead><tr><th>メソッド</th><th>用途</th></tr></thead>
   <tbody>
-    <tr><td><code>setChartType(type)</code></td><td>18 種類のいずれか。<a href={href('/docs/chart-types')}>チャートタイプ</a>を参照してください。</td></tr>
+    <tr><td><code>setChartType(type)</code></td><td>25 種類のいずれか。<a href={href('/docs/chart-types')}>チャートタイプ</a>を参照してください。</td></tr>
     <tr><td><code>getChartType()</code></td><td>現在描画しているチャートタイプ（既定は <code>'candlestick'</code>）。</td></tr>
     <tr><td><code>setTheme(name | theme)</code></td><td>組み込みテーマを切り替えるか、独自のテーマを設定します。<code>getTheme()</code> は設定したとおりに返します。</td></tr>
     <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>チャートの任意の部分をキーでスタイル設定（<code>'grid.vertical.visible'</code>、<code>'series.candlestick.upColor'</code>…）。<code>null</code> でキーを外します。<a href={href('/docs/styling#overrides')}>スタイル</a>を参照。</td></tr>
@@ -241,6 +245,21 @@ formatVolumeLoc(345_000_000, 'ko')           // '3.45억'`}</code></pre>
   <code>priceLimits</code> のない独自テーマは、明るい背景ではライトテーマの色、暗い背景ではダークテーマの色を使います。
 </p>
 
+<h3 id="broker-limits">ブローカーが提供する当日の値幅制限</h3>
+<p>
+  <code>setPriceLimits</code> は、基準値だけでなく、その銘柄の当日の上限、下限、基準値をそのまま受け取ります。
+  ブローカーや取引所が提供する場合はそれを渡してください。特別な値幅や、別の取引所へ移った銘柄の最初のセッションは、
+  基準値の何パーセントという形では求められず、そのとき市場のパーセンテージは他に情報がない場合の代替にすぎません。
+  チャート上の線、注文をドラッグできる価格、チケットのチェックはすべて渡された値に従います。ウィジェットの注文チケットは
+  価格欄の上にこの 3 つを表示し、押すとその価格が設定されます。<code>priceLimitOrder</code> でボードと同じ順に並べられ、
+  指定しなかったものは表示されません。
+</p>
+<pre><code>{`chart.setMarket(MARKET_HOSE)
+chart.setPriceLimits({ ceiling: 27.1, floor: 23.6, reference: 25.35 })   // as the broker gives them for the symbol
+chart.setPriceLimits(25.35)                                              // or the reference alone: the market's percentages of it
+
+new ChartWidget(host, { trading: true, priceLimitOrder: ['reference', 'ceiling', 'floor'] })   // the ticket's row, in your board's order`}</code></pre>
+
 <h3 id="comparing-symbols">シンボルの比較</h3>
 <p>
   別のシンボルの変化率を価格スケール上に表示する（<code>addCompareSymbol</code>）ほか、その価格を専用の
@@ -315,6 +334,131 @@ chart.exportVisibleData('json', undefined, { indicators: false })
 const text = chart.getExportText('csv', { range: 'visible' })
 const { bars, columns } = chart.getExportData()          // columns: { name, values }[]`}</code></pre>
 
+<h3 id="pictures">画像、印刷、PDF</h3>
+<p>
+  チャートを画像にします：ファイルに保存する、コピーする、または data URL、バイト列、キャンバスとして読み取ります。
+  ほかに何も指定しなければ、画面に表示されているままのチャートのキャンバスから読み取ります。
+  ピクセル数を増やす（<code>pixelRatio</code>）か別のテーマ（<code>theme</code>）を指定すると、チャート自体が何で描いていても、
+  画像のためにフレームを Canvas 2D で描き直します：ページ上のチャートは大きさを変えられず、何も知らされません。
+  <code>width</code> または <code>height</code> を指定すると、チャートをその大きさでレイアウトし直し、
+  表示中のバーをそこでも表示して、ページのレイアウトを元に戻します：サイドバーにあるチャートから、スライドや用紙 1 枚のための画像を作れます。
+  バーの幅は、バーが取りうる幅の範囲内で、その大きさに応じて決まります：それを超えると、表示されるバーが増えるか減り、中央はほぼ同じです。
+  独自の大きさの画像には、ポインターに追従するもの（クロスヘア、計測）も、ホストがチャートの上に重ねたキャンバスも入らず、
+  プロットの余地がない大きさでは画像は得られません。<code>type</code> は <code>'png'</code>（既定）、
+  <code>'jpeg'</code>、<code>'webp'</code> のいずれかで、後の 2 つには <code>quality</code> を指定できます。
+</p>
+<pre><code>{`chart.screenshot('btc-1h')                                   // btc-1h.png、画面のとおり
+chart.screenshot('btc-1h', { pixelRatio: 3, type: 'webp' })  // 3 倍のピクセル数で描き直す
+await chart.copyScreenshot()                                 // PNG をクリップボードへ。ブラウザーが拒否した場合は false
+const url = chart.screenshotDataURL({ theme: 'light' })      // ライトテーマで。チャートはそのまま
+const blob = await chart.screenshotBlob({ type: 'jpeg', quality: 0.9 })
+const canvas = chart.toCanvas({ pixelRatio: 2 })             // 上に描き足すか、自分で読み取るために
+const slide = await chart.screenshotBlob({ width: 1920, height: 1080 })   // その大きさでレイアウトし直す`}</code></pre>
+<p>
+  <code>print()</code> は、チャートだけを対象にブラウザーの印刷ダイアログを開きます：チャートの画像だけを含み、
+  それが置かれているページのものは何も含まないページです。印刷する画像がなかったときは <code>false</code> を返します。
+  <code>toPdf()</code> は 1 ページの PDF を返し、画像は劣化なしで、余白の内側に収まる最大の大きさで入ります。
+  どちらも紙のためにチャートを描き直し、指定しない限りライトテーマで 2 倍のピクセル数です。
+  <code>chartsToPdf</code> は複数のチャートから、チャートごとに 1 ページの PDF を 1 つ作ります：価格チャート、
+  <a href={href('/docs/finance')}>金融チャート</a>、または独自のキャンバスです。
+</p>
+<pre><code>{`import { chartsToPdf } from '@tradecanvas/chart'
+
+chart.print({ title: 'BTCUSDT, 1h' })
+const pdf = await chart.toPdf({ pageSize: 'letter', margin: 12, title: 'BTCUSDT' })   // Blob
+const full = await chart.toPdf({ width: 1123, height: 794 })   // ページと同じ形でレイアウト：余白が許す限り大きく
+const report = await chartsToPdf([chart, equityChart, allocationChart], { title: 'March', theme: 'dark' })`}</code></pre>
+<p>
+  <code>pageSize</code> は <code>'a4'</code>（既定）、<code>'a3'</code>、<code>'letter'</code>、
+  <code>'legal'</code>、または用紙の 2 辺のミリメートル値です。<code>orientation</code> は
+  <code>'landscape'</code>（既定）または <code>'portrait'</code>、<code>margin</code> はミリメートル単位です。
+  PDF は自前のテキストを持たないので、フォントは要りません：チャートの文字は、どの言語でも画像の中にあります。
+  画像はブラウザーが描ける大きさまでに抑えられる（どの辺も 16,384 ピクセルまで、全体で約 1,600 万ピクセル）ため、
+  非常に大きなチャートでは指定より少ないピクセル数になります。ピクセルはブラウザーの
+  <code>CompressionStream</code> で劣化なしに圧縮されます。これは現在のどのブラウザーにもあり、
+  ないブラウザーでは画像のほぼすべてを保つ JPEG になります。印刷では画像を <code>data:</code> URL としてフレームに入れるため、
+  コンテンツセキュリティポリシーのあるページは、画像についてそれを許可する必要があります。
+</p>
+<p>
+  画像に入るのは、チャートが自分のキャンバスに描くものです：プロット、軸、凡例、表示中であればクロスヘア、
+  そしてホストがチャートの上に重ねたキャンバス（非表示の場合と、別サイトの画像を含む場合を除きます。後者はどのページも読み戻せません）。ページの要素で作られたものは入りません：ツールチップと、ウィジェットの各バーおよびインジケーター名の行です。
+  <code>features.screenshot</code> がオフなら、画像も印刷も PDF もありません。ChartWidget では、コマンドパレットに
+  <strong>チャートを印刷</strong>と<strong>チャートをPDFで保存</strong>があり、
+  <code>widget.printChart()</code> と <code>widget.saveChartPdf()</code> もあります。
+  どちらもチャートのシンボルと時間足を名前に使い、印刷するものや保存するものがなかったときはトーストを表示します。
+  これらは <code>screenshot</code> スイッチに従います。
+</p>
+
+<h3 id="no-page">ページなしで描くチャート</h3>
+<p>
+  <code>renderPriceChart</code> は、ページのない場所で、あなたが用意した 2D コンテキストに価格チャートを描きます：
+  メール、レポート、ボットのメッセージに入れる画像のために Node で作ったキャンバスや、ワーカー内の
+  <code>OffscreenCanvas</code> です。描くのは 1 フレームで、
+  <code>Chart</code> が自分のフレームを組み立てるのと同じように組み立てます：同じ大きさなら、
+  <code>chart.fitContent()</code> ですべてのバーを表示した（<code>visibleRange</code> を使う場合は
+  <code>chart.setVisibleRange()</code>）ページ上のチャートが、同じバーについて返す画像と同じです。
+</p>
+<pre><code>{`import { createCanvas, Path2D } from '@napi-rs/canvas'   // または Path2D を持つ別の Node 用キャンバス
+import { renderPriceChart } from '@tradecanvas/chart'
+
+const canvas = createCanvas(1920, 1080)
+const ctx = canvas.getContext('2d')
+ctx.scale(2, 2)                                            // 960 × 540 のチャートを 2 倍のピクセル数で
+renderPriceChart(ctx, {
+  data: bars,                                              // 収まるならすべてのバーを表示
+  symbol: 'BTCUSDT',
+  timeframe: '1d',
+  theme: 'light',
+  timeZone: 'Asia/Ho_Chi_Minh',
+  indicators: [
+    { id: 'ema', params: { period: 21 } },
+    { id: 'rsi', instanceId: 'momentum' },                 // 価格の下の独自のペイン
+    { id: 'stochastic', pane: 'momentum' },                // そのペインに、そのスケールで
+  ],
+  drawings: [
+    { type: 'horizontalLine', anchors: [{ time: bars[0].time, price: 64000 }], style: { color: '#2266ff' } },
+    { type: 'horizontalLine', anchors: [{ time: bars[0].time, price: 70 }], paneId: 'momentum' },  // そのペインに
+  ],
+  markers: [{ time: bars[40].time, price: bars[40].low, direction: 'long', confidence: 0.8, source: 'strategy', label: 'Buy' }],
+  path2D: Path2D,                                          // Node 自体には Path2D がない
+}, { width: 960, height: 540 })
+const png = canvas.toBuffer('image/png')`}</code></pre>
+<p>
+  チャートの見た目を決めるオプションは <code>Chart</code> のものです：<code>chartType</code> と
+  <code>chartTypeOptions</code>、<code>theme</code>、<code>font</code>、<code>overrides</code>、
+  <code>density</code>、<code>logScale</code>、<code>numberLocale</code>、<code>priceFormat</code>、
+  <code>watermark</code>、そして出来高、グリッド、軸、凡例を外すための <code>features</code>。
+  ページ上のチャートが呼び出しで受け取るものは、ここではオプションで受け取ります：<code>data</code>、
+  凡例のための <code>symbol</code> と <code>timeframe</code>、<code>indicators</code>、
+  <code>drawings</code>（<code>addDrawing</code> が受け取る形）、
+  <code>markers</code>（<code>addSignalMarker</code> が受け取る形）、
+  <code>visibleRange</code>（表示する最初と最後のバーの時刻）、<code>pricePrecision</code>、
+  <code>timeZone</code>（指定しなければマシン自身のタイムゾーン：読み手のいるタイムゾーンを指定してください）、
+  <code>symbolSeries</code>（<code>'compareSymbol'</code>、<code>'spread'</code>、相関のための、ほかのシンボルのバー）。
+  インジケーターは保存したレイアウトのものと同じように読まれるので、
+  <code>chart.getIndicatorSetup()</code> と <code>chart.getDrawings()</code> はそのまま渡せ、
+  インジケーターのペイン上の描画も一緒です：誰かがブラウザーで設定したチャートを、サーバーで描き直せます。
+  <code>plugins</code> には、独自のインジケーター、チャートタイプ、描画ツール、オーバーレイを渡します。
+</p>
+<p>
+  指定した大きさを、コンテキスト自身の単位で、テーマの背景の上に描きます：ピクセル数を増やすには、
+  先にコンテキストをスケールしてください。バーは <code>Path2D</code> で描かれますが、Node にはありません：
+  <code>@napi-rs/canvas</code> と <code>skia-canvas</code> はそれぞれ自分のものをエクスポートしているので、
+  <code>path2D</code> として渡します。ワーカーには自前のものがあります。テキストはテーマのフォントで描かれるので、
+  キャンバスが持っているフォントを <code>font</code> で指定してください。ポインターに追従するものはありません：
+  クロスヘア、カウントダウン、ツールチップはありません。
+  注文とポジション、アラート、比較ライン、価格帯別出来高とマーケットプロファイル、セッションの塗りつぶし、市場の値幅制限は、
+  この方法ではまだ描かれません。金融チャートは <code>renderFinanceChart</code> で同じように描かれ、
+  <code>imagesToPdf</code> はこうして作った画像を PDF に入れます。
+</p>
+<p>
+  オプションの誤りは、何かを描く前に、オプションの名前を挙げて知らされます：知らないインジケーター、テーマ、
+  タイムゾーン、同じ <code>instanceId</code> を持つ 2 つのインジケーター、取りうる範囲の外の数値には
+  <code>RangeError</code>、種類の違うものを渡したオプションには <code>TypeError</code> です。
+  バーになっていないバーは、チャートが除外するのと同じように除外されます。コンテキストは受け取ったときの状態のまま残されます。
+  あなたのプラグインが描画中に例外を投げた場合は、次のチャートは別のコンテキストに描いてください。
+</p>
+
 <h3>価格帯別出来高</h3>
 <p>
   表示範囲の出来高を価格帯ごとに集計した横向きのヒストグラムです。既定ではオフで、
@@ -366,6 +510,15 @@ chart.setSessionShadingConfig({
 <pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
 chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
 chart.isExtendedHoursVisible()`}</code></pre>
+<p>
+  <strong>取引日。</strong>午前 0 時をまたぐセッション（CME のシカゴ時間 17:00〜16:00）は、その開始時刻から取引日を始めます。日・週・月ごとにリセットされるインジケーター（Session VWAP、VWAP と累積デルタの anchor、セッション出来高プロファイル、MTF 平均の日）、前日ラインとマーケットプロファイルの日は 17:00 から 17:00 までとなり、終わる日の日付で呼ばれます。1 日の中に収まるセッションは午前 0 時のままです。日足と約定から作る日は、タイムゾーンの午前 0 時のままです。チャートが取引所の時刻を表示している間（<code>setTimeZone('exchange')</code>、または取引所のタイムゾーンを名前で指定）、日区切り線もそこから始まります。ほかの時刻では、1 日は午前 0 時から午前 0 時までです。
+</p>
+<pre><code>{`chart.setSymbolInfo({ symbol: 'ES', timeZone: 'America/Chicago', sessions: [{ start: '17:00', end: '16:00' }] })
+// Session VWAP、svp、前日ライン: 17:00 から 17:00
+
+import { tradingDayStart } from '@tradecanvas/chart'
+tradingDayStart([{ start: '17:00', end: '16:00' }])   // 1020: minutes after midnight
+tradingDayStart([{ start: '09:30', end: '16:00' }])   // null: midnight`}</code></pre>
 
 <h3>前期間のレベル (PDH / PDL / PDC)</h3>
 <p>
@@ -384,7 +537,7 @@ const levels = computePeriodLevels(bars, 'day', 'Australia/Sydney')  // [{ id, l
 <p>
   価格ごとの滞在時間を示すヒストグラムです。各バーは、その値幅が触れたすべての価格帯に
   TPO を 1 つずつ加え、POC（Point of Control、最も活発な価格）とバリューエリア
-  （TPO の約 70%）を浮かび上がらせます。出来高ではなく時間で重み付けする点で価格帯別出来高とは
+  （TPO の約 70%。Market Profile と同じく、POC から重い側へ 2 区間ずつ広げます）を浮かび上がらせます。出来高ではなく時間で重み付けする点で価格帯別出来高とは
   異なり、左端に固定されるため両方を同時に表示できます。既定ではオフで、設定シートから、
   または直接切り替えます：
 </p>
@@ -395,6 +548,7 @@ chart.setMarketProfileConfig({
   opacity: 0.32,
   valueAreaPct: 0.7,  // fraction of TPOs in the value area
   highlightPoC: true, // dashed line at the point of control
+  valueAreaColor: '#7e57c2', color: '#90a4ae', // 独自の色。null でテーマの色（陽線、補助テキスト）
 })
 
 // split into one mini-profile per trading day, in the exchange's zone
@@ -449,6 +603,8 @@ chart.on('dataUpdate', e => /* setData と新しいバーでは { kind: 'bars', 
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
+chart.on('marginCall', e => /* { marginLevel, level, equity, marginUsed }: 口座が証拠金について警告を受けた */)
+chart.on('trades', e => /* { trades, recent }：シンボルの約定。追っている間（followTrades、フットプリント）または渡したとき（addTrades） */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* 描画、インジケーター、アラート、チャートタイプ、テーマのいずれかが変わった可能性がある */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
@@ -574,7 +730,7 @@ widget.destroy()`}</code></pre>
   <code>null</code> が返ります。<code>onPanelChange</code> オプションには、どのように変わったか（レール、閉じるボタン、
   自分のコード、ウィジェットが狭くなったこと）にかかわらず、開いているパネルの id か <code>null</code> が渡されます。
 </p>
-<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder', or a page's id; false if not there
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder' | 'tape', or a page's id; false if not there
 widget.getOpenPanel()           // the panel open, or null
 widget.closePanel()
 
@@ -672,6 +828,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>日付へ移動</td></tr>
     <tr><td><kbd>?</kbd></td><td>キーボードショートカットの一覧。機能名でもキーでも検索できます</td></tr>
     <tr><td><kbd>Alt</kbd> + チャートをクリック</td><td>カーソル位置のバーに OHLC ツールチップを固定（ライブのクロスヘアとの差分を表示）</td></tr>
+    <tr><td>チャート上でマウスを長押し</td><td>ボタンを押している間、カーソル位置のバーのフローティング OHLCV ツールチップを表示。カーソルに追従し、チャートはパンしません（<code>{`chartOptions: { features: { crosshairTooltip: true } }`}</code> でホバーだけでも追従、<code>false</code> で常に非表示）</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>ツールチップの固定を解除 / 描画をキャンセル</td></tr>
     <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td><td>リプレイを 1 つ戻す / 進める</td></tr>
     <tr><td><kbd>Space</kbd></td><td>リプレイを再生 / 一時停止（チャートかトラック上で。リプレイ外ではチャートを全体表示）</td></tr>
@@ -1138,10 +1295,21 @@ grid.setFeatures({ 'toolbar.replay': false })               // すべてのチ�
 grid.getActiveWidget().getChart()
 grid.getLayoutSession()?.saveAs('Majors')
 
+// 各チャートをそれぞれのセルに収めた 1 枚の画像：ファイル、印刷ダイアログ、PDF
+grid.screenshot('majors', { pixelRatio: 2 })
+await grid.copyScreenshot()                             // PNG としてクリップボードへ
+const sheet = await grid.toPdf({ title: 'Majors' })   // チャート単体と同じく、ライトテーマで 2 倍のピクセル数
+
 // チャートが作られるたびに（最初と、グリッドが増えたとき）
 new ChartWidgetGrid(host, {
   onChartAdd: (widget, index) => widget.getChart().addIndicator('ema', { period: 21 }),
 })`}</code></pre>
+<p>
+  バーのカメラボタンは、同じことをメニューから行います。チャートをまとめた画像を保存、コピー、印刷、
+  または PDF として保存し、ファイル名は表示中のシンボルから付けます（四つ以上なら <code>charts</code>）。
+  <code>picture: false</code> でボタンをなくせます。チャートの <code>screenshot</code> スイッチがオフの間も隠れ、
+  <code>copyImage</code> がオフの間はコピーの項目がありません。
+</p>
 <p>
   クロスヘアの同期では、ポインター位置の時刻がすべてのチャートに表示されます。時間軸の同期では、
   操作中のチャートに合わせてほかのチャートもスクロール・ズームします。描画は、同じシンボルを表示している

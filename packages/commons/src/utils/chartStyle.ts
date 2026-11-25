@@ -203,12 +203,13 @@ export function resolveChartTheme(base: Theme, chartType: ChartType, overrides: 
       vertical: lineLook(o, 'crosshair.vertical', { visible: true, color: plain.crosshair, style: 'solid', width: 1 }),
       labelBackground: str('crosshair.labelBackground', crosshairTagLook(background, plain.text).background),
       labelText: str('crosshair.labelTextColor', crosshairTagLook(background, plain.text).text),
+      labelChange: (o('crosshair.labelChange') as boolean | undefined) ?? plain.crosshairChange ?? false,
     },
     axis: {
       price: {
         line: str('axis.price.lineColor', plain.axisLine),
         text: str('axis.price.textColor', plain.axisLabel),
-        valueTagsOutlined: (o('axis.price.valueTagsOutlined') as boolean | undefined) ?? false,
+        valueTagsOutlined: (o('axis.price.valueTagsOutlined') as boolean | undefined) ?? plain.valueTagsOutlined ?? false,
       },
       time: { line: str('axis.time.lineColor', plain.axisLine), text: str('axis.time.textColor', plain.axisLabel) },
     },
@@ -228,6 +229,7 @@ export function resolveChartTheme(base: Theme, chartType: ChartType, overrides: 
       width: (o('lastPrice.width') as number | undefined) ?? 1,
       labelBackground: (o('lastPrice.labelBackground') as string | undefined) ?? null,
       labelText: (o('lastPrice.labelTextColor') as string | undefined) ?? null,
+      limitColors: (o('lastPrice.limitColors') as boolean | undefined) ?? false,
     },
     sessionBreaks: {
       color: (o('sessionBreaks.color') as string | undefined) ?? null,
@@ -282,6 +284,7 @@ const READ_BACK: { [K in ChartStyleKey]?: (t: Theme, s: ResolvedChartStyle) => u
   'panes.titleColor': (_t, s) => s.panes.title,
   'crosshair.labelBackground': (_t, s) => s.crosshair.labelBackground,
   'crosshair.labelTextColor': (_t, s) => s.crosshair.labelText,
+  'crosshair.labelChange': (_t, s) => s.crosshair.labelChange,
   'axis.price.lineColor': (_t, s) => s.axis.price.line,
   'axis.price.textColor': (_t, s) => s.axis.price.text,
   'axis.time.lineColor': (_t, s) => s.axis.time.line,
@@ -298,6 +301,7 @@ const READ_BACK: { [K in ChartStyleKey]?: (t: Theme, s: ResolvedChartStyle) => u
   'lastPrice.width': (_t, s) => s.lastPrice.width,
   'lastPrice.labelBackground': (_t, s) => s.lastPrice.labelBackground,
   'lastPrice.labelTextColor': (_t, s) => s.lastPrice.labelText,
+  'lastPrice.limitColors': (_t, s) => s.lastPrice.limitColors,
   'axis.price.valueTagsOutlined': (_t, s) => s.axis.price.valueTagsOutlined,
   'grid.vertical.periodsOnly': (_t, s) => s.grid.verticalAtPeriods,
   // As drawn: a theme that sets only candle colours gets volume in those colours.

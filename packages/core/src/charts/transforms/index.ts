@@ -1,4 +1,4 @@
-export { toHeikinAshi } from './heikinAshi.js';
+export { toHeikinAshi, toSmoothedHeikinAshi, SMOOTHED_HEIKIN_ASHI_PERIOD } from './heikinAshi.js';
 export { toRenko } from './renko.js';
 export type { RenkoConfig } from './renko.js';
 export { toLineBreak } from './lineBreak.js';

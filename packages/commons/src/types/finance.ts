@@ -108,6 +108,15 @@ export interface HeatmapCell {
   value: number;
   weight?: number;
   group?: string;
+  /**
+   * The cell's logo, drawn over its name where the cell has room for it: an
+   * `https:` or `http:` address, a path on your site, a `blob:` URL, or a
+   * `data:image/png|jpeg|gif|webp|avif|svg+xml` one, as a symbol's `logo`.
+   * It is asked for as a picture the page may read, so the chart can still
+   * be saved as a picture itself: one from another site has to allow that
+   * (CORS), or it is not drawn. Any other address is ignored.
+   */
+  logo?: string;
   meta?: Record<string, unknown>;
 }
 
@@ -140,6 +149,8 @@ export interface HeatmapOptions extends BaseFinanceChartOptions {
   valueFormat?: (value: number) => string;
   showLabels?: boolean;
   showValues?: boolean;
+  /** Whether the cells that have a `logo` draw it (`true`). */
+  showLogos?: boolean;
   onCellClick?: (cell: HeatmapCell) => void;
   crosshair?: boolean;
 }
@@ -422,3 +433,415 @@ export interface CounterClockOptions extends BaseFinanceChartOptions {
   crosshair?: boolean;
   onPointClick?: (point: CounterClockPoint) => void;
 }
+
+/**
+ * One leg of an options position: an option bought or sold, or the underlying
+ * held beside them. An option without its `strike`, or the underlying without
+ * its `entry`, counts for nothing.
+ */
+export interface OptionLeg {
+  /** A call, a put, or the underlying itself. */
+  type: 'call' | 'put' | 'underlying';
+  /** Bought (`'long'`) or sold (`'short'`). */
+  side: 'long' | 'short';
+  /** An option's strike. */
+  strike?: number;
+  /** What one unit of the option cost, or brought in when sold. Default `0`. */
+  premium?: number;
+  /** The price the underlying was bought or sold at, for an `'underlying'` leg. */
+  entry?: number;
+  /** How many. Default `1`; `0` counts for nothing. */
+  quantity?: number;
+  /** This option's own implied volatility, for its value before expiry (`PayoffOptions.model`); the model's without one. */
+  volatility?: number;
+  /** This option's own days to expiry, where the legs do not expire together (a calendar spread); the model's without one. */
+  daysToExpiry?: number;
+}
+
+/**
+ * What a position is worth before it expires is worked out with: the
+ * Black-Scholes price of each option, as a European one, at one
+ * volatility. It is a model's answer, not a quote.
+ */
+export interface PayoffModel {
+  /** Days until the options expire. `0` is the day itself: the payoff. */
+  daysToExpiry: number;
+  /** The implied volatility, a year's, as a share: `0.25` is 25%. */
+  volatility: number;
+  /** The interest rate, a year's, as a share. Default `0`. */
+  rate?: number;
+  /** The underlying's dividend yield, a year's, as a share. Default `0`. */
+  dividendYield?: number;
+  /** The line's name in the legend. Default `'In 30 days'`, by `daysToExpiry`: name it yourself where the legs have days of their own. */
+  label?: string;
+}
+
+export interface PayoffOptions extends BaseFinanceChartOptions {
+  /** The position's legs: what they make or lose together at expiry is the line. */
+  legs: OptionLeg[];
+  /**
+   * Draws a second line: what the position makes or loses with this many
+   * days still to go, by a model (`PayoffModel`). The pointer reads both.
+   */
+  model?: PayoffModel;
+  /** The payoff's name in the legend, beside the model's line. Default `'At expiry'`. */
+  expiryLabel?: string;
+  /** The units one contract is for (100 for a US stock option). Default `1`. */
+  multiplier?: number;
+  /** The underlying's price now: a marked line. */
+  spot?: number;
+  /** A word before the price now on its mark (`'Spot'`). */
+  spotLabel?: string;
+  /** The underlying's prices drawn. Default: from under the lowest strike to over the highest. */
+  range?: { min: number; max: number };
+  /** How a profit or a loss is written. */
+  valueFormat?: (value: number) => string;
+  /** How the underlying's price is written. */
+  priceFormat?: (value: number) => string;
+  /** The line and the area above zero. Default: the theme's up colour. */
+  profitColor?: string;
+  /** The line and the area below zero. Default: the theme's down colour. */
+  lossColor?: string;
+  /** Show the profit or loss at the price under the pointer. Default `true`. */
+  crosshair?: boolean;
+}
+
+export interface CurvePoint {
+  x: number;
+  y: number;
+}
+
+/** One line of a curve chart: an expiry's smile, a day's yield curve. */
+export interface CurveSeries {
+  name: string;
+  /** The line's points, in any order: drawn by rising `x`. */
+  points: CurvePoint[];
+  color?: string;
+  /** Drawn dashed: yesterday's curve beside today's. */
+  dashed?: boolean;
+}
+
+/** A labelled line at an x: the strike at the money. */
+export interface CurveMarker {
+  x: number;
+  label?: string;
+  color?: string;
+}
+
+export interface CurveChartOptions extends BaseFinanceChartOptions {
+  /** The curves: values against a strike, a tenor, a maturity. */
+  series: CurveSeries[];
+  /** Labels along x in place of the scale's own: a tenor each (`{ x: 30, label: '1M' }`). */
+  ticks?: { x: number; label: string }[];
+  /** How an x is written, without `ticks`. */
+  xFormat?: (value: number) => string;
+  valueFormat?: (value: number) => string;
+  /** Round the lines through their points, never past a value they do not reach. Default `true`. */
+  smooth?: boolean;
+  /** A dot at each point. Default `true`. */
+  showPoints?: boolean;
+  /** Labelled lines at x values. */
+  markers?: CurveMarker[];
+  /** The curves' names over the plot. Default `true` with more than one. */
+  legend?: boolean;
+  /** Show each curve's value at the x under the pointer. Default `true`. */
+  crosshair?: boolean;
+}
+
+/** A box plot's five numbers and what lies outside them. */
+export interface BoxPlotStats {
+  /** The lower whisker's end: the lowest value that is no outlier. */
+  min: number;
+  /** The first quartile: a quarter of the values are under it. */
+  q1: number;
+  median: number;
+  /** The third quartile: a quarter of the values are over it. */
+  q3: number;
+  /** The upper whisker's end: the highest value that is no outlier. */
+  max: number;
+  /** The values past the whiskers, in order. */
+  outliers: number[];
+}
+
+/** One box: a group's raw `values`, or its numbers worked out already in `stats`. */
+export interface BoxPlotGroup {
+  label: string;
+  values?: number[];
+  /** Used in place of `values` when both are given. */
+  stats?: BoxPlotStats;
+  color?: string;
+}
+
+/** The words a box plot's readout names its numbers with. */
+export interface BoxPlotLabels {
+  max: string;
+  q3: string;
+  median: string;
+  q1: string;
+  min: string;
+}
+
+export interface BoxPlotOptions extends BaseFinanceChartOptions {
+  /** A box for each group: returns by weekday, by month, by strategy. */
+  data: BoxPlotGroup[];
+  /**
+   * How far a whisker may reach past the box, in box heights (the
+   * interquartile range): values further out are outliers. Default `1.5`;
+   * `Infinity` takes the whiskers to the lowest and the highest value.
+   */
+  whiskers?: number;
+  /** A box whose median is under zero in the theme's down colour, the rest in its up colour. */
+  colorBySign?: boolean;
+  valueFormat?: (value: number) => string;
+  /** The readout's words, for another language. Default: `Max`, `Q3`, `Median`, `Q1`, `Min`. */
+  labels?: Partial<BoxPlotLabels>;
+  /** Show the hovered box's numbers. Default `true`. */
+  crosshair?: boolean;
+  /** Called with the group a click falls on, and its five numbers: anywhere up and down its place across the plot, as the pointer's readout picks it. */
+  onBoxClick?: (group: BoxPlotGroup, stats: BoxPlotStats) => void;
+}
+
+/** One spoke of a radar chart. */
+export interface RadarAxis {
+  label: string;
+  /** The value at the centre. Default `0`, or the lowest value on the spoke when that is under zero. */
+  min?: number;
+  /** The value at the rim. Default: the highest value any series has on this spoke. */
+  max?: number;
+}
+
+export interface RadarChartOptions extends BaseFinanceChartOptions {
+  /** The spokes, clockwise from twelve o'clock: at least three. */
+  axes: RadarAxis[];
+  /** A shape for each series: `values[i]` is its value on `axes[i]`. */
+  series: ChartSeries[];
+  /** The rings of the grid between the centre and the rim. Default `4`. */
+  rings?: number;
+  /** Tint each shape with its colour. Default `true`. */
+  fill?: boolean;
+  /** The series' names. Default `true` with more than one. */
+  legend?: boolean;
+  valueFormat?: (value: number) => string;
+  /** Show every series' value on the spoke nearest the pointer. Default `true`. */
+  crosshair?: boolean;
+  /** Called with the measure nearest a click on the radar, and each series' value on it: the spoke the pointer's readout picks, wherever between two the click falls. */
+  onAxisClick?: (hit: RadarAxisHit) => void;
+}
+
+/** A radar's measure, as a click on its spoke gives it. */
+export interface RadarAxisHit {
+  /** The measure's label. */
+  axis: string;
+  /** Its place among `axes`. */
+  index: number;
+  /** Each series' value on it; null where the series has none. */
+  values: { series: string; value: number | null }[];
+}
+
+/** A part of a whole that may have parts of its own. */
+export interface SunburstNode {
+  label: string;
+  /** Its size, when it has no children; with children it is as large as they are together. */
+  value?: number;
+  /** Default: the palette's in turn for the first ring, the parent's for the rings outside it. */
+  color?: string;
+  children?: SunburstNode[];
+  meta?: Record<string, unknown>;
+}
+
+export interface SunburstOptions extends BaseFinanceChartOptions {
+  /** The first ring's parts, clockwise from twelve o'clock; their children are the rings outside. */
+  data: SunburstNode[];
+  /** How many rings are drawn. Default: as many as the data is deep, four at most. */
+  maxDepth?: number;
+  /** The hole as a share of the radius. Default `0.3`. */
+  innerRadius?: number;
+  /** Text in the hole: a caption and a figure (`'Total'`, `'1.2B'`). */
+  centerLabel?: string;
+  centerValue?: string;
+  /** Print a part's name on it when it fits. Default `true`. */
+  showLabels?: boolean;
+  valueFormat?: (value: number) => string;
+  /** Show the hovered part's path, value and share. Default `true`. */
+  crosshair?: boolean;
+  /** `path` is the labels from the first ring down to the part. */
+  onNodeClick?: (node: SunburstNode, path: string[]) => void;
+}
+
+export interface StackedAreaOptions extends BaseFinanceChartOptions {
+  /** A label for each point along x: dates, periods. */
+  categories: string[];
+  /** The areas, the first at the bottom: `values[i]` belongs to `categories[i]`. A value under zero counts as none. */
+  series: ChartSeries[];
+  /** Each point's values as shares of their total, so the areas fill the height: how a mix changes. */
+  normalized?: boolean;
+  /** The series' names. Default `true` with more than one. */
+  legend?: boolean;
+  valueFormat?: (value: number) => string;
+  /** Show every series' value at the point under the pointer. Default `true`. */
+  crosshair?: boolean;
+}
+
+/**
+ * Where a 3D chart is seen from, in degrees. `yaw` turns it about its
+ * upright axis: at 0 the x axis runs across and the y axis straight back; a
+ * positive yaw swings the far end of the x axis towards the eye, a negative
+ * one away from it. `pitch` is how far above the floor the eye is: 0 level
+ * with it, 90 straight down on it. A pitch outside 0 to 90 is held to them.
+ */
+export interface View3D {
+  /** Default `-35`: the corner where both axes start is nearest. */
+  yaw?: number;
+  /** Default `28`. */
+  pitch?: number;
+}
+
+/**
+ * Colours from the lowest value to the highest, for a surface. Hex and
+ * rgb() colours blend; others (names, hsl()) change in steps.
+ */
+export interface ColorRamp {
+  /**
+   * Two or more colours, the lowest value's first. Default: one hue, from
+   * near the chart's ground up to its strongest, so low values stand back in
+   * the dark theme and in the light one.
+   */
+  colors?: string[];
+  /** Where the first colour is reached; values under it keep it. Default: the lowest value. */
+  min?: number;
+  /** Where the last colour is reached; values over it keep it. Default: the highest value. Given under `min`, the two are taken in order. */
+  max?: number;
+}
+
+/** A point of a surface chart: what the pointer is on. */
+export interface SurfacePoint {
+  /** The point's place along x and along y, as the options gave them. */
+  x: number | string;
+  y: number | string;
+  value: number;
+  /** Its indexes in the options' `x` and `y`. */
+  xIndex: number;
+  yIndex: number;
+}
+
+/** What every 3D chart's options hold. */
+export interface Chart3DOptions extends BaseFinanceChartOptions {
+  /** Where the chart is seen from at first, and what a double click goes back to. */
+  view?: View3D;
+  /**
+   * Turn the chart by dragging it: a mouse turns and tilts it, a finger
+   * turns it only, so that a page still scrolls under it. With the keyboard,
+   * once Tab has reached the chart: the arrows turn and tilt it (further
+   * with Shift), Home goes back to `view`. Default `true`.
+   */
+  rotate?: boolean;
+  /**
+   * What a screen reader says after a key turned the chart, in your words.
+   * Default `'Turned to -35°, tilted to 28°'`.
+   */
+  describeView?: (view: Required<View3D>) => string;
+  /** Called as the chart is turned, by a drag or a key, with where it is seen from now. */
+  onViewChange?: (view: Required<View3D>) => void;
+  /** The axes' titles: across, back and up. */
+  xLabel?: string;
+  yLabel?: string;
+  valueLabel?: string;
+  valueFormat?: (value: number) => string;
+  /** Show what is under the pointer. Default `true`. */
+  crosshair?: boolean;
+}
+
+export interface SurfaceChartOptions extends Chart3DOptions {
+  /**
+   * The points along x: strikes, prices. Numbers are placed by their value
+   * (and drawn by rising value, whatever their order); names are spaced
+   * evenly, in the order given. A number that is none (`NaN`, `Infinity`)
+   * is left out with its values. With fewer than two points along x, or none
+   * along y, nothing is drawn. Past 120 points along an axis they are thinned
+   * to that many, the first and the last kept, and to 60 for as long as the
+   * chart is being turned.
+   */
+  x: number[] | string[];
+  /** The points along y, the axis that runs back: days to expiry, times. Numbers or names, as `x`. */
+  y: number[] | string[];
+  /** `values[yIndex][xIndex]`; a missing or non-finite value leaves a hole. */
+  values: number[][];
+  /**
+   * `'surface'` (default): a shaded sheet through the values. `'wireframe'`:
+   * its lines only. `'slices'`: each y as a filled line of its own, one
+   * behind another: an order book's depth over time.
+   */
+  style?: 'surface' | 'wireframe' | 'slices';
+  /** The colours values are drawn in. Default: one hue over the values' range. */
+  colorRamp?: ColorRamp;
+  /** The lines between a surface's cells. Default `true`; left out anyway where the cells are too small for them. */
+  mesh?: boolean;
+  /** How an x and a y are written, when they are numbers. */
+  xFormat?: (value: number) => string;
+  yFormat?: (value: number) => string;
+  /** The colours' bar under the chart. Default `true`. */
+  legend?: boolean;
+  onPointClick?: (point: SurfacePoint) => void;
+}
+
+export interface Bar3DChartOptions extends Chart3DOptions {
+  /** A label for each column along x. No more than the first 120 are drawn. */
+  categories: string[];
+  /**
+   * A row of columns for each series, the first where the y axis starts (the
+   * front, as the chart is first seen): `values[i]` belongs to
+   * `categories[i]`. No more than the first 120 are drawn.
+   */
+  series: ChartSeries[];
+  /** The series' names. Default `true` with more than one. */
+  legend?: boolean;
+  onBarClick?: (hit: BarHit) => void;
+}
+
+/** An order book at a time, for `depthSurface`. */
+export interface DepthSnapshot extends DepthData {
+  /** When the book was read, ms. */
+  time: number;
+}
+
+/** What `depthSurface` makes of a run of order books: a surface chart's `x`, `y` and `values`. */
+export interface DepthSurface {
+  /** Prices, evenly spaced. */
+  x: number[];
+  /** The books' times. */
+  y: number[];
+  /** `values[time][price]`: the volume waiting from the best price out to that price. */
+  values: number[][];
+}
+
+/**
+ * The options of each finance chart, by the name `renderFinanceChart` knows
+ * it by: the chart's class name without `Chart`, its first letter small.
+ */
+export interface FinanceChartOptionsMap {
+  bar: BarChartOptions;
+  donut: DonutChartOptions;
+  scatter: ScatterChartOptions;
+  histogram: HistogramOptions;
+  calendar: CalendarChartOptions;
+  matrix: MatrixChartOptions;
+  heatmap: HeatmapOptions;
+  counterClock: CounterClockOptions;
+  depth: DepthChartOptions;
+  equityCurve: EquityCurveOptions;
+  waterfall: WaterfallOptions;
+  gauge: GaugeOptions;
+  sparkline: SparklineOptions;
+  payoff: PayoffOptions;
+  curve: CurveChartOptions;
+  boxPlot: BoxPlotOptions;
+  radar: RadarChartOptions;
+  sunburst: SunburstOptions;
+  stackedArea: StackedAreaOptions;
+  surface: SurfaceChartOptions;
+  bar3d: Bar3DChartOptions;
+}
+
+/** A finance chart's name, as `renderFinanceChart` takes it. */
+export type FinanceChartKind = keyof FinanceChartOptionsMap;
+

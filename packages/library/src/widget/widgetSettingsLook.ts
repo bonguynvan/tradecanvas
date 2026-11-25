@@ -48,6 +48,7 @@ export const LAST_PRICE_SECTION: LookSection = {
     autoRow('settings.labelBackground', 'lastPrice.labelBackground', { from: 'lastPrice.upColor' }),
     // A picker opened from Auto starts on the page's colour: the text of a tag filled with the ink.
     autoRow('settings.labelText', 'lastPrice.labelTextColor', { from: 'background.color' }),
+    row('settings.limitColors', 'lastPrice.limitColors'),
   ],
 };
 export const VOLUME_SECTION: LookSection = {
@@ -116,6 +117,7 @@ export const APPEARANCE_SECTIONS: readonly LookSection[] = [
       row('drawingSettings.lineWidth', 'crosshair.horizontal.width', 'crosshair.vertical.width'),
       row('settings.labelBackground', 'crosshair.labelBackground'),
       row('settings.labelText', 'crosshair.labelTextColor'),
+      row('settings.labelChange', 'crosshair.labelChange'),
     ],
   },
   {
@@ -177,7 +179,7 @@ const SERIES_LABELS: Readonly<Record<string, MessageKey>> = {
 };
 
 /** Types whose up and down are bodies with wicks. */
-const BODIES: ReadonlySet<ChartType> = new Set<ChartType>(['candlestick', 'heikinAshi', 'volumeCandles', 'equivolume']);
+const BODIES: ReadonlySet<ChartType> = new Set<ChartType>(['candlestick', 'heikinAshi', 'smoothedHeikinAshi', 'volumeCandles', 'equivolume']);
 
 /** The rows of a chart type's own colours and widths, in the key table's order. */
 export function seriesRows(type: ChartType): LookRow[] {

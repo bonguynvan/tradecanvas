@@ -1,7 +1,17 @@
-import type { FontConfig, Theme, ThemeName } from '@tradecanvas/commons';
+import type { ChartImageOptions, ChartPdfOptions, ChartPrintOptions, FontConfig, Theme, ThemeName } from '@tradecanvas/commons';
 import { DARK_THEME, LIGHT_THEME } from '@tradecanvas/commons';
 import { DPRManager, backingSize } from '../engine/DPRManager.js';
 import { isolateFontFeatures } from '../engine/CanvasLayer.js';
+import { canvasBlob, canvasDataURL, canvasesToPdf, copyImage, downloadImage, imageFileName, imageRatio, picturePixels, printCanvas } from '../ui/chartImage.js';
+
+/** A picture for paper has this many pixels to a CSS pixel when the options do not say, and is drawn in this theme. */
+const PAPER_PIXEL_RATIO = 2;
+const PAPER_THEME: ThemeName = 'light';
+
+/** The options for a picture that goes on paper: light and sharp unless they say otherwise. */
+function forPaper<O extends ChartImageOptions>(options: O): O {
+  return { ...options, theme: options.theme ?? PAPER_THEME, pixelRatio: options.pixelRatio ?? PAPER_PIXEL_RATIO };
+}
 
 function namedTheme(theme?: ThemeName | Theme): Theme {
   if (!theme || theme === 'dark') return DARK_THEME;
@@ -119,6 +129,90 @@ export abstract class BaseFinanceChart {
     if ('font' in options) this.fontGiven = options.font;
     if ('theme' in options || 'font' in options) this.theme = financeTheme(this.themeGiven, this.fontGiven);
     if (options.ariaLabel !== undefined) this.setLabel(options.ariaLabel);
+  }
+
+  /**
+   * Draws the chart for a picture of it: what `renderChart` draws, whole,
+   * with nothing that follows the pointer or is on its way somewhere, and
+   * without touching what the chart on the page keeps between frames (a
+   * picture may be another size than the chart).
+   */
+  protected renderStill(ctx: CanvasRenderingContext2D, width: number, height: number, theme: Theme): void {
+    this.renderChart(ctx, width, height, theme);
+  }
+
+  /**
+   * The chart drawn again on a canvas of its own, for a picture: at the
+   * chart's size by the screen's pixel ratio, or as `options` say (another
+   * size, more pixels, another theme). Nothing that follows the pointer is
+   * on it. Null for a chart with no size.
+   */
+  toCanvas(options: ChartImageOptions = {}): HTMLCanvasElement | null {
+    if (this.width === 0 || this.height === 0) this.updateSize();
+    const side = (asked: number | undefined, own: number) => (asked !== undefined && Number.isFinite(asked) && asked > 0 ? asked : own);
+    const width = side(options.width, this.width);
+    const height = side(options.height, this.height);
+    if (!(width > 0) || !(height > 0)) return null;
+    const ratio = imageRatio(width, height, options.pixelRatio, this.dpr || 1);
+    const canvas = document.createElement('canvas');
+    const pixels = picturePixels({ width, height }, ratio);
+    canvas.width = pixels.width;
+    canvas.height = pixels.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    const theme = options.theme !== undefined ? financeTheme(options.theme, this.fontGiven) : this.theme;
+    ctx.setTransform(canvas.width / width, 0, 0, canvas.height / height, 0, 0);
+    // A chart with no ground of its own (a sparkline) still has one in a picture: a JPEG or a page has no see-through.
+    ctx.fillStyle = theme.background;
+    ctx.fillRect(0, 0, width, height);
+    this.renderStill(ctx, width, height, theme);
+    return canvas;
+  }
+
+  /** The chart as a picture in a data URL, or null for a chart with no size. */
+  screenshotDataURL(options: ChartImageOptions = {}): string | null {
+    const canvas = this.toCanvas(options);
+    return canvas ? canvasDataURL(canvas, options) : null;
+  }
+
+  /** The chart as a picture file's bytes, or null for a chart with no size. */
+  async screenshotBlob(options: ChartImageOptions = {}): Promise<Blob | null> {
+    const canvas = this.toCanvas(options);
+    return canvas ? canvasBlob(canvas, options) : null;
+  }
+
+  /** Saves the chart as a picture file: `filename` (`chart` with none), ending as the format does. */
+  screenshot(filename?: string, options: ChartImageOptions = {}): void {
+    const url = this.screenshotDataURL(options);
+    if (url) downloadImage(url, imageFileName(filename, options.type ?? 'png'));
+  }
+
+  /** Puts the chart on the clipboard as a PNG. False where the browser has no clipboard for pictures, or refuses. */
+  copyScreenshot(options: Omit<ChartImageOptions, 'type' | 'quality'> = {}): Promise<boolean> {
+    const canvas = this.toCanvas(options);
+    return copyImage(canvas ? canvasBlob(canvas) : Promise.resolve(null));
+  }
+
+  /**
+   * Opens the browser's print dialog for the chart alone: a page that holds
+   * its picture and nothing of the page it is on. In the light theme and at
+   * twice the pixels unless `options` say otherwise. False for a chart with
+   * no size.
+   */
+  print(options: ChartPrintOptions = {}): boolean {
+    const canvas = this.toCanvas(forPaper(options));
+    return canvas !== null && printCanvas(canvas, { title: options.title });
+  }
+
+  /**
+   * The chart as a PDF of one page: its picture, kept without loss, as
+   * large as fits within the margins. A4 on its side, in the light theme
+   * and at twice the pixels unless `options` say otherwise. Null for a chart
+   * with no size.
+   */
+  async toPdf(options: ChartPdfOptions = {}): Promise<Blob | null> {
+    const canvas = this.toCanvas(forPaper(options));
+    return canvas ? canvasesToPdf([canvas], options) : null;
   }
 
   /** What the chart shows, for screen readers (the canvas's aria-label). */

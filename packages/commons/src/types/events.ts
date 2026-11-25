@@ -1,11 +1,11 @@
 import type { OHLCBar, TimeFrame } from './ohlc.js';
-import type { ConnectionInfo } from './realtime.js';
+import type { ConnectionInfo, Trade } from './realtime.js';
 import type { Point } from './rendering.js';
 import type { IndicatorValue } from './indicator.js';
 import type { DrawingToolType } from './drawing.js';
 import type { SymbolInfo } from './symbol.js';
 import type { MarketConfig } from '../market/types.js';
-import type { FillEvent } from './execution.js';
+import type { AccountSummary, FillEvent, MarginCall } from './execution.js';
 import type { TradingOrder, TradingPosition } from './trading.js';
 
 export type ChartEventType =
@@ -43,6 +43,8 @@ export type ChartEventType =
   | 'styleChange'
   | 'resize'
   | 'orderPlace'
+  /** The execution adapter took an order asked for (`orderPlace`), as the order it made of it. */
+  | 'orderPlaced'
   | 'orderModify'
   | 'orderCancel'
   | 'positionClose'
@@ -51,6 +53,11 @@ export type ChartEventType =
   | 'executionFill'
   | 'ordersChange'
   | 'positionsChange'
+  | 'accountChange'
+  | 'marginCall'
+  | 'trades'
+  | 'executionChange'
+  | 'bidAskChange'
   | 'executionError'
   | 'bracketPlace'
   /** A confirmed bracket the execution adapter took, as the order it placed. */
@@ -172,6 +179,12 @@ export interface BarClickPayload {
 export interface OrderModifyPayload {
   orderId: string;
   newPrice: number;
+  /**
+   * Where a stop-limit order's stop goes, when the move is of one: with the
+   * order dragged by its line (the room between the two kept), or alone,
+   * dragged by its own (`newPrice` is then the price the order has).
+   */
+  newStopPrice?: number;
 }
 
 export interface OrderCancelPayload {
@@ -182,6 +195,8 @@ export interface PositionModifyPayload {
   positionId: string;
   stopLoss?: number;
   takeProfit?: number;
+  /** The position's take-profit levels, all of them; null removes them. */
+  takeProfits?: { price: number; quantity: number }[] | null;
   /** The distance the stop-loss is to trail the price by; null ends the trail. */
   trailingStop?: number | null;
 }
@@ -201,8 +216,31 @@ export interface OrderPlacePayload {
   takeProfit?: number;
   /** The distance, in price, the position's stop-loss is to trail the price by. */
   trailingStop?: number;
+  /** Take-profit levels for the position the order opens: a part of it closes at each. */
+  takeProfits?: { price: number; quantity: number }[];
   /** How long the order works. */
-  timeInForce?: 'gtc' | 'day';
+  timeInForce?: 'gtc' | 'day' | 'gtd' | 'ioc' | 'fok';
+  /** When the order ends (ms since the epoch), with `timeInForce: 'gtd'`. */
+  expireTime?: number;
+  /** A name shared by orders of which one cancels the others. */
+  ocoGroup?: string;
+  /** The symbol the order is for: the one the chart shows as it is asked for, unless the order names another. */
+  symbol?: string;
+  /** The exchange's own name for the order (`ATO`, `ATC`…), where the broker's rules give kinds of their own. */
+  exchangeType?: string;
+  /**
+   * The id the order goes out with, its own: the chart gives one to every order asked for
+   * (`placeOrderIntent`) that has none. A broker that takes it turns away a repeat of the same
+   * order (a press sent twice, a retry after a slow answer), and `orderPlaced` and
+   * `executionError` name the order by it.
+   */
+  clientOrderId?: string;
+}
+
+/** An order the execution adapter took: the one asked for, with its `clientOrderId`, and the order made of it. */
+export interface OrderPlacedPayload {
+  intent: OrderPlacePayload;
+  order: TradingOrder;
 }
 
 export interface ExecutionErrorPayload {
@@ -210,6 +248,8 @@ export interface ExecutionErrorPayload {
   cause?: unknown;
   /** The chart's intent whose command failed (`'orderPlace'`, `'bracketPlace'`…), when it was one. */
   command?: string;
+  /** The `clientOrderId` of the order that failed, for an `'orderPlace'`. */
+  clientOrderId?: string;
   /**
    * Why the chart sent it no further, when that was the chart's call and not
    * the adapter's: a bracket with no quantity (`'noQuantity'`), or no price yet
@@ -289,6 +329,8 @@ export type ChartContextArea = 'plot' | 'pane' | 'priceAxis' | 'timeAxis';
  * Payload for `chartContextMenu`: a right-click off any drawing, where it was
  * (`x`, `y` in the chart's pixels), and the price and bar time there when the
  * area has them (the price pane: both; the price axis: price; the time axis: time).
+ * The price is on the market's grid (`chart.roundPrice`): what is placed at it
+ * is at a price the market has.
  */
 export interface ChartContextMenuPayload {
   area: ChartContextArea;
@@ -300,7 +342,7 @@ export interface ChartContextMenuPayload {
   pane?: string;
 }
 
-/** Payload for `priceAxisAdd`: the "+" by the price axis was clicked at `price`. */
+/** Payload for `priceAxisAdd`: the "+" by the price axis was clicked at `price`, a price on the market's grid (`chart.roundPrice`). */
 export interface PriceAxisAddPayload {
   price: number;
   x: number;
@@ -435,8 +477,14 @@ export interface ChartEventMap {
   /** The chart's size changed: its element was resized (a window, a rotation, a panel beside it) or `resize()` was called. */
   resize: ResizePayload;
   orderPlace: OrderPlacePayload;
+  /**
+   * The execution adapter took an order asked for: until this, or an `executionError` naming its
+   * `clientOrderId`, the order is on its way. Not sent with no adapter connected: the order is
+   * then the app's to place, and to answer for.
+   */
+  orderPlaced: OrderPlacedPayload;
   bracketPlace: BracketPlacePayload;
-  /** A confirmed bracket the execution adapter took, as the order it placed (`connectExecution(adapter, { brackets: 'place' })`). */
+  /** A confirmed bracket the execution adapter took, as the order it placed (not with `connectExecution(adapter, { brackets: 'event' })`). */
   bracketOrder: { order: TradingOrder; bracket: BracketPlacePayload };
   orderModify: OrderModifyPayload;
   orderCancel: OrderCancelPayload;
@@ -449,6 +497,23 @@ export interface ChartEventMap {
   ordersChange: { orders: TradingOrder[] };
   /** The positions on the chart changed (`setPositions`, or the execution adapter): all of them. */
   positionsChange: { positions: TradingPosition[] };
+  /** The best bid and ask marked on the chart changed (`setBidAsk`, or the feed's quotes); null: taken off. */
+  bidAskChange: { bid?: number; ask?: number } | null;
+  /** An execution adapter was connected to the chart, or the one it had was taken away. */
+  executionChange: { connected: boolean };
+  /** The account's money changed (the execution adapter's `account`); null once no adapter keeps one. */
+  accountChange: { account: AccountSummary | null };
+  /** The account was warned: its equity fell under the part of its margin it is to keep (the execution adapter's `marginCall`). */
+  marginCall: MarginCall;
+  /**
+   * Trades of the chart's symbol, oldest first: the feed's while they are
+   * followed (`chart.followTrades()`, or a footprint chart), and those given
+   * with `chart.addTrades()`. `recent`: the feed's recent trades, told when
+   * it starts being followed and after a reconnect, not trades made just now.
+   * The feed's recent trades are told once, however often it is asked for
+   * them; `chart.getTrades()` has the ones told before a listener came.
+   */
+  trades: { trades: Trade[]; recent: boolean };
   /** The reverse button on a position's tag was pressed. */
   positionReverse: { positionId: string };
   /** A right-click off any drawing, where it landed: only while something listens. */

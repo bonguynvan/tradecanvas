@@ -73,3 +73,16 @@ describe('computePeriodLevels', () => {
     expect(computePeriodLevels(bars, 'day', 'Mars/Olympus_Mons')).toEqual(computePeriodLevels(bars, 'day'));
   });
 });
+
+describe('computePeriodLevels on a trading day that starts in the evening', () => {
+  it('ends yesterday at the session’s open, not at midnight', () => {
+    // 09:00 and 15:00 in Chicago (UTC-6 in January), then 17:00 and 23:00: the 17:00 bar opens the next trading day.
+    const t = (hour: number) => Date.UTC(2023, 0, 2, hour + 6);
+    const bars = [bar(t(9), 10, 11, 9, 10), bar(t(15), 10, 15, 10, 14), bar(t(17), 20, 30, 20, 28), bar(t(23), 28, 40, 27, 39)];
+    const midnight = computePeriodLevels(bars, 'day', 'America/Chicago');
+    expect(midnight).toEqual([]);
+    const evening = computePeriodLevels(bars, 'day', 'America/Chicago', 17 * 60);
+    expect(evening.find((l) => l.label === 'PDH')?.price).toBe(15);
+    expect(evening.find((l) => l.label === 'Day Open')?.price).toBe(20);
+  });
+});

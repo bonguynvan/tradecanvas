@@ -221,6 +221,135 @@ await chart.setTimeframe('500T')
 const builder = new TickBarBuilder(100)
 builder.push([{ time, price, volume }])   // → [{ bar, closed }]`}</code></pre>
 
+<h2 id="order-flow">Who took the trades</h2>
+<p>
+  A feed can say which side took each trade, the one that crossed the spread: <code>side</code> on a
+  trade (<code>'buy'</code> when the buyer lifted the ask, <code>'sell'</code> when the seller hit the
+  bid) and <code>buyVolume</code> on a bar, the part of its <code>volume</code> the buyers took. Both
+  are optional. With <code>buyVolume</code> a bar has a delta, bought less sold:
+  <code>barDelta(bar)</code> gives it, or <code>null</code> for a bar that does not say, and the Volume
+  Delta indicator (<code>voldelta</code>) draws it, and its running sum, in place of its estimate.
+  <code>BinanceAdapter</code> fills both in, from the exchange's taker buy volume and its aggregate
+  trades; <code>MockAdapter</code> makes them up.
+</p>
+<pre><code>{`chart.setData([{ time, open, high, low, close, volume: 1200, buyVolume: 700 }])
+chart.addIndicator('voldelta', { mode: 1, anchor: 'session' })   // the cumulative delta, from each session's start
+
+barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</code></pre>
+<p>
+  The chart carries <code>buyVolume</code> wherever it carries the volume. Bars built of other bars
+  (<code>resampleBars</code>, a timeframe the feed lacks) add it up; tick bars, and bars aggregated
+  from ticks, count it from trades that say their <code>side</code>; a replayed bar has it in step with
+  its volume; the CSV and JSON exports write it in a column of its own (<code>Buy Volume</code>), which
+  the import reads back. A bar with a part that does not say has none: half a split is no split.
+</p>
+<p>
+  Three things to know. A trade pushed with <code>chart.updateLastBarFromTick</code> counts too when it
+  has its <code>side</code>; one with a volume and no side leaves the forming bar with no
+  <code>buyVolume</code>. Renko, Kagi, line break, point and figure and range bars are drawn bars, not
+  the feed's: indicators on those charts read the drawn bars, which have no split, so the delta there is
+  the estimate. And where only some bars of a series say, the cumulative delta adds true deltas to
+  estimates, each of which is a bar's whole volume: it steps where the two meet. The JS API and UDF
+  bridges have no field for it.
+</p>
+
+<h2 id="footprint">The footprint chart</h2>
+<p>
+  <code>chartType: 'footprint'</code> draws, by each bar, what traded at every price inside it: what
+  the sellers took at the bid on the left, what the buyers took at the ask on the right. A row where
+  one side outdid the other is in bold on a stronger tint, the row most traded at has a line round
+  it, and a slim candle stands at the left of each bar. In the widget it is Footprint in the chart
+  type menu, with its settings in Chart Settings.
+</p>
+<pre><code>{`const chart = new Chart(el, { chartType: 'footprint' })
+await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1m' })`}</code></pre>
+<p>
+  That is all a feed with trades needs (<code>fetchTrades</code> and <code>subscribeTrades</code>, as
+  <code>BinanceAdapter</code> and <code>MockAdapter</code> have): while the chart shows a footprint it
+  asks the feed for its recent trades, a thousand of them, and follows its live ones, and it stops
+  when the chart type changes. A feed keeps few trades, so at first only the newest bars have a
+  footprint: the bar the recent trades began part way through is left out, the bars before it are
+  slim candles, and the footprint grows with the live trades from there. Another symbol or timeframe
+  starts it again.
+</p>
+<p>
+  A host with trades of its own gives them with <code>chart.addTrades(trades)</code>, on any chart
+  type: each is counted in the bar of its time and the row of its price, on the side that took it. A
+  trade with no <code>side</code> is told by the trade before it (bought when the price went up to
+  it, sold when it went down): an estimate, as the delta of a bar with no <code>buyVolume</code> is.
+  A host that keeps the rows gives those, bar by bar, and <code>footprintOf</code> makes them from
+  trades in one call.
+</p>
+<pre><code>{`import { footprintOf, footprintStats } from '@tradecanvas/chart'
+
+chart.setChartTypeOptions({ footprint: { rowSize: 0.5, collect: false } })   // the rows are the host's
+chart.setFootprint([
+  { time: bar.time, levels: [{ price: 100, buy: 12, sell: 30 }, { price: 100.5, buy: 41, sell: 9 }] },
+])
+chart.setFootprint(footprintOf(trades, '1m', 0.5))    // or made from trades
+
+const rows = chart.getFootprint(bar.time)             // { time, levels }, or null for a bar with none
+if (rows) footprintStats(rows.levels)                 // { buy, sell, volume, delta, poc, … }
+chart.clearFootprint()                                // before another series' rows`}</code></pre>
+<table>
+  <thead><tr><th>Setting</th><th>Default</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>rowSize</code></td><td><code>'auto'</code></td><td>The height of a row in price. Auto is about a ten-thousandth of the last price, rounded to 1, 2 or 5 (5 at 60,000), in whole steps of the symbol's price step; with rows given by hand, the smallest step between their prices. Another size starts the footprint again.</td></tr>
+    <tr><td><code>cells</code></td><td><code>'bidAsk'</code></td><td><code>'bidAsk'</code>: the two sides apart. <code>'delta'</code>: bought less sold. <code>'volume'</code>: both together.</td></tr>
+    <tr><td><code>imbalance</code></td><td><code>3</code></td><td>How many times one side has to outdo the other, a row apart, to be marked: what was bought at a price against what was sold one row below, and what was sold against what was bought one row above. 0 marks none.</td></tr>
+    <tr><td><code>collect</code></td><td><code>true</code></td><td>false: the chart asks its feed for no trades.</td></tr>
+    <tr><td><code>totals</code></td><td><code>true</code></td><td>Under each bar, what its rows add up to: bought less sold in the colour of its sign, and both together under that. Written where a bar is wide enough for a number; the price scale leaves them room under the lowest bar. false: none.</td></tr>
+  </tbody>
+</table>
+<p>
+  The zoom decides what a bar carries. Choosing the footprint zooms in to where the numbers read,
+  and its bars may get much wider than candles do; zoomed out, the numbers give way to a bar for
+  each side, then to plain candles. Rows too thin to read are drawn 2, 5, 10… to one, on round
+  prices. The footprint is kept for the newest 500 bars and is not saved with the chart's state.
+  During a replay the bars not yet shown carry no cells, nor does a bar still forming from finer bars.
+  On a tick chart a trade is counted in the last bar that had opened when it came, so a bar's first
+  trade can fall in the bar before it. It is drawn in Canvas 2D, with the WebGL
+  renderer too. <code>renderPriceChart</code> draws it from <code>footprint</code>, the rows as
+  <code>chart.getFootprint()</code> gives them.
+</p>
+
+<h2 id="tape">The tape, and the trades themselves</h2>
+<p>
+  <code>chart.followTrades()</code> follows the trades of the chart's symbol until the function it
+  returns is called: the feed's recent trades, then its live ones, as <code>trades</code> events. The
+  feed is asked once for any number of followers, and a chart that shows a footprint follows them by
+  itself. Trades given with <code>chart.addTrades()</code> are told the same way. No trade of the
+  feed's is told twice: not on another timeframe of the symbol, nor after a reconnect, when only the
+  ones missed are, though later ones were told first. <code>chart.getTrades()</code> gives the trades told
+  lately, up to two thousand, for a listener that comes after they were told.
+</p>
+<pre><code>{`const stop = chart.followTrades()
+chart.on('trades', (e) => {
+  // e.payload.trades: oldest first
+  // e.payload.recent: the feed's recent trades, not trades made just now
+  for (const trade of e.payload.trades) log(trade.time, trade.price, trade.volume, trade.side)
+})
+stop()   // the feed is let go of once no one follows it and the chart is no footprint`}</code></pre>
+<p>
+  In the widget, <code>tape: true</code> adds the tape (time and sales) to the dock: the trades newest
+  on top, each with its time, its price and its size, the price in the colour of who took it. A bar
+  over the list says how much of the rows the buyers took and how much the sellers, a trade ten times
+  the usual size stands out, and trades under a least size can be left out
+  (<code>{`tape: { minSize: 0.5 }`}</code>, or typed in the panel). The widget follows the feed's trades
+  only while the tape is open. <code>widget.openPanel('tape')</code> opens it; its switches are
+  <code>tape</code> and <code>dock.tape</code>.
+</p>
+<p>
+  A menu in the tape's header lists one side's trades alone (bought, or sold), and makes one row of the
+  trades made together: those of one moment, one price and one side, their sizes added, so a market
+  order that took several resting orders reads as the one trade it was. Such a row is measured against
+  the least size, and for being large, by what it adds up to. Both can be set from the start
+  (<code>{`tape: { side: 'buy', group: true }`}</code>). What a reader chooses in the panel is kept in
+  the browser and is there the next time: the side and the grouping for every symbol, the least size
+  for the symbol it was chosen on, since a size means one thing on one instrument and another on the next.
+  What the reader chose is used over the option it started from, each choice by itself; <code>persist: false</code> keeps nothing.
+</p>
+
 <h2>Market status and news</h2>
 <p>
   <code>marketStatus(info, now)</code> tells whether a symbol's market is open at a moment, from its
@@ -382,7 +511,7 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // every mark from 
 
 <h3>Paper trading in a replay</h3>
 <p>
-  An execution adapter with <code>setMarkPrice(price, time)</code> (as
+  An execution adapter with <code>setMarkPrice(price, time, symbol)</code> (as
   <code>PaperExecutionAdapter</code> has) trades on the replay: during a replay the chart
   hands it each replayed price and time, so orders and stops fill as the replay passes
   them and fills land on the replayed bars. Each step's low and high count, and a jump
@@ -391,6 +520,8 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // every mark from 
   it meanwhile; when the replay ends it goes back to the live price, and fills to the
   clock. Price alerts keep watching the live market throughout; alerts on indicator
   lines wait for the replay to end.
+  <code>chart.getTradingTime()</code> is the moment an order placed now is placed at: the replay's while the
+  account trades on it, else the clock's. The widget's order ticket counts a good-till-date order's date from it.
 </p>
 <pre><code>{`chart.connectExecution(new PaperExecutionAdapter())
 chart.replayStart({ startIndex: 300, paused: true })

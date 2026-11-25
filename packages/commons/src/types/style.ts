@@ -22,12 +22,24 @@ export type StyleValueKind = 'color' | 'lineStyle' | 'width' | 'boolean';
  *   whatever the day's direction, and `lastPrice.labelTextColor` colours its
  *   text. Unset, the tag is the up or the down colour and its text the one
  *   that reads on it. The line keeps `upColor` and `downColor` either way.
+ * - `lastPrice.limitColors` draws the last price's line and tag in a day's
+ *   limit's colour while the price is at that limit: the ceiling's at or
+ *   over the ceiling, the floor's at or under the floor, the reference's at
+ *   the reference price, over a look's own `lastPrice.labelBackground`.
+ *   The tag is a shade deeper where its figure would not read. For a market
+ *   that has a day's limits and a board that colours prices by them; off
+ *   unless you set it. The legend and the crosshair keep the day's colours.
+ * - `crosshair.labelChange` writes, under the price the crosshair names on
+ *   the axis, how far that price is from the last one, in percent (none on a
+ *   scale that is in percent already). The Graphite themes have it on.
  * - `axis.price.valueTagsOutlined` draws an indicator's value tags on the
  *   price axis (in the price pane and in the indicator panes) outlined:
  *   the chart's background (a pane's own where it has one), with an edge
  *   and its text in the line's colour, instead of filled with the line's
  *   colour. A line too close to the background to be read on it has its
- *   value written in the scale's text colour.
+ *   value written in a deeper shade of its colour. The bid's, the ask's,
+ *   the high's and the low's tags, and an order's and a position's, are
+ *   outlined with them.
  * - `grid.vertical.periodsOnly` rules the vertical grid where a period
  *   begins, not at the time axis's labels: at each day's first bar on an
  *   intraday chart, each month's on a chart of days, each year's on a chart
@@ -64,6 +76,7 @@ export const CHART_STYLE_KEYS = {
   'crosshair.vertical.width': 'width',
   'crosshair.labelBackground': 'color',
   'crosshair.labelTextColor': 'color',
+  'crosshair.labelChange': 'boolean',
 
   'axis.price.lineColor': 'color',
   'axis.price.textColor': 'color',
@@ -85,6 +98,7 @@ export const CHART_STYLE_KEYS = {
   'lastPrice.width': 'width',
   'lastPrice.labelBackground': 'color',
   'lastPrice.labelTextColor': 'color',
+  'lastPrice.limitColors': 'boolean',
 
   'volume.upColor': 'color',
   'volume.downColor': 'color',
@@ -119,6 +133,10 @@ export const CHART_STYLE_KEYS = {
   'series.heikinAshi.downColor': 'color',
   'series.heikinAshi.wickUpColor': 'color',
   'series.heikinAshi.wickDownColor': 'color',
+  'series.smoothedHeikinAshi.upColor': 'color',
+  'series.smoothedHeikinAshi.downColor': 'color',
+  'series.smoothedHeikinAshi.wickUpColor': 'color',
+  'series.smoothedHeikinAshi.wickDownColor': 'color',
   'series.hollowCandle.upColor': 'color',
   'series.hollowCandle.downColor': 'color',
   'series.volumeCandles.upColor': 'color',
@@ -129,10 +147,18 @@ export const CHART_STYLE_KEYS = {
   'series.equivolume.downColor': 'color',
   'series.equivolume.wickUpColor': 'color',
   'series.equivolume.wickDownColor': 'color',
+  'series.footprint.upColor': 'color',
+  'series.footprint.downColor': 'color',
+  'series.footprint.wickUpColor': 'color',
+  'series.footprint.wickDownColor': 'color',
   'series.bar.upColor': 'color',
   'series.bar.downColor': 'color',
   'series.hiLo.upColor': 'color',
   'series.hiLo.downColor': 'color',
+  'series.hlcBars.upColor': 'color',
+  'series.hlcBars.downColor': 'color',
+  'series.columns.upColor': 'color',
+  'series.columns.downColor': 'color',
   'series.renko.upColor': 'color',
   'series.renko.downColor': 'color',
   'series.lineBreak.upColor': 'color',
@@ -152,10 +178,17 @@ export const CHART_STYLE_KEYS = {
   'series.stepLine.lineWidth': 'width',
   'series.lineWithMarkers.color': 'color',
   'series.lineWithMarkers.lineWidth': 'width',
+  'series.spline.color': 'color',
+  'series.spline.lineWidth': 'width',
+  'series.dots.color': 'color',
   'series.area.lineColor': 'color',
   'series.area.lineWidth': 'width',
   'series.area.topColor': 'color',
   'series.area.bottomColor': 'color',
+  'series.stepArea.lineColor': 'color',
+  'series.stepArea.lineWidth': 'width',
+  'series.stepArea.topColor': 'color',
+  'series.stepArea.bottomColor': 'color',
   'series.hlcArea.lineColor': 'color',
   'series.hlcArea.lineWidth': 'width',
   'series.hlcArea.topColor': 'color',
@@ -218,6 +251,8 @@ export interface ResolvedChartStyle {
     vertical: ResolvedLineLook;
     labelBackground: string;
     labelText: string;
+    /** The price on the axis has, under it, how far it is from the last price, in percent. */
+    labelChange: boolean;
   };
   /** `valueTagsOutlined`: an indicator's value tags on the price axis drawn outlined, not filled. */
   axis: { price: { line: string; text: string; valueTagsOutlined: boolean }; time: { line: string; text: string } };
@@ -225,8 +260,11 @@ export interface ResolvedChartStyle {
   legend: { text: string; label: string; up: string; down: string };
   /** Null: the watermark's own colour, or the theme's. */
   watermark: { color: string | null };
-  /** `labelBackground` and `labelText`, null: the tag is the up or the down colour, its text the one that reads on it. */
-  lastPrice: { visible: boolean; up: string; down: string; style: LineStyle; width: number; labelBackground: string | null; labelText: string | null };
+  /**
+   * `labelBackground` and `labelText`, null: the tag is the up or the down colour, its text the one that reads on it.
+   * `limitColors`: at a day's limit or its reference price, the line and the tag are that limit's colour.
+   */
+  lastPrice: { visible: boolean; up: string; down: string; style: LineStyle; width: number; labelBackground: string | null; labelText: string | null; limitColors: boolean };
   /** Null: the session breaks' own settings, or the theme's. */
   sessionBreaks: { color: string | null; style: LineStyle | null; width: number | null };
   /** Null: the high and low lines' own colour. */

@@ -2,14 +2,14 @@
  * The widget's look: corners, sizes, type, lines, shadows and the shape of
  * its bars, as tokens. A preset gives all of them; a theme of yours changes
  * what it names. Colours stay with the widget's dark / light theme, but for
- * Modern's: it brings a dark and a light of its own (see `WidgetStyles.css`
- * and `MODERN_DARK_THEME`).
+ * Graphite's and Modern's: each brings a dark and a light of its own (see
+ * `WidgetStyles.css`, and `GRAPHITE_DARK_THEME` and `MODERN_DARK_THEME`).
  */
 import { FIGURES_FONT_FAMILY, PHI, SANS_FONT_FAMILY, evenPx, phiStep } from '@tradecanvas/commons';
 
-export type WidgetUIPreset = 'modern' | 'print' | 'studio' | 'terminal' | 'capsule' | 'desk';
+export type WidgetUIPreset = 'graphite' | 'modern' | 'print' | 'studio' | 'terminal' | 'capsule' | 'desk';
 
-const DEFAULT_PRESET: WidgetUIPreset = 'modern';
+const DEFAULT_PRESET: WidgetUIPreset = 'graphite';
 
 /** Type climbs by the cube root of φ: every third size is φ larger (11, 13, 15, 18, 21). */
 const TYPE_STEPS_PER_PHI = 3;
@@ -93,7 +93,7 @@ export function scaledWidgetUI(ui: ResolvedWidgetUI, factor: number): ResolvedWi
   return {
     ...ui,
     sizes: { toolbar: at(s.toolbar), control: at(s.control), controlSmall: at(s.controlSmall), icon: at(s.icon), sidebar: at(s.sidebar), menuItem: at(s.menuItem) },
-    font: { ...ui.font, size: Math.round(ui.font.size * factor) },
+    font: { ...ui.font, size: Math.round(ui.font.size * factor), ...(ui.font.smallSize === undefined ? {} : { smallSize: Math.round(ui.font.smallSize * factor) }) },
   };
 }
 
@@ -155,6 +155,13 @@ export interface WidgetUIFont {
   mono: string;
   /** Body size, px; the small sizes follow it. */
   size: number;
+  /**
+   * The small size, px, 10 to 20: figures in a table, a field's name, a segment. Left out, it is
+   * the step under `size` on the look's scale (11 for 13). A look that sets it writes nothing to
+   * read under it: its smallest type (`--tcw-font-size-xs`) is this size too, and only a character
+   * inside a set shape (`--tcw-font-size-glyph`) stays two steps under `size`.
+   */
+  smallSize?: number;
   weight: number;
   strongWeight: number;
   /** Small labels (section titles, field names): as written or in capitals. */
@@ -274,6 +281,15 @@ const DESK_SANS = "Tahoma, Verdana, 'Segoe UI', 'DejaVu Sans', sans-serif";
  * and each system's own where it doesn't, as Print's.
  */
 const MODERN_SANS = `'Geist', ${PRINT_SANS}`;
+/**
+ * Graphite's face: IBM Plex Sans where the page loads it (the widget loads no fonts), whose
+ * digits are one width as drawn, and each system's own where it doesn't, as Print's.
+ */
+const GRAPHITE_SANS = `'IBM Plex Sans', ${PRINT_SANS}`;
+/** Graphite's one corner, px, on everything but a dot. */
+const GRAPHITE_RADIUS = 3;
+/** Graphite's one shadow, on what floats over the chart. */
+const GRAPHITE_SHADOW = '0 0 0 1px var(--tcw-border-strong), var(--tcw-shadow-md)';
 
 type Density = 'compact' | 'spacious';
 type PresetBase = Omit<ResolvedWidgetUI, 'components' | 'preset' | 'density'> & {
@@ -286,7 +302,35 @@ type PresetBase = Omit<ResolvedWidgetUI, 'components' | 'preset' | 'density'> & 
 
 const PRESETS: Record<WidgetUIPreset, PresetBase> = {
   /*
-   * Modern, the default: a code editor's window. Chrome a shade off the chart
+   * Graphite, the default: a trading desk's chrome with no hue of its own. Grounds a shade apart
+   * with hairlines between. Its tokens are few on purpose: controls are 20, 24, 28, 36 or 40 px
+   * tall and nothing between, every corner is 3 px, floating layers cast one shadow and nothing
+   * else casts any. What is picked (a tool, an interval, a tab) shows on a lighter ground in the
+   * text's own colour, and the button that sends is that colour too, so amber is left for what is
+   * the user's own on the chart, a link and the logo. Its dark and light colours are in the stylesheet, scoped to it.
+   */
+  graphite: {
+    radius: { xs: GRAPHITE_RADIUS, sm: GRAPHITE_RADIUS, md: GRAPHITE_RADIUS, lg: GRAPHITE_RADIUS, xl: GRAPHITE_RADIUS },
+    components: { tag: GRAPHITE_RADIUS, tooltip: GRAPHITE_RADIUS, toolbar: 0, sidebar: 0 },
+    sizes: { toolbar: 40, control: 28, controlSmall: 24, icon: 16, sidebar: 42, menuItem: 28 },
+    density: {
+      compact: { toolbar: 36, control: 24, controlSmall: 20, icon: 16, sidebar: 36, menuItem: 24 },
+      spacious: { toolbar: 48, control: 36, controlSmall: 28, icon: 20, sidebar: 46, menuItem: 36 },
+    },
+    font: { family: GRAPHITE_SANS, mono: PRINT_FIGURES, size: 13, smallSize: 12, weight: 400, strongWeight: 600, labelCase: 'none', labelTracking: 0 },
+    borders: { width: 1, separators: true },
+    // One shadow, for what floats: a menu, a dialog and a tooltip alike.
+    shadows: { menu: GRAPHITE_SHADOW, dialog: GRAPHITE_SHADOW, tooltip: GRAPHITE_SHADOW },
+    blur: 0,
+    active: 'tint',
+    toolbar: 'docked',
+    sidebar: 'docked',
+    intervals: 'plain',
+    tagRadius: GRAPHITE_RADIUS,
+    iconStroke: 1.5,
+  },
+  /*
+   * Modern, the default before Graphite: a code editor's window. Chrome a shade off the chart
    * around it, hairlines between, 16 px icons in 28 px buttons on a 38 px bar,
    * corners of 4 on controls, 6 on menus and floating panels and 8 on dialogs.
    * A chosen tool shows the editor's toggled ground; its own dark and light
@@ -545,16 +589,19 @@ export function resolveWidgetUI(theme?: WidgetUIPreset | WidgetUITheme): Resolve
   const radius = pick(base.radius, t.radius, (_, v) => px(v, 0, 999));
   const density = oneOf(t.density, ['compact', 'classic', 'comfortable', 'spacious', 'airy'] as const) ? t.density : 'comfortable';
   const sizes = pick(densitySizes(base, density), t.sizes, (key, v) => (key === 'icon' ? px(v, 10, 32) : px(v, 16, 80)));
-  const picked = pick(base.font, t.font, (key, v) => {
+  // A preset's small size is for its own body size: under a theme's other body size it follows the scale again.
+  const ownBody = px(t.font?.size, 11, 20) && t.font?.size !== base.font.size;
+  const picked = pick({ ...base.font, smallSize: ownBody ? undefined : base.font.smallSize }, t.font, (key, v) => {
     if (key === 'family' || key === 'mono') return cssValue(v);
     if (key === 'size') return px(v, 11, 20);
+    if (key === 'smallSize') return px(v, MIN_TYPE_SIZE, 20);
     if (key === 'weight' || key === 'strongWeight') return px(v, 100, 900);
     if (key === 'labelCase') return v === 'none' || v === 'uppercase';
     return px(v, 0, 0.5);
   });
   // Airy figures read in the look's own sans face, unless its figures face is set; Print's and Modern's
   // in plain Segoe UI, as Segoe UI Variable's and Geist's digits are not one width and the chart's canvas can't ask.
-  const figures = picked.family === PRINT_SANS || picked.family === MODERN_SANS ? SANS_FONT_FAMILY : picked.family;
+  const figures = picked.family === PRINT_SANS || picked.family === MODERN_SANS || picked.family === GRAPHITE_SANS ? SANS_FONT_FAMILY : picked.family;
   const font = density === 'airy' && t.font?.mono === undefined ? { ...picked, mono: figures } : picked;
   // Corners the theme sets on the scale reach the parts that follow it.
   const components = pick(componentsFrom(radius, base.components), t.components, (_, v) => px(v, 0, 999));
@@ -588,6 +635,11 @@ export function widgetUIVariables(ui: ResolvedWidgetUI): Record<string, string> 
   const compact = ui.density === 'compact';
   const even = isEvenDensity(ui.density);
   const tool = compact ? 1 : TOOL_STEP;
+  const small = f.smallSize ?? typeSize(f.size, -1);
+  // A character inside a set shape (a badge's letter, a keycap): the scale's smallest, in every look.
+  const glyph = typeSize(f.size, -2);
+  // The smallest type to read: the scale's smallest too, but a look that sets its small size has nothing under it.
+  const tiny = f.smallSize === undefined ? glyph : small;
   // A half step over the other buttons (an even size, so the icon centres on whole pixels),
   // but never so wide the column keeps less than its room a side.
   const toolStep = even ? evenPx(s.control * TOOL_STEP) : Math.round(s.control * TOOL_STEP);
@@ -607,7 +659,7 @@ export function widgetUIVariables(ui: ResolvedWidgetUI): Record<string, string> 
     '--tcw-line-height': even ? String(Math.round((evenPx(f.size * LINE_RATIO) / f.size) * 1e5) / 1e5) : String(LINE_RATIO),
     '--tcw-legend-line': p(legendLine),
     '--tcw-legend-line-pane': p(paneLine),
-    '--tcw-line-xs': even ? p(evenPx(typeSize(f.size, -2) * LINE_RATIO)) : String(LINE_RATIO),
+    '--tcw-line-xs': even ? p(evenPx(tiny * LINE_RATIO)) : String(LINE_RATIO),
     // The bars' text buttons a whole number of pixels wide, where the browser can round a box sized by its content.
     '--tcw-text-w': even ? TEXT_WIDTH_ROUNDED : 'auto',
     '--tcw-radius-xs': p(r.xs),
@@ -639,8 +691,9 @@ export function widgetUIVariables(ui: ResolvedWidgetUI): Record<string, string> 
     '--tcw-font': f.family,
     '--tcw-font-mono': f.mono,
     '--tcw-font-size': p(f.size),
-    '--tcw-font-size-sm': p(typeSize(f.size, -1)),
-    '--tcw-font-size-xs': p(typeSize(f.size, -2)),
+    '--tcw-font-size-sm': p(small),
+    '--tcw-font-size-xs': p(tiny),
+    '--tcw-font-size-glyph': p(glyph),
     '--tcw-font-size-lg': p(typeSize(f.size, 1)),
     '--tcw-font-size-xl': p(typeSize(f.size, 2)),
     '--tcw-font-size-display': p(typeSize(f.size, 3)),
@@ -649,7 +702,7 @@ export function widgetUIVariables(ui: ResolvedWidgetUI): Record<string, string> 
     '--tcw-label-case': f.labelCase,
     '--tcw-label-tracking': `${f.labelTracking}em`,
     // Labels in capitals read at the smallest size; labels as written need the next.
-    '--tcw-label-size': p(typeSize(f.size, f.labelCase === 'uppercase' ? -2 : -1)),
+    '--tcw-label-size': p(f.labelCase === 'uppercase' ? typeSize(f.size, -2) : small),
     '--tcw-border-w': p(ui.borders.width),
     '--tcw-sep-w': ui.borders.separators ? p(Math.max(1, ui.borders.width)) : '0px',
     '--tcw-menu-shadow': ui.shadows.menu,

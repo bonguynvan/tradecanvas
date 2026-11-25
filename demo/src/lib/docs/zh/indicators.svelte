@@ -154,10 +154,12 @@ chart.addIndicator('vwap', { anchor: 'all' })   // 已加载的全部K线，与�
 </table>
 
 <p>
-  <code>voldelta</code>（Volume Delta）根据 OHLCV 估算买卖压力——收涨的K线计入正成交量，
-  收跌的K线计入负成交量。<code>mode: 0</code> 为逐根K线的柱状图，
-  <code>mode: 1</code> 为累计 delta。（真正的逐笔 delta 需要每笔成交的买价 / 卖价数据，
-  而 OHLCV 序列并不包含这些信息。）
+  <code>voldelta</code>（Volume Delta）是每根K线中主动买入的成交量减去主动卖出的成交量。
+  说明了谁是主动方的K线（它的 <code>buyVolume</code>）给出真实的 delta。没有说明的K线则按收盘方式估算：
+  收盘价不低于开盘价时全部成交量计为正，否则计为负，这是 OHLCV K线所能做到的最接近的结果。
+  <code>mode: 0</code> 为逐根K线的柱状图，<code>mode: 1</code> 为累计 delta，在每个
+  <code>anchor</code> 周期重新开始（<code>'session'</code>、<code>'week'</code> 或 <code>'month'</code>；
+  默认的 <code>'all'</code> 则从不重新开始）。
 </p>
 
 <h2>亚洲行情软件常见的指标</h2>
@@ -187,6 +189,58 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   要导入它，请把 <code>@tradecanvas/core</code> 列入应用的依赖。
 </p>
 <pre><code>{`import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core/patterns'`}</code></pre>
+
+<h2 id="fair-value-gaps">公允价值缺口</h2>
+<p>
+  三根K线中，第三根的最低价高于第一根的最高价（向下时，第三根的最高价低于第一根的最低价），就留下一个公允价值缺口：两者之间只有中间那根K线成交过。图表在这段价格上画一个方框，缺口未回补时从中间那根K线画到右边缘，向上的缺口用青色，向下的用粉色（与K线形态标记同色，以区别于K线的红绿；可在指标样式中更改）。之后第一根完全穿过它的K线即回补该缺口，此后不再绘制，除非 <code>showFilled</code> 为 1。<code>detectFairValueGaps</code> 不需要图表就能给出全部缺口，以及回补每个缺口的K线。
+</p>
+<pre><code>{`chart.addIndicator('fvg')                              // 每个未回补的缺口一个方框
+chart.addIndicator('fvg', { minPercent: 0.1 })         // 略去小于价格 0.1% 的缺口
+chart.addIndicator('fvg', { showFilled: 1 })           // 保留已回补的缺口，颜色更淡，画到回补它的K线
+
+import { detectFairValueGaps } from '@tradecanvas/chart'
+
+detectFairValueGaps(bars, { minPercent: 0.1 })
+// [{ index, formed, direction: 'up' | 'down', top, bottom, filledAt }]`}</code></pre>
+
+<h2 id="divergences">背离</h2>
+<p>
+  背离是指价格与振荡指标各转向两次，但方向不一致。看涨背离出现在两个低点：价格创出更低的低点，而指标的低点更高。看跌背离出现在两个高点：价格创出更高的高点，而指标的高点更低。<code>rsidiv</code> 是带背离标记的 RSI：每处背离在两个转折点之间画一条线，并在第二个转折点做标记；<code>hidden: 1</code> 还会加上隐藏背离（价格守住，RSI 没有），用虚线表示。转折点需要比它之前的 <code>left</code> 根K线和之后的 <code>right</code> 根K线都突出，因此背离会晚 <code>right</code> 根K线才确认，确认它的那根K线收盘后不再改变（那根K线仍在形成时，它可能出现又消失）；两个转折点相距 <code>minBars</code> 到 <code>maxBars</code> 根。<code>detectDivergences(bars, line, options)</code> 可读取任何每根K线一个值的序列（没有值处为 null），不需要图表。
+</p>
+<pre><code>{`chart.addIndicator('rsidiv', {}, 'bottom')                    // RSI，并标出背离
+chart.addIndicator('rsidiv', { hidden: 1 }, 'bottom')         // 加上隐藏背离，虚线
+chart.addIndicator('rsidiv', { left: 3, right: 3 }, 'bottom') // 更近的转折点：晚 3 根确认，数量更多
+
+import { detectDivergences } from '@tradecanvas/chart'
+
+detectDivergences(bars, macdHistogram, { left: 5, right: 5, minBars: 5, maxBars: 60, hidden: true })
+// [{ kind: 'bullish' | 'bearish', hidden, from, to, confirmed, valueFrom, valueTo, priceFrom, priceTo }]`}</code></pre>
+
+<h2 id="session-volume-profile">分时段成交量分布</h2>
+<p>
+  <code>svp</code> 绘制每个交易日按价格的成交量：当天的价格区间分成 <code>rows</code> 行，每根K线的成交量平均分给其区间覆盖的各行，从当天第一根K线向右画出。其上，当天的控制点（成交量最大的一行）和价值区（围绕它、占当天成交量 <code>valueArea</code> 百分比的各行，默认 70，按 Market Profile 的算法每次从较重一侧加入两行）以横贯当天的线表示。一天从交易所时钟的午夜开始（<code>setExchangeTimeZone</code>），与 Session VWAP 相同。每根K线的 <code>poc</code>、<code>vah</code> 和 <code>val</code> 是它所在整天的值，包括它之后的K线：在过去的某天，早盘的K线带有当天收盘时的分布；在仍在交易的当天，它们会随交易移动。它们用于解读一天，不适合在该K线上作信号或回测。<code>volumeProfile</code> 是所有已加载K线的一个分布；<code>sessionVolumeProfiles</code> 无需图表即可给出每天的各行。
+</p>
+<pre><code>{`chart.addIndicator('svp')                           // 每天一个分布，带控制点和价值区
+chart.addIndicator('svp', { rows: 40, valueArea: 68 }) // 更细的行，更窄的价值区
+
+import { sessionVolumeProfiles } from '@tradecanvas/chart'
+
+sessionVolumeProfiles(bars, { rows: 24, valueArea: 70, timeZone: 'America/New_York' })
+// [{ start, end, time, low, high, rowHeight, volumes, total, poc, valueAreaLow, valueAreaHigh, valueAreaRows }]`}</code></pre>
+
+<h2 id="order-blocks">订单块</h2>
+<p>
+  摆动高点是指比之前 <code>length</code> 根K线都高、且不低于之后 <code>length</code> 根K线的K线（默认 5），因此要晚 <code>length</code> 根K线才能确认；摆动低点同理向下。当收盘价突破最近一个尚未被突破的摆动高点时，摆动点与该收盘之间最低的K线即为看涨订单块，范围为其最高价到最低价；收盘跌破最近的摆动低点时，其间最高的K线即为看跌订单块。每个摆动点只生成一个订单块。<code>orderblocks</code> 以与公允价值缺口相同的颜色把每个订单块画成方框，订单块有效时延伸到右边缘；收盘价穿过它（看涨块下方、看跌块上方）即为突破并移除，除非 <code>showBroken</code> 为 1。每一侧只绘制最近的 <code>count</code> 个仍有效的订单块（默认 5；0 为全部），较早较远的只会让图表杂乱。<code>detectOrderBlocks</code> 无需图表即可给出全部订单块以及突破每个订单块的K线。
+</p>
+<pre><code>{`chart.addIndicator('orderblocks')                    // 仍有效的订单块
+chart.addIndicator('orderblocks', { count: 3 })        // 每侧最近的三个
+chart.addIndicator('orderblocks', { length: 3 })       // 更短的摆动：更多订单块，更早确认
+chart.addIndicator('orderblocks', { showBroken: 1 })   // 已突破的也显示，更淡，画到突破它的K线
+
+import { detectOrderBlocks } from '@tradecanvas/chart'
+
+detectOrderBlocks(bars, { length: 5 })
+// [{ kind: 'bullish' | 'bearish', index, formed, top, bottom, swing, brokenAt }]`}</code></pre>
 
 <h2>自定义指标</h2>
 <p>

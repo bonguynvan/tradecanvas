@@ -17,6 +17,10 @@ export type { ParseResult, DragDropImporterCallbacks } from './io/index.js';
 export type {
   OHLCBar,
   DataSeries,
+  FootprintBar,
+  FootprintLevel,
+  FootprintOptions,
+  FootprintCells,
   TimeFrame,
   ChartOptions,
   BarLayout,
@@ -99,12 +103,16 @@ export type {
   PositionReverseIntent,
   TimeInForce,
   FillReason,
+  MarginCall,
   ExecutionAdapter,
+  OrderContext,
   ExecutionConfig,
   ExecutionEvent,
   ExecutionEventType,
   ExecutionListener,
   FillEvent,
+  AccountSummary,
+  TakeProfitLevel,
   ExecutionError,
   Locale,
   LocaleStrings,
@@ -158,10 +166,18 @@ export type {
   CandlePatternKind,
 } from '@tradecanvas/commons';
 export { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core';
+export { detectFairValueGaps } from '@tradecanvas/core';
+export type { FairValueGap, FairValueGapOptions } from '@tradecanvas/core';
+export { detectDivergences } from '@tradecanvas/core';
+export type { Divergence, DivergenceOptions } from '@tradecanvas/core';
+export { sessionVolumeProfiles } from '@tradecanvas/core';
+export type { SessionVolumeProfile, SessionVolumeProfileOptions } from '@tradecanvas/core';
+export { detectOrderBlocks } from '@tradecanvas/core';
+export type { OrderBlock, OrderBlockOptions } from '@tradecanvas/core';
 
 // Re-export themes and defaults
 export {
-  DARK_THEME, LIGHT_THEME, MODERN_DARK_THEME, MODERN_LIGHT_THEME, DARK_TERMINAL, DARK_PRICE_LIMITS, LIGHT_PRICE_LIMITS, TC_PALETTE, TC_SERIES_COLORS, volumeColor, VOLUME_ALPHA, CHART_STYLE_KEYS,
+  DARK_THEME, LIGHT_THEME, GRAPHITE_DARK_THEME, GRAPHITE_LIGHT_THEME, MODERN_DARK_THEME, MODERN_LIGHT_THEME, DARK_TERMINAL, DARK_PRICE_LIMITS, LIGHT_PRICE_LIMITS, TC_PALETTE, TC_SERIES_COLORS, volumeColor, VOLUME_ALPHA, CHART_STYLE_KEYS,
   MONO_FONT_FAMILY, FIGURES_FONT_FAMILY, SANS_FONT_FAMILY, CHART_SPACING,
   DEFAULT_DRAWING_STYLE, DEFAULT_TRADING_CONFIG,
   DEFAULT_SIGNAL_STYLE, DEFAULT_TRADE_ZONE_STYLE,
@@ -169,8 +185,13 @@ export {
 } from '@tradecanvas/commons';
 
 // Re-export data utilities
-export { normalizeBarTime, normalizeBar, barsAreDaily, barTimeUnit, MS_TIME_THRESHOLD } from '@tradecanvas/commons';
+export { normalizeBarTime, normalizeBar, barsAreDaily, barTimeUnit, MS_TIME_THRESHOLD, barDelta, buyVolumeOf } from '@tradecanvas/commons';
+export { tradingDayStart } from '@tradecanvas/commons';
 export type { BarTimeUnit } from '@tradecanvas/commons';
+
+// The footprint chart's data: rows from trades, a bar's sums, and where one side outdid the other
+export { autoFootprintRow, footprintImbalances, footprintOf, footprintStats } from '@tradecanvas/core';
+export type { FootprintImbalance, FootprintStats } from '@tradecanvas/core';
 
 // Timeframes of any length, resampling, and display time zones
 export {
@@ -181,7 +202,7 @@ export type { KnownTimeFrame, TimeFrameUnit, BucketOptions, TimeZoneSetting, His
 
 // Symbol search and what a feed knows about a symbol
 export { rankSymbols, stepDecimals, tickerOf } from '@tradecanvas/commons';
-export { formatFraction, fractionTick, priceFormatterFor } from '@tradecanvas/commons';
+export { formatFraction, fractionTick, priceFormatterFor, quantityText, orderQuantityText } from '@tradecanvas/commons';
 export type { PriceFormatter, PriceFraction, TimeFormatter, TimeFormatContext } from '@tradecanvas/commons';
 export type { SymbolInfo, SymbolSession, SymbolSearchOptions } from '@tradecanvas/commons';
 export type { ShapeConfig, PriceLimitColors } from '@tradecanvas/commons';
@@ -231,6 +252,11 @@ export type { DefinedIndicatorInput, IndicatorBars, IndicatorCalculation, Indica
 export type { IndicatorInputInfo } from '@tradecanvas/core';
 // The trade a Long/Short Position drawing stands for, for an app that places an order from it.
 export { positionLevels } from '@tradecanvas/core';
+// The trading activity log's lines (`chart.getActivityLog()`).
+export type { ActivityEntry, ActivityKind } from './model/ActivityLog.js';
+// A bracket being placed (`chart.getBracket()`), what sizes it, and the quantity a size gives it.
+export { bracketQuantity } from '@tradecanvas/core';
+export type { BracketDraft, BracketSize } from '@tradecanvas/core';
 export type { PositionLevels } from '@tradecanvas/core';
 // Screen geometry of a frame, for plugins that draw (indicators, overlays, chart types).
 export { barIndexToX, xToBarIndex, priceToY, priceToYMapper, yToPrice, timeToX, xToTime, timestampToBarIndex } from '@tradecanvas/core';
@@ -238,7 +264,7 @@ export { barIndexToX, xToBarIndex, priceToY, priceToYMapper, yToPrice, timeToX, 
 // Re-export realtime module
 export { StreamManager, ReconnectManager, ReplayController, BinanceAdapter, MockAdapter, TickAggregator, CurrentPriceLine, PaperExecutionAdapter, WebSocketAdapter, PollingAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, UpbitAdapter, ResamplingAdapter, ManualFeed, adapterFromFeed, feedFromAdapter, isDataFeed, withResampling, servesTimeframe, KEPT_BUCKETS, TickBarBuilder, TickBarAdapter, withTickBars } from '@tradecanvas/core';
 export type { ReplayBarEvent, ReplayEventMap, ReplayOptions, ReplayStateChangeEvent, ReplayStatus } from '@tradecanvas/core';
-export type { PaperExecutionOptions, WebSocketAdapterOptions, WsParseResult, PollingAdapterOptions, CoinbaseAdapterOptions, BybitAdapterOptions, KrakenAdapterOptions, UpbitAdapterOptions } from '@tradecanvas/core';
+export type { PaperExecutionOptions, PaperCommission, WebSocketAdapterOptions, WsParseResult, PollingAdapterOptions, CoinbaseAdapterOptions, BybitAdapterOptions, KrakenAdapterOptions, UpbitAdapterOptions } from '@tradecanvas/core';
 export { DEFAULT_RECONNECT, DEFAULT_STREAM_CONFIG } from '@tradecanvas/commons';
 // Datafeeds written for the callback-style JS API, and UDF servers, as a DataFeed
 export { feedFromJsApi, udfFeed, sessionsFromJsApi, symbolInfoFromJsApi } from '@tradecanvas/core';
@@ -266,7 +292,7 @@ export { VolumeRenderer, CompareRenderer } from '@tradecanvas/core';
 // How many charts on the page draw with WebGL at once.
 export { setMaxWebGLCharts, DEFAULT_MAX_WEBGL_CHARTS } from '@tradecanvas/core';
 export { lttbDownsample, lttbVisibleIndices } from '@tradecanvas/core';
-export type { CompareSymbol, CompareValue, MarketProfileConfig, PivotMarkersConfig } from '@tradecanvas/core';
+export type { CompareSymbol, CompareValue, DepthHeatmapConfig, MarketProfileConfig, PivotMarkersConfig } from '@tradecanvas/core';
 export { toHeikinAshi, toRenko, toLineBreak, toKagi, toPointAndFigure, toRangeBars, ReshapeMemo, axisTimes } from '@tradecanvas/core';
 
 // Re-export data export
@@ -296,8 +322,13 @@ export type { LayoutStorage, SavedLayout, SavedLayoutSummary } from './state/lay
 export type { GridLayout, GridArea, GridShape, GridCellConfig, ChartGridOptions } from './grid/ChartGrid.js';
 
 // Finance charts
-export { SparklineChart, DepthChart, EquityCurveChart, HeatmapChart, WaterfallChart, GaugeChart, PerformanceDashboard, BarChart, DonutChart, ScatterChart, HistogramChart, CalendarChart, MatrixChart, CounterClockChart } from './finance/index.js';
-export { histogramBins, niceScale, correlationMatrix, counterClockPoints, counterClockPhase } from '@tradecanvas/core';
+export { SparklineChart, DepthChart, EquityCurveChart, HeatmapChart, WaterfallChart, GaugeChart, PerformanceDashboard, BarChart, DonutChart, ScatterChart, HistogramChart, CalendarChart, MatrixChart, CounterClockChart, PayoffChart, CurveChart, BoxPlotChart, RadarChart, SunburstChart, StackedAreaChart, SurfaceChart, Bar3DChart } from './finance/index.js';
+export { histogramBins, niceScale, correlationMatrix, counterClockPoints, counterClockPhase, optionPayoff, payoffStats, optionPrice, positionValue, curveValueAt, boxPlotStats, depthSurface, renderFinanceChart, FINANCE_CHART_KINDS, imagesToPdf } from '@tradecanvas/core';
+export type { PdfImage } from '@tradecanvas/core';
+export { chartsToPdf } from './chartsToPdf.js';
+export type { PdfPageSource } from './chartsToPdf.js';
+export { renderPriceChart } from './static/renderPriceChart.js';
+export type { PayoffStats, OptionTerms } from '@tradecanvas/core';
 export {
   toEquityPoints,
   computeDrawdownCurve,
@@ -315,6 +346,40 @@ export type {
 } from './finance/index.js';
 export type {
   BaseFinanceChartOptions,
+  OptionLeg,
+  PayoffModel,
+  PayoffOptions,
+  RadarAxisHit,
+  CurvePoint,
+  CurveSeries,
+  CurveMarker,
+  CurveChartOptions,
+  BoxPlotStats,
+  BoxPlotGroup,
+  BoxPlotLabels,
+  BoxPlotOptions,
+  RadarAxis,
+  RadarChartOptions,
+  SunburstNode,
+  SunburstOptions,
+  StackedAreaOptions,
+  View3D,
+  ColorRamp,
+  Chart3DOptions,
+  SurfacePoint,
+  SurfaceChartOptions,
+  Bar3DChartOptions,
+  DepthSnapshot,
+  DepthSurface,
+  FinanceChartKind,
+  FinanceChartOptionsMap,
+  ChartImageOptions,
+  PriceChartOptions,
+  PriceChartIndicator,
+  PriceChartFeatures,
+  ChartPrintOptions,
+  ChartPdfOptions,
+  PdfPageOptions,
   SparklineOptions,
   DepthChartOptions,
   EquityPoint,

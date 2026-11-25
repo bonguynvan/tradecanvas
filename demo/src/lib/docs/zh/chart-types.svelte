@@ -1,10 +1,16 @@
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const { href } = useI18n();
+</script>
+
 <svelte:head>
   <title>图表类型 — TradeCanvas 文档</title>
-  <meta name="description" content="18 种内置图表类型：蜡烛图、OHLC、高低图、平均K线（Heikin-Ashi）、砖形图（Renko）、卡吉图（Kagi）、点数图（Point & Figure）、等量图（Equivolume）等。" />
+  <meta name="description" content="25 种内置图表类型：蜡烛图、OHLC 和 HLC 柱线、柱形图、样条曲线、阶梯面积图、高低图、平均K线（Heikin-Ashi）及其平滑版、砖形图（Renko）、卡吉图（Kagi）、点数图（Point & Figure）、等量图（Equivolume）等。" />
 </svelte:head>
 
 <h1>图表类型</h1>
-<p>18 种内置图表类型。运行时可通过 <code>chart.setChartType(type)</code> 切换。</p>
+<p>25 种内置图表类型。运行时可通过 <code>chart.setChartType(type)</code> 切换。</p>
 
 <h2>标准类型</h2>
 <table>
@@ -20,6 +26,11 @@
     <tr><td><code>hollowCandle</code></td><td>收盘价 &gt; 前一收盘价时实体为空心。</td></tr>
     <tr><td><code>hlcArea</code></td><td>最高价—最低价区间带，加一条收盘价线。</td></tr>
     <tr><td><code>hiLo</code></td><td>每根K线画一根从最低价到最高价的柱，按涨跌着色；柱子足够宽时会标出最高价和最低价。</td></tr>
+    <tr><td><code>hlcBars</code></td><td>每根K线画一条从最低价到最高价的竖线，并在收盘价处画一条短横线，不画开盘价；按收盘价相对前一收盘价的涨跌着色。</td></tr>
+    <tr><td><code>columns</code></td><td>一根向上到每个收盘价的柱子，按收盘价相对前一收盘价的涨跌着色。柱子立在视图内最低收盘价的稍下方，不与成交量重叠。</td></tr>
+    <tr><td><code>stepArea</code></td><td>阶梯线，其下方的区域填充。</td></tr>
+    <tr><td><code>spline</code></td><td>穿过各收盘价的平滑曲线，绝不会高于高位的收盘价，也不会低于低位的收盘价。</td></tr>
+    <tr><td><code>dots</code></td><td>在每个收盘价处画一个圆点。</td></tr>
   </tbody>
 </table>
 
@@ -28,6 +39,7 @@
   <thead><tr><th>类型</th><th>说明</th></tr></thead>
   <tbody>
     <tr><td><code>heikinAshi</code></td><td>经 Heikin-Ashi 变换得到的平滑蜡烛序列（平均K线）。</td></tr>
+    <tr><td><code>smoothedHeikinAshi</code></td><td>先把价格按 <code>period</code> 根K线取平均，再做 Heikin-Ashi 变换（默认 10，1 到 500 的整数；组件设置中的“平滑周期”）：它的蜡烛转向更晚、更少，所以一段趋势显示为连续的同一种颜色。<code>{`chart.setChartTypeOptions({ smoothedHeikinAshi: { period: 20 } })`}</code>。</td></tr>
     <tr><td><code>renko</code></td><td>固定价格砖块图（砖形图）；与时间无关。</td></tr>
     <tr><td><code>kagi</code></td><td>阳线 / 阴线（卡吉图）；反转幅度按百分比（默认 4）或按价格。</td></tr>
     <tr><td><code>lineBreak</code></td><td>收盘价突破最近几条线（默认 3 条）时画出新线（新价线）。</td></tr>
@@ -43,6 +55,16 @@
     <tr><td><code>volumeCandles</code></td><td>蜡烛宽度与成交量成正比。</td></tr>
     <tr><td><code>equivolume</code></td><td>
       覆盖完整价格区间的方框，宽度与成交量占比成正比；颜色取决于收盘价相对前一收盘价的涨跌（Richard Arms 风格）。
+    </td></tr>
+  </tbody>
+</table>
+
+<h2>订单流</h2>
+<table>
+  <thead><tr><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><code>footprint</code></td><td>
+      在每根K线旁画出其内部每个价位的成交：卖方在买价主动成交的量和买方在卖价主动成交的量，来自数据源的成交或你自己的数据。参见<a href={href('/docs/realtime#footprint')}>足迹图</a>。
     </td></tr>
   </tbody>
 </table>

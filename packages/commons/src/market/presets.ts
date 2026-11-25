@@ -127,6 +127,9 @@ const HOSE_STEPS: readonly PriceStepBand[] = [
 // Market presets. Vietnamese prices are in thousands of dong (25.35 is 25,350
 // dong), as price boards show them; scaleMarketPrices(preset, 1000) for dong.
 
+/** A Vietnamese share's price is written in thousands of dong: 26.40 is 26,400 dong, so a share at it is worth 1,000 times the figure. */
+const VN_PRICE_IN_DONG = 1000;
+
 /**
  * HOSE shares (Ho Chi Minh City), in thousands of dong: steps of 0.01 below
  * 10, 0.05 from 10, 0.1 from 50; 2 decimals; lots of 100; limits of ±7%
@@ -142,6 +145,7 @@ export const MARKET_HOSE: MarketConfig = {
   pricePrecision: 2,
   volumeUnit: 100,
   priceStep: 0.01,
+  contractMultiplier: VN_PRICE_IN_DONG,
   priceSteps: HOSE_STEPS,
   timeZone: VN_TIME_ZONE,
   priceLimits: { enabled: true, ceilingPercent: 7, floorPercent: 7 },
@@ -160,6 +164,7 @@ export const MARKET_HNX: MarketConfig = {
   type: 'stock',
   exchange: 'HNX',
   currency: 'VND',
+  contractMultiplier: VN_PRICE_IN_DONG,
   pricePrecision: 1,
   volumeUnit: 100,
   priceStep: 0.1,
@@ -174,6 +179,7 @@ export const MARKET_UPCOM: MarketConfig = {
   type: 'stock',
   exchange: 'UPCOM',
   currency: 'VND',
+  contractMultiplier: VN_PRICE_IN_DONG,
   pricePrecision: 1,
   volumeUnit: 100,
   priceStep: 0.1,
@@ -372,8 +378,9 @@ const scaled = (value: number, factor: number) => Math.round(value * factor * 1e
 
 /**
  * A copy of `config` for prices `factor` times larger (a power of ten):
- * steps, bands, the reference price and the decimals follow; a contract's
- * multiplier stays. `scaleMarketPrices(MARKET_HOSE, 1000)` reads prices in
+ * steps, bands, the reference price and the decimals follow, and what a price
+ * is worth (`contractMultiplier`) is divided by it, so an order is worth what
+ * it was. `scaleMarketPrices(MARKET_HOSE, 1000)` reads prices in
  * dong (25350) instead of thousands (25.35).
  */
 export function scaleMarketPrices(config: MarketConfig, factor: number): MarketConfig {
@@ -382,10 +389,14 @@ export function scaleMarketPrices(config: MarketConfig, factor: number): MarketC
     ...config,
     pricePrecision: config.pricePrecision === undefined ? undefined : Math.max(0, config.pricePrecision - decimalsLess),
     priceStep: config.priceStep === undefined ? undefined : scaled(config.priceStep, factor),
+    ...(config.contractMultiplier === undefined ? {} : { contractMultiplier: scaled(config.contractMultiplier, 1 / factor) }),
     priceSteps: config.priceSteps?.map((band) => ({ from: scaled(band.from, factor), step: scaled(band.step, factor) })),
     priceLimits: config.priceLimits && {
       ...config.priceLimits,
       referencePrice: config.priceLimits.referencePrice === undefined ? undefined : scaled(config.priceLimits.referencePrice, factor),
+      // A ceiling and a floor given as they are for the day are prices too.
+      ...(config.priceLimits.ceiling === undefined ? {} : { ceiling: scaled(config.priceLimits.ceiling, factor) }),
+      ...(config.priceLimits.floor === undefined ? {} : { floor: scaled(config.priceLimits.floor, factor) }),
     },
   };
 }

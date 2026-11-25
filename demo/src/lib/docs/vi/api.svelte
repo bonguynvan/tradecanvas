@@ -27,6 +27,10 @@
     <tr><td><code>appendBars(bars)</code></td><td>Thêm theo lô; tính lại chỉ báo một lần.</td></tr>
     <tr><td><code>updateLastBar(bar)</code></td><td>Cập nhật nến đang hình thành.</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>Gộp một tick vào nến cuối.</td></tr>
+    <tr><td><code>addTrades(trades)</code></td><td>Đưa trade vào <a href={href('/docs/realtime#footprint')}>footprint</a>: mỗi trade vào nến theo thời gian của nó và hàng giá theo giá của nó, ở bên đã chủ động khớp.</td></tr>
+    <tr><td><code>followTrades()</code></td><td>Theo dõi các trade của feed, các trade gần nhất rồi các trade trực tiếp, dưới dạng sự kiện <code>trades</code>, cho tới khi hàm nó trả về được gọi. Xem <a href={href('/docs/realtime#tape')}>tape</a>.</td></tr>
+    <tr><td><code>getTrades()</code></td><td>Các trade vừa được báo, cũ nhất trước: của feed và các trade đưa vào bằng tay. Dành cho bên lắng nghe đến sau khi trade đã được báo.</td></tr>
+    <tr><td><code>setFootprint(bars)</code> / <code>getFootprint(time?)</code> / <code>clearFootprint()</code></td><td>Các hàng giá của footprint, từng nến một: đưa vào bằng tay, đọc lại (của một nến, hoặc của mọi nến), xoá đi.</td></tr>
     <tr><td><code>updateBar(bar)</code></td><td>Sửa một nến đã nạp: nến có cùng time, ở bất kỳ vị trí nào trong chuỗi. View giữ nguyên; trả về false khi không có nến đã nạp nào có time đó.</td></tr>
     <tr><td><code>getData()</code></td><td>Đọc chuỗi OHLC gốc.</td></tr>
   </tbody>
@@ -48,7 +52,7 @@
 <table>
   <thead><tr><th>Phương thức</th><th>Mục đích</th></tr></thead>
   <tbody>
-    <tr><td><code>setChartType(type)</code></td><td>Một trong 18 loại — xem <a href={href('/docs/chart-types')}>Loại biểu đồ</a>.</td></tr>
+    <tr><td><code>setChartType(type)</code></td><td>Một trong 25 loại — xem <a href={href('/docs/chart-types')}>Loại biểu đồ</a>.</td></tr>
     <tr><td><code>getChartType()</code></td><td>Loại mà chart đang vẽ (mặc định <code>'candlestick'</code>).</td></tr>
     <tr><td><code>setTheme(name | theme)</code></td><td>Đổi giữa các theme có sẵn, hoặc đặt theme riêng. <code>getTheme()</code> trả lại theme như đã đặt.</td></tr>
     <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>Đặt style cho bất kỳ phần nào của chart theo key (<code>'grid.vertical.visible'</code>, <code>'series.candlestick.upColor'</code>…); <code>null</code> bỏ một key. Xem <a href={href('/docs/styling#overrides')}>Styling</a>.</td></tr>
@@ -250,6 +254,21 @@ formatVolumeLoc(345_000_000, 'ko')           // '3.45억'`}</code></pre>
   Theme riêng không có <code>priceLimits</code> dùng màu của theme sáng trên nền sáng, của theme tối trên nền tối.
 </p>
 
+<h3 id="broker-limits">Biên độ trong ngày do broker cung cấp</h3>
+<p>
+  <code>setPriceLimits</code> nhận trực tiếp giá trần, giá sàn và giá tham chiếu trong ngày của symbol, thay vì chỉ
+  giá tham chiếu. Hãy truyền chúng khi broker hoặc sở giao dịch cung cấp: biên độ đặc biệt, hay phiên đầu tiên của một
+  cổ phiếu trên sàn khác, không phải là một tỷ lệ phần trăm của giá tham chiếu, và khi đó tỷ lệ của thị trường chỉ là
+  phương án dùng khi không có gì tốt hơn. Các đường trên chart, mức giá mà một order được kéo tới và các kiểm tra của
+  ticket đều theo giá trị được cung cấp. Order ticket của widget hiện ba mức giá này ngay trên ô giá, nhấn vào mức nào
+  thì đặt giá đó; <code>priceLimitOrder</code> xếp chúng theo thứ tự bảng giá của bạn, và bỏ những mức không được nêu.
+</p>
+<pre><code>{`chart.setMarket(MARKET_HOSE)
+chart.setPriceLimits({ ceiling: 27.1, floor: 23.6, reference: 25.35 })   // as the broker gives them for the symbol
+chart.setPriceLimits(25.35)                                              // or the reference alone: the market's percentages of it
+
+new ChartWidget(host, { trading: true, priceLimitOrder: ['reference', 'ceiling', 'floor'] })   // the ticket's row, in your board's order`}</code></pre>
+
 <h3 id="comparing-symbols">So sánh mã</h3>
 <p>
   Phần trăm thay đổi của một mã khác trên thang giá (<code>addCompareSymbol</code>), hoặc
@@ -329,6 +348,132 @@ chart.exportVisibleData('json', undefined, { indicators: false })
 const text = chart.getExportText('csv', { range: 'visible' })
 const { bars, columns } = chart.getExportData()          // columns: { name, values }[]`}</code></pre>
 
+<h3 id="pictures">Ảnh, in và PDF</h3>
+<p>
+  Chart dưới dạng ảnh: lưu thành file, sao chép, hoặc đọc dưới dạng data URL, dạng byte hoặc dạng canvas. Khi
+  không yêu cầu gì thêm, ảnh được đọc từ các canvas của chart như chúng đang hiện trên màn hình. Yêu cầu nhiều pixel hơn
+  (<code>pixelRatio</code>) hoặc một theme khác (<code>theme</code>) thì frame được vẽ lại cho
+  ảnh, bằng Canvas 2D dù chart đang vẽ bằng gì: chart trên trang không bị đổi kích thước và cũng không
+  được báo. <code>width</code> hoặc <code>height</code> dàn lại chart ở kích thước đó, các nến đang
+  hiển thị vẫn hiển thị ở đó, rồi trả lại layout của trang: một ảnh cho slide hoặc cho tờ giấy từ một
+  chart nằm trong sidebar. Nến rộng theo kích thước đó, trong giới hạn độ rộng của một nến: vượt giới hạn thì số nến
+  hiển thị nhiều hơn hoặc ít hơn, quanh cùng một điểm giữa. Ở kích thước riêng, ảnh không có gì
+  đi theo con trỏ (crosshair, phép đo), cũng không có canvas mà host đặt chồng lên chart, và kích thước không
+  đủ chỗ cho vùng vẽ thì không cho ra ảnh. <code>type</code> là <code>'png'</code> (mặc định), <code>'jpeg'</code> hoặc
+  <code>'webp'</code>, kèm <code>quality</code> cho hai loại sau.
+</p>
+<pre><code>{`chart.screenshot('btc-1h')                                   // btc-1h.png, as on the screen
+chart.screenshot('btc-1h', { pixelRatio: 3, type: 'webp' })  // drawn again at three times the pixels
+await chart.copyScreenshot()                                 // a PNG on the clipboard; false where the browser refuses
+const url = chart.screenshotDataURL({ theme: 'light' })      // in the light theme; the chart stays as it is
+const blob = await chart.screenshotBlob({ type: 'jpeg', quality: 0.9 })
+const canvas = chart.toCanvas({ pixelRatio: 2 })             // to draw on, or to read yourself
+const slide = await chart.screenshotBlob({ width: 1920, height: 1080 })   // laid out again at that size`}</code></pre>
+<p>
+  <code>print()</code> mở dialog in của trình duyệt cho riêng chart: một trang chứa ảnh của chart
+  và không có gì của trang đang chứa nó; hàm trả về <code>false</code> khi không có ảnh để in.
+  <code>toPdf()</code> trả về một PDF một trang, ảnh được giữ không mất dữ liệu và lớn hết mức vừa trong
+  lề. Cả hai vẽ lại chart cho giấy, ở theme sáng và
+  gấp đôi số pixel, trừ khi bạn chỉ định khác. <code>chartsToPdf</code> tạo một PDF từ nhiều chart, mỗi chart
+  một trang: chart giá, các <a href={href('/docs/finance')}>biểu đồ tài chính</a>, hoặc một canvas của riêng bạn.
+</p>
+<pre><code>{`import { chartsToPdf } from '@tradecanvas/chart'
+
+chart.print({ title: 'BTCUSDT, 1h' })
+const pdf = await chart.toPdf({ pageSize: 'letter', margin: 12, title: 'BTCUSDT' })   // a Blob
+const full = await chart.toPdf({ width: 1123, height: 794 })   // laid out in the page's own shape: as large as its margins allow
+const report = await chartsToPdf([chart, equityChart, allocationChart], { title: 'March', theme: 'dark' })`}</code></pre>
+<p>
+  <code>pageSize</code> là <code>'a4'</code> (mặc định), <code>'a3'</code>, <code>'letter'</code>,
+  <code>'legal'</code> hoặc hai cạnh của tờ giấy tính bằng milimét; <code>orientation</code> là
+  <code>'landscape'</code> (mặc định) hoặc <code>'portrait'</code>; <code>margin</code> tính bằng milimét.
+  PDF không chứa văn bản riêng nên không cần font: chữ của chart nằm trong ảnh của nó, ở bất kỳ ngôn ngữ nào.
+  Ảnh bị giới hạn theo những gì trình duyệt vẽ được (không cạnh nào quá 16,384 pixel, tổng cộng khoảng 16 triệu), nên
+  một chart rất lớn nhận ít pixel hơn yêu cầu. Các pixel được nén không mất dữ liệu bằng
+  <code>CompressionStream</code> của trình duyệt, mọi trình duyệt hiện nay đều có; trình duyệt không có thì nhận một JPEG giữ
+  gần như toàn bộ ảnh. Khi in, ảnh được đặt vào một frame dưới dạng URL <code>data:</code>, nên trang có
+  content security policy phải cho phép loại URL đó cho ảnh.
+</p>
+<p>
+  Ảnh có những gì chart vẽ trên các canvas của nó: vùng vẽ, các trục, legend,
+  crosshair nếu đang hiện, và canvas mà host đặt chồng lên chart (trừ khi canvas đó đang ẩn, hoặc chứa
+  ảnh từ một site khác, thứ mà không trang nào được đọc lại). Những gì dựng bằng phần tử của trang thì không có trong ảnh: các tooltip, các thanh của widget và các dòng tên chỉ báo của nó. Khi
+  <code>features.screenshot</code> tắt thì không có ảnh, in hay PDF. ChartWidget có
+  <strong>In biểu đồ</strong> và <strong>Lưu biểu đồ thành PDF</strong> trong command palette, cùng
+  <code>widget.printChart()</code> và <code>widget.saveChartPdf()</code>, cả hai lấy tên theo mã và
+  khung thời gian của chart, kèm một toast khi không có gì để in hoặc để lưu; chúng đi theo công tắc
+  <code>screenshot</code>.
+</p>
+
+<h3 id="no-page">Chart vẽ khi không có trang</h3>
+<p>
+  <code>renderPriceChart</code> vẽ chart giá lên một context 2D của riêng bạn, ở nơi không có trang:
+  một canvas tạo trong Node, cho ảnh trong email, báo cáo hoặc tin nhắn của bot, hoặc một
+  <code>OffscreenCanvas</code> trong worker. Đó là một frame, được dựng như cách <code>Chart</code> dựng
+  frame của nó: ở cùng kích thước, nó là ảnh mà một chart trên trang cho ra từ cùng các nến sau khi
+  <code>chart.fitContent()</code> đưa mọi nến vào view (hoặc <code>chart.setVisibleRange()</code>, với
+  <code>visibleRange</code>).
+</p>
+<pre><code>{`import { createCanvas, Path2D } from '@napi-rs/canvas'   // or another canvas for Node that has Path2D
+import { renderPriceChart } from '@tradecanvas/chart'
+
+const canvas = createCanvas(1920, 1080)
+const ctx = canvas.getContext('2d')
+ctx.scale(2, 2)                                            // a 960 × 540 chart at twice the pixels
+renderPriceChart(ctx, {
+  data: bars,                                              // every bar is on view when they fit
+  symbol: 'BTCUSDT',
+  timeframe: '1d',
+  theme: 'light',
+  timeZone: 'Asia/Ho_Chi_Minh',
+  indicators: [
+    { id: 'ema', params: { period: 21 } },
+    { id: 'rsi', instanceId: 'momentum' },                 // a pane of its own under the prices
+    { id: 'stochastic', pane: 'momentum' },                // in that pane, on its scale
+  ],
+  drawings: [
+    { type: 'horizontalLine', anchors: [{ time: bars[0].time, price: 64000 }], style: { color: '#2266ff' } },
+    { type: 'horizontalLine', anchors: [{ time: bars[0].time, price: 70 }], paneId: 'momentum' },  // on that pane
+  ],
+  markers: [{ time: bars[40].time, price: bars[40].low, direction: 'long', confidence: 0.8, source: 'strategy', label: 'Buy' }],
+  path2D: Path2D,                                          // Node has no Path2D of its own
+}, { width: 960, height: 540 })
+const png = canvas.toBuffer('image/png')`}</code></pre>
+<p>
+  Các tuỳ chọn là của <code>Chart</code> ở những chỗ chúng quy định chart trông thế nào: <code>chartType</code> và
+  <code>chartTypeOptions</code>, <code>theme</code>, <code>font</code>, <code>overrides</code>,
+  <code>density</code>, <code>logScale</code>, <code>numberLocale</code>, <code>priceFormat</code>,
+  <code>watermark</code>, và <code>features</code> để bỏ khối lượng, lưới, một trục hoặc
+  legend. Những gì chart trên trang nhận qua lời gọi thì hàm này nhận dưới dạng tuỳ chọn: <code>data</code>,
+  <code>symbol</code> và <code>timeframe</code> cho legend, <code>indicators</code>,
+  <code>drawings</code> (như <code>addDrawing</code> nhận), <code>markers</code> (như
+  <code>addSignalMarker</code> nhận), <code>visibleRange</code> (thời gian của nến đầu và nến cuối
+  đang hiển thị), <code>pricePrecision</code>, <code>timeZone</code> (không có thì dùng múi giờ của máy: hãy ghi
+  múi giờ của người đọc) và <code>symbolSeries</code> (nến của các mã khác, cho
+  <code>'compareSymbol'</code>, <code>'spread'</code> và các correlation). Một chỉ báo được đọc như chỉ báo của
+  một layout đã lưu, nên <code>chart.getIndicatorSetup()</code> và <code>chart.getDrawings()</code> đưa vào
+  nguyên dạng, kể cả hình vẽ trên pane của một chỉ báo: chart mà ai đó dựng trong trình duyệt được vẽ lại
+  trên server. <code>plugins</code> nhận một chỉ báo, một loại biểu đồ, một công cụ vẽ hoặc một overlay của
+  riêng bạn.
+</p>
+<p>
+  Hàm vẽ theo kích thước bạn đưa, tính bằng đơn vị của context, trên nền của theme: muốn nhiều pixel hơn thì
+  scale context trước. Nến được vẽ bằng <code>Path2D</code>, thứ Node không có:
+  <code>@napi-rs/canvas</code> và <code>skia-canvas</code> đều export bản của mình, để đưa vào
+  <code>path2D</code>; worker có sẵn. Chữ dùng font của theme, nên hãy chỉ định bằng <code>font</code> một font
+  mà canvas của bạn có. Không có gì đi theo con trỏ: không có crosshair, đếm ngược hay tooltip. Order
+  và position, cảnh báo, đường so sánh, Volume Profile và Market Profile, tô màu phiên và biên độ
+  của thị trường chưa được vẽ theo cách này. Biểu đồ tài chính được vẽ theo cùng cách bằng
+  <code>renderFinanceChart</code>, và <code>imagesToPdf</code> đưa các ảnh tạo theo cách này vào một PDF.
+</p>
+<p>
+  Lỗi trong các tuỳ chọn được báo trước khi vẽ bất cứ thứ gì, theo tên của tuỳ chọn:
+  <code>RangeError</code> cho một chỉ báo, theme hoặc múi giờ mà hàm không biết, hai chỉ báo cùng một
+  <code>instanceId</code>, và một số nằm ngoài khoảng cho phép; <code>TypeError</code> cho một tuỳ chọn
+  sai kiểu. Nến không phải là nến thì bị bỏ ra, như chart bỏ nó ra. Context được
+  để lại như lúc nhận; nếu một plugin của bạn throw trong lúc vẽ, hãy vẽ chart tiếp theo trên một context khác.
+</p>
+
 <h3>Volume Profile</h3>
 <p>
   Histogram ngang của khối lượng giao dịch, chia theo vùng giá trong khoảng đang
@@ -383,6 +528,15 @@ chart.setSessionShadingConfig({
 <pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
 chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
 chart.isExtendedHoursVisible()`}</code></pre>
+<p>
+  <strong>Ngày giao dịch.</strong> Một phiên kéo qua nửa đêm (phiên 17:00 đến 16:00 giờ Chicago của CME) bắt đầu ngày giao dịch từ giờ mở phiên. Khi đó các chỉ báo bắt đầu lại mỗi ngày, tuần hoặc tháng (Session VWAP, anchor của VWAP và của cumulative delta, volume profile theo phiên, các ngày của MTF average), các đường ngày trước và các ngày của market profile chạy từ 17:00 đến 17:00, mỗi ngày mang tên ngày nó kết thúc. Các phiên nằm trong một ngày vẫn tính từ nửa đêm. Nến ngày và các ngày dựng từ giao dịch vẫn theo nửa đêm của múi giờ. Các đường kẻ ngăn ngày của biểu đồ cũng bắt đầu ở đó khi biểu đồ hiện giờ của sàn (<code>setTimeZone('exchange')</code>, hoặc ghi thẳng múi giờ của sàn); theo múi giờ khác, một ngày chạy từ nửa đêm đến nửa đêm.
+</p>
+<pre><code>{`chart.setSymbolInfo({ symbol: 'ES', timeZone: 'America/Chicago', sessions: [{ start: '17:00', end: '16:00' }] })
+// Session VWAP, svp, các đường ngày trước: từ 17:00 đến 17:00
+
+import { tradingDayStart } from '@tradecanvas/chart'
+tradingDayStart([{ start: '17:00', end: '16:00' }])   // 1020: minutes after midnight
+tradingDayStart([{ start: '09:30', end: '16:00' }])   // null: midnight`}</code></pre>
 
 <h3>Mức của kỳ trước (PDH / PDL / PDC)</h3>
 <p>
@@ -401,7 +555,7 @@ const levels = computePeriodLevels(bars, 'day', 'Australia/Sydney')  // [{ id, l
 <p>
   Histogram thời gian tại mức giá: mỗi nến đóng góp một TPO cho mỗi vùng giá
   mà biên độ của nến chạm tới, từ đó cho ra Point of Control (mức giá giao dịch nhiều nhất) và
-  value area (≈70% số TPO). Khác với Volume Profile — tính trọng số theo thời gian,
+  value area (≈70% số TPO, mở rộng từ POC mỗi lần hai ô về phía cặp nặng hơn, theo cách của Market Profile). Khác với Volume Profile — tính trọng số theo thời gian,
   không theo khối lượng — và được ghim bên trái để hiển thị được cùng lúc với Volume Profile. Mặc định tắt;
   bật/tắt trong phần cài đặt hoặc gọi trực tiếp:
 </p>
@@ -412,6 +566,7 @@ chart.setMarketProfileConfig({
   opacity: 0.32,
   valueAreaPct: 0.7,  // fraction of TPOs in the value area
   highlightPoC: true, // dashed line at the point of control
+  valueAreaColor: '#7e57c2', color: '#90a4ae', // màu riêng; null: màu của theme (nến tăng, chữ phụ)
 })
 
 // split into one mini-profile per trading day, in the exchange's zone
@@ -468,6 +623,8 @@ chart.on('dataUpdate', e => /* { kind: 'bars', length } on setData and new bars;
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
+chart.on('marginCall', e => /* { marginLevel, level, equity, marginUsed }: the account was warned of its margin */)
+chart.on('trades', e => /* { trades, recent }: các trade của symbol, khi chúng được theo dõi (followTrades, footprint) hoặc đưa vào (addTrades) */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* drawings, indicators, alerts, chart type or theme may have changed */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
@@ -602,7 +759,7 @@ widget.destroy()`}</code></pre>
   nhận id của panel đang mở, hoặc <code>null</code>, dù thay đổi đến từ đâu: rail, nút đóng, code của bạn,
   hay widget chuyển sang hẹp.
 </p>
-<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder', or a page's id; false if not there
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder' | 'tape', or a page's id; false if not there
 widget.getOpenPanel()           // the panel open, or null
 widget.closePanel()
 
@@ -702,6 +859,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>Chuyển đến một ngày</td></tr>
     <tr><td><kbd>?</kbd></td><td>Bảng phím tắt, tìm được theo chức năng của phím hoặc theo phím</td></tr>
     <tr><td><kbd>Alt</kbd> + click chart</td><td>Ghim tooltip OHLC tại nến đang hover (hiển thị chênh lệch so với crosshair hiện tại)</td></tr>
+    <tr><td>Click giữ trên chart</td><td>Tooltip OHLCV nổi cho nến dưới con trỏ, trong lúc còn giữ nút chuột: nó đi theo con trỏ, và chart không pan (<code>{`chartOptions: { features: { crosshairTooltip: true } }`}</code> thì nó đi theo cả con trỏ chỉ hover, <code>false</code> thì không bao giờ hiện)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Bỏ ghim tooltip / huỷ vẽ</td></tr>
     <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td><td>Lùi / tiến replay một bước</td></tr>
     <tr><td><kbd>Space</kbd></td><td>Chạy hoặc tạm dừng replay (trên chart hoặc thanh tiến trình của replay; ngoài replay thì fit chart)</td></tr>
@@ -1207,10 +1365,21 @@ grid.setFeatures({ 'toolbar.replay': false })               // every chart's swi
 grid.getActiveWidget().getChart()
 grid.getLayoutSession()?.saveAs('Majors')
 
+// The charts as one picture, each in its cell: a file, the print dialog, a PDF
+grid.screenshot('majors', { pixelRatio: 2 })
+await grid.copyScreenshot()                             // onto the clipboard, as a PNG
+const sheet = await grid.toPdf({ title: 'Majors' })   // light and at twice the pixels, as a chart's
+
 // Each chart as it is made (at the start, and when the grid grows)
 new ChartWidgetGrid(host, {
   onChartAdd: (widget, index) => widget.getChart().addIndicator('ema', { period: 21 }),
 })`}</code></pre>
+<p>
+  Nút máy ảnh trên thanh của grid làm các việc đó từ một menu: lưu ảnh các chart thành file ảnh,
+  chép ảnh, in, hoặc lưu thành PDF, đặt tên theo các mã đang hiện (<code>charts</code> khi có hơn
+  ba mã). <code>picture: false</code> bỏ nút này; nút cũng ẩn khi switch <code>screenshot</code>
+  của các chart tắt, và không có mục chép ảnh khi <code>copyImage</code> tắt.
+</p>
 <p>
   Đồng bộ crosshair hiển thị thời gian dưới con trỏ trên mọi chart; đồng bộ thời gian
   cuộn và zoom các chart khác theo chart đang thao tác; hình vẽ được copy

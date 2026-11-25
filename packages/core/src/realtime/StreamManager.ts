@@ -83,10 +83,13 @@ const DAY_MS = 86_400_000;
  * shown from the history's first on, so the forming bar stays, and alerts
  * cross from its close.
  */
-function withForming(history: OHLCBar[], forming: AggregatedBar | null): OHLCBar[] {
+export function withForming(history: OHLCBar[], forming: AggregatedBar | null): OHLCBar[] {
   if (!forming) return history;
-  const { time, open, high, low, close, volume } = forming;
-  return [...history, { time: normalizeBarTime(time) / barTimeUnit(history), open, high, low, close, volume }];
+  const { time, open, high, low, close, volume, buyVolume } = forming;
+  const bar: OHLCBar = { time: normalizeBarTime(time) / barTimeUnit(history), open, high, low, close, volume };
+  // What the buyers took of it so far goes with it, as with the history's bars.
+  if (buyVolume !== undefined) bar.buyVolume = buyVolume;
+  return [...history, bar];
 }
 
 /** Whether a bar of `tf` at `time` starts where `zone`'s midnight counts from, and not on the epoch. */

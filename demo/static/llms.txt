@@ -1,6 +1,6 @@
 # TradeCanvas
 
-> Trading chart library for the web, drawn with Canvas 2D or WebGL (TypeScript, no runtime dependencies): candlestick, Heikin-Ashi, Renko and other chart types, 134 indicators, drawing tools, live exchange feeds, orders and positions on the chart, alerts, replay and backtesting. npm: @tradecanvas/chart (Chart and the ChartWidget UI), @tradecanvas/react, @tradecanvas/vue, @tradecanvas/svelte, @tradecanvas/analytics.
+> Trading chart library for the web, drawn with Canvas 2D or WebGL (TypeScript, no runtime dependencies): candlestick, Heikin-Ashi, Renko and other chart types, 138 indicators, drawing tools, live exchange feeds, orders and positions on the chart, alerts, replay and backtesting. npm: @tradecanvas/chart (Chart and the ChartWidget UI), @tradecanvas/react, @tradecanvas/vue, @tradecanvas/svelte, @tradecanvas/analytics.
 
 Use `ChartWidget` (`@tradecanvas/chart/widget`) for a complete trading UI, or `Chart` (`@tradecanvas/chart`) to build your own around it. Both need a sized DOM element and run in the browser only.
 
@@ -8,11 +8,12 @@ Use `ChartWidget` (`@tradecanvas/chart/widget`) for a complete trading UI, or `C
 
 - [Getting started](https://tradecanvas.dev/docs/getting-started): install, the widget, the headless chart
 - [Moving to 2.0](https://tradecanvas.dev/docs/migration): from 1.x: the new default look and the option that keeps the old one, each removed name and what to use, what changed without a name changing
+- [Moving to 3.0](https://tradecanvas.dev/docs/migration-3): from 2.x, while 3.0 is in development: each behaviour that changed and the option that keeps the old one
 - [Moving from TradingView](https://tradecanvas.dev/docs/from-tradingview): an app on TradingView's charting library or Lightweight Charts: its datafeed kept as it is (feedFromJsApi, udfFeed for a UDF server), the MCP tools that map its options, featuresets, overrides, studies, drawings and methods, what changes and what does not carry over
 - [API reference](https://tradecanvas.dev/docs/api): Chart and ChartWidget methods, options and events
 - [Indicators](https://tradecanvas.dev/docs/indicators): every built-in indicator with its id, inputs and lines
 - [Styling](https://tradecanvas.dev/docs/styling): the widget's look as tokens: the Print (default, kept to the golden ratio), Studio, Terminal, Capsule and Desk presets, your own theme, CSS variables
-- [Customization](https://tradecanvas.dev/docs/customization): every way to customise: themes, looks, style overrides, the widget's 135 feature switches, your own toolbar, sidebar, status bar, menu entries and shortcuts, your own CSS
+- [Customization](https://tradecanvas.dev/docs/customization): every way to customise: themes, looks, style overrides, the widget's 138 feature switches, your own toolbar, sidebar, status bar, menu entries and shortcuts, your own CSS
 - [Chart types](https://tradecanvas.dev/docs/chart-types): candlestick, Heikin-Ashi, Renko, Kagi, point & figure and more
 - [Drawing tools](https://tradecanvas.dev/docs/drawing-tools): trend lines, Fibonacci, Gann, patterns, text
 - [Realtime and replay](https://tradecanvas.dev/docs/realtime): data adapters (Binance, Coinbase, Bybit, Kraken, WebSocket, polling) and replay

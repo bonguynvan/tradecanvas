@@ -261,6 +261,9 @@ describe('sections', () => {
     const between = kids.slice(firstGroup, lastGroup + 1).filter((el) => el.classList.contains('tcw-sidebar-divider'));
     const sections = new Set(DRAWING_TOOL_GROUPS.map((g) => g.section));
     expect(between).toHaveLength(sections.size - 1);
+    // Marked as the tools' own, apart from the dividers that end the cursor and begin what acts on drawings.
+    expect(between.every((el) => el.classList.contains('tcw-sidebar-divider--section'))).toBe(true);
+    expect(bar.querySelectorAll('.tcw-sidebar-divider:not(.tcw-sidebar-divider--section)').length).toBeGreaterThan(0);
     // The groups of one section are next to each other.
     const order = DRAWING_TOOL_GROUPS.map((g) => g.section);
     expect(order.filter((s, i) => s !== order[i - 1])).toEqual([...sections]);

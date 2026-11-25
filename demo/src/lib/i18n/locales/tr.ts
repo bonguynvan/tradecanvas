@@ -4,7 +4,7 @@ const tr: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Web için Canvas alım satım grafikleri',
     description:
-      'TradeCanvas, Canvas 2D veya WebGL ile çizen, web için bir alım satım grafik kütüphanesidir: 18 grafik türü, 134 gösterge, 76 çizim aracı, canlı borsa akışları, grafik üzerinde emirler, replay ve backtest, 30 dilde. Sıfır bağımlılık, MIT.',
+      'TradeCanvas, Canvas 2D veya WebGL ile çizen, web için bir alım satım grafik kütüphanesidir: 18 grafik türü, 138 gösterge, 76 çizim aracı, canlı borsa akışları, grafik üzerinde emirler, replay ve backtest, 30 dilde. Sıfır bağımlılık, MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const tr: SiteMessages = {
     release: 'WebGL oluşturucu, 30 dil',
     title: 'Alım satım uygulamaları için grafik motoru.',
     ledeHtml:
-      'Mum grafiklerinden Renko’ya, 134 gösterge, 76 çizim aracı, canlı borsa akışları ve grafik üzerinde emirler. Canvas 2D veya WebGL ile, sıfır bağımlılıkla çizilir. Hazır <code>ChartWidget</code>’ı ekleyin ya da kendi arayüzünüzü headless <code>Chart</code> üzerine kurun.',
+      'Mum grafiklerinden Renko’ya, 138 gösterge, 76 çizim aracı, canlı borsa akışları ve grafik üzerinde emirler. Canvas 2D veya WebGL ile, sıfır bağımlılıkla çizilir. Hazır <code>ChartWidget</code>’ı ekleyin ya da kendi arayüzünüzü headless <code>Chart</code> üzerine kurun.',
     getStarted: 'Başlayın',
     browseExamples: 'Örneklere göz atın',
     specsLabel: 'Temel rakamlar',
@@ -71,7 +71,7 @@ const tr: SiteMessages = {
           title: 'Piyasayı okuyun',
           text: 'Mumların üzerinde bantlar, ortalamalar ve osilatörler, onların üstünde Fibonacci seviyeleri ve trend çizgileri; her birinin kendi ayarları ve alarmları var.',
           points: [
-            '134 gösterge, biri diğerinin üzerinde, örneğin RSI’ın ortalaması',
+            '138 gösterge, biri diğerinin üzerinde, örneğin RSI’ın ortalaması',
             'Mıknatıs, gruplar ve geri almayla 76 çizim aracı',
             'Fiyatlar, çizgiler ve gösterge kesişimleri için alarmlar',
           ],
@@ -218,11 +218,11 @@ const tr: SiteMessages = {
     },
     indicators: {
       title: 'Göstergeler',
-      stat: '134 yerleşik',
+      stat: '138 yerleşik',
       blurb:
         'Grafik üstü katmanlar ve paneller kütüphanenin kendi içinde hesaplanır, sıfır matematik bağımlılığı. Canlı tick’ler yalnızca oluşmakta olan barı yeniden hesaplar: 100k barda dört göstergeyle tick başına 0.001 ms.',
       tryThis: [
-        'Göstergeler düğmesine (ya da Ctrl+K) basın ve 134 göstergeden herhangi birini arayın',
+        'Göstergeler düğmesine (ya da Ctrl+K) basın ve 138 göstergeden herhangi birini arayın',
         'Açıklamadaki bir gösterge adına tıklayın: parametreler, renkler ve seviyeler',
         'Bir hareketli ortalamanın kaynağını başka bir göstergenin çizgisi yapın',
         'Panelleri yeniden boyutlandırmak için aralarındaki çizgiyi sürükleyin; bir panelin sağ üstündeki düğmeler onu taşır, daraltır veya büyütür',
@@ -381,7 +381,7 @@ const tr: SiteMessages = {
     },
     overrides: {
       title: 'Stil geçersiz kılmaları',
-      stat: '107 anahtar',
+      stat: '122 anahtar',
       blurb:
         'Grafiğin görünümünün herhangi bir parçası, temadan ayrı olarak anahtarla: her yöndeki ızgara, artı imleç, eksenler, paneller, açıklama, son fiyat, hacim ve her grafik türünün renkleri. Burada dikey ızgara kapalı, yatay ızgara noktalı, artı imleç düz ve MACD’nin sinyal çizgisi kendi ayırıcısı olan bir panelde kesik çizgili.',
       tryThis: [
@@ -435,6 +435,17 @@ const tr: SiteMessages = {
         'Grafiğin üstünde Canvas 2D ile WebGL arasında geçiş yapın: her geçiş kısa bir kaydırmayı ölçer',
         'Parlak satırları arayın: zaman içinde tek bir fiyatta duran miktar duvarları',
         'Bir duvara yakınlaştırıp ileri geri kaydırın: hücreler barlarla birlikte hareket eder',
+      ],
+    },
+    orderflow: {
+      title: 'Emir akışı',
+      stat: 'Footprint + bant',
+      blurb:
+        'Akıştaki her işlem, onu hangi tarafın aldığıyla birlikte. Footprint grafiği, her çubuğun yanına, içindeki her fiyatta satıcıların bid’den ve alıcıların ask’ten ne aldığını yazar, bir tarafın diğerine üstün geldiği satırları işaretler ve her çubuğun toplamını altına yazar: alınan eksi satılan ve ikisi birlikte. Yanındaki bant, işlemleri gerçekleştikçe, en yeniler üstte olacak şekilde, alan tarafın renginde listeler.',
+      tryThis: [
+        'İşlemler geldikçe en yeni çubuğun satır satır dolmasını ve altındaki toplamların değişmesini izleyin',
+        'Bandın başlığındaki menüyü açın: yalnızca alınanları ya da satılanları listeleyin veya eşzamanlı işlemleri tek satırda toplayın',
+        'Büyük işlemleri bırakmak için banda bir en küçük boyut yazın, sonra grafiği uzaklaştırın: her satırdaki sayılar yerini her taraf için küçük bir şeride bırakır, toplamlar kalır',
       ],
     },
     switching: {
@@ -493,6 +504,23 @@ const tr: SiteMessages = {
     counterClock: 'Saat yönünün tersi eğri: hacme karşı fiyat, 25 günlük ortalamalar',
     avgVolume: 'Hacim, ortalama',
     avgPrice: 'Fiyat, ortalama',
+    payoff: 'Iron condor: vadede kâr ve zarar',
+    smile: 'Kullanım fiyatına göre zımni oynaklık',
+    weekdayReturns: 'Haftanın gününe göre günlük getiriler',
+    scorecard: 'Strateji ve karşılaştırma ölçütü',
+    strategy: 'Strateji',
+    benchmark: 'Karşılaştırma ölçütü',
+    allocationRings: 'Varlık sınıfına ve sektöre göre dağılım',
+    allocationOverTime: 'Yıl boyunca dağılım',
+    volSurface: 'Kullanım fiyatına ve vadeye göre zımni oynaklık',
+    strike: 'Kullanım fiyatı',
+    expiry: 'Vade',
+    depthOverTime: 'Zaman içinde emir defteri derinliği',
+    quarterReturns: 'Çeyreğe ve varlık sınıfına göre getiri',
+    turnHint: 'Bir grafiği döndürmek için sürükleyin; çift tıklama ilk görünüme döndürür.',
+    exportLabel: 'Portföy grafiğini kaydet',
+    print: 'Yazdır',
+    reportPdf: 'Tüm grafikler tek PDF içinde',
     waterfall: {
       start: 'Başlangıç',
       btcLong: 'BTC uzun',
@@ -704,7 +732,7 @@ const tr: SiteMessages = {
         { name: 'Üçüncü taraf çalışma zamanı bağımlılığı yok', detail: 'Kurulacak ya da denetlenecek başka bir şey yok' },
       ],
       indicators: [
-        { name: '134 yerleşik gösterge', detail: 'Altı türde pivot noktaları, MA Cross, başka bir sembolle korelasyon' },
+        { name: '138 yerleşik gösterge', detail: 'Altı türde pivot noktaları, MA Cross, başka bir sembolle korelasyon' },
         { name: 'Fiyat kaynağı', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: 'Gösterge üzerinde gösterge', detail: 'Örneğin RSI’ın hareketli ortalaması, her tick’te güncellenir' },
         { name: 'Tek panelde birden çok gösterge, paneller arasında taşıma', detail: 'moveIndicatorToPane' },
@@ -775,7 +803,7 @@ const tr: SiteMessages = {
       ],
       customization: [
         { name: 'Widget için üç görünüm', detail: 'Studio, Terminal, Capsule; ui ve setUI; --tcw-* CSS değişkenleri' },
-        { name: 'Anahtar anahtar grafik görünümü', detail: 'Ana uygulama katmanı ve kullanıcı katmanında, 107 tipli anahtar üzerinde applyOverrides' },
+        { name: 'Anahtar anahtar grafik görünümü', detail: 'Ana uygulama katmanı ve kullanıcı katmanında, 122 tipli anahtar üzerinde applyOverrides' },
         { name: 'Her anahtara ulaşan ayarlar', detail: 'Görüntülenen grafik türü için stil sekmesi, alım satım sekmesi' },
         { name: 'Açılıp kapatılabilen 114 özellik', detail: 'features, setFeatures, isFeatureOn; çalışırken değiştirilebilir' },
         { name: 'Widget’ta kendi parçalarınız', detail: 'Araç çubuğu düğmeleri ve açılır menüler, kenar çubuğu düğmeleri, durum öğeleri, yuvalar, menü öğeleri' },
@@ -927,6 +955,7 @@ const tr: SiteMessages = {
       frameworks: 'Framework’ler',
       embed: 'Gömülebilir Widget',
       migration: "2.0'a geçiş",
+      'migration-3': "3.0'a geçiş",
       'from-tradingview': "TradingView'dan geçiş",
       'how-it-works': 'Nasıl çalışır',
       api: 'API Referansı',

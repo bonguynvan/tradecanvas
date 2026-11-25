@@ -13,15 +13,22 @@
 <p>
   组件的外观由一组 token 构成：各类部件的圆角、控件与工具栏的尺寸、字体、边框、阴影、选中按钮的样式，
   以及工具栏和画线工具是沿边停靠还是悬浮。从一套预设出发，想改哪里就改哪里。颜色仍由主题决定
-  （<code>dark</code> / <code>light</code>，参见 <a href={href('/docs/api')}>API 参考</a>）；任何外观都能与这两种主题搭配。默认的 Modern
-  自带一套深色和一套浅色；其他外观共用它出现之前组件所用的配色。
+  （<code>dark</code> / <code>light</code>，参见 <a href={href('/docs/api')}>API 参考</a>）；任何外观都能与这两种主题搭配。默认的 Graphite 和 Modern
+  各自带一套深色和一套浅色；其他外观共用它们出现之前组件所用的配色。
 </p>
 
 <h2>预设</h2>
 <table>
   <thead><tr><th>预设</th><th>外观</th></tr></thead>
   <tbody>
-    <tr><td><code>modern</code>（默认）</td><td>
+    <tr><td><code>graphite</code>（默认）</td><td>
+      交易台的界面，自身不带色相：各层底色只差一档（<code>#131416</code> / <code>#ffffff</code>），以细线分隔。
+      尺寸有意保持很少：控件高 20、24、28、36 或 40 px，所有圆角 3 px，浮层共用一种阴影，其余没有阴影。
+      选中的项（周期、工具、标签页）以较亮的底色和正文颜色显示；琥珀色只留给要执行的操作。开关是勾选框，
+      账户表格的列宽与数字相当。页面加载了 IBM Plex Sans 时用它，否则用系统字体。在图表上，如果你没有传入主题对象，
+      颜色为 <code>GRAPHITE_DARK_THEME</code> 和 <code>GRAPHITE_LIGHT_THEME</code>。
+    </td></tr>
+    <tr><td><code>modern</code></td><td>
       代码编辑器的窗口，采用其 Dark Modern 和 Light Modern 配色。图表铺在编辑器的底色上
       （<code>#1f1f1f</code> / <code>#ffffff</code>），四周的栏比底色略深或略浅一级，中间以细线分隔；
       38 px 的工具栏上是 28 px 的按钮和 16 px 的图标；控件圆角 4 px，菜单 6 px，对话框 8 px。Logo 的琥珀色
@@ -163,7 +170,8 @@ chart.setFont(null)                         // the theme's own font again`}</cod
   font: {
     family: "'Manrope', system-ui, sans-serif",
     mono: "'JetBrains Mono', monospace",
-    size: 13, weight: 500, strongWeight: 600,
+    size: 13, smallSize: 12,                          // body; figures in tables, field names
+    weight: 500, strongWeight: 600,
     labelCase: 'uppercase', labelTracking: 0.06,      // small labels
   },
   borders: { width: 1, separators: true },           // rules between toolbar groups
@@ -314,7 +322,9 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>十字光标线的同样四项（默认为细实线）。</td></tr>
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>坐标轴以及面板刻度上的价格、时间标签。</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>每个坐标轴的轴线和标签（面板刻度沿用价格轴的）。</td></tr>
-    <tr><td><code>axis.price.valueTagsOutlined</code></td><td><code>true</code> 让价格轴上指标的数值标签画成描边样式（内部为图表的背景色，或面板自己的背景色，边框为线条的颜色，文字也用该颜色），而不是用线条的颜色填充：在价格面板、指标面板和左侧刻度上都是如此。线条颜色与背景太接近、在背景上看不清时，其数值用刻度的文字颜色书写。</td></tr>
+    <tr><td><code>lastPrice.limitColors</code></td><td><code>true</code> 时，价格位于当日某个限价上时，最新价的线和标签用该限价的颜色绘制：达到或超过涨停价用涨停色，达到或低于跌停价用跌停色，等于参考价用参考价颜色。在它们之间，或没有限价时，保持当日涨跌的颜色。适用于有涨跌停、行情板按其着色的市场；默认关闭。</td></tr>
+    <tr><td><code>crosshair.labelChange</code></td><td><code>true</code> 时，在价格轴上十字线所指价格的下方，写出该价格相对最新价的百分比距离（<code>+1.25%</code>），按图表的区域设置书写。没有最新价时，或刻度本身已是百分比或指数时，不写。价格轴会为它留出宽度。Graphite 主题默认开启（主题自己的 <code>crosshairChange</code>），其他主题关闭。</td></tr>
+    <tr><td><code>axis.price.valueTagsOutlined</code></td><td><code>true</code> 让价格轴上指标的数值标签画成描边样式（内部为图表的背景色，或面板自己的背景色，边框为线条的颜色，文字也用该颜色），而不是用线条的颜色填充：在价格面板、指标面板和左侧刻度上都是如此。线条颜色与背景太接近、在背景上看不清时，其数值用该颜色更深的一档书写，直到对比度达到 4.5:1。 Graphite 主题默认画成描边样式，除非此项为 <code>false</code>。 买价、卖价以及最高、最低价的标签也随之画成描边样式。</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>图例中的数值，以及它的标签（O、H、L、Vol）。</td></tr>
     <tr><td><code>legend.upColor</code>, <code>.downColor</code></td><td>读取 K 线数值之处的上涨和下跌颜色：图例中的收盘价和涨跌、十字光标和固定的提示框、测量工具。未设置时跟随主序列的颜色，所以隐藏了自身 K 线的图表（由叠加层绘制自己的 K 线）设置这两项，就能保留它们。</td></tr>
     <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>最新价线和标签；未设置时颜色跟随主序列。当前 K 线的剩余时间（<code>features.barCountdown</code>）挂在标签下方。</td></tr>

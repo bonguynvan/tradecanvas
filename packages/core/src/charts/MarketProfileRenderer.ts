@@ -1,3 +1,4 @@
+import { chartFont, chartTypeSize } from '../ui/chartType.js';
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceTagText, smallValueDecimals } from '@tradecanvas/commons';
 import { computeMarketProfile, computeSessionProfiles, assignSessionLetters, tpoLetter } from './marketProfile.js';
@@ -39,6 +40,15 @@ export interface MarketProfileConfig {
   splitBySession: boolean;
   /** TPO letters per session, when split and zoomed in. */
   letters: boolean;
+  /** The colour of the rows outside the value area; null is the theme's secondary text. */
+  color: string | null;
+  /** The colour of the value area's rows, its lines and its figures; null is the theme's rising candle. */
+  valueAreaColor: string | null;
+}
+
+/** A colour given for a layer: a string with something in it, else none (the theme's). */
+function ownColor(color: string | null): string | null {
+  return typeof color === 'string' && color.trim() !== '' ? color : null;
 }
 
 export class MarketProfileRenderer {
@@ -49,11 +59,15 @@ export class MarketProfileRenderer {
   private valueAreaPct = 0.7;
   private highlightPoC = true;
   private showStats = true;
+  private color: string | null = null;
+  private valueAreaColor: string | null = null;
+  private clearTop = 0;
   private splitBySession = false;
   private letters = false;
   private lastStats: MarketProfileStats | null = null;
   /** The zone whose midnight starts each session of the split profile (null: UTC's). */
   private exchangeZone: string | null = null;
+  private dayStart: number | null = null;
 
   setVisible(v: boolean): void { this.visible = v; if (!v) this.lastStats = null; }
   isVisible(): boolean { return this.visible; }
@@ -63,16 +77,28 @@ export class MarketProfileRenderer {
   setValueAreaPct(p: number): void { this.valueAreaPct = Math.max(0.3, Math.min(0.95, p)); }
   setHighlightPoC(enabled: boolean): void { this.highlightPoC = enabled; }
   setShowStats(enabled: boolean): void { this.showStats = enabled; }
+  /**
+   * Colours of its own; null is the theme's. A chart that hides its candles, or colours them for
+   * something else, keeps its profile with these.
+   */
+  setColors(colors: { color?: string | null; valueAreaColor?: string | null }): void {
+    if (colors.color !== undefined) this.color = ownColor(colors.color);
+    if (colors.valueAreaColor !== undefined) this.valueAreaColor = ownColor(colors.valueAreaColor);
+  }
+  /** How far down the plot is taken at its top (the legend's lines), px: the figures are written under it. */
+  setClearTop(px: number): void { this.clearTop = Number.isFinite(px) && px > 0 ? px : 0; }
   /** Split the profile into one mini-histogram per trading day, from the exchange's midnight (`setExchangeTimeZone`). */
   setSplitBySession(enabled: boolean): void { this.splitBySession = enabled; }
   isSplitBySession(): boolean { return this.splitBySession; }
   /** How it is drawn, as the setters left it. */
   getConfig(): MarketProfileConfig {
-    const { buckets, widthRatio, opacity, valueAreaPct, highlightPoC, showStats, splitBySession, letters } = this;
-    return { buckets, widthRatio, opacity, valueAreaPct, highlightPoC, showStats, splitBySession, letters };
+    const { buckets, widthRatio, opacity, valueAreaPct, highlightPoC, showStats, splitBySession, letters, color, valueAreaColor } = this;
+    return { buckets, widthRatio, opacity, valueAreaPct, highlightPoC, showStats, splitBySession, letters, color, valueAreaColor };
   }
   /** The exchange's zone, an IANA name the chart has checked: sessions start at its midnight. */
   setExchangeTimeZone(zone: string | null): void { this.exchangeZone = zone; }
+  /** When the trading day starts, minutes after the exchange's midnight; null for midnight. */
+  setDayStart(minute: number | null): void { this.dayStart = minute; }
   /** Render TPO letters (A, B, C…) per session instead of bars, when split + zoomed in. */
   setLetters(enabled: boolean): void { this.letters = enabled; }
   /** Whether it writes text: the stats readout, or TPO letters per session (when zoomed in enough). */
@@ -130,13 +156,13 @@ export class MarketProfileRenderer {
       const w = bucket.count * inv * profileWidth;
       const inVA = bucket.mid >= profile.valueAreaLow && bucket.mid <= profile.valueAreaHigh;
       ctx.globalAlpha = inVA ? Math.min(1, this.opacity + 0.18) : this.opacity;
-      ctx.fillStyle = inVA ? theme.candleUp : theme.textSecondary;
+      ctx.fillStyle = inVA ? this.valueAreaColor ?? theme.candleUp : this.color ?? theme.textSecondary;
       ctx.fillRect(left, row.top + 0.5, w, row.height - 1);
     }
 
     // Value-area boundary lines (VAH / VAL) — faint dotted guides.
     ctx.globalAlpha = 0.6;
-    ctx.strokeStyle = theme.candleUp;
+    ctx.strokeStyle = this.valueAreaColor ?? theme.candleUp;
     ctx.lineWidth = 1;
     ctx.setLineDash([1, 3]);
     for (const price of [profile.valueAreaHigh, profile.valueAreaLow]) {
@@ -164,7 +190,7 @@ export class MarketProfileRenderer {
 
     // Stats readout — POC / VAH / VAL in a compact label, top-left of profile.
     if (this.showStats) {
-      this.drawStats(ctx, chartRect.x + 6, chartRect.y + 6, pocPrice, profile.valueAreaHigh, profile.valueAreaLow, viewport, theme);
+      this.drawStats(ctx, chartRect.x + 6, chartRect.y + 6 + this.clearTop, pocPrice, profile.valueAreaHigh, profile.valueAreaLow, viewport, theme);
     }
 
     ctx.restore();
@@ -182,7 +208,7 @@ export class MarketProfileRenderer {
     const sessions = computeSessionProfiles(slice, priceRange.min, priceRange.max, {
       buckets: this.buckets,
       valueAreaPct: this.valueAreaPct,
-    }, this.exchangeZone);
+    }, this.exchangeZone, this.dayStart);
     if (sessions.length === 0) return;
 
     const toY = priceToYMapper(viewport);
@@ -216,7 +242,7 @@ export class MarketProfileRenderer {
           const y = priceBucketRow(b, n, viewport, toY).mid;
           const inVA = profile.buckets[b].mid >= profile.valueAreaLow && profile.buckets[b].mid <= profile.valueAreaHigh;
           ctx.globalAlpha = inVA ? 0.95 : 0.6;
-          ctx.fillStyle = inVA ? theme.candleUp : theme.textSecondary;
+          ctx.fillStyle = inVA ? this.valueAreaColor ?? theme.candleUp : this.color ?? theme.textSecondary;
           const shown = Math.min(col.length, maxChars);
           for (let k = 0; k < shown; k++) {
             ctx.fillText(tpoLetter(col[k]), leftX + k * charW, y);
@@ -230,7 +256,7 @@ export class MarketProfileRenderer {
           const w = bucket.count * inv * sessionWidth;
           const inVA = bucket.mid >= profile.valueAreaLow && bucket.mid <= profile.valueAreaHigh;
           ctx.globalAlpha = inVA ? Math.min(1, this.opacity + 0.18) : this.opacity;
-          ctx.fillStyle = inVA ? theme.candleUp : theme.textSecondary;
+          ctx.fillStyle = inVA ? this.valueAreaColor ?? theme.candleUp : this.color ?? theme.textSecondary;
           ctx.fillRect(leftX, row.top + 0.5, w, row.height - 1);
         }
       }
@@ -267,13 +293,14 @@ export class MarketProfileRenderer {
     const text = (price: number) => priceTagText(price, viewport, digits);
     const rows: [string, string, string][] = [
       ['POC', text(poc), theme.text],
-      ['VAH', text(vah), theme.candleUp],
-      ['VAL', text(val), theme.candleUp],
+      ['VAH', text(vah), this.valueAreaColor ?? theme.candleUp],
+      ['VAL', text(val), this.valueAreaColor ?? theme.candleUp],
     ];
     ctx.globalAlpha = 1;
-    ctx.font = `600 10px ${theme.font.family}`;
+    ctx.font = chartFont(theme, 1, '600');
     ctx.textBaseline = 'middle';
-    const lineH = 14;
+    // A row as tall as its type and the room 10 px type had in 14.
+    const lineH = chartTypeSize(theme, 1) + 4;
     const padX = 6;
     const labelW = 26;
     let maxValW = 0;

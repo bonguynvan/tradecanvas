@@ -37,7 +37,18 @@ const query = new URLSearchParams(location.search);
 const theme = query.get('theme') === 'light' ? 'light' : 'dark';
 const locale = query.get('locale') ?? undefined;
 document.body.className = theme;
-const stage = (window.stage = { ready: false, errors: [], charts: {} });
+const stage = (window.stage = {
+  ready: false,
+  errors: [],
+  charts: {},
+  lib,
+  // The cell of each chart, by the name `renderFinanceChart` knows the chart by.
+  kinds: {
+    bar: 'bar', donut: 'donut', scatter: 'scatter', histogram: 'histogram', calendar: 'calendar', matrix: 'matrix', 'counter-clock': 'counterClock',
+    'heatmap-sectors': 'heatmap', equity: 'equityCurve', depth: 'depth', waterfall: 'waterfall', gauge: 'gauge', sparkline: 'sparkline', payoff: 'payoff',
+    curve: 'curve', 'box-plot': 'boxPlot', radar: 'radar', sunburst: 'sunburst', 'stacked-area': 'stackedArea', surface: 'surface', bar3d: 'bar3d',
+  },
+});
 window.addEventListener('error', (e) => stage.errors.push(e.message));
 
 const grid = document.getElementById('grid');
@@ -112,10 +123,87 @@ cell('equity-flat', (el) => new lib.EquityCurveChart(el, { ...base, data: [{ tim
 cell('depth-one-level', (el) => new lib.DepthChart(el, { ...base, data: { bids: [{ price: 100, volume: 5 }], asks: [] } }));
 cell('depth-small-prices', (el) => new lib.DepthChart(el, { ...base, bidColor: 'rgb(31, 168, 116)', askColor: '#e55', data: { bids: [{ price: 0.00001234, volume: 5e6 }, { price: 0.00001232, volume: 9e6 }], asks: [{ price: 0.00001236, volume: 4e6 }, { price: 0.00001239, volume: 7e6 }] } }));
 cell('heatmap-no-numbers', (el) => new lib.HeatmapChart(el, { ...base, weighted: true, data: [{ id: 'a', label: 'AAA', value: 3, weight: 5 }, { id: 'b', label: 'No value', value: NaN, weight: 3 }, { id: 'c', label: 'No weight', value: -2, weight: NaN }, { id: 'd', label: 'DDD', value: -4, weight: 2 }] }));
+// Logos written in `data:`, so the page asks no other site for one: a disc with a letter, a wide one, one that is no
+// picture (its cell is as a cell with none), a cell with none, and a cell too small for the one it has.
+const disc = (letter, colour) => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><circle cx="32" cy="32" r="30" fill="${colour}"/><text x="32" y="43" font-size="32" font-family="sans-serif" font-weight="700" text-anchor="middle" fill="#fff">${letter}</text></svg>`);
+const wideLogo = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="40"><rect width="120" height="40" rx="8" fill="#1d4ed8"/><rect x="14" y="16" width="92" height="8" fill="#fff"/></svg>');
+cell('heatmap-logos', (el) => new lib.HeatmapChart(el, { ...base, weighted: true, data: [
+  { id: 'vcb', label: 'VCB', value: 2.4, weight: 9, logo: disc('V', '#15803d') },
+  { id: 'hpg', label: 'HPG', value: -1.8, weight: 6, logo: disc('H', '#b45309') },
+  { id: 'fpt', label: 'FPT', value: 0.6, weight: 5, logo: wideLogo },
+  { id: 'mwg', label: 'MWG', value: -3.9, weight: 4, logo: 'data:image/png;base64,AAAA' },
+  { id: 'vnm', label: 'VNM', value: 1.1, weight: 3 },
+  { id: 'pnj', label: 'PNJ', value: 4.2, weight: 0.3, logo: disc('P', '#7c3aed') },
+] }));
 cell('sparkline-short-hex', (el) => new lib.SparklineChart(el, { ...base, data: [3, 5, 4, 8, 6, 9, 7], color: '#0af' }), true);
 cell('empty-waterfall', (el) => new lib.WaterfallChart(el, { ...base, data: [] }));
 cell('empty-equity', (el) => new lib.EquityCurveChart(el, { ...base, data: [] }));
 cell('empty-depth', (el) => new lib.DepthChart(el, { ...base, data: { bids: [], asks: [] } }));
+
+// Options and portfolios.
+const condor = [{ type: 'put', side: 'long', strike: 90, premium: 1 }, { type: 'put', side: 'short', strike: 95, premium: 2.5 }, { type: 'call', side: 'short', strike: 105, premium: 2.5 }, { type: 'call', side: 'long', strike: 110, premium: 1 }];
+const strikes = [80, 85, 90, 95, 100, 105, 110, 115, 120];
+const smile = (level, skew) => strikes.map((x) => ({ x, y: level + ((x - 100) / 10) ** 2 * skew - (x - 100) * 0.12 }));
+const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((label, d) => ({ label, values: Array.from({ length: 60 }, (_, i) => (random() - 0.5 + (d - 2) * 0.05) * 3 + (i % 29 === 0 ? 6 : 0)) }));
+const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const mix = [{ name: 'Stocks', values: months.map((_, i) => 40 + i * 2) }, { name: 'Bonds', values: months.map((_, i) => 30 - i) }, { name: 'Cash', values: months.map((_, i) => 20 - i * 0.5) }, { name: 'Gold', values: months.map(() => 8) }];
+const holdings = [
+  { label: 'Stocks', children: [{ label: 'Banks', children: [{ label: 'VCB', value: 12 }, { label: 'BID', value: 6 }, { label: 'TCB', value: 4 }] }, { label: 'Technology', value: 14 }, { label: 'Steel', value: 9 }, { label: 'Retail', value: 7 }] },
+  { label: 'Bonds', children: [{ label: 'Government', value: 15 }, { label: 'Corporate', value: 8 }] },
+  { label: 'Cash', value: 18 },
+  { label: 'Gold', value: 7 },
+];
+const scores = ['Sharpe', 'Sortino', 'Calmar', 'Alpha', 'Omega'].map((label) => ({ label, max: 3 }));
+cell('payoff', (el) => new lib.PayoffChart(el, { ...base, legs: condor, multiplier: 100, spot: 101.4, spotLabel: 'Spot' }));
+cell('curve', (el) => new lib.CurveChart(el, { ...base, series: [{ name: '1M', points: smile(22, 1.6) }, { name: '3M', points: smile(24, 0.9) }, { name: '6M', points: smile(25, 0.5) }], markers: [{ x: 101.4, label: 'ATM' }], valueFormat: (v) => `${v.toFixed(1)}%` }));
+cell('box-plot', (el) => new lib.BoxPlotChart(el, { ...base, data: weekdays, colorBySign: true, valueFormat: (v) => `${v.toFixed(1)}%` }));
+cell('radar', (el) => new lib.RadarChart(el, { ...base, axes: scores, series: [{ name: 'Strategy', values: [1.8, 2.4, 1.5, 1.1, 2] }, { name: 'Benchmark', values: [1, 1.3, 0.7, 0.4, 1.2] }] }));
+cell('sunburst', (el) => new lib.SunburstChart(el, { ...base, data: holdings, centerLabel: 'Total', centerValue: '100%', valueFormat: (v) => `${v}%` }));
+cell('stacked-area', (el) => new lib.StackedAreaChart(el, { ...base, categories: months, series: mix }));
+
+// In three dimensions.
+const tenors = ['1W', '1M', '2M', '3M', '6M', '1Y'];
+const volatility = tenors.map((_, t) => strikes.map((k) => 0.2 + ((k - 100) / 100) ** 2 * (2.4 / (1 + t * 0.7)) - (k - 100) * 0.0012 + t * 0.006));
+const books = Array.from({ length: 24 }, (_, t) => {
+  const mid = 100 + Math.sin(t / 4) * 1.2;
+  return {
+    time: start + t * 60_000,
+    bids: Array.from({ length: 30 }, (_, i) => ({ price: Math.round((mid - 0.1 - i * 0.1) * 10) / 10, volume: 4 + i * 0.6 + (i === 12 ? 30 + t : 0) + random() * 3 })),
+    asks: Array.from({ length: 30 }, (_, i) => ({ price: Math.round((mid + 0.1 + i * 0.1) * 10) / 10, volume: 4 + i * 0.5 + (i === 18 ? 46 - t : 0) + random() * 3 })),
+  };
+});
+const clock = (ms) => new Date(ms).toISOString().slice(11, 16);
+const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
+const classes = [{ name: 'Stocks', values: [4.2, 6.1, -2.4, 5.3] }, { name: 'Bonds', values: [1.1, 0.8, 1.6, -0.5] }, { name: 'Gold', values: [2.5, -1.2, 3.8, 2.1] }];
+cell('surface', (el) => new lib.SurfaceChart(el, { ...base, x: strikes, y: tenors, values: volatility, xLabel: 'Strike', yLabel: 'Expiry', valueLabel: 'IV', valueFormat: (v) => `${(v * 100).toFixed(1)}%` }));
+cell('surface-slices', (el) => new lib.SurfaceChart(el, { ...base, ...lib.depthSurface(books, { levels: 44 }), style: 'slices', xLabel: 'Price', yLabel: 'Time', valueLabel: 'Depth', yFormat: clock }));
+cell('bar3d', (el) => new lib.Bar3DChart(el, { ...base, categories: quarters, series: classes, valueFormat: (v) => `${v.toFixed(1)}%` }));
+// The states that could break them.
+cell('payoff-marks-together', (el) => new lib.PayoffChart(el, { ...base, legs: [{ type: 'call', side: 'long', strike: 100, premium: 4 }, { type: 'put', side: 'long', strike: 100, premium: 4 }], spot: 108.2, spotLabel: 'Price now' }));
+cell('payoff-covered-call', (el) => new lib.PayoffChart(el, { ...base, legs: [{ type: 'underlying', side: 'long', entry: 0.0412 }, { type: 'call', side: 'short', strike: 0.045, premium: 0.0011 }], multiplier: 100_000, spot: 0.0431 }));
+// The value before expiry over the payoff: a dashed line, the two named over the plot, a short straddle's far under its payoff at the strike.
+cell('payoff-before-expiry', (el) => new lib.PayoffChart(el, { ...base, legs: condor, multiplier: 100, spot: 101.4, spotLabel: 'Spot', model: { daysToExpiry: 30, volatility: 0.22, rate: 0.03 } }));
+cell('payoff-short-straddle', (el) => new lib.PayoffChart(el, { ...base, legs: [{ type: 'call', side: 'short', strike: 100, premium: 3 }, { type: 'put', side: 'short', strike: 100, premium: 3 }], range: { min: 85, max: 115 }, model: { daysToExpiry: 60, volatility: 0.45, label: 'Sixty days before' }, expiryLabel: 'On the day' }));
+cell('curve-term-structure', (el) => new lib.CurveChart(el, { ...base, series: [{ name: 'Today', points: [{ x: 7, y: 31 }, { x: 30, y: 26 }, { x: 90, y: 25 }, { x: 180, y: 25.5 }, { x: 365, y: 27 }] }, { name: 'A week ago', dashed: true, points: [{ x: 7, y: 24 }, { x: 30, y: 24.5 }, { x: 90, y: 25 }, { x: 365, y: 26 }] }, { name: 'One quote', points: [{ x: 180, y: 29 }] }], ticks: [{ x: 7, label: '1W' }, { x: 30, label: '1M' }, { x: 90, label: '3M' }, { x: 180, label: '6M' }, { x: 365, label: '1Y' }] }));
+cell('box-plot-long-labels', (el) => new lib.BoxPlotChart(el, { ...base, data: [{ label: 'Momentum, twelve months', values: [1, 2, 2, 3, 3, 3, 4, 9] }, { label: 'One trade only', values: [-2] }, { label: 'No trades yet', values: [] }, { label: 'Worked out elsewhere', stats: { min: -6, q1: -3, median: -1, q3: 0.5, max: 2, outliers: [-11, 6] } }, { label: 'All the same', values: [1.5, 1.5, 1.5] }] }));
+cell('radar-many-long-labels', (el) => new lib.RadarChart(el, { ...base, axes: ['Return, annualised', 'Volatility', 'Maximum drawdown', 'Win rate', 'Profit factor', 'Exposure', 'Turnover', 'Capacity'].map((label) => ({ label })), series: [{ name: 'Trend', values: [8, 3, 5, 6, 2, 9, 4, 7] }, { name: 'Mean reversion', values: [5, 6, 2, 8, 7, 3, 9, 1] }, { name: 'Carry', values: [3, 2, 8, 4, 5, 6, 1, 9] }] }));
+cell('sunburst-pie-small-parts', (el) => new lib.SunburstChart(el, { ...base, innerRadius: 0, data: [{ label: 'Everything else', value: 94 }, ...Array.from({ length: 12 }, (_, i) => ({ label: `Small ${i + 1}`, value: 0.5, children: [{ label: 'Half', value: 0.25 }, { label: 'Other half', value: 0.25 }] }))] }));
+cell('stacked-area-normalized-many', (el) => new lib.StackedAreaChart(el, { ...base, normalized: true, categories: Array.from({ length: 90 }, (_, i) => new Date(start + i * DAY).toISOString().slice(5, 10)), series: [{ name: 'Long', values: Array.from({ length: 90 }, (_, i) => 50 + Math.sin(i / 8) * 30) }, { name: 'Short', values: Array.from({ length: 90 }, (_, i) => 30 + Math.cos(i / 11) * 25) }, { name: 'Flat', values: Array.from({ length: 90 }, (_, i) => (i > 40 && i < 50 ? 0 : 20)) }] }));
+cell('stacked-area-one-point', (el) => new lib.StackedAreaChart(el, { ...base, categories: ['Today'], series: [{ name: 'Stocks', values: [60] }, { name: 'Cash', values: [40] }] }));
+cell('empty-sunburst', (el) => new lib.SunburstChart(el, { ...base, data: [] }));
+const days3d = [7, 14, 30, 60, 120, 365];
+const prices3d = Array.from({ length: 15 }, (_, i) => 80 + i * 3);
+cell('surface-wireframe-profit', (el) => new lib.SurfaceChart(el, { ...base, style: 'wireframe', x: prices3d, y: days3d, values: days3d.map((d) => prices3d.map((p) => (p === 101 && d === 30 ? NaN : Math.max(-6, 14 - Math.abs(p - 101) * (0.5 + 12 / d)) - 4))), colorRamp: { colors: ['#e8505b', '#8d8b86', '#1c9e6d'], min: -10, max: 10 }, xLabel: 'Price', yLabel: 'Days left', valueLabel: 'Profit' }));
+cell('surface-dense', (el) => new lib.SurfaceChart(el, { ...base, x: Array.from({ length: 300 }, (_, i) => i), y: Array.from({ length: 300 }, (_, i) => i), values: Array.from({ length: 300 }, (_, r) => Array.from({ length: 300 }, (_, c) => Math.sin(c / 28) * Math.cos(r / 34) + (c + r) / 500)), legend: false }));
+cell('surface-flat-long-names', (el) => new lib.SurfaceChart(el, { ...base, x: ['Consumer discretionary', 'Information technology', 'Health care'], y: ['Three months to expiry', 'Six months to expiry'], values: [[5, 5, 5], [5, 5, 5]], xLabel: 'A sector with a long name', yLabel: 'Time left', valueLabel: 'Weight' }));
+cell('surface-from-above', (el) => new lib.SurfaceChart(el, { ...base, x: strikes, y: tenors, values: volatility, view: { yaw: 0, pitch: 90 }, valueFormat: (v) => `${(v * 100).toFixed(1)}%` }));
+cell('surface-level-end-on', (el) => new lib.SurfaceChart(el, { ...base, style: 'slices', x: strikes, y: tenors, values: volatility, view: { yaw: 0, pitch: 0 }, rotate: false, valueFormat: (v) => `${(v * 100).toFixed(1)}%` }));
+cell('surface-one-row', (el) => new lib.SurfaceChart(el, { ...base, x: strikes, y: ['1M'], values: [volatility[1]], view: { yaw: 150, pitch: 20 } }));
+cell('bar3d-negative-one-series', (el) => new lib.Bar3DChart(el, { ...base, categories: ['Revenue from operations', 'Costs', 'Tax', 'Net'], series: [{ name: 'Year', values: [120, -45, -15, 60], color: 'teal' }], xLabel: 'Line', valueLabel: 'Amount' }));
+cell('bar3d-many', (el) => new lib.Bar3DChart(el, { ...base, categories: Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`), series: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((name, d) => ({ name, values: Array.from({ length: 24 }, (_, hour) => (hour === 3 && d === 2 ? NaN : 20 + Math.sin((hour - 6) / 3.8) * 14 + d * 2 + random() * 6)) })), view: { yaw: -50, pitch: 40 }, xLabel: 'Hour', valueLabel: 'Volume' }));
+cell('empty-surface', (el) => new lib.SurfaceChart(el, { ...base, x: [], y: [], values: [] }));
+cell('empty-bar3d', (el) => new lib.Bar3DChart(el, { ...base, categories: ['Q1'], series: [] }));
+cell('empty-radar', (el) => new lib.RadarChart(el, { ...base, axes: [{ label: 'Only' }, { label: 'Two' }], series: [{ name: 's', values: [1, 2] }] }));
 
 let equity = 100_000;
 const samples = Array.from({ length: 400 }, (_, i) => {

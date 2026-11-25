@@ -28,7 +28,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <b>简体中文</b> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
-**TradeCanvas 是一套面向交易应用的开源图表库**（[tradecanvas.dev](https://tradecanvas.dev/zh/)），采用 MIT 许可证。从K线到砖形图（Renko），134 个指标、76 种画线工具、交易所实时行情和图上下单，用 Canvas 2D 或 WebGL 绘制，不依赖任何第三方库。可以直接使用完整的 `ChartWidget`，也可以在无界面的 `Chart` 上构建自己的界面，支持 TypeScript、React、Vue 和 Svelte。
+**TradeCanvas 是一套面向交易应用的开源图表库**（[tradecanvas.dev](https://tradecanvas.dev/zh/)），采用 MIT 许可证。从K线到砖形图（Renko），138 个指标、76 种画线工具、交易所实时行情和图上下单，用 Canvas 2D 或 WebGL 绘制，不依赖任何第三方库。可以直接使用完整的 `ChartWidget`，也可以在无界面的 `Chart` 上构建自己的界面，支持 TypeScript、React、Vue 和 Svelte。
 
 它是一套由你掌控的图表引擎：MIT 许可证，从 npm 安装、随你的应用一起部署，用你自己的数据，打上你自己的品牌。图表上没有别人的标志，不需要申请授权，你和用户之间也没有任何平台。正在使用 TradingView 的 charting library 或 Lightweight Charts？datafeed 可以原样保留：[从 TradingView 迁移](https://tradecanvas.dev/zh/docs/from-tradingview/)。
 
@@ -38,12 +38,13 @@
 
 ## 亮点
 
-- **18 种图表、134 个指标、76 种画线工具**，指标叠加指标、画线预警、撤销与重做。
+- **25 种图表、138 个指标、76 种画线工具**，指标叠加指标、画线预警、撤销与重做。
 - **在图表上交易**：实时盈亏的持仓、可拖动的委托和止损止盈，模拟经纪商或你自己的接口。
 - **实时数据**：内置 Binance、Bybit、Coinbase 和 Kraken，自己的数据源约二十行即可接入。
 - **快**：WebGL 下百万根 K 线 60 fps 平移；一次实时 tick 约一微秒；百万根 K 线上每秒 30,000 笔成交持续十分钟，内存不增长（[测试](benchmarks/2026-11-03.md)）。
 - **工作区**：多图网格、布局、K 线回放、回测。
-- **另有十四种图表**，用于行情图周围的页面：深度图、权益曲线、瀑布图、热力图与板块图、柱状图、环形图、散点图、直方图、日历图、相关性矩阵、仪表盘、迷你走势图，以及回测结果面板。
+- **另有二十二种图表**，用于行情图周围的页面：深度图、权益曲线、瀑布图、热力图与板块图、柱状图、环形图、散点图、直方图、日历图、相关性矩阵、仪表盘、迷你走势图、期权到期损益图、曲线图（波动率微笑、期限结构）、箱线图、雷达图、旭日图、堆叠面积图、可拖动旋转的三维曲面图（波动率曲面、随时间变化的深度）、三维柱状图，以及回测结果面板。
+- **可打印，也可脱离页面**：任意图表都能导出为清晰的图片，单独打印或保存为 PDF；价格图表和上述图表还可在 Node 或 Worker 中绘制，无需浏览器页面。
 - **随你定制**：主题、三种外观、114 个开关、插件；30 种语言；手机与应用。
 
 <table>

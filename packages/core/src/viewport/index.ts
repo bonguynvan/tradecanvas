@@ -1,4 +1,5 @@
 export { Viewport, MIN_BAR_UNIT, MIN_BAR_UNIT_LIMIT, PRICE_SCALE_MARGIN } from './Viewport.js';
+export type { ViewportSnapshot } from './Viewport.js';
 export {
   barIndexToX,
   priceToY,

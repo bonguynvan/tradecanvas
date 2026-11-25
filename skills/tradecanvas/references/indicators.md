@@ -2,11 +2,11 @@
 
 # Built-in indicators
 
-134 indicators. Add one with `chart.addIndicator(id, params)`; params you leave out take the defaults below.
+138 indicators. Add one with `chart.addIndicator(id, params)`; params you leave out take the defaults below.
 An indicator's values at bar `i` are `chart.getIndicatorOutput(instanceId).series[i]`, an object keyed by the line keys listed here.
 "Source ✓" means it has a `source` input: a price (`close`, `open`, `high`, `low`, `hl2`, `hlc3`, `ohlc4`, `hlcc4`) or another indicator's line (`indicatorSource(instanceId, key)`).
 
-## On the price pane (48)
+## On the price pane (51)
 
 Drawn over the candles, on the price scale.
 
@@ -60,8 +60,11 @@ Drawn over the candles, on the price scale.
 | `demark` | DeMark Projected Range | — | high: Projected high, low: Projected low | — | |
 | `rainbow` | Moving Average Rainbow | first: 10, step: 10, count: 10, exponential: 0 | ma1: MA 1, ma2: MA 2, ma3: MA 3, ma4: MA 4, ma5: MA 5, ma6: MA 6, ma7: MA 7, ma8: MA 8, ma9: MA 9, ma10: MA 10, ma11: MA 11, ma12: MA 12, ma13: MA 13, ma14: MA 14, ma15: MA 15, ma16: MA 16, ma17: MA 17, ma18: MA 18, ma19: MA 19, ma20: MA 20 | — | |
 | `candlepatterns` | Candlestick Patterns | trendPeriod: 10, reversal: 1, continuation: 1, indecision: 0 | bull: Bullish, bear: Bearish, neutral: Indecision | — | |
+| `fvg` | Fair Value Gaps | minPercent: 0, showFilled: 0 | bull: Bullish top, bullLow: Bullish bottom, bear: Bearish top, bearLow: Bearish bottom | — | |
+| `svp` | Session Volume Profile | rows: 24, valueArea: 70 | poc: POC, vah: VAH, val: VAL | — | |
+| `orderblocks` | Order Blocks | length: 5, showBroken: 0, count: 5 | bull: Bullish top, bullLow: Bullish bottom, bear: Bearish top, bearLow: Bearish bottom | — | |
 
-## In a pane of their own (86)
+## In a pane of their own (87)
 
 Drawn in a pane under the chart (`addIndicator(id, params, 'bottom' | 'top')`), with their own scale and levels.
 
@@ -85,7 +88,7 @@ Drawn in a pane under the chart (`addIndicator(id, params, 'bottom' | 'top')`), 
 | `vroc` | Volume Rate of Change | period: 14 | value: VROC | 0 | |
 | `ao` | Awesome Oscillator | fast: 5, slow: 34 | value: AO | — | |
 | `chaikinOsc` | Chaikin Oscillator | fast: 3, slow: 10 | value: Chaikin | — | |
-| `voldelta` | Volume Delta | mode: 0 | value: Delta | — | |
+| `voldelta` | Volume Delta | mode: 0, anchor: "all" | value: Delta | — | |
 | `vortex` | Vortex Indicator | period: 14 | viPlus: VI+, viMinus: VI− | 1 | |
 | `chop` | Choppiness Index | period: 14 | value: CHOP | 38.2, 61.8 | |
 | `uo` | Ultimate Oscillator | fast: 7, mid: 14, slow: 28 | value: UO | 30, 70 | |
@@ -153,3 +156,4 @@ Drawn in a pane under the chart (`addIndicator(id, params, 'bottom' | 'top')`), 
 | `tradevalue` | Trade Value | — | value: Value | — | |
 | `binarywave` | Binary Wave | ma: 20, fast: 12, slow: 26, signal: 9, roc: 12, stoch: 14 | value: Wave | 0 | |
 | `sroc` | Smoothed Rate of Change | ema: 13, roc: 21 | value: S-ROC | 0 | |
+| `rsidiv` | RSI Divergence | period: 14, left: 5, right: 5, minBars: 5, maxBars: 60, hidden: 0 | value: RSI, bull: Bullish, bear: Bearish | 30, 70 | |

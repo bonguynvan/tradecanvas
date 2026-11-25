@@ -4,7 +4,7 @@ const vi: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Biểu đồ giao dịch Canvas cho web',
     description:
-      'TradeCanvas là thư viện biểu đồ giao dịch cho web, vẽ bằng Canvas 2D hoặc WebGL: 18 loại biểu đồ, 134 chỉ báo, 76 công cụ vẽ, dữ liệu trực tiếp từ sàn, đặt lệnh ngay trên biểu đồ, phát lại và backtest, bằng 30 ngôn ngữ. Không phụ thuộc thư viện nào, giấy phép MIT.',
+      'TradeCanvas là thư viện biểu đồ giao dịch cho web, vẽ bằng Canvas 2D hoặc WebGL: 18 loại biểu đồ, 138 chỉ báo, 76 công cụ vẽ, dữ liệu trực tiếp từ sàn, đặt lệnh ngay trên biểu đồ, phát lại và backtest, bằng 30 ngôn ngữ. Không phụ thuộc thư viện nào, giấy phép MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const vi: SiteMessages = {
     release: 'bộ vẽ WebGL, 30 ngôn ngữ',
     title: 'Bộ máy biểu đồ cho ứng dụng giao dịch.',
     ledeHtml:
-      'Từ nến Nhật đến Renko, 134 chỉ báo, 76 công cụ vẽ, dữ liệu trực tiếp từ sàn và đặt lệnh ngay trên biểu đồ. Vẽ bằng Canvas 2D hoặc WebGL, không phụ thuộc thư viện nào. Gắn nguyên <code>ChartWidget</code> đầy đủ, hoặc tự dựng giao diện riêng trên <code>Chart</code> headless.',
+      'Từ nến Nhật đến Renko, 138 chỉ báo, 76 công cụ vẽ, dữ liệu trực tiếp từ sàn và đặt lệnh ngay trên biểu đồ. Vẽ bằng Canvas 2D hoặc WebGL, không phụ thuộc thư viện nào. Gắn nguyên <code>ChartWidget</code> đầy đủ, hoặc tự dựng giao diện riêng trên <code>Chart</code> headless.',
     getStarted: 'Bắt đầu',
     browseExamples: 'Xem ví dụ',
     specsLabel: 'Các con số chính',
@@ -71,7 +71,7 @@ const vi: SiteMessages = {
           title: 'Đọc thị trường',
           text: 'Dải băng, đường trung bình và dao động trên các cây nến, mức Fibonacci và đường xu hướng vẽ lên trên, mỗi thứ có cài đặt và cảnh báo riêng.',
           points: [
-            '134 chỉ báo, chỉ báo này chồng lên chỉ báo kia, như đường trung bình của RSI',
+            '138 chỉ báo, chỉ báo này chồng lên chỉ báo kia, như đường trung bình của RSI',
             '76 công cụ vẽ, có nam châm, nhóm và hoàn tác',
             'Cảnh báo theo giá, theo đường vẽ và khi chỉ báo cắt nhau',
           ],
@@ -218,11 +218,11 @@ const vi: SiteMessages = {
     },
     indicators: {
       title: 'Chỉ báo',
-      stat: '134 có sẵn',
+      stat: '138 có sẵn',
       blurb:
         'Chỉ báo phủ lên giá và chỉ báo ở bảng riêng, đều tự tính trong thư viện, không phụ thuộc thư viện toán nào. Tick trực tiếp chỉ tính lại nến đang hình thành — 0.001 ms mỗi tick với bốn chỉ báo trên 100k nến.',
       tryThis: [
-        'Bấm nút Chỉ báo (hoặc Ctrl+K) và tìm bất kỳ chỉ báo nào trong 134 chỉ báo',
+        'Bấm nút Chỉ báo (hoặc Ctrl+K) và tìm bất kỳ chỉ báo nào trong 138 chỉ báo',
         'Bấm vào tên chỉ báo trên chú thích: thông số, màu sắc và các mức',
         'Đặt Nguồn của một đường trung bình động là đường của một chỉ báo khác',
         'Kéo đường phân cách giữa các bảng để đổi kích thước; các nút ở góc phải trên của bảng để di chuyển, thu gọn hoặc phóng to',
@@ -381,7 +381,7 @@ const vi: SiteMessages = {
     },
     overrides: {
       title: 'Override style',
-      stat: '107 khoá',
+      stat: '122 khoá',
       blurb:
         'Bất kỳ phần nào của biểu đồ theo khoá, riêng khỏi theme: lưới theo từng chiều, crosshair, các trục, pane, legend, giá cuối, volume và màu của từng loại biểu đồ. Ở đây lưới dọc tắt, lưới ngang chấm chấm, crosshair nét liền, và đường signal của MACD nét đứt trong một pane có đường phân cách riêng.',
       tryThis: [
@@ -435,6 +435,17 @@ const vi: SiteMessages = {
         'Chuyển giữa Canvas 2D và WebGL phía trên biểu đồ: mỗi lần chuyển sẽ đo một lần kéo ngắn',
         'Tìm các hàng sáng: những bức tường khối lượng đứng yên ở một mức giá theo thời gian',
         'Phóng to vào một bức tường rồi kéo qua lại: các ô chạy theo kịp các cây nến',
+      ],
+    },
+    orderflow: {
+      title: 'Order flow',
+      stat: 'Footprint + tape',
+      blurb:
+        'Mọi trade của feed, kèm bên chủ động khớp. Footprint chart ghi, cạnh mỗi nến, phần bên bán khớp ở bid và phần bên mua khớp ở ask tại từng mức giá bên trong nến, đánh dấu các hàng mà một bên áp đảo bên kia, và cộng tổng của mỗi nến ngay bên dưới: mua trừ bán, rồi cả hai cộng lại. Bên cạnh là tape, liệt kê các trade ngay khi chúng khớp, mới nhất ở trên cùng, theo màu của bên chủ động.',
+      tryThis: [
+        'Xem nến mới nhất được lấp dần từng hàng khi có trade, và tổng bên dưới nó thay đổi',
+        'Mở menu ở đầu tape: chỉ liệt kê bên mua hoặc bên bán, hoặc gộp các trade cùng lúc thành một hàng',
+        'Gõ một cỡ tối thiểu trên tape để chỉ giữ các trade lớn, rồi zoom out chart: các hàng chuyển thành thanh, còn tổng vẫn ở đó',
       ],
     },
     switching: {
@@ -491,6 +502,23 @@ const vi: SiteMessages = {
     counterClock: 'Đường ngược chiều kim đồng hồ: giá theo khối lượng, trung bình 25 ngày',
     avgVolume: 'Khối lượng, trung bình',
     avgPrice: 'Giá, trung bình',
+    payoff: 'Iron condor: lãi lỗ khi đáo hạn',
+    smile: 'Implied volatility theo strike',
+    weekdayReturns: 'Lợi nhuận ngày theo thứ trong tuần',
+    scorecard: 'Chiến lược so với benchmark',
+    strategy: 'Chiến lược',
+    benchmark: 'Benchmark',
+    allocationRings: 'Phân bổ theo loại tài sản và ngành',
+    allocationOverTime: 'Phân bổ trong năm',
+    volSurface: 'Implied volatility theo strike và kỳ hạn',
+    strike: 'Strike',
+    expiry: 'Kỳ hạn',
+    depthOverTime: 'Độ sâu sổ lệnh theo thời gian',
+    quarterReturns: 'Lợi nhuận theo quý và loại tài sản',
+    turnHint: 'Kéo biểu đồ để xoay, nhấp đúp để quay về góc nhìn ban đầu.',
+    exportLabel: 'Lưu biểu đồ danh mục',
+    print: 'In',
+    reportPdf: 'Mọi biểu đồ trong một PDF',
     pnl: 'Phân bổ lãi/lỗ',
     fearGreed: 'Chỉ số Sợ hãi & Tham lam',
     waterfall: {
@@ -704,7 +732,7 @@ const vi: SiteMessages = {
         { name: 'Không phụ thuộc thư viện bên thứ ba khi chạy', detail: 'Không có gì khác phải cài hay rà soát' },
       ],
       indicators: [
-        { name: '134 chỉ báo có sẵn', detail: 'Pivot points 6 kiểu, MA Cross, tương quan với mã khác' },
+        { name: '138 chỉ báo có sẵn', detail: 'Pivot points 6 kiểu, MA Cross, tương quan với mã khác' },
         { name: 'Chọn nguồn giá', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: 'Chỉ báo chồng lên chỉ báo', detail: 'Như đường trung bình của RSI, cập nhật theo từng tick' },
         { name: 'Nhiều chỉ báo trong một pane, chuyển giữa các pane', detail: 'moveIndicatorToPane' },
@@ -775,7 +803,7 @@ const vi: SiteMessages = {
       ],
       customization: [
         { name: 'Ba kiểu giao diện cho widget', detail: 'Studio, Terminal, Capsule; ui và setUI; biến CSS --tcw-*' },
-        { name: 'Giao diện biểu đồ theo khoá', detail: 'applyOverrides trên 107 khoá có kiểu, ở lớp ứng dụng và lớp người dùng' },
+        { name: 'Giao diện biểu đồ theo khoá', detail: 'applyOverrides trên 122 khoá có kiểu, ở lớp ứng dụng và lớp người dùng' },
         { name: 'Settings chỉnh được mọi khoá', detail: 'Tab style theo loại biểu đồ đang xem, tab giao dịch' },
         { name: '114 công tắc tính năng', detail: 'features, setFeatures, isFeatureOn; đổi được khi đang chạy' },
         { name: 'Thành phần của riêng bạn trong widget', detail: 'Nút và dropdown trên toolbar, nút sidebar, mục thanh trạng thái, slot, mục menu' },
@@ -927,6 +955,7 @@ const vi: SiteMessages = {
       frameworks: 'Framework',
       embed: 'Widget nhúng',
       migration: 'Chuyển sang 2.0',
+      'migration-3': 'Chuyển sang 3.0',
       'from-tradingview': 'Chuyển từ TradingView',
       'how-it-works': 'Cách hoạt động',
       api: 'Tham chiếu API',

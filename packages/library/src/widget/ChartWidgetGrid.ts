@@ -1,10 +1,13 @@
-import type { ChartStyleOverrides, ChartStyleOverridesPatch, DataAdapter, DrawingState, Theme, ThemeName, VisibleRangeChangePayload } from '@tradecanvas/commons';
-import { tickerOf } from '@tradecanvas/commons';
+import type { ChartImageOptions, ChartPdfOptions, ChartPrintOptions, ChartStyleOverrides, ChartStyleOverridesPatch, DataAdapter, DrawingState, Theme, ThemeName, VisibleRangeChangePayload } from '@tradecanvas/commons';
+import { DARK_THEME, LIGHT_THEME, tickerOf } from '@tradecanvas/commons';
+import { canCopyImage, canvasBlob, canvasDataURL, canvasesToPdf, copyImage, downloadImage, imageFileName, printCanvas } from '@tradecanvas/core';
 import { ChartWidget } from './ChartWidget.js';
 import type { ChartWidgetOptions, WidgetLayoutsOptions } from './types.js';
 import { readWidgetFeatures, type WidgetFeatures } from './widgetFeatures.js';
 import { GRID_LAYOUT_SHAPES, GRID_LAYOUTS, gridAreas, gridChartCount, isGridLayout, placeGridCell, type GridLayout, type GridShape } from '../grid/gridShapes.js';
 import { GridLayoutPicker } from './GridLayoutPicker.js';
+import { GridPictureButton } from './GridPictureButton.js';
+import { gridPicture } from './gridPicture.js';
 import { injectWidgetStyles, removeWidgetStyles } from './WidgetStyles.js';
 import { createTranslator, fill, resolveMessages, writingDirection, type MessageKey, type Translator } from './i18n.js';
 import { createIcon } from './icons.js';
@@ -61,8 +64,14 @@ export interface ChartWidgetGridOptions {
   sync?: Partial<WidgetGridSync>;
   /** Named layouts of the whole grid (arrangement, sync and every chart). Default `true`. */
   layouts?: boolean | WidgetLayoutsOptions;
-  /** The bar above the charts: arrangement, sync, layouts. Default `true`. */
+  /** The bar above the charts: arrangement, sync, the charts' picture, layouts. Default `true`. */
   bar?: boolean;
+  /**
+   * The bar's picture button: the charts together saved as an image, copied,
+   * printed or saved as a PDF. Default `true`. It is hidden as well while
+   * a chart's `screenshot` switch is off: the picture shows every chart.
+   */
+  picture?: boolean;
   /** The chart in use changed (pressed, or the grid shrank). */
   onActiveChange?: (index: number, widget: ChartWidget) => void;
   /** A chart was made: at the start, and when the grid grows. Feed it data, add indicators… */
@@ -82,6 +91,11 @@ export interface WidgetGridLayoutContent {
 interface Cell {
   el: HTMLDivElement;
   widget: ChartWidget;
+}
+
+/** A picture for paper: in the light theme and at twice the pixels, unless the options say otherwise. */
+function forPaper<O extends Omit<ChartImageOptions, 'type' | 'quality'>>(options: O): O {
+  return { ...options, theme: options.theme ?? 'light', pixelRatio: options.pixelRatio ?? 2 };
 }
 
 /** A detached copy of plain data (drawings): charts must not share objects they change in place. */
@@ -132,6 +146,8 @@ export class ChartWidgetGrid {
   private drawingSource: Cell | null = null;
   /** The bar's arrangement button and its menu. */
   private layoutPicker: GridLayoutPicker | null = null;
+  /** The bar's picture button and its menu. */
+  private pictureButton: GridPictureButton | null = null;
   private syncButtons = new Map<keyof WidgetGridSync, HTMLButtonElement>();
   private layoutsButton: HTMLButtonElement | null = null;
   /** A tab per chart: a narrow grid (a phone) shows one chart at a time. */
@@ -173,6 +189,8 @@ export class ChartWidgetGrid {
     this.applyShape();
     for (let i = 0; i < this.shapeCount(); i++) this.cells.push(this.createCell(i));
     this.markActive();
+    // Now that there are charts to say whether their pictures are switched on.
+    this.pictureButton?.render();
     // The bar takes the charts' theme (a Theme object can be dark or light).
     const theme = this.cells[0]?.el.querySelector<HTMLElement>('.tcw-root')?.dataset.tcwTheme;
     if (theme) this.root.dataset.tcwTheme = theme;
@@ -221,6 +239,79 @@ export class ChartWidgetGrid {
     this.markActive();
     this.options.onActiveChange?.(index, this.cells[index].widget);
     this.session?.changed();
+  }
+
+  // --- Pictures ---
+
+  /**
+   * The grid's charts as one picture, each in its cell, a line between
+   * them: for a file, a page or a PDF of the whole grid. Each chart is
+   * drawn again for its cell (`chart.toCanvas`), so the room its widget's
+   * bars take on the page is the chart's in the picture. `options` are a
+   * chart's own picture's (`pixelRatio`, `theme`), and a `width` or a
+   * `height` is the whole grid's. A narrow grid, which shows one chart at
+   * a time, gives that chart. Null when no chart has a picture to give.
+   */
+  toCanvas(options: ChartImageOptions = {}): HTMLCanvasElement | null {
+    const grid = this.cellsEl.getBoundingClientRect();
+    const pieces = this.cells.map((cell) => {
+      const box = cell.el.getBoundingClientRect();
+      return { chart: cell.widget.getChart(), box: { x: box.left - grid.left, y: box.top - grid.top, width: box.width, height: box.height } };
+    });
+    // The line between two cells, as the charts draw their own lines in the picture's theme.
+    const theme = options.theme === undefined ? this.getActiveWidget().getChart().getTheme() : options.theme === 'light' ? LIGHT_THEME : options.theme === 'dark' ? DARK_THEME : options.theme;
+    return gridPicture(pieces, { width: grid.width, height: grid.height }, options, theme.axisLine, window.devicePixelRatio || 1);
+  }
+
+  /** The grid's picture in a data URL (`toCanvas`); `options` say its format too. */
+  screenshotDataURL(options: ChartImageOptions = {}): string | null {
+    const canvas = this.toCanvas(options);
+    return canvas ? canvasDataURL(canvas, options) : null;
+  }
+
+  /** The grid's picture as a file's bytes (`toCanvas`); `options` say its format too. */
+  async screenshotBlob(options: ChartImageOptions = {}): Promise<Blob | null> {
+    const canvas = this.toCanvas(options);
+    return canvas ? canvasBlob(canvas, options) : null;
+  }
+
+  /** Saves the grid's picture as a file: `charts.png` unless `filename` says otherwise. */
+  screenshot(filename = 'charts', options: ChartImageOptions = {}): void {
+    const url = this.screenshotDataURL(options);
+    if (url) downloadImage(url, imageFileName(filename, options.type ?? 'png'));
+  }
+
+  /**
+   * Copies the grid's picture to the clipboard, as a PNG (`toCanvas`).
+   * False where the browser has no clipboard for pictures or refuses, and
+   * when there was no picture.
+   */
+  async copyScreenshot(options: Omit<ChartImageOptions, 'type' | 'quality'> = {}): Promise<boolean> {
+    // Nothing is drawn where there is no clipboard to put it on.
+    if (!canCopyImage()) return false;
+    const canvas = this.toCanvas(options);
+    return copyImage(canvas ? canvasBlob(canvas) : Promise.resolve(null));
+  }
+
+  /**
+   * Opens the browser's print dialog for the grid's charts alone, in the
+   * light theme and at twice the pixels unless `options` say otherwise.
+   * False when there was no picture to print.
+   */
+  print(options: ChartPrintOptions = {}): boolean {
+    const canvas = this.toCanvas(forPaper(options));
+    return canvas !== null && printCanvas(canvas, { title: options.title });
+  }
+
+  /**
+   * The grid's charts as a PDF of one page: their picture, kept without
+   * loss, as large as fits within the margins. In the light theme and at
+   * twice the pixels unless `options` say otherwise. For a page a chart,
+   * give the charts to `chartsToPdf`. Null when there was no picture.
+   */
+  async toPdf(options: ChartPdfOptions = {}): Promise<Blob | null> {
+    const canvas = this.toCanvas(forPaper(options));
+    return canvas ? canvasesToPdf([canvas], options) : null;
   }
 
   getLayout(): GridLayout {
@@ -314,6 +405,7 @@ export class ChartWidgetGrid {
     const read = readWidgetFeatures(patch);
     for (const c of this.cells) c.widget.setFeatures(read);
     this.featureSwitches = { ...this.featureSwitches, ...read };
+    this.pictureButton?.render();
   }
 
   /** Every chart's theme. */
@@ -388,6 +480,7 @@ export class ChartWidgetGrid {
     this.session?.destroy();
     this.layoutsUI?.destroy();
     this.layoutPicker?.destroy();
+    this.pictureButton?.destroy();
     for (const c of this.cells) this.destroyCell(c);
     this.cells = [];
     this.root.remove();
@@ -620,6 +713,8 @@ export class ChartWidgetGrid {
       c.el.classList.toggle('tcw-grid-cell-current', i === this.active);
     });
     this.renderTabs();
+    // Other charts may be here now: whether their pictures are switched on is asked again.
+    this.pictureButton?.render();
   }
 
   /** A tab per chart, its symbol and interval: the active one pressed. */
@@ -702,6 +797,21 @@ export class ChartWidgetGrid {
     spacer.className = 'tcw-toolbar-spacer';
     bar.append(this.sep(), sync, spacer);
 
+    if (this.options.picture !== false) {
+      this.pictureButton = new GridPictureButton({
+        root: this.root,
+        t: this.t,
+        symbols: () => [...new Set(this.picturedCells().map((c) => c.widget.getSymbol()))],
+        // The picture shows every chart: it needs every chart's leave.
+        isOn: (feature) => this.cells.length > 0 && this.cells.every((c) => c.widget.isFeatureOn(feature)),
+        screenshot: (filename) => this.screenshot(filename),
+        copyScreenshot: () => this.copyScreenshot(),
+        print: (options) => this.print(options),
+        toPdf: (options) => this.toPdf(options),
+        toast: (message, kind) => this.toast(message, kind),
+      });
+      bar.appendChild(this.pictureButton.button);
+    }
     if (this.options.layouts !== false) {
       this.layoutsButton = document.createElement('button');
       this.layoutsButton.type = 'button';
@@ -714,6 +824,19 @@ export class ChartWidgetGrid {
     }
     this.renderBar();
     return bar;
+  }
+
+  /**
+   * The charts a picture shows: those with room on the page (a narrow grid
+   * shows one; all of them where the page is not laid out), less a chart
+   * that gives no picture (`features.screenshot` off on the chart itself).
+   */
+  private picturedCells(): Cell[] {
+    const shown = this.cells.filter((c) => {
+      const box = c.el.getBoundingClientRect();
+      return box.width > 0 && box.height > 0;
+    });
+    return (shown.length > 0 ? shown : this.cells).filter((c) => c.widget.getChart().getFeatures().screenshot);
   }
 
   private sep(): HTMLSpanElement {

@@ -95,6 +95,25 @@ describe('prices quoted in dong', () => {
   });
 });
 
+describe('what a price is worth, in dong', () => {
+  it('counts a share’s price in thousands: 100 shares at 26.40 are 2,640,000 dong', () => {
+    for (const market of [MARKET_HOSE, MARKET_HOSE_ETF, MARKET_HNX, MARKET_UPCOM]) {
+      expect(market.contractMultiplier, market.exchange).toBe(1000);
+      expect(26.4 * 100 * (market.contractMultiplier ?? 1)).toBe(2_640_000);
+    }
+    // A futures contract keeps its own: 100,000 dong a point.
+    expect(MARKET_VN30F.contractMultiplier).toBe(100_000);
+  });
+
+  it('keeps an order’s worth the same when its prices are read in dong', () => {
+    const inDong = scaleMarketPrices(MARKET_HOSE, 1000);
+    expect(inDong.contractMultiplier).toBe(1);
+    expect(26_400 * 100 * (inDong.contractMultiplier ?? 1)).toBe(2_640_000);
+    // A market with none given is given none.
+    expect(scaleMarketPrices({ type: 'stock' }, 1000)).not.toHaveProperty('contractMultiplier');
+  });
+});
+
 describe('Vietnamese sessions', () => {
   it('reads the session in the exchange’s time zone', () => {
     const at = (iso: string, market: MarketConfig) => getCurrentSession(market.sessions ?? [], vn(iso), market.timeZone)?.type ?? null;
@@ -165,5 +184,14 @@ describe('Vietnamese colours', () => {
     // Volume keeps the theme's own: the candles carry the colours.
     expect(theme.volumeUp).toBe(DARK_THEME.volumeUp);
     expect(theme.volumeDown).toBe(DARK_THEME.volumeDown);
+  });
+});
+
+describe('scaleMarketPrices: limits given for the day', () => {
+  it('scales a ceiling and a floor given whole, as it scales the reference', () => {
+    const scaledUp = scaleMarketPrices({ type: 'stock', priceLimits: { enabled: true, referencePrice: 25.35, ceiling: 27.1, floor: 23.6 } }, 1000);
+    expect(scaledUp.priceLimits).toMatchObject({ referencePrice: 25350, ceiling: 27100, floor: 23600 });
+    // None given: none made.
+    expect(scaleMarketPrices({ type: 'stock', priceLimits: { enabled: true, referencePrice: 25.35 } }, 1000).priceLimits).not.toHaveProperty('ceiling');
   });
 });

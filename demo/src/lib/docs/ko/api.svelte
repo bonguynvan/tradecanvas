@@ -27,6 +27,10 @@
     <tr><td><code>appendBars(bars)</code></td><td>일괄 추가합니다. 지표는 한 번만 다시 계산합니다.</td></tr>
     <tr><td><code>updateLastBar(bar)</code></td><td>현재 형성 중인 봉을 변경합니다.</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>틱을 마지막 봉에 병합합니다.</td></tr>
+    <tr><td><code>addTrades(trades)</code></td><td>체결을 <a href={href('/docs/realtime#footprint')}>풋프린트</a>에 넣습니다: 각 체결을 그 시각의 봉과 그 가격의 행에, 가져간 쪽으로 계산합니다.</td></tr>
+    <tr><td><code>followTrades()</code></td><td>피드의 체결을, 최근 체결에 이어 실시간 체결을, 돌려주는 함수가 호출될 때까지 <code>trades</code> 이벤트로 따라갑니다. <a href={href('/docs/realtime#tape')}>체결 내역</a>을 참고하세요.</td></tr>
+    <tr><td><code>getTrades()</code></td><td>최근에 알린 체결을 오래된 것부터: 피드의 체결과 직접 넣은 체결. 체결이 알려진 뒤에 온 리스너를 위한 것입니다.</td></tr>
+    <tr><td><code>setFootprint(bars)</code> / <code>getFootprint(time?)</code> / <code>clearFootprint()</code></td><td>풋프린트의 행을 봉 단위로: 직접 넣기, 다시 읽기(한 봉의 것, 또는 모든 봉의 것), 지우기.</td></tr>
     <tr><td><code>updateBar(bar)</code></td><td>불러온 봉을 고칩니다. 시리즈 어디에 있든 시각이 같은 봉입니다. 보는 위치는 그대로이며, 그 시각의 봉이 없으면 false를 돌려줍니다.</td></tr>
     <tr><td><code>getData()</code></td><td>원본 OHLC 시리즈를 읽습니다.</td></tr>
   </tbody>
@@ -48,7 +52,7 @@
 <table>
   <thead><tr><th>메서드</th><th>용도</th></tr></thead>
   <tbody>
-    <tr><td><code>setChartType(type)</code></td><td>18가지 유형 중 하나 — <a href={href('/docs/chart-types')}>차트 유형</a>을 참고하세요.</td></tr>
+    <tr><td><code>setChartType(type)</code></td><td>25가지 유형 중 하나 —<a href={href('/docs/chart-types')}>차트 유형</a>을 참고하세요.</td></tr>
     <tr><td><code>getChartType()</code></td><td>현재 그리고 있는 차트 유형(기본값 <code>'candlestick'</code>).</td></tr>
     <tr><td><code>setTheme(name | theme)</code></td><td>내장 테마 사이에서 전환하거나 자신의 테마를 설정합니다. <code>getTheme()</code> 은 설정한 그대로 돌려줍니다.</td></tr>
     <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>차트의 어떤 부분이든 키로 스타일 지정(<code>'grid.vertical.visible'</code>, <code>'series.candlestick.upColor'</code>…). <code>null</code> 은 키를 뺍니다. <a href={href('/docs/styling#overrides')}>스타일</a> 참고.</td></tr>
@@ -241,6 +245,20 @@ formatVolumeLoc(345_000_000, 'ko')           // '3.45억'`}</code></pre>
   <code>priceLimits</code>가 없는 자체 테마는 밝은 배경에서는 라이트 테마의 색을, 어두운 배경에서는 다크 테마의 색을 씁니다.
 </p>
 
+<h3 id="broker-limits">브로커가 주는 당일 가격 제한</h3>
+<p>
+  <code>setPriceLimits</code>는 기준가만이 아니라 그 종목의 당일 상한가, 하한가, 기준가를 그대로 받습니다. 브로커나
+  거래소가 제공한다면 그것을 넘기세요. 특별한 제한폭이나 다른 거래소로 옮긴 종목의 첫 거래일은 기준가의 몇 퍼센트로
+  구할 수 없으며, 그럴 때 시장의 퍼센트는 더 나은 정보가 없을 때 쓰는 대안일 뿐입니다. 차트의 선, 주문을 끌어다 놓을 수
+  있는 가격, 티켓의 검사는 모두 넘겨받은 값을 따릅니다. 위젯의 주문 티켓은 가격 칸 위에 이 세 가격을 보여 주며, 누르면
+  그 가격이 설정됩니다. <code>priceLimitOrder</code>로 시세판과 같은 순서로 배치하고, 적지 않은 것은 표시하지 않습니다.
+</p>
+<pre><code>{`chart.setMarket(MARKET_HOSE)
+chart.setPriceLimits({ ceiling: 27.1, floor: 23.6, reference: 25.35 })   // as the broker gives them for the symbol
+chart.setPriceLimits(25.35)                                              // or the reference alone: the market's percentages of it
+
+new ChartWidget(host, { trading: true, priceLimitOrder: ['reference', 'ceiling', 'floor'] })   // the ticket's row, in your board's order`}</code></pre>
+
 <h3 id="comparing-symbols">종목 비교</h3>
 <p>
   다른 종목의 변동률을 가격 눈금에 표시하거나(<code>addCompareSymbol</code>), 그 가격을 별도 눈금이나
@@ -311,6 +329,130 @@ chart.exportVisibleData('json', undefined, { indicators: false })
 const text = chart.getExportText('csv', { range: 'visible' })
 const { bars, columns } = chart.getExportData()          // columns: { name, values }[]`}</code></pre>
 
+<h3 id="pictures">이미지, 인쇄, PDF</h3>
+<p>
+  차트를 이미지로 얻습니다: 파일로 저장하거나, 복사하거나, 데이터 URL, 바이트 또는 캔버스로 읽습니다. 그 밖에
+  요청한 것이 없으면 화면에 있는 그대로 차트의 캔버스에서 읽습니다. 더 많은 픽셀(<code>pixelRatio</code>)이나
+  다른 테마(<code>theme</code>)를 요청하면 차트 자체가 무엇으로 그리든 Canvas 2D로 이미지를 위해 프레임을 다시
+  그립니다. 페이지의 차트는 크기가 바뀌지 않고 아무 알림도 받지 않습니다. <code>width</code>나 <code>height</code>를
+  주면 차트를 그 크기로 다시 배치해 화면에 있던 봉을 거기에 그대로 보여 주고, 페이지의 배치를 되돌려 놓습니다.
+  사이드바에 있는 차트에서 슬라이드나 종이 한 장에 쓸 이미지를 얻는 방법입니다. 봉의 너비는 봉이 가질 수 있는
+  범위 안에서 그 크기가 정하는 대로입니다. 그 범위를 넘으면 가운데를 거의 그대로 두고 보이는 봉이 늘거나 줄어듭니다.
+  자체 크기로 만든 이미지에는 포인터를 따르는 것(십자선, 측정)도, 호스트가 차트 위에 올린 캔버스도 없으며,
+  플롯이 들어갈 자리가 없는 크기에서는 이미지가 나오지 않습니다. <code>type</code>은 <code>'png'</code>(기본값),
+  <code>'jpeg'</code> 또는 <code>'webp'</code>이며, 뒤의 둘에는 <code>quality</code>를 줍니다.
+</p>
+<pre><code>{`chart.screenshot('btc-1h')                                   // btc-1h.png, as on the screen
+chart.screenshot('btc-1h', { pixelRatio: 3, type: 'webp' })  // drawn again at three times the pixels
+await chart.copyScreenshot()                                 // a PNG on the clipboard; false where the browser refuses
+const url = chart.screenshotDataURL({ theme: 'light' })      // in the light theme; the chart stays as it is
+const blob = await chart.screenshotBlob({ type: 'jpeg', quality: 0.9 })
+const canvas = chart.toCanvas({ pixelRatio: 2 })             // to draw on, or to read yourself
+const slide = await chart.screenshotBlob({ width: 1920, height: 1080 })   // laid out again at that size`}</code></pre>
+<p>
+  <code>print()</code>는 차트만을 위한 브라우저의 인쇄 대화상자를 엽니다. 차트의 이미지만 담고 차트가 있는
+  페이지의 것은 아무것도 담지 않은 페이지입니다. 인쇄할 이미지가 없었으면 <code>false</code>를 돌려줍니다.
+  <code>toPdf()</code>는 한 페이지짜리 PDF를 돌려주며, 이미지는 손실 없이, 여백 안에 들어가는 가장 큰 크기로
+  담깁니다. 둘 다 달리 지정하지 않으면 라이트 테마와 두 배의 픽셀로, 종이에 맞게 차트를 다시 그립니다.
+  <code>chartsToPdf</code>는 여러 차트를 한 페이지에 하나씩 담아 PDF 하나로 만듭니다: 가격 차트,
+  <a href={href('/docs/finance')}>금융 차트</a>, 또는 직접 만든 캔버스.
+</p>
+<pre><code>{`import { chartsToPdf } from '@tradecanvas/chart'
+
+chart.print({ title: 'BTCUSDT, 1h' })
+const pdf = await chart.toPdf({ pageSize: 'letter', margin: 12, title: 'BTCUSDT' })   // a Blob
+const full = await chart.toPdf({ width: 1123, height: 794 })   // laid out in the page's own shape: as large as its margins allow
+const report = await chartsToPdf([chart, equityChart, allocationChart], { title: 'March', theme: 'dark' })`}</code></pre>
+<p>
+  <code>pageSize</code>는 <code>'a4'</code>(기본값), <code>'a3'</code>, <code>'letter'</code>,
+  <code>'legal'</code> 또는 밀리미터로 적은 용지의 두 변입니다. <code>orientation</code>은
+  <code>'landscape'</code>(기본값) 또는 <code>'portrait'</code>이고, <code>margin</code>은 밀리미터 단위입니다.
+  PDF에는 자체 텍스트가 없어 글꼴이 필요 없습니다. 차트의 글자는 어떤 언어든 이미지 안에 있습니다.
+  이미지는 브라우저가 그릴 수 있는 크기로 제한되므로(어느 변도 16,384픽셀을 넘지 않고, 전체로는 약 1,600만 픽셀)
+  아주 큰 차트는 요청한 것보다 적은 픽셀을 받습니다. 픽셀은 브라우저의
+  <code>CompressionStream</code>으로 손실 없이 압축하며, 현재의 브라우저는 모두 이를 갖추고 있습니다. 이것이 없는
+  브라우저는 이미지를 거의 그대로 담은 JPEG를 받습니다. 인쇄는 이미지를 <code>data:</code> URL로 프레임에 넣으므로,
+  콘텐츠 보안 정책이 있는 페이지는 이미지에 그 URL을 허용해야 합니다.
+</p>
+<p>
+  이미지에 담기는 것은 차트가 자신의 캔버스에 그리는 것입니다: 플롯, 축, 범례, 보이고 있다면 십자선, 그리고
+  호스트가 차트 위에 올린 캔버스(숨겨져 있거나, 어떤 페이지도 다시 읽어 올 수 없는 다른 사이트의 이미지를 담고
+  있는 경우는 제외). 페이지 요소로 만든 것은 담기지 않습니다: 툴팁, 그리고 위젯의 바와 지표 이름 행.
+  <code>features.screenshot</code>을 끄면 이미지도, 인쇄도, PDF도 없습니다. ChartWidget은 명령 팔레트에
+  <strong>차트 인쇄</strong>와 <strong>차트를 PDF로 저장</strong>이 있고,
+  <code>widget.printChart()</code>와 <code>widget.saveChartPdf()</code>가 있습니다. 둘 다 차트의 종목과
+  시간 단위를 이름으로 하며, 인쇄하거나 저장할 것이 없었으면 토스트를 띄웁니다. 이들은 <code>screenshot</code>
+  스위치를 따릅니다.
+</p>
+
+<h3 id="no-page">페이지 없이 그리는 차트</h3>
+<p>
+  <code>renderPriceChart</code>는 페이지가 없는 곳에서, 직접 마련한 2D 컨텍스트에 가격 차트를 그립니다:
+  이메일, 보고서, 봇의 메시지에 넣을 이미지를 위해 Node에서 만든 캔버스, 또는 워커의
+  <code>OffscreenCanvas</code>. <code>Chart</code>가 자신의 프레임을 구성하는 방식 그대로 구성한
+  한 프레임입니다. 같은 크기에서는, <code>chart.fitContent()</code>가 모든 봉을 화면에 넣은 뒤
+  (<code>visibleRange</code>를 쓴다면 <code>chart.setVisibleRange()</code> 뒤) 페이지의 차트가 같은 봉으로 내는
+  이미지와 같습니다.
+</p>
+<pre><code>{`import { createCanvas, Path2D } from '@napi-rs/canvas'   // or another canvas for Node that has Path2D
+import { renderPriceChart } from '@tradecanvas/chart'
+
+const canvas = createCanvas(1920, 1080)
+const ctx = canvas.getContext('2d')
+ctx.scale(2, 2)                                            // a 960 × 540 chart at twice the pixels
+renderPriceChart(ctx, {
+  data: bars,                                              // every bar is on view when they fit
+  symbol: 'BTCUSDT',
+  timeframe: '1d',
+  theme: 'light',
+  timeZone: 'Asia/Ho_Chi_Minh',
+  indicators: [
+    { id: 'ema', params: { period: 21 } },
+    { id: 'rsi', instanceId: 'momentum' },                 // a pane of its own under the prices
+    { id: 'stochastic', pane: 'momentum' },                // in that pane, on its scale
+  ],
+  drawings: [
+    { type: 'horizontalLine', anchors: [{ time: bars[0].time, price: 64000 }], style: { color: '#2266ff' } },
+    { type: 'horizontalLine', anchors: [{ time: bars[0].time, price: 70 }], paneId: 'momentum' },  // on that pane
+  ],
+  markers: [{ time: bars[40].time, price: bars[40].low, direction: 'long', confidence: 0.8, source: 'strategy', label: 'Buy' }],
+  path2D: Path2D,                                          // Node has no Path2D of its own
+}, { width: 960, height: 540 })
+const png = canvas.toBuffer('image/png')`}</code></pre>
+<p>
+  차트의 모양을 정하는 옵션은 <code>Chart</code>의 것입니다: <code>chartType</code>과
+  <code>chartTypeOptions</code>, <code>theme</code>, <code>font</code>, <code>overrides</code>,
+  <code>density</code>, <code>logScale</code>, <code>numberLocale</code>, <code>priceFormat</code>,
+  <code>watermark</code>, 그리고 거래량, 격자, 축, 범례를 빼는 <code>features</code>.
+  페이지의 차트가 호출로 받는 것을 여기서는 옵션으로 받습니다: <code>data</code>,
+  범례에 쓰는 <code>symbol</code>과 <code>timeframe</code>, <code>indicators</code>,
+  <code>drawings</code>(<code>addDrawing</code>이 받는 그대로), <code>markers</code>(<code>addSignalMarker</code>가
+  받는 그대로), <code>visibleRange</code>(화면의 첫 봉과 마지막 봉의 시각),
+  <code>pricePrecision</code>, <code>timeZone</code>(없으면 그 컴퓨터의 시간대입니다. 읽는 사람이 있는
+  시간대를 지정하세요), <code>symbolSeries</code>(<code>'compareSymbol'</code>, <code>'spread'</code>,
+  상관계수를 위한 다른 종목의 봉). 지표는 저장된 레이아웃의 지표와 같은 방식으로 읽으므로
+  <code>chart.getIndicatorSetup()</code>과 <code>chart.getDrawings()</code>가 그대로 들어가고, 지표 패널에 있는
+  그림도 함께 들어갑니다. 누군가 브라우저에서 구성한 차트를 서버에서 다시 그리는 것입니다. <code>plugins</code>는
+  직접 만든 지표, 차트 유형, 그리기 도구 또는 오버레이를 받습니다.
+</p>
+<p>
+  지정한 크기를 컨텍스트 자체의 단위로, 테마의 배경 위에 그립니다. 픽셀을 늘리려면 먼저 컨텍스트의 배율을
+  조정하세요. 봉은 <code>Path2D</code>로 그리는데 Node에는 이것이 없습니다.
+  <code>@napi-rs/canvas</code>와 <code>skia-canvas</code>는 각자의 것을 내보내므로
+  <code>path2D</code>로 넘기면 됩니다. 워커에는 자체의 것이 있습니다. 텍스트는 테마의 글꼴로 그리므로, 캔버스에 있는
+  글꼴을 <code>font</code>로 지정하세요. 포인터를 따르는 것은 없습니다: 십자선, 카운트다운, 툴팁이 없습니다. 주문과
+  포지션, 알림, 비교선, 매물대와 마켓 프로파일, 세션 음영, 시장의 가격 제한은 아직 이 방식으로 그려지지 않습니다.
+  금융 차트는 <code>renderFinanceChart</code>가 같은 방식으로 그리고, <code>imagesToPdf</code>는 이렇게 만든
+  이미지를 PDF에 넣습니다.
+</p>
+<p>
+  옵션에 잘못된 것이 있으면 아무것도 그리기 전에 옵션의 이름으로 알립니다: 모르는 지표, 테마, 시간대,
+  같은 <code>instanceId</code>를 가진 두 지표, 허용 범위를 벗어난 숫자에는 <code>RangeError</code>,
+  종류가 맞지 않는 옵션에는 <code>TypeError</code>. 봉이라 할 수 없는 봉은 차트가 빼듯이 빠집니다.
+  컨텍스트는 받은 상태 그대로 남깁니다. 직접 만든 플러그인이 그리는 도중에 예외를 던지면 다음 차트는 다른
+  컨텍스트에 그리세요.
+</p>
+
 <h3>매물대 (Volume Profile)</h3>
 <p>
   보이는 범위의 거래량을 가격대별로 나누어 보여 주는 가로 히스토그램입니다.
@@ -364,6 +506,15 @@ chart.setSessionShadingConfig({
 <pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
 chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
 chart.isExtendedHoursVisible()`}</code></pre>
+<p>
+  <strong>거래일.</strong> 자정을 넘기는 세션(CME 시카고 시간 17:00~16:00)은 개장 시각에 거래일을 시작합니다. 그러면 하루, 한 주, 한 달마다 다시 시작하는 지표(Session VWAP, VWAP과 누적 델타의 anchor, 세션 거래량 프로파일, MTF 평균의 하루), 전일 레벨선, 마켓 프로파일의 하루가 17:00부터 17:00까지이며, 끝나는 날의 날짜로 부릅니다. 하루 안에 있는 세션은 자정 그대로입니다. 일봉과 체결로 만드는 하루는 시간대의 자정 그대로입니다. 차트가 거래소 시간을 보여 주는 동안(<code>setTimeZone('exchange')</code> 또는 거래소 시간대를 이름으로 지정) 차트의 날짜 구분선도 거기서 시작합니다. 다른 시간대에서는 하루가 자정부터 자정까지입니다.
+</p>
+<pre><code>{`chart.setSymbolInfo({ symbol: 'ES', timeZone: 'America/Chicago', sessions: [{ start: '17:00', end: '16:00' }] })
+// Session VWAP, svp, 전일 레벨선: 17:00부터 17:00까지
+
+import { tradingDayStart } from '@tradecanvas/chart'
+tradingDayStart([{ start: '17:00', end: '16:00' }])   // 1020: minutes after midnight
+tradingDayStart([{ start: '09:30', end: '16:00' }])   // null: midnight`}</code></pre>
 
 <h3>이전 기간 레벨 (PDH / PDL / PDC)</h3>
 <p>
@@ -382,7 +533,7 @@ const levels = computePeriodLevels(bars, 'day', 'Australia/Sydney')  // [{ id, l
 <p>
   가격별 체류 시간 히스토그램입니다. 각 봉은 자신의 범위가 닿은 모든 가격 구간에
   TPO를 하나씩 더하며, 이를 통해 POC(Point of Control, 가장 오래 머문 가격)와
-  가치 영역(TPO의 약 70%)이 드러납니다. 거래량이 아니라 시간으로 가중한다는 점에서
+  가치 영역(TPO의 약 70%. Market Profile처럼 POC에서 더 무거운 쪽으로 두 칸씩 넓힙니다)이 드러납니다. 거래량이 아니라 시간으로 가중한다는 점에서
   매물대와 다르며, 왼쪽에 고정되므로 둘을 함께 표시할 수 있습니다. 기본값은 꺼짐이며,
   설정 창에서 또는 코드로 직접 켜고 끌 수 있습니다.
 </p>
@@ -393,6 +544,7 @@ chart.setMarketProfileConfig({
   opacity: 0.32,
   valueAreaPct: 0.7,  // fraction of TPOs in the value area
   highlightPoC: true, // dashed line at the point of control
+  valueAreaColor: '#7e57c2', color: '#90a4ae', // 자체 색상. null이면 테마의 색(상승 봉, 보조 텍스트)
 })
 
 // split into one mini-profile per trading day, in the exchange's zone
@@ -449,6 +601,8 @@ chart.on('dataUpdate', e => /* setData와 새 봉에서는 { kind: 'bars', lengt
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
+chart.on('marginCall', e => /* { marginLevel, level, equity, marginUsed }: 계좌가 증거금 경고를 받음 */)
+chart.on('trades', e => /* { trades, recent }: 심볼의 체결. 따라가는 동안(followTrades, 풋프린트) 또는 넣었을 때(addTrades) */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* 그림, 지표, 알림, 차트 유형 또는 테마가 바뀌었을 수 있음 */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
@@ -575,7 +729,7 @@ widget.destroy()`}</code></pre>
   <code>null</code>이 돌아옵니다. <code>onPanelChange</code> 옵션은 어떻게 바뀌었든(레일, 닫기 버튼, 여러분의 코드,
   위젯이 좁아짐) 열린 패널의 id 또는 <code>null</code>을 받습니다.
 </p>
-<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder', or a page's id; false if not there
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder' | 'tape', or a page's id; false if not there
 widget.getOpenPanel()           // the panel open, or null
 widget.closePanel()
 
@@ -673,6 +827,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>날짜로 이동</td></tr>
     <tr><td><kbd>?</kbd></td><td>키보드 단축키 목록. 기능이나 키로 검색할 수 있습니다</td></tr>
     <tr><td><kbd>Alt</kbd> + 차트 클릭</td><td>마우스를 올린 봉에 OHLC 툴팁 고정(실시간 십자선과의 차이 표시)</td></tr>
+    <tr><td>차트에서 마우스 길게 누르기</td><td>버튼을 누르고 있는 동안 포인터 아래 봉의 플로팅 OHLCV 툴팁 표시. 포인터를 따라가며 차트는 이동하지 않음(<code>{`chartOptions: { features: { crosshairTooltip: true } }`}</code>이면 올려놓기만 해도 따라다니고, <code>false</code>이면 표시하지 않음)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>툴팁 고정 해제 / 그리기 취소</td></tr>
     <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td><td>리플레이 한 단계 뒤로 / 앞으로</td></tr>
     <tr><td><kbd>Space</kbd></td><td>리플레이 재생 또는 일시정지(차트나 트랙에서; 리플레이 밖에서는 차트 맞춤)</td></tr>
@@ -1143,10 +1298,21 @@ grid.setFeatures({ 'toolbar.replay': false })               // 모든 차트의 
 grid.getActiveWidget().getChart()
 grid.getLayoutSession()?.saveAs('Majors')
 
+// 차트들을 각자의 칸에 담은 한 장의 이미지: 파일, 인쇄 대화상자, PDF
+grid.screenshot('majors', { pixelRatio: 2 })
+await grid.copyScreenshot()                             // PNG로 클립보드에
+const sheet = await grid.toPdf({ title: 'Majors' })   // 차트 하나일 때처럼 라이트 테마와 두 배의 픽셀로
+
 // 각 차트가 만들어질 때마다 (처음, 그리고 그리드가 커질 때)
 new ChartWidgetGrid(host, {
   onChartAdd: (widget, index) => widget.getChart().addIndicator('ema', { period: 21 }),
 })`}</code></pre>
+<p>
+  막대의 카메라 버튼은 같은 일을 메뉴에서 합니다. 차트들을 담은 이미지를 저장하거나, 복사하거나, 인쇄하거나,
+  PDF로 저장하며, 파일 이름은 표시 중인 종목에서 따옵니다(셋을 넘으면 <code>charts</code>).
+  <code>picture: false</code>는 버튼을 없앱니다. 차트의 <code>screenshot</code> 스위치가 꺼져 있는 동안에도 숨겨지고,
+  <code>copyImage</code>가 꺼져 있으면 복사 항목이 없습니다.
+</p>
 <p>
   십자선 동기화는 포인터 아래의 시간을 모든 차트에 표시하고, 시간 축 동기화는 사용 중인 차트에 맞춰
   나머지 차트를 스크롤하고 확대/축소하며, 그림은 같은 종목을 보여 주는 차트로 복사됩니다(이 동기화를 켜면

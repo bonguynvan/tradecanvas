@@ -27,6 +27,7 @@
   let languageCode = $state(i18n.lang === 'en' ? 'vi' : i18n.lang);
   /** The look for scenes with a look picker. */
   const LOOKS: readonly { id: WidgetUIPreset; name: string }[] = [
+    { id: 'graphite', name: 'Graphite' },
     { id: 'modern', name: 'Modern' },
     { id: 'print', name: 'Print' },
     { id: 'studio', name: 'Studio' },
@@ -34,7 +35,7 @@
     { id: 'capsule', name: 'Capsule' },
     { id: 'desk', name: 'Desk' },
   ];
-  let look = $state<WidgetUIPreset>('modern');
+  let look = $state<WidgetUIPreset>('graphite');
   /** The airy density on top of the look: sans figures and spacious controls (the bars are golden either way). */
   let airy = $state(false);
   /** The renderer for scenes with a renderer picker. */

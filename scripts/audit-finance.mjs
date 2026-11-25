@@ -1,11 +1,12 @@
 // The browser audit of the finance charts: scripts/audit/finance.html draws
-// each of the fourteen and the dashboard, then the states that broke before
+// each of the twenty-two and the dashboard, then the states that broke before
 // (a step of zero, long labels, flat data, a book of one level, cells with no
 // number, nothing to show). In both themes at a phone, a laptop and a wide
 // screen, and at the pixel ratios where lines go soft, it checks that every
 // canvas keeps to its box, is drawn in its box's own pixels and has something
-// on it, that a pointer and a finger get a readout, and that the page has no
-// errors and no sideways scroll. A change to the finance charts runs it before
+// on it, that a pointer and a finger get a readout, that each chart gives a
+// picture of itself, is the same drawn with no page, and goes into a PDF, and
+// that the page has no errors and no sideways scroll. A change to the finance charts runs it before
 // its pull request.
 //
 //   pnpm build
@@ -32,9 +33,9 @@ const SIZES = {
 /** Time for the charts to draw after a change. */
 const SETTLE_MS = 300;
 /** The charts with a readout, and where across them to point (a share of the width). */
-const READOUTS = { equity: 0.7, depth: 0.3, waterfall: 0.6, bar: 0.5, 'heatmap-sectors': 0.3 };
+const READOUTS = { equity: 0.7, depth: 0.3, waterfall: 0.6, bar: 0.5, 'heatmap-sectors': 0.3, payoff: 0.6, curve: 0.5, 'box-plot': 0.3, radar: 0.5, sunburst: 0.7, 'stacked-area': 0.5, surface: 0.5, 'surface-slices': 0.3, bar3d: 0.45 };
 /** The charts that draw nothing but their background, by design. */
-const EMPTY = ['empty-waterfall', 'empty-equity', 'empty-depth'];
+const EMPTY = ['empty-waterfall', 'empty-equity', 'empty-depth', 'empty-sunburst', 'empty-radar', 'empty-surface', 'empty-bar3d'];
 
 function serve() {
   const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.map': 'application/json' };
@@ -75,6 +76,94 @@ function pageChecks(empty) {
   return problems;
 }
 
+/**
+ * What must hold of every chart's picture; each problem as a sentence. A
+ * picture at twice the pixels is twice the box and has the chart on it; the
+ * chart drawn with no page by `renderFinanceChart` is the chart's own
+ * picture pixel for pixel, and on an OffscreenCanvas all but the shades of
+ * its slanted lines; and all of them make one PDF, a page each.
+ */
+async function pictureChecks(empty) {
+  const problems = [];
+  // The share of pixels an OffscreenCanvas may draw a shade apart from a canvas of the page: its slanted lines and curves.
+  const OFFSCREEN_SHARE = 0.02;
+  const { charts, kinds, lib } = window.stage;
+  const pixels = (canvas) => canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+  const colours = (data) => {
+    const seen = new Set();
+    for (let i = 0; i < data.length; i += 4 * 37) seen.add(`${data[i]},${data[i + 1]},${data[i + 2]}`);
+    return seen.size;
+  };
+  for (const [name, chart] of Object.entries(charts)) {
+    const box = document.getElementById(name);
+    const picture = chart.toCanvas({ pixelRatio: 2 });
+    if (!picture) {
+      problems.push(`${name}: it gives no picture`);
+      continue;
+    }
+    if (picture.width !== box.clientWidth * 2 || picture.height !== box.clientHeight * 2) {
+      problems.push(`${name}: its picture at twice the pixels is ${picture.width}×${picture.height} for a box ${box.clientWidth}×${box.clientHeight}`);
+    }
+    if (!empty.includes(name) && colours(pixels(picture)) < 2) problems.push(`${name}: nothing is on its picture`);
+  }
+  // A map's logos are on its picture, each in its own colours, and the picture can still be read: a cell too small
+  // for its logo draws none.
+  const logos = charts['heatmap-logos']?.toCanvas({ pixelRatio: 1 });
+  if (!logos) problems.push('heatmap-logos: no picture to look for its logos on');
+  else {
+    const data = pixels(logos);
+    const count = (r, g, b) => {
+      let found = 0;
+      for (let i = 0; i < data.length; i += 4) if (data[i] === r && data[i + 1] === g && data[i + 2] === b) found++;
+      return found;
+    };
+    const LOGO_PIXELS = 40;
+    for (const [what, [r, g, b]] of [['the disc of its largest cell', [21, 128, 61]], ['its wide logo', [29, 78, 216]]]) {
+      if (count(r, g, b) < LOGO_PIXELS) problems.push(`heatmap-logos: ${what} is not on its picture`);
+    }
+    if (count(124, 58, 237) > 0) problems.push('heatmap-logos: a cell too small for its logo drew it');
+  }
+  /** How many pixels of two pictures of one size are not the same. */
+  const differing = (a, b) => {
+    let count = 0;
+    for (let i = 0; i < a.length; i += 4) {
+      if (a[i] !== b[i] || a[i + 1] !== b[i + 1] || a[i + 2] !== b[i + 2] || a[i + 3] !== b[i + 3]) count++;
+    }
+    return count;
+  };
+  for (const [name, kind] of Object.entries(kinds)) {
+    const chart = charts[name];
+    if (!chart) {
+      problems.push(`${name}: no chart to draw without a page`);
+      continue;
+    }
+    const own = chart.toCanvas({ pixelRatio: 1 });
+    const size = { width: own.width, height: own.height };
+    // On a canvas of the page's kind: the same calls, so the same pixels.
+    const plain = Object.assign(document.createElement('canvas'), size);
+    lib.renderFinanceChart(plain.getContext('2d'), kind, chart.options, size);
+    // On a canvas with no page: a worker's kind. The browser draws slanted lines on it a shade apart.
+    const free = new OffscreenCanvas(own.width, own.height);
+    const ctx = free.getContext('2d');
+    lib.renderFinanceChart(ctx, kind, chart.options, size);
+    const drawn = ctx.getImageData(0, 0, free.width, free.height).data;
+    if (colours(drawn) < 2) problems.push(`${name}: drawn with no page, nothing is on it`);
+    // A sparkline has no ground of its own: its picture has one, the page-free drawing has the caller's.
+    if (kind === 'sparkline') continue;
+    const picture = pixels(own);
+    const apart = differing(picture, pixels(plain));
+    if (apart > 0) problems.push(`${name}: drawn by renderFinanceChart it differs from its own picture in ${apart} of ${picture.length / 4} pixels`);
+    const shades = differing(picture, drawn);
+    if (shades > (picture.length / 4) * OFFSCREEN_SHARE) problems.push(`${name}: drawn on an OffscreenCanvas it differs from its own picture in ${shades} of ${picture.length / 4} pixels`);
+  }
+  const all = Object.values(charts);
+  const pdf = await lib.chartsToPdf(all, { title: 'Finance charts' });
+  const text = pdf ? new TextDecoder('latin1').decode(await pdf.arrayBuffer()) : '';
+  if (!text.startsWith('%PDF-1.4')) problems.push('the charts make no PDF');
+  else if (!text.includes(`/Count ${all.length} `)) problems.push(`the PDF of ${all.length} charts has not a page each: ${/\/Count \d+/.exec(text)?.[0]}`);
+  return problems;
+}
+
 /** How many colours a chart's canvas has: a readout drawn over it adds some. */
 function colours(id) {
   const canvas = document.getElementById(id).querySelector('canvas');
@@ -92,7 +181,7 @@ async function shoot(browser, base, theme, size) {
   await page.goto(`${base}/scripts/audit/finance.html?theme=${theme}`);
   await page.waitForFunction(() => window.stage?.ready, null, { timeout: 30000 });
   await page.waitForTimeout(SETTLE_MS);
-  const problems = [...errors, ...(await page.evaluate(pageChecks, EMPTY))];
+  const problems = [...errors, ...(await page.evaluate(pageChecks, EMPTY)), ...(await page.evaluate(pictureChecks, EMPTY))];
   await page.screenshot({ path: join(OUT, `finance-${theme}-${size}.png`), fullPage: true });
 
   for (const [id, share] of Object.entries(READOUTS)) {

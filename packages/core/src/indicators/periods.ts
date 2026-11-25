@@ -25,6 +25,7 @@ export type PeriodKeyer = (time: number) => number;
 const ANCHOR_FRAMES: Record<PeriodAnchor, TimeFrame> = { session: '1d', week: '1w', month: '1M' };
 const MINUTE_MS = 60_000;
 const DAY_MS = 86_400_000;
+const DAY_MINUTES = 1440;
 /** UTC's buckets: weeks from Monday, days from its midnight. */
 const UTC_BUCKETS: BucketOptions = {};
 /**
@@ -54,7 +55,9 @@ function isAnchor(period: string): period is PeriodAnchor {
  * period's bounds are kept in real time, for the reading its bars had: the
  * bucket is worked out once a period, and a bar inside it costs a compare.
  */
-export function periodKeyer(data: ArrayLike<{ time: number }>, period: PeriodAnchor | TimeFrame, zone?: string | null): PeriodKeyer {
+export function periodKeyer(data: ArrayLike<{ time: number }>, period: PeriodAnchor | TimeFrame, zone?: string | null, dayStart?: number | null): PeriodKeyer {
+  const shifted = dayShift(period, dayStart);
+  if (shifted > 0) return shiftedKeyer(data, isAnchor(period) ? ANCHOR_FRAMES[period] : period, zone, shifted);
   const frame = isAnchor(period) ? ANCHOR_FRAMES[period] : period;
   const unit = barTimeUnit(data);
   const clock = zone && !isUtcTimeZone(zone) && timeframeFollowsDays(frame) && isValidTimeZone(zone) ? zone : null;
@@ -76,6 +79,45 @@ export function periodKeyer(data: ArrayLike<{ time: number }>, period: PeriodAnc
     end = timeframeBucketStart(start + reach, frame, options);
     key = clock === null || isDate ? start : timeframeBucketStart(ms + zoneOffsetMinutes(clock, ms) * MINUTE_MS, frame);
     return key;
+  };
+}
+
+/**
+ * How far a bar's time is moved before its day is read, ms: a trading day
+ * that starts at 17:00 is read as the day 7 hours on, so it is named by the
+ * date it ends on. None for a day that starts at midnight, and for frames
+ * shorter than a day, which keep the exchange's midnight.
+ */
+function dayShift(period: PeriodAnchor | TimeFrame, dayStart: number | null | undefined): number {
+  if (dayStart === null || dayStart === undefined || !Number.isFinite(dayStart)) return 0;
+  const start = Math.round(dayStart);
+  if (start <= 0 || start >= DAY_MINUTES) return 0;
+  const frame = isAnchor(period) ? ANCHOR_FRAMES[period] : period;
+  if (!(timeframeToMs(frame) >= DAY_MS)) return 0;
+  return (DAY_MINUTES - start) * MINUTE_MS;
+}
+
+/**
+ * The keyer for a trading day that does not start at midnight: each bar's
+ * time on the exchange's clock, moved by `shift`, bucketed as UTC's would be.
+ * Read on the wall clock, so a day keeps its 17:00 start across a change of
+ * the clocks. A daily bar stamped at 00:00 UTC is still the date it names.
+ * The last period's bounds are kept, as the plain keyer keeps them.
+ */
+function shiftedKeyer(data: ArrayLike<{ time: number }>, frame: TimeFrame, zone: string | null | undefined, shift: number): PeriodKeyer {
+  const unit = barTimeUnit(data);
+  const clock = zone && !isUtcTimeZone(zone) && isValidTimeZone(zone) ? zone : null;
+  const dates = barsAreDaily(data) === true;
+  const reach = timeframeToMs(frame) * NEXT_BUCKET_REACH;
+  let start = NaN;
+  let end = NaN;
+  return (time) => {
+    const ms = time * unit;
+    const wall = dates && ms % DAY_MS === 0 ? ms : ms + (clock === null ? 0 : zoneOffsetMinutes(clock, ms) * MINUTE_MS) + shift;
+    if (wall >= start && wall < end) return start;
+    start = timeframeBucketStart(wall, frame);
+    end = timeframeBucketStart(start + reach, frame);
+    return start;
   };
 }
 

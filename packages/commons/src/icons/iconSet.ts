@@ -78,6 +78,7 @@ export const UI_ICONS: Readonly<Record<string, IconDef>> = {
   stepForward: { d: 'M18 5v14M5.5 5.5v13l10-6.5z' }, // Replay: one bar on
   replayPick: { d: 'M7.5 3.5V7M7.5 17V20.5M6 7h3a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 9 17H6a1.5 1.5 0 0 1-1.5-1.5v-7A1.5 1.5 0 0 1 6 7z', dash: 'M15 3V21', soft: 'M15 4h4.5a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H15z' }, // Replay: pick the start bar (a candle, the cut, the hidden bars)
   ladder: { d: 'M4 6H11M13 6H17M6 10H11M13 10H20M8 14H11M13 14H15M5 18H11M13 18H19' }, // Depth ladder
+  tape: { d: 'M6 3.5h12v17l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5-2 1.5zM9 8.5h6M9 12.5h6' }, // Time and sales
   save: { d: 'M5.5 3.5h10.5l4.5 4.5v10.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2zM8 3.5v5h7v-5M7.5 20.5v-6h9v6' }, // Save layout
   folder: { d: 'M3.5 7a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z' }, // Open layout
   link: { d: 'M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1.2 1.2M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1.2-1.2' }, // Sync
@@ -86,6 +87,9 @@ export const UI_ICONS: Readonly<Record<string, IconDef>> = {
   arrowUpDown: { d: 'M8.5 19V5M5 8.5L8.5 5L12 8.5M15.5 5V19M12 15.5L15.5 19L19 15.5' }, // Reverse a position
   more: { dots: [[6, 12, 1.6], [12, 12, 1.6], [18, 12, 1.6]] }, // More
   copy: { d: 'M9.5 8.5h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zM15.5 8.5v-3a1 1 0 0 0-1-1h-9a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h3' }, // Clone
+  download: { d: 'M12 4v11M7.5 10.5L12 15l4.5-4.5M4.5 19.5h15' }, // Save as a file
+  printer: { d: 'M7.5 8.5v-5h9v5M7.5 17h-2a2 2 0 0 1-2-2v-4.5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2V15a2 2 0 0 1-2 2h-2M7.5 13.5h9v7h-9z' }, // Print
+  file: { d: 'M13.5 3.5h-6a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-10zM13.5 3.5v5h5M9 13h6M9 16.5h6' }, // A document (PDF)
   grip: { dots: [[9, 6, 1.4], [15, 6, 1.4], [9, 12, 1.4], [15, 12, 1.4], [9, 18, 1.4], [15, 18, 1.4]] }, // Drag to reorder
   layoutGrid: { d: 'M5 4.5h4.5a.5.5 0 0 1 .5.5v4.5a.5.5 0 0 1-.5.5H5a.5.5 0 0 1-.5-.5V5a.5.5 0 0 1 .5-.5zM14.5 4.5H19a.5.5 0 0 1 .5.5v4.5a.5.5 0 0 1-.5.5h-4.5a.5.5 0 0 1-.5-.5V5a.5.5 0 0 1 .5-.5zM5 14h4.5a.5.5 0 0 1 .5.5V19a.5.5 0 0 1-.5.5H5a.5.5 0 0 1-.5-.5v-4.5A.5.5 0 0 1 5 14zM14.5 14H19a.5.5 0 0 1 .5.5V19a.5.5 0 0 1-.5.5h-4.5a.5.5 0 0 1-.5-.5v-4.5a.5.5 0 0 1 .5-.5z' }, // Chart layout
 };
@@ -178,12 +182,19 @@ export const CHART_TYPE_ICONS: Readonly<Record<string, IconDef>> = {
   bar: { d: 'M8 4V20M5 8H8M8 16H11M16 6V18M13 15H16M16 9H19' }, // Bar (OHLC)
   volumeCandles: { d: 'M6.5 5V8M6.5 16V19M15.5 3.5V6M15.5 16V20', fills: ['M5.5 8h2a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-7a.5.5 0 0 1 .5-.5z', 'M11.5 6h8a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5z'] }, // Volume Candles
   equivolume: { d: 'M4.5 10h2a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1zM10 6h5a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zM18.5 4h1a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z' }, // Equivolume
+  footprint: { d: 'M12 4V20M8 7.5H12M5 12H12M9 16.5H12M12 7.5H18M12 12H15M12 16.5H19' }, // Footprint
   line: { d: 'M3 17L8 11L12 14L21 5' }, // Line
   area: { d: 'M3 17L8 11L12 14L21 5', soft: 'M3 17L8 11L12 14L21 5V20H3z' }, // Area
   baseline: { d: 'M3 16L7 9L11 14L15 7L21 15', dash: 'M3 12H21' }, // Baseline
   hlcArea: { d: 'M3 9L8 6L13 9L21 4M3 15L8 13L13 16L21 11', dash: 'M3 12L8 9.5L13 12.5L21 7.5', soft: 'M3 9L8 6L13 9L21 4V11L13 16L8 13L3 15z' }, // HLC Area
   stepLine: { d: 'M3 18H8V12H12V15H16V7H21' }, // Step Line
   lineWithMarkers: { d: 'M4 17L9 10L14 14L20 6', dots: [[4, 17], [9, 10], [14, 14], [20, 6]] }, // Line with Markers
+  columns: { d: 'M4 20V11H8V20M10 20V6H14V20M16 20V14H20V20', fills: ['M4 11h4v9H4z', 'M10 6h4v14h-4z', 'M16 14h4v6h-4z'] }, // Columns
+  hlcBars: { d: 'M6 6V18M6 14H9M12 4V15M12 8H15M18 9V20M18 12H21' }, // HLC Bars
+  dots: { d: 'M4 17h.01', dots: [[4, 17], [8, 11], [12, 14], [16, 8], [20, 6]] }, // Dots
+  stepArea: { d: 'M3 18H8V12H12V15H16V7H21', soft: 'M3 18H8V12H12V15H16V7H21V20H3z' }, // Step Area
+  spline: { d: 'M3 16C7 16 7 8 11 8S15 14 21 6' }, // Spline
+  smoothedHeikinAshi: { d: 'M5.5 10V12M5.5 18V19.5M12 6.5V8M12 14V15.5M18.5 3.5V5M18.5 11V12.5M3 21C9 20 15 15 21 9', fills: ['M4 12h3v6H4z', 'M10.5 8h3v6h-3z', 'M17 5h3v6h-3z'] }, // Smoothed Heikin-Ashi
   hiLo: { d: 'M6 7V17M12 4V14M18 9V20', fills: ['M5 7h2v10H5z', 'M11 4h2v10h-2z', 'M17 9h2v11h-2z'] }, // High-Low
   renko: { d: 'M3.5 15.5h4v4h-4zM7.5 11.5h4v4h-4zM11.5 7.5h4v4h-4zM15.5 11.5h4v4h-4z' }, // Renko
   lineBreak: { d: 'M4 14h4v5H4zM8 10h4v4H8zM16 9h4v8h-4z', fills: ['M12 5h4v5h-4z'] }, // Line Break

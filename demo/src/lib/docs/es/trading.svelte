@@ -56,6 +56,10 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   empiezan al menos un 1% más allá del precio actual, para que ninguno se active nada más ponerlo. Al soltar se envía
   <code>positionModify</code>, como al arrastrar un stop, de modo que un adaptador de ejecución conectado lo aplica.
   <code>lineButtons: {'{'} addStops: false {'}'}</code> deja fuera los botones.
+  Mientras se arrastra una línea hasta un precio, la cruz no dibuja línea horizontal ni escribe el precio en el eje: la
+  etiqueta de la propia línea ya lo lleva.
+  Un precio fijado a mano se ajusta a la rejilla del mercado: una orden, un stop, un objetivo o un nivel arrastrados, las líneas de un bracket y de una orden en borrador, una alerta arrastrada, el precio que da un clic derecho o el “+” junto al eje. Queda en el paso de precio del mercado (<code>setMarket</code>, o el <code>minTick</code> del símbolo); si no, en los decimales que muestra el eje de precios: <code>chart.roundPrice</code>. La cruz escribe el precio bajo el puntero en la misma rejilla, así que lo que marca es donde coloca el “+” de al lado.
+  En un mercado con techo y suelo para el día (<code>setPriceLimits</code>), el precio propio de una orden también se mantiene dentro: su línea se detiene en el límite al arrastrarla más allá, la entrada de un bracket y una orden en borrador empiezan y se quedan dentro, y el menú no ofrece ninguna orden fuera de ellos, ni la escalera de profundidad coloca una. El stop, el objetivo y los niveles de una posición no quedan sujetos: no son órdenes de hoy.
 </p>
 <p>
   Las posiciones, las órdenes y sus ejecuciones se pueden ocultar, y sus líneas bloquear. Ocultas, ninguna se dibuja ni
@@ -100,7 +104,7 @@ chart.setIndicatorsVisible(ids, false)   // varios indicadores a la vez, un paso
 chart.connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
 
 chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.command: the intent that failed
-// chart.connectExecution(adapter, { brackets: 'place' })   // a confirmed bracket goes to it too: see Bracket orders
+// A confirmed bracket goes to it too: see Bracket orders
 // chart.disconnectExecution()`}</code></pre>
 <p>
   Implementa <code>ExecutionAdapter</code> (es el equivalente de
@@ -111,6 +115,306 @@ chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.comma
   <code>error</code>. <code>PaperExecutionAdapter</code> es un entorno de pruebas
   con ejecuciones virtuales para demos y tests.
 </p>
+
+<h3 id="order-outcome">Qué fue de una orden</h3>
+<p>
+  Toda orden pedida sale con un <code>clientOrderId</code>, un identificador propio: el que traía o, si no, uno que le da
+  el gráfico, y <code>placeOrderIntent</code> devuelve la orden tal como se envió. Hasta que el adaptador responde, la orden
+  está en camino. <code>orderPlaced</code> dice que el adaptador la aceptó, con la orden que hizo de ella;
+  <code>executionError</code> con <code>command: 'orderPlace'</code> y el mismo <code>clientOrderId</code> dice que fue
+  rechazada. El <code>placeOrder</code> de un adaptador debe terminar de una de las dos formas: resolver con la orden o
+  rechazar con el motivo. Pasa el identificador al bróker que lo acepte y responde a una repetición con la orden ya creada,
+  para que una pulsación enviada dos veces sea una sola orden (la cuenta de simulación lo hace).
+</p>
+<pre><code>{`const sent = chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1 })
+chart.on('orderPlaced', (e) => { if (e.payload.intent.clientOrderId === sent?.clientOrderId) done(e.payload.order) })
+chart.on('executionError', (e) => { if (e.payload.clientOrderId === sent?.clientOrderId) failed(e.payload.cause) })`}</code></pre>
+
+<h3 id="order-kinds">Órdenes que funcionan juntas, y durante cuánto tiempo</h3>
+<p>
+  La intención de una orden (<code>chart.placeOrderIntent</code>, el <code>placeOrder</code> del adaptador) dice más que
+  su precio:
+</p>
+<ul>
+  <li>
+    <strong><code>ocoGroup</code></strong>: un nombre que comparten órdenes de las que una cancela a las demás, como un
+    objetivo y un stop para la misma salida. Cuando una se ejecuta, el resto del grupo se cancela. Sus etiquetas en el
+    gráfico dicen OCO.
+  </li>
+  <li>
+    <strong><code>timeInForce</code></strong>: <code>'gtc'</code> (válida hasta cancelar), <code>'day'</code>,
+    <code>'gtd'</code> (válida hasta una fecha: <code>expireTime</code>, en milisegundos), e <code>'ioc'</code> o
+    <code>'fok'</code> para una orden que se ejecuta al instante o no se ejecuta.
+  </li>
+  <li>
+    <strong><code>type: 'stopLimit'</code></strong>: <code>stopPrice</code> es donde empieza a funcionar y
+    <code>price</code> el límite al que funciona después. Su línea en el gráfico es su límite, y su stop tiene una línea propia de rayas y puntos, con la etiqueta STOP y su precio en el
+    eje. Arrastrar la línea de la orden mueve ambos, con la misma separación; arrastrar la del stop, o su etiqueta, mueve solo el stop.
+    <code>orderModify</code> lleva entonces <code>newStopPrice</code> junto a <code>newPrice</code>, y la cuenta de simulación lo sigue.
+  </li>
+</ul>
+<pre><code>{`// A target and a stop for one exit: whichever fills first takes the other off
+chart.placeOrderIntent({ side: 'sell', type: 'limit', price: 66_000, quantity: 1, ocoGroup: 'exit' })
+chart.placeOrderIntent({ side: 'sell', type: 'stop', price: 63_000, stopPrice: 63_000, quantity: 1, ocoGroup: 'exit' })
+
+// Works until midnight UTC
+chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1, timeInForce: 'gtd', expireTime: Date.UTC(2027, 0, 1) })`}</code></pre>
+<p>
+  La cuenta de simulación hace con cada una lo que haría un bróker. De un grupo, la primera que se ejecuta cancela el
+  resto. Una stop-limit pasa a ser una orden límite a su <code>price</code> una vez que el precio alcanza su stop, y se
+  ejecuta solo dentro de ese límite (al precio que alcanzó el stop, cuando está dentro de él). Una orden <code>'gtd'</code>
+  se retira cuando la hora dada con <code>setMarkPrice</code> alcanza su fecha (la del reloj, si no se da ninguna
+  hora), y una cuya fecha ya pasó se rechaza. Una límite <code>'ioc'</code> o <code>'fok'</code> se ejecuta al
+  instante, al precio que hay, cuando este está dentro de ella, y se rechaza cuando no lo está (<code>executionError</code>). El mercado de simulación no tiene tamaño propio, así que allí las dos son
+  iguales, salvo que se le dé uno (<a href="#partial-fills">más abajo</a>). El ticket de orden del widget ofrece ambas para una orden límite, y su panel de cuenta escribe OCO junto a
+  una orden de un grupo y la fecha de una orden con fecha. Deja <code>'day'</code> a la aplicación, que sabe cuándo termina el día de su mercado.
+  El ticket ofrece válida hasta una fecha para una orden límite y una orden stop: una fecha y una hora en el reloj del propio gráfico, un día desde ahora para empezar, y no envía ninguna orden que terminaría en el pasado.
+  Una orden límite IOC o FOK puede llevar un precio que atraviese el mercado: se ejecuta al precio de mercado, y el ticket calcula su valor, su riesgo y sus objetivos desde ahí.
+  El ticket acepta también una orden stop-límite, con un precio stop y un precio límite, válida hasta cancelar, por el día o hasta una fecha. Puede ejecutarse en cualquier precio entre su stop y su límite, así que su stop-loss va más allá del stop y su take-profit más allá del límite; el panel de cuenta la nombra y escribe ambos precios, el stop primero.
+</p>
+<p>
+  <strong>Una sola posición neta.</strong> Por defecto, la cuenta de simulación abre una posición por cada orden ejecutada, una compra
+  junto a una venta (<code>positions: 'hedge'</code>). <code>{`new PaperExecutionAdapter({ positions: 'net' })`}</code>
+  mantiene una sola posición, como una cuenta de futuros: una ejecución en el mismo sentido la aumenta al promedio de sus precios, una
+  en sentido contrario le resta y realiza esa parte (<code>pnl</code> en la ejecución), y una mayor le da
+  la vuelta, y el resto se abre al precio de la ejecución. Una ejecución que la aumenta trae sus stops cuando los tiene; una
+  que le resta deja los stops de la posición como están; una que le da la vuelta trae los suyos.
+</p>
+<h3 id="partial-fills">Órdenes que se ejecutan por partes</h3>
+<p>
+  Una orden límite descansa en el mercado y se ejecuta a medida que otros llegan a ella, a menudo una parte cada vez. Con un
+  <code>fillSize</code>, la cuenta de simulación ejecuta como mucho esa cantidad de una orden límite a un mismo precio: una mayor
+  ejecuta una parte en cada precio que alcanza su límite (cada <code>setMarkPrice</code>), y sigue activa por el
+  resto. La orden permanece en <code>chart.getOrders()</code> con su <code>filledQuantity</code>; cada parte es una
+  ejecución propia (<code>executionFill</code>), cuyo <code>remaining</code> es lo que dejó activo, y la
+  última parte retira la orden. El gráfico escribe lo ejecutado en la etiqueta de la orden (<code>2/5</code>), y
+  el panel de cuenta del widget en su fila; las etiquetas del stop y del objetivo de la orden dicen lo que daría el resto,
+  ya que lo ejecutado es una posición con etiquetas propias.
+</p>
+<pre><code>{`const broker = new PaperExecutionAdapter({ fillSize: 2 })   // two of a limit order at each price
+chart.connectExecution(broker)
+chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 95, quantity: 5 })
+
+chart.on('executionFill', (e) => console.log(e.payload.quantity, e.payload.remaining))   // 2 3, then 2 1, then 1 undefined
+chart.on('ordersChange', (e) => console.log(e.payload.orders[0]?.filledQuantity))        // 2, 4, then no order`}</code></pre>
+<p>
+  Las partes de una orden forman una sola posición, al promedio de sus precios; en una cuenta neta se suman a su
+  posición, o le restan. La posición tiene el stop-loss, el take-profit y los niveles de la orden desde su primera
+  parte, y una parte posterior no los trae una segunda vez: un stop que moviste desde entonces, o que quitaste, se queda como lo
+  dejaste. Una parte que se ejecuta después de que su posición se cerró abre otra, de nuevo con los stops de la orden. Un nivel es
+  un tamaño del plan completo, así que puede que las primeras partes no lo cubran: no toma más de lo que está abierto. Una stop-limit
+  también se ejecuta por partes, una vez que funciona como límite. Una parte paga su propia comisión, y una que la cuenta ya no puede sostener cancela lo que queda de la
+  orden (<code>executionError</code>). Lo que queda se puede mover, cancelar, o terminar en su fecha, y la primera
+  parte cancela el resto del grupo de la orden. De una orden <code>'ioc'</code>, lo que se ejecuta al instante se ejecuta y el
+  resto se descarta (su ejecución dice cuánto: su <code>dropped</code>, junto a una <code>quantity</code> menor que la pedida, y la
+  orden que devuelve <code>placeOrder</code> lleva su <code>filledQuantity</code>; el registro anota el
+  resto como cancelado, y el widget dice cuánto se ejecutó); una orden <code>'fok'</code> mayor que el tamaño se rechaza. Una orden a mercado y
+  una stop se ejecutan enteras, igual que los cierres: el mercado de simulación las toma al precio que hay, y no modela ningún deslizamiento.
+  Un adaptador propio informa de las partes de su bróker de la misma manera: la orden con su
+  <code>filledQuantity</code> en <code>orders</code>, y un <code>fill</code> por cada una.
+</p>
+
+<h3 id="take-profit-levels">Tomar beneficios por partes</h3>
+<p>
+  Una posición se puede cerrar por partes. <code>takeProfits</code> en la intención de una orden, o en una posición
+  (<code>chart.modifyPositionIntent</code>), es una lista de niveles, cada uno un <code>price</code> y la
+  <code>quantity</code> que se cierra allí. Cuando el precio alcanza un nivel, su parte se cierra al precio del nivel
+  y el nivel desaparece; lo que dejan los niveles sigue abierto para que lo cierre <code>takeProfit</code>, o el stop-loss.
+  El stop-loss cierra todo lo que queda, esperasen los niveles que esperasen, un nivel más allá del take-profit nunca se
+  alcanza, y un nivel no toma más de lo que sigue abierto.
+  El gráfico dibuja una línea y una etiqueta para cada uno (TP1 es el más cercano), con su parte y lo que daría, y
+  el panel de cuenta del widget escribe el nivel más cercano y cuántos más hay.
+</p>
+<pre><code>{`chart.placeOrderIntent({
+  side: 'buy', type: 'market', price: 64_000, quantity: 3,
+  stopLoss: 63_000,
+  takeProfits: [{ price: 65_000, quantity: 1 }, { price: 66_000, quantity: 1 }],   // a third at each
+  takeProfit: 67_000,                                                              // the rest
+})
+
+chart.modifyPositionIntent({ positionId: 'pos-1', takeProfits: [{ price: 65_500, quantity: 2 }] })   // all of them, anew
+chart.modifyPositionIntent({ positionId: 'pos-1', takeProfits: null })                               // none`}</code></pre>
+<p>
+  La cuenta de simulación cierra las partes (una ejecución cada una, con <code>reason: 'takeProfit'</code> y lo que
+  realizó) y las cuenta en el <code>closedQuantity</code> de la posición. Solo acepta niveles que son una
+  ganancia respecto a la entrada, y en una cuenta neta una orden que trae niveles da a la posición sus niveles, como
+  le da sus stops. TP1 en el gráfico es el nivel más cercano que sigue esperando. Un adaptador propio informa de los de su
+  bróker. En el ticket de orden del widget, un take-profit se puede alcanzar en uno, dos o tres
+  <strong>Objetivos</strong>: con más de uno, una parte igual de la cantidad se cierra en cada objetivo del
+  camino, a distancias iguales desde la entrada, y el take-profit cierra lo que queda. El ticket lista qué se cierra
+  y dónde antes de enviar la orden.
+</p>
+<p>
+  El nivel de una posición se arrastra en el gráfico como su stop-loss y su take-profit, por su línea o por su etiqueta:
+  la línea sigue al puntero, con el lugar donde quedó, tenue, detrás de ella, y al soltar se emite
+  <code>positionModify</code> con todos los <code>takeProfits</code> de la posición, ese movido, el más cercano
+  primero. Un nivel es una ganancia, así que uno soltado en la entrada o más allá de ella por el lado perdedor vuelve a donde estaba, y
+  no se emite nada. De dos niveles al alcance de una pulsación se toma el más cercano; la línea de una orden, el stop-loss
+  o el take-profit en el mismo lugar se toman antes que un nivel, que su etiqueta sigue moviendo. Los niveles de una
+  orden que aún espera son un plan que la orden trae y no son tiradores; tampoco lo es ninguno mientras las líneas están
+  bloqueadas.
+</p>
+
+<h3 id="account">Una cuenta con dinero</h3>
+<p>
+  Con un <code>balance</code>, la cuenta de simulación lleva su dinero como un bróker. Lo que un cierre gana o pierde
+  va al saldo, las posiciones abiertas retienen margen (su valor, entre <code>leverage</code>), y cada ejecución
+  paga su <code>commission</code>. Una orden que el margen libre no puede sostener se rechaza
+  (<code>executionError</code>), y también una inversión; una orden en espera cuyo dinero ya no está cuando llega su
+  precio se cancela, lo que también dice <code>executionError</code>. <code>multiplier</code> es lo que vale para una unidad un movimiento
+  de uno en el precio, para un contrato de futuros: dale el
+  <code>contractMultiplier</code> del mercado, con el que el panel del widget cuenta la ganancia de las posiciones. La cuenta se comunica
+  antes que la ejecución que la cambió, así que <code>chart.getAccount()</code> en un listener de <code>executionFill</code>
+  la lee tal como la dejó la ejecución. Sin un <code>balance</code> no hay cuenta, y se acepta cualquier orden, como
+  antes.
+</p>
+<p>
+  Mientras las posiciones retienen margen, la cuenta dice cómo está su patrimonio respecto a él: <code>marginLevel</code>, el
+  patrimonio como parte del margen usado (<code>1.5</code> es el 150%). Dos niveles actúan sobre él, y cada uno queda fuera salvo que
+  se dé. Por debajo de <code>marginCallLevel</code> la cuenta avisa una vez, el evento <code>marginCall</code>, y
+  de nuevo solo después de que el patrimonio haya vuelto a estar por encima del nivel; no cierra nada. Por debajo de
+  <code>stopOutLevel</code> cierra posiciones al precio que hay, primero la que más pierde, hasta
+  volver a estar por encima del nivel o no tener ninguna: cerrar una libera su margen, lo que puede bastar. Cada una es una ejecución con
+  <code>reason: 'liquidation'</code>. Ambos se calculan con cada precio que llega, después de las órdenes y los stops que
+  alcanzó, así que un stop-loss cierra primero su posición, y sobre una ejecución que lleva el patrimonio por debajo de un nivel se actúa
+  en el siguiente precio. El margen de una posición se retiene al precio de su entrada, así que el nivel se mueve solo con el patrimonio.
+  Un stop-out deja activas las órdenes que esperan: una cuyo dinero ya no está se cancela cuando llega su precio.
+  Sin ninguno de los dos niveles, no se cierra nada y un saldo puede bajar de cero.
+</p>
+<pre><code>{`const broker = new PaperExecutionAdapter({
+  balance: 10_000,
+  leverage: 10,                                 // a position holds a tenth of its value
+  commission: { rate: 0.0004, min: 0.1 },       // 0.04% of each fill's value, no less than 0.1; perUnit: an amount a unit
+  positions: 'net',
+  marginCallLevel: 1,                           // warn when the equity falls under the margin held
+  stopOutLevel: 0.5,                            // close positions when it falls under half of it
+})
+chart.connectExecution(broker)
+
+chart.getAccount()   // { balance, equity, unrealisedPnl, realisedPnl, marginUsed, freeMargin, commission, marginLevel? } or null
+chart.on('accountChange', (e) => console.log(e.payload.account?.equity))
+chart.on('executionFill', (e) => console.log(e.payload.commission, e.payload.reason))   // 'liquidation' for a stop-out
+chart.on('marginCall', (e) => warn(e.payload))   // { marginLevel: 0.9, level: 1, equity, marginUsed }`}</code></pre>
+<p>
+  El panel de cuenta del widget encabeza sus totales con el saldo, el patrimonio y el margen libre, y el nivel de
+  margen mientras lo hay; muestra un margin call como una advertencia, y nombra la ejecución de un stop-out en su historial. Un
+  adaptador propio hace lo mismo implementando <code>getAccount()</code> y emitiendo <code>account</code>
+  con un <code>AccountSummary</code> cuando su dinero cambia, y <code>marginCall</code> cuando su bróker avisa.
+</p>
+
+<h3 id="symbols">Una cuenta con más de un símbolo</h3>
+<p>
+  Un gráfico muestra un símbolo, y una cuenta puede tener muchos. Una orden, una posición y una ejecución pueden
+  decir de qué símbolo son (<code>symbol</code>). El gráfico dibuja las del símbolo que muestra y las que no dicen
+  ninguno; las que nombran otro símbolo las guarda, y las vuelve a dibujar cuando se muestra ese símbolo.
+  <code>getOrders()</code>, <code>getPositions()</code> y <code>getFills()</code> dan toda la cuenta, igual que
+  <code>ordersChange</code> y <code>positionsChange</code>; <code>chart.getSymbol()</code> dice cuáles están en el
+  gráfico. Una orden que pide el gráfico nombra el símbolo mostrado (<code>symbol</code> en
+  <code>orderPlace</code>), y la cuenta de simulación lo conserva en la orden, en la posición que abre y en sus
+  ejecuciones. Un adaptador propio para una cuenta de varios símbolos lo nombra en cada una. El gráfico nunca
+  adivina: lo que no nombra símbolo se dibuja en todos los símbolos, como antes. Dos nombres son un mismo símbolo sin
+  importar mayúsculas, y por su ticker cuando solo uno nombra su mercado (<code>BTCUSDT</code> y
+  <code>BINANCE:BTCUSDT</code>); si los dos nombran un mercado, debe ser el mismo.
+</p>
+<p>
+  Una ejecución es una marca sobre las barras de un símbolo, así que el gráfico da un símbolo a cada una: el suyo;
+  si no, el de su posición o su orden; si no, el que se mostraba cuando llegó. El panel de cuenta del widget lista
+  las filas de todos los símbolos y nombra el símbolo cuando alguna es de otro; una posición de otro símbolo
+  muestra el precio que el adaptador da para ella (<code>markPrice</code> en la posición) y el resultado a ese
+  precio, o ninguno de los dos: el precio del gráfico no es el suyo. La escalera de profundidad marca las órdenes
+  del símbolo cuyo libro muestra.
+</p>
+<p>
+  Un bróker valora una posición a su precio de marca, que no siempre es la última operación que muestra el
+  gráfico. Cuando el adaptador da a una posición su <code>markPrice</code>, la fila del panel y la etiqueta del
+  gráfico cuentan el resultado a ese precio, también para una posición del símbolo del gráfico, de modo que las
+  filas coinciden con el P&amp;L abierto de la cuenta. Envía las posiciones de nuevo cuando la marca se mueva. Sin
+  él, una posición del símbolo del gráfico se cuenta al último precio del gráfico.
+</p>
+<p>
+  Con un stream (<code>connect</code>, <code>switchStream</code>) el gráfico conoce su símbolo. Con barras que pones
+  tú, dilo al cambiarlas; <code>ChartWidget</code> lo hace cuando se elige su símbolo.
+</p>
+<pre><code>{`chart.setData(barsOf('ETHUSDT'))
+chart.setSymbol('ETHUSDT')        // dibuja las órdenes y posiciones de ETHUSDT; '' vuelve a dibujarlo todo
+chart.getSymbol()                 // 'ETHUSDT'
+
+chart.setPositions([
+  { id: 'p1', symbol: 'BTCUSDT', side: 'buy', entryPrice: 64_000, quantity: 1, markPrice: 64_250 },   // se guarda, no se dibuja
+  { id: 'p2', symbol: 'ETHUSDT', side: 'sell', entryPrice: 3_150, quantity: 2 },                      // se dibuja
+])`}</code></pre>
+<p>
+  Un precio también es de un símbolo. Nómbralo al alimentar la cuenta de simulación y cada precio trabaja solo las
+  órdenes y los stops de ese símbolo y valora solo sus posiciones; una posición se cierra, se invierte y se liquida
+  al último precio de su propio símbolo, y una cuenta neta lleva una posición por símbolo. Un precio que no nombra
+  símbolo es el precio de todo lo que tiene la cuenta, como antes. Nómbralo en todos los precios que entregas, o en ninguno:
+  uno que no nombra símbolo vuelve a hacer de la cuenta un solo mercado. En una repetición el gráfico nombra el símbolo
+  en los precios que entrega.
+</p>
+<pre><code>{`feed.onTrade((trade) => broker.setMarkPrice(trade.price, trade.time, trade.symbol))`}</code></pre>
+
+<h3 id="live-price">Un precio que ya no está en vivo</h3>
+<p>
+  El precio del gráfico está en vivo mientras el feed del widget está conectado y enviando. Un feed que no está
+  conectado, o que está conectado y no ha enviado nada en un minuto (<code>feedQuietAfter</code>, en segundos), deja
+  el último precio donde estaba: la barra de estado lo dice entonces en lugar de «Live», y el ticket no envía órdenes
+  a mercado y avisa en las demás, cuyo precio es el del propio trader. Mientras el feed no está conectado, una orden
+  pedida con una sola pulsación (el menú del botón derecho, la escalera de profundidad) y una orden bracket o un
+  borrador confirmados en el gráfico también se retienen, con un aviso (<code>chart.setOrderGate</code> retiene estos
+  dos). Cerrar una posición y cancelar una orden nunca se retienen. Un mercado cerrado (las <code>sessions</code> del
+  símbolo) es silencioso por naturaleza y no se juzga, ni tampoco una repetición o las barras que pones tú (sin
+  <code>adapter</code>): retén ahí las órdenes en tu propio manejador de <code>orderPlace</code>.
+</p>
+<pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, feedQuietAfter: 30 })   // seconds; 0: never
+chart.getFeedTime()   // when the stream last told anything, ms; null before it has`}</code></pre>
+
+<h3 id="confirmations">Confirmaciones</h3>
+<p>
+  En <code>ChartWidget</code>, una operación que se haría con una sola pulsación se confirma antes: cerrar o invertir
+  una posición (su fila en el panel de cuenta, sus botones en el gráfico), y una orden del menú del botón derecho o de
+  la escalera de profundidad. El diálogo dice la operación completa (el lado, la cantidad, el precio, el símbolo);
+  Enter la hace, Escape la deja sin hacer. <code>confirmOrders: false</code> es la operativa de un clic, para un
+  bróker cuyos traders la piden. El ticket de orden no se pregunta dos veces: su botón de enviar es la confirmación.
+  En la escalera de profundidad, pulsar una celda de bid coloca una orden limitada de compra a ese precio, junto a
+  los bids que hay allí, y pulsar una celda de ask, una limitada de venta; cada celda lo dice, con la cantidad, antes
+  de pulsarla.
+</p>
+<pre><code>{`new ChartWidget(host, { adapter, symbol: 'BTCUSDT', trading: true, confirmOrders: false })   // one-click trading
+chart.setPositionGuard((action, positionId, send) => ask(action, positionId).then((yes) => yes && send()))   // your own, on a headless Chart`}</code></pre>
+
+<h3 id="broker-rules">Las reglas de órdenes del bróker</h3>
+<p>
+  El preset de una bolsa (<code>setMarket</code>) tiene sus pasos de precio y su lote. Lo que un bróker acepta para un
+  símbolo en una sesión es cosa del bróker, y cambia sin una nueva versión de la librería: dalo como
+  <code>orderRules</code>, y de nuevo con <code>widget.setOrderRules</code> cuando cambie el símbolo o la sesión.
+  <code>orderKinds</code> son las clases de orden que ofrece el ticket en lugar de Mercado, Límite, Stop y Stop-límite,
+  cada una con el nombre de la bolsa (<code>code</code>) y la clase que el gráfico conoce (<code>type</code>): esta
+  decide si el ticket pide un precio y cómo se dibuja, y el nombre va con la orden como <code>exchangeType</code>,
+  para el bróker. <code>timesInForce</code> son las vigencias aceptadas (una clase puede tener las suyas), y
+  <code>lot</code> prevalece sobre el del mercado. La cuenta de simulación conserva el nombre en la orden y la opera
+  según su <code>type</code>: no se simula una subasta de apertura ni de cierre. Una orden del menú del botón derecho o
+  de la escalera de profundidad sale como la clase del bróker de su tipo, con una vigencia que este acepta, o no sale si
+  el bróker no tiene ninguna (un stop en HOSE). Una orden bracket, un borrador arrastrado en el gráfico y el cierre o la
+  inversión de una posición no llevan nombre: tu adaptador les da la clase de la bolsa. Una orden a mercado nunca lleva
+  vigencia.
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  adapter, symbol: 'VNM', trading: true,
+  orderRules: {
+    orderKinds: [
+      { code: 'LO', type: 'limit' },
+      { code: 'ATO', type: 'market' },
+      { code: 'ATC', type: 'market' },
+      { code: 'MP', type: 'market' },
+    ],
+    timesInForce: ['day'],
+    lot: 100,
+  },
+})
+// Another session, another list: an open ticket takes it at once
+widget.setOrderRules({ orderKinds: [{ code: 'ATC', type: 'market' }, { code: 'LO', type: 'limit' }], timesInForce: ['day'], lot: 100 })
+
+chart.on('orderPlace', (e) => send(e.payload.exchangeType ?? e.payload.type, e.payload))   // 'ATO', and type: 'market'`}</code></pre>
 
 <h2>Actuar sobre órdenes y posiciones desde el gráfico</h2>
 <p>
@@ -135,8 +439,8 @@ chart.modifyPositionIntent({ positionId: 'pos-1', trailingStop: 150 }) // the st
   Un adaptador que pueda invertir en un solo paso implementa
   <code>reversePosition</code>; si no lo hace, el gráfico cierra la posición y envía
   una orden de mercado en sentido contrario. Las órdenes aceptan un
-  <code>stopLoss</code>, un <code>takeProfit</code> y un <code>timeInForce</code>
-  (<code>'gtc'</code> o <code>'day'</code>) que se trasladan a la posición que abren.
+  <code>stopLoss</code>, un <code>takeProfit</code> y una distancia de seguimiento
+  que se trasladan a la posición que abren.
 </p>
 <p>
   <strong>Para autores de adaptadores:</strong> en <code>PositionModifyIntent</code>,
@@ -213,8 +517,8 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
 <h2>Ticket de orden y panel de cuenta (ChartWidget)</h2>
 <p>
   <strong>Cuenta</strong>, en el menú <strong>Operar</strong> de la barra, abre un panel de cuenta bajo el gráfico: las
-  posiciones abiertas con su ganancia o pérdida, las órdenes pendientes y las
-  ejecuciones hasta el momento con el P&amp;L realizado. Cada fila permite cerrar,
+  posiciones abiertas con su ganancia o pérdida, las órdenes pendientes, las
+  ejecuciones hasta el momento con el P&amp;L realizado, y un registro de lo que pasó con las órdenes. Cada fila permite cerrar,
   invertir o cancelar. <strong>Nueva orden</strong> abre un ticket de orden: compra o
   venta, a mercado, límite o stop, cantidad, precio, un stop-loss y un take-profit
   opcionales, y la vigencia. Revisa la orden mientras la rellenas (una compra límite
@@ -225,6 +529,14 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   fluctuación mínima del mercado y el precio de la orden dentro del techo y el suelo del día, empieza en un lote y, por
   encima de uno, acepta solo lotes completos (las acciones sueltas van en una orden de lote
   incompleto aparte).
+</p>
+<p>
+  Cuando el feed da bid y ask, el ticket valora, comprueba y envía una compra al ask y una venta al bid; si no, ambas al
+  último precio. Con un adaptador de ejecución conectado espera su respuesta: sigue abierto, con <strong>Enviando…</strong>
+  en lugar de su botón y sin nada que se pueda cambiar; se cierra cuando la orden es aceptada, y si es rechazada conserva
+  lo escrito y dice por qué hasta que la orden se cambia. Tras diez segundos sin respuesta lo dice y sigue esperando: revisa tus órdenes antes de enviarla de nuevo. Una pulsación fuera del ticket no lo cierra; Escape, Cancelar y
+  el aspa sí. Una orden pedida con una sola pulsación, desde el menú del botón derecho o un peldaño de la escalera de
+  profundidad, es por el lote del mercado (<code>volumeUnit</code>) donde lo hay, y si no por uno.
 </p>
 <p>
   El ticket muestra el símbolo junto al título. El tipo y la vigencia son opciones en una fila (las flechas
@@ -245,13 +557,40 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   alineadas a la derecha en tipo monoespaciado, el dinero con los decimales del paso de precio y en el formato numérico
   del idioma; en el móvil cada fila es una tarjeta con sus cifras rotuladas.
 </p>
+<p>
+  El widget dice qué fue de una orden que envió: la que el adaptador rechazó, con las palabras del propio adaptador, y la
+  que se ejecutó en parte y descartó el resto, cuánto se ejecutó.
+</p>
+<p>
+  <strong>La pestaña Registro</strong> lista lo que pasó con las órdenes, lo más reciente primero: cada una colocada, movida,
+  cancelada o ejecutada, y lo que el bróker rechazó con su motivo. Lo lleva el gráfico, también para un gráfico
+  propio: <code>chart.getActivityLog()</code> da las últimas 200 entradas, la más antigua primero, cada una
+  <code>{`{ time, kind, orderId, side, type, quantity, price, reason, pnl, message }`}</code> con lo que tiene su
+  <code>kind</code> (<code>'placed'</code>, <code>'moved'</code>, <code>'cancelled'</code>,
+  <code>'filled'</code>, <code>'rejected'</code>). Se lee de las órdenes, ejecuciones y errores que se comunican al gráfico,
+  por un adaptador de ejecución o por <code>setOrders</code> y <code>addFill</code>. Las órdenes que había cuando empezó
+  no están en él, ni las que hay cuando se conecta o se retira un adaptador, o (sin adaptador) cuando cambia el
+  símbolo: son lo que hay, no órdenes colocadas. Una orden ejecutada en parte y luego retirada se registra como
+  cancelada. <code>chart.clearActivityLog()</code> lo vacía.
+</p>
+<p>
+  <strong>Vender y Comprar en el gráfico.</strong> Mientras hay un adaptador de ejecución conectado, el widget muestra dos
+  botones bajo la leyenda del gráfico, cada uno con el precio al que operaría: el mejor bid en Vender y el mejor ask
+  en Comprar con el diferencial entre ellos (<code>chart.setBidAsk</code>, o un feed cuyos ticks los traen), si no el
+  último precio en ambos, como en una repetición o cuando el feed solo da un lado. Una pulsación abre el ticket de orden en ese
+  lado. <code>executionChange</code> dice cuándo se conecta o se retira un adaptador, <code>bidAskChange</code>
+  cuándo cambian el bid y el ask, y el interruptor <code>tradeButtons</code> apaga los botones.
+</p>
 <pre><code>{`const widget = new ChartWidget(host, {
   trading: true,         // default
   accountPanel: true,    // default when trading is on
+  features: { tradeButtons: true },   // default: Sell and Buy under the legend, with a broker connected
 })
 widget.getChart().connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
 widget.toggleAccountPanel(true)
-// The panel follows ordersChange, positionsChange, executionFill and each tick.`}</code></pre>
+// The panel follows ordersChange, positionsChange, executionFill and each tick.
+
+widget.getChart().getActivityLog().at(-1)   // { time, kind: 'filled', side: 'buy', quantity: 1, price: 64_000, reason: 'order' }`}</code></pre>
 <p>
   Las marcas de ejecución pertenecen al símbolo del gráfico: al cambiar de símbolo en
   el widget, el siguiente empieza sin ninguna.
@@ -275,35 +614,53 @@ chart.cancelOrderDraft()`}</code></pre>
   Confirma con <kbd>Enter</kbd> (o con el botón Enviar) y cancela con
   <kbd>Esc</kbd>. En el widget, las flechas verde/roja de la barra de
   herramientas inician un bracket largo/corto. El gráfico emite un único evento
-  <code>bracketPlace</code> para que tu backend actúe.
+  <code>bracketPlace</code>, y envía el bracket a un adaptador de ejecución conectado
+  (más abajo); sin ninguno, el evento es para que tu backend actúe.
 </p>
 <p>
-  Con un adaptador de ejecución conectado con <code>brackets: 'place'</code>, el gráfico también se lo envía al
-  adaptador como una sola orden: la entrada, una límite cuando el precio tiene que volver a ella y una stop cuando tiene
-  que seguir hasta ella, su cantidad, y su stop-loss y su take-profit sobre ella. Una vez que el adaptador la aceptó, el
+  <strong>Su tamaño.</strong> Un bracket es por la cantidad que le da su tamaño. <code>{`{ quantity: 2 }`}</code>
+  es esa cantidad. <code>{`{ risk: 50 }`}</code> es el dinero que se pierde en el stop: la cantidad es entonces 50
+  entre la distancia del stop a la entrada (por <code>multiplier</code>, lo que vale para una unidad un movimiento
+  de uno en el precio), redondeada hacia abajo a <code>quantityStep</code>, y sigue a las líneas cuando se
+  arrastran. La cantidad se escribe en la etiqueta de la entrada, y <code>bracketPlace</code> la lleva. En el
+  widget se escribe en un campo de la barra del bracket, que empieza en la última cantidad escrita y, si no la hay,
+  en el lote del mercado. <code>widget.startBracket(side, size)</code> también recibe un tamaño: un bracket
+  dimensionado por su riesgo no tiene campo. <code>bracketQuantity(bracket, size)</code> es la misma cuenta para
+  tu propio código.
+</p>
+<p>
+  Con un adaptador de ejecución conectado, el gráfico también envía un bracket confirmado al
+  adaptador como una sola orden: la entrada, limitada cuando el precio tiene que volver a ella y stop cuando tiene
+  que seguir hasta ella, su cantidad, y su stop-loss y take-profit en ella. Cuando el adaptador la acepta, el
   gráfico envía <code>bracketOrder</code> con la orden. Si el adaptador la rechaza, envía
-  <code>executionError</code> con <code>command: 'bracketPlace'</code>. El widget dice "enviada" solo entonces, y dice
-  por qué cuando fue rechazada. Un bracket sin cantidad no se envía, ya que nadie vio un tamaño que enviar; tampoco uno
-  confirmado antes de que el gráfico tenga un precio para distinguir una entrada límite de una stop.
-  <code>executionError</code> da el <code>reason</code> (<code>'noQuantity'</code>, <code>'noPrice'</code>).
-  Los brackets que inician las flechas de la barra de herramientas y <code>startBracket</code> aún no tienen cantidad,
-  así que con <code>'place'</code> no se envían, y el widget lo dice. Sin él, un bracket confirmado se queda en un
-  evento, y el widget dice que se confirmó. Un adaptador conectado sin indicarlo (sin <code>brackets</code>) mantiene el
-  evento y avisa una vez en la consola. <code>'place'</code> pasa a ser el valor por defecto en la próxima versión
-  mayor, así que una app que envía ella misma el bracket del evento pasa <code>brackets: 'event'</code>.
+  <code>executionError</code> con <code>command: 'bracketPlace'</code>. Solo entonces el widget dice "colocado",
+  y dice por qué cuando fue rechazado. Un bracket sin cantidad no se confirma, porque nadie ha visto un tamaño que
+  colocar: <code>confirmBracket()</code> devuelve false, y el bracket se queda en el gráfico hasta recibir una.
+  Uno confirmado antes de que el gráfico tenga un precio con el que distinguir una entrada limitada de una stop no
+  se envía. <code>executionError</code> da el <code>reason</code> (<code>'noQuantity'</code>,
+  <code>'noPrice'</code>), y el widget lo dice. Una app que coloca por su cuenta el bracket del evento conecta con
+  <code>brackets: 'event'</code>: el bracket se queda entonces en un evento, y el widget dice que se confirmó.
+  Antes de la 3.0 ese era el comportamiento por defecto (consulta
+  <a href={href('/docs/migration-3')}>Migrar a la 3.0</a>).
 </p>
 <pre><code>{`chart.startBracket('buy')          // entry defaults to the latest close
 chart.startBracket('sell', 64_800) // or pin the entry price
 
+chart.startBracket('buy', undefined, { quantity: 2 })                   // for two
+chart.startBracket('buy', undefined, { risk: 50, quantityStep: 0.001 }) // for what loses 50 at the stop
+chart.setBracketSize({ quantity: 3 })   // while it is placed
+chart.getBracket()                      // { side, entry, stopLoss, takeProfit, quantity } or null
+
 chart.on('bracketPlace', (e) => {
-  const { side, entry, stopLoss, takeProfit, riskReward } = e.payload
-  // submit to your OMS, then reflect fills back via chart.setOrders/setPositions
+  const { side, entry, stopLoss, takeProfit, quantity, riskReward } = e.payload
+  // with no adapter (or brackets: 'event'): submit to your OMS, then reflect fills back via chart.setOrders/setPositions
 })
 
-// Or let the connected adapter place it
-chart.connectExecution(broker, { brackets: 'place' })
+// The connected adapter places it
+chart.connectExecution(broker)
 chart.placesBrackets()   // true
 chart.on('bracketOrder', (e) => console.log(e.payload.order.id))
+// chart.connectExecution(broker, { brackets: 'event' })   // only the event: your code places it
 
 chart.confirmBracket()  // same as Enter
 chart.cancelBracket()   // same as Esc`}</code></pre>
@@ -377,6 +734,7 @@ chart.setDepthOverlay({ mode: 'cumulative' })       // change the look later`}</
 </p>
 <pre><code>{`chart.setDepthHeatmapVisible(true)
 chart.setDepthHeatmapConfig({ opacity: 0.7, capacity: 240 })
+chart.setDepthHeatmapConfig({ bidColor: '#1e88e5', askColor: '#fb8c00' })   // colores propios; null: los de las velas del tema
 
 // each book update both draws the overlay/ladder and records a heatmap column
 widget.setDepth(orderBook)

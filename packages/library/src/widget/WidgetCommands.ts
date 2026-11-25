@@ -17,6 +17,8 @@ export interface CommandsHost {
   readonly commandPalettePart: ChartWidget['commandPalettePart'];
   readonly comparing: ChartWidget['comparing'];
   copyChartImage: ChartWidget['copyChartImage'];
+  printChart: ChartWidget['printChart'];
+  saveChartPdf: ChartWidget['saveChartPdf'];
   copyShareLink: ChartWidget['layouts']['copyShareLink'];
   readonly featureState: ChartWidget['featureState'];
   handleToggleTheme: ChartWidget['handleToggleTheme'];
@@ -119,8 +121,11 @@ export class WidgetCommands {
       { id: 'objectTree', label: this.host.t('objects.title'), category: 'action' },
       { id: 'dataWindow', label: this.host.t('action.dataWindow'), category: 'action' },
       { id: 'symbolInfo', label: this.host.t('action.symbolInfo'), category: 'action' },
+      { id: 'tape', label: this.host.t('tape.title'), category: 'action' },
       { id: 'screenshot', label: this.host.t('action.screenshot'), category: 'action' },
       { id: 'copyImage', label: this.host.t('action.copyImage'), category: 'action' },
+      { id: 'printChart', label: this.host.t('action.printChart'), category: 'action' },
+      { id: 'savePdf', label: this.host.t('action.savePdf'), category: 'action' },
       { id: 'shareView', label: this.host.t('action.shareView'), category: 'action' },
       { id: 'toggleTheme', label: this.host.t('action.toggleTheme'), category: 'action' },
       { id: 'settings', label: this.host.t('action.settings'), category: 'action' },
@@ -134,9 +139,10 @@ export class WidgetCommands {
     return items.filter((item) => item.category !== 'action' || (this.commandOn(item.id) && this.commandThere(item.id)));
   }
 
-  /** Whether the widget has what a command works on: a watchlist, a feed to compare from, layouts to save to. */
+  /** Whether the widget has what a command works on: a watchlist, a tape, a feed to compare from, layouts to save to. */
   private commandThere(id: string): boolean {
     if (id === 'watchlist') return this.host.watching.watchlist !== null;
+    if (id === 'tape') return Boolean(this.host.options.tape);
     if (id === 'compare') return this.host.adapter !== null && this.host.options.chartOptions?.features?.compareSymbols !== false;
     if (id === 'saveLayout') return this.host.layoutSession !== null;
     return true;
@@ -172,6 +178,7 @@ export class WidgetCommands {
       case 'watchlist':
       case 'alerts':
       case 'objectTree':
+      case 'tape':
         this.host.openPanel(id);
         break;
       case 'hotkeys':
@@ -188,6 +195,12 @@ export class WidgetCommands {
         break;
       case 'copyImage':
         void this.host.copyChartImage();
+        break;
+      case 'printChart':
+        this.host.printChart();
+        break;
+      case 'savePdf':
+        void this.host.saveChartPdf();
         break;
       case 'shareView':
         void this.host.copyShareLink();

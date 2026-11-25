@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { OHLCBar, Theme, ViewportState } from '@tradecanvas/commons';
-import { DARK_THEME } from '@tradecanvas/commons';
+import { DARK_THEME, resolveChartTheme } from '@tradecanvas/commons';
 import { CrosshairHandler } from '../CrosshairHandler.js';
 
 const bars: OHLCBar[] = Array.from({ length: 50 }, (_, i) => ({
@@ -21,16 +21,21 @@ const viewport = {
 function recorder() {
   const lines: number[][] = [];
   const texts: string[] = [];
+  const textYs: number[] = [];
+  const clips: number[][] = [];
   let from: number[] = [];
+  let box: number[] = [];
   const ctx = {
     setLineDash() {}, beginPath() {}, stroke() {}, fill() {}, closePath() {}, fillRect() {},
     save() {}, restore() {}, quadraticCurveTo() {}, arcTo() {}, roundRect() {},
+    rect(x: number, y: number, w: number, h: number) { box = [x, y, w, h]; },
+    clip() { clips.push(box); },
     moveTo(x: number, y: number) { from = [x, y]; },
     lineTo(x: number, y: number) { lines.push([...from, x, y]); from = [x, y]; },
     measureText: (t: string) => ({ width: t.length * 6 }),
-    fillText(t: string) { texts.push(t); },
+    fillText(t: string, _x: number, y: number) { texts.push(t); textYs.push(y); },
   } as unknown as CanvasRenderingContext2D;
-  return { ctx, lines, texts };
+  return { ctx, lines, texts, textYs, clips };
 }
 
 const theme = DARK_THEME as Theme;
@@ -282,6 +287,95 @@ describe('CrosshairHandler cursor kinds', () => {
   });
 });
 
+describe('CrosshairHandler on a market with a price step', () => {
+  const priceAt = (handler: CrosshairHandler) => {
+    const { ctx, texts } = recorder();
+    handler.renderAxisLabels(ctx, viewport, theme, bars);
+    return texts[0];
+  };
+
+  it('writes the price under the pointer as the market has it: on its step', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    // 300 px for the prices from 110 down to 90: y 157 is 99.53.
+    handler.onPointerMove({ x: 204, y: 157 });
+    expect(priceAt(handler)).toBe('99.53');
+    handler.setPriceRounding((price) => Math.round(price * 2) / 2);
+    expect(priceAt(handler)).toBe('99.50');
+    handler.onPointerMove({ x: 204, y: 161 });
+    expect(priceAt(handler)).toBe('99.50');
+    handler.onPointerMove({ x: 204, y: 147 });
+    expect(priceAt(handler)).toBe('100.00');
+  });
+
+  it('writes the pointer’s own price again with no step told, or where the rounding gives none', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    handler.onPointerMove({ x: 204, y: 157 });
+    handler.setPriceRounding(() => Number.NaN);
+    expect(priceAt(handler)).toBe('99.53');
+    handler.setPriceRounding((price) => Math.round(price));
+    expect(priceAt(handler)).toBe('100.00');
+    handler.setPriceRounding(null);
+    expect(priceAt(handler)).toBe('99.53');
+  });
+
+  it('leaves its line under the pointer: only what is written keeps to the step', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    handler.setPriceRounding((price) => Math.round(price));
+    handler.onPointerMove({ x: 204, y: 157 });
+    const { ctx, lines } = recorder();
+    handler.render(ctx, viewport, theme);
+    // On the pointer's row of pixels (y 157), not on the row of the price written (100 is at y 150).
+    expect(Math.abs(lines[1][1] - 157)).toBeLessThanOrEqual(0.5);
+  });
+});
+
+describe('CrosshairHandler while a line is dragged to a price', () => {
+  const at = () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    handler.onPointerMove({ x: 204, y: 150 });
+    return handler;
+  };
+  const drawn = (handler: CrosshairHandler) => {
+    const lines = recorder();
+    handler.render(lines.ctx, viewport, theme);
+    const labels = recorder();
+    handler.renderAxisLabels(labels.ctx, viewport, theme, bars);
+    return { lines: lines.lines, texts: labels.texts };
+  };
+
+  it('draws no horizontal line and no price: the line dragged writes its own, a few pixels away', () => {
+    const handler = at();
+    const free = drawn(handler);
+    expect(free.lines).toHaveLength(2);
+    expect(free.texts).toHaveLength(2);
+    let held = true;
+    handler.setPriceHeld(() => held);
+    const dragging = drawn(handler);
+    // The vertical line and the time stay: the bar under the pointer is still told.
+    expect(dragging.lines).toEqual([free.lines[0]]);
+    expect(dragging.texts).toEqual([free.texts[1]]);
+    // Let go: both are back at the next frame, with nothing told to the crosshair.
+    held = false;
+    expect(drawn(handler)).toEqual(free);
+  });
+
+  it('still reports the bar under the pointer', async () => {
+    const handler = new CrosshairHandler();
+    const callback = vi.fn();
+    handler.setCallback(callback);
+    handler.setData(bars);
+    handler.setPriceHeld(() => true);
+    handler.onPointerMove({ x: 204, y: 150 });
+    handler.render(recorder().ctx, viewport, theme);
+    await Promise.resolve();
+    expect(callback).toHaveBeenCalledWith(20, expect.anything());
+  });
+});
+
 describe('CrosshairHandler — a drawing’s span on the axes', () => {
   /** Records filled boxes as [x, y, w, h, colour] and the text with its colour. */
   function spanRecorder() {
@@ -363,3 +457,96 @@ describe('CrosshairHandler — a drawing’s span on the axes', () => {
   });
 });
 
+describe('CrosshairHandler: how far the pointer’s price is from the last', () => {
+  const withChange = (on: boolean): Theme => ({ ...resolveChartTheme(DARK_THEME, 'candlestick', { 'crosshair.labelChange': on }) });
+  const written = (handler: CrosshairHandler, on: ViewportState = viewport, t: Theme = withChange(true)) => {
+    const { ctx, texts } = recorder();
+    handler.renderAxisLabels(ctx, on, t, bars);
+    // The price pill's texts: the time's is the last.
+    return texts.slice(0, -1);
+  };
+  const at = (y: number) => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    // 300 px for the prices from 110 down to 90.
+    handler.onPointerMove({ x: 204, y });
+    return handler;
+  };
+
+  it('writes it under the price, signed, where the theme says so and a last price is known', () => {
+    const above = at(135); // 101.00
+    above.setChangeBase(() => 100);
+    expect(written(above)).toEqual(['101.00', '+1.00%']);
+    const below = at(165); // 99.00
+    below.setChangeBase(() => 100);
+    expect(written(below)).toEqual(['99.00', '\u22121.00%']);
+    const same = at(150);
+    same.setChangeBase(() => 100);
+    expect(written(same)).toEqual(['100.00', '0.00%']);
+  });
+
+  it('writes the price alone with the key off, with no last price, or with one that is no price', () => {
+    const handler = at(135);
+    handler.setChangeBase(() => 100);
+    expect(written(handler, viewport, withChange(false))).toEqual(['101.00']);
+    expect(written(handler, viewport, DARK_THEME as Theme)).toEqual(['101.00']);
+    for (const base of [null, 0, Number.NaN, -5]) {
+      handler.setChangeBase(() => base);
+      expect(written(handler), String(base)).toEqual(['101.00']);
+    }
+    handler.setChangeBase(null);
+    expect(written(handler)).toEqual(['101.00']);
+  });
+
+  it('writes none with the last price switched off in the chart’s style', () => {
+    const handler = at(135);
+    handler.setChangeBase(() => 100);
+    const hidden = resolveChartTheme(DARK_THEME, 'candlestick', { 'crosshair.labelChange': true, 'lastPrice.visible': false }) as Theme;
+    expect(written(handler, viewport, hidden)).toEqual(['101.00']);
+  });
+
+  it('writes none on a scale that is in percent or indexed already', () => {
+    const handler = at(135);
+    handler.setChangeBase(() => 100);
+    for (const scaleMode of ['percentage', 'indexedTo100'] as const) {
+      expect(written(handler, { ...viewport, scaleMode, scaleBaseline: 100 } as ViewportState), scaleMode).toHaveLength(1);
+    }
+  });
+
+  it('counts from the price as it is written: on the market’s step', () => {
+    const handler = at(157); // 99.53
+    handler.setChangeBase(() => 100);
+    handler.setPriceRounding((price) => Math.round(price * 2) / 2);
+    expect(written(handler)).toEqual(['99.50', '\u22120.50%']);
+  });
+
+  it('keeps its two lines on the plot by either edge, and inside the tag however wide the change', () => {
+    for (const y of [0, 2, 298, 300]) {
+      const handler = at(y);
+      handler.setChangeBase(() => 100);
+      const { ctx, textYs, clips } = recorder();
+      handler.renderAxisLabels(ctx, viewport, withChange(true), bars);
+      // The tag is 2 × 11 + 2 + 8 = 32 px tall: its lines are 6.5 px each side of its middle, which stays 16 px in.
+      expect(Math.min(...textYs.slice(0, 2)), String(y)).toBeGreaterThanOrEqual(16 - 6.5);
+      expect(Math.max(...textYs.slice(0, 2)), String(y)).toBeLessThanOrEqual(300 - 16 + 6.5);
+      // What is written is cut at the tag: a change of four figures does not run over the chart's edge.
+      expect(clips, String(y)).toHaveLength(1);
+      const [, top, , height] = clips[0];
+      expect(top).toBeGreaterThanOrEqual(0);
+      expect(top + height).toBeLessThanOrEqual(300);
+    }
+    // A tag of one line is where the pointer is, as it was.
+    const plain = at(2);
+    const { ctx, textYs, clips } = recorder();
+    plain.renderAxisLabels(ctx, viewport, withChange(false), bars);
+    expect(textYs[0]).toBe(2);
+    expect(clips).toHaveLength(0);
+  });
+
+  it('writes the percentage in the chart’s locale', () => {
+    const handler = at(135);
+    handler.setChangeBase(() => 100);
+    handler.setLocale('de-DE');
+    expect(written(handler)[1]).toBe('+1,00%');
+  });
+});

@@ -212,6 +212,123 @@ await chart.setTimeframe('500T')
 const builder = new TickBarBuilder(100)
 builder.push([{ time, price, volume }])   // → [{ bar, closed }]`}</code></pre>
 
+<h2 id="order-flow">누가 체결을 가져갔는가</h2>
+<p>
+  피드는 각 체결을 어느 쪽이 가져갔는지, 즉 스프레드를 넘은 쪽을 알려 줄 수 있습니다: 체결의
+  <code>side</code>(매수 측이 매도 호가를 가져가면 <code>'buy'</code>, 매도 측이 매수 호가를 치면
+  <code>'sell'</code>)와 봉의 <code>buyVolume</code>, 즉 <code>volume</code> 가운데 매수 측이 가져간 부분입니다.
+  둘 다 선택 사항입니다. <code>buyVolume</code>이 있으면 봉에 델타(매수에서 매도를 뺀 값)가 있습니다:
+  <code>barDelta(bar)</code>가 그 값을 돌려주고, 알려 주지 않는 봉에는 <code>null</code>을 돌려줍니다. Volume
+  Delta 지표(<code>voldelta</code>)는 추정값 대신 그 델타와 누적 합을 그립니다.
+  <code>BinanceAdapter</code>는 거래소의 테이커 매수 거래량과 집계 체결에서 둘 다 채우고,
+  <code>MockAdapter</code>는 만들어 냅니다.
+</p>
+<pre><code>{`chart.setData([{ time, open, high, low, close, volume: 1200, buyVolume: 700 }])
+chart.addIndicator('voldelta', { mode: 1, anchor: 'session' })   // the cumulative delta, from each session's start
+
+barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</code></pre>
+<p>
+  차트는 거래량을 가져가는 곳이면 어디든 <code>buyVolume</code>도 가져갑니다. 다른 봉으로 만든 봉
+  (<code>resampleBars</code>, 피드에 없는 시간 단위)은 그것을 더하고, 틱 봉과 틱으로 집계한 봉은
+  <code>side</code>를 알려 주는 체결에서 그것을 세며, 리플레이 중인 봉은 거래량과 같은 비율로 그것을 갖고,
+  CSV와 JSON 내보내기는 그것을 별도의 열(<code>Buy Volume</code>)에 쓰며 가져오기가 그 열을 다시 읽습니다.
+  알려 주지 않는 부분이 하나라도 있는 봉에는 없습니다: 절반만 아는 것은 아는 것이 아닙니다.
+</p>
+<p>
+  알아 둘 것이 세 가지 있습니다. <code>chart.updateLastBarFromTick</code>으로 넣은 체결도
+  <code>side</code>가 있으면 셉니다. 거래량은 있는데 side가 없는 체결은 형성 중인 봉에서
+  <code>buyVolume</code>을 없앱니다. Renko, Kagi, Line Break, Point &amp; Figure, Range Bars는 차트가 그리는
+  봉이지 피드의 봉이 아닙니다: 이런 차트의 지표는 그려진 봉을 읽고, 그 봉에는 이 구분이 없으므로 거기서의
+  델타는 추정값입니다. 그리고 시리즈의 일부 봉만 알려 줄 때 누적 델타는 실제 델타와 추정값을 더하는데,
+  추정값은 저마다 봉의 거래량 전체이므로 둘이 만나는 곳에서 계단이 생깁니다. JS API와 UDF 브리지에는 이를
+  위한 필드가 없습니다.
+</p>
+
+<h2 id="footprint">풋프린트 차트</h2>
+<p>
+  <code>chartType: 'footprint'</code>는 각 봉 옆에, 그 봉 안의 모든 가격에서 체결된 것을 그립니다: 왼쪽에는 매도 측이
+  매수 호가에서 가져간 물량, 오른쪽에는 매수 측이 매도 호가에서 가져간 물량입니다. 한쪽이 다른 쪽을 크게 앞선 행은 더 진한 바탕 위에
+  굵게 표시되고, 가장 많이 체결된 행에는 테두리가 있으며, 각 봉의 왼쪽에는 가는 캔들이 섭니다. 위젯에서는 차트 유형 메뉴의
+  Footprint이고, 설정은 Chart Settings에 있습니다.
+</p>
+<pre><code>{`const chart = new Chart(el, { chartType: 'footprint' })
+await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1m' })`}</code></pre>
+<p>
+  체결을 가진 피드라면 이것으로 충분합니다(<code>fetchTrades</code>와 <code>subscribeTrades</code>.
+  <code>BinanceAdapter</code>와 <code>MockAdapter</code>에 있습니다): 풋프린트를 보여 주는 동안 차트는 피드에 최근 체결을
+  천 건 요청하고, 그 뒤로는 실시간 체결을 따라가며, 차트 유형이 바뀌면 멈춥니다. 피드가 보관하는 체결은 많지 않으므로 처음에는
+  가장 최근의 봉들만 풋프린트를 가집니다: 최근 체결이 중간부터 시작된 봉은 제외되고, 그 이전 봉들은 가는 캔들이며, 거기서부터
+  실시간 체결과 함께 풋프린트가 늘어납니다. 다른 심볼이나 타임프레임에서는 처음부터 다시 시작합니다.
+</p>
+<p>
+  자체 체결을 가진 호스트는 어떤 차트 유형에서든 <code>chart.addTrades(trades)</code>로 넣습니다: 각 체결은
+  그 시각의 봉과 그 가격의 행에, 가져간 쪽으로 계산됩니다. <code>side</code>가 없는 체결은 바로 앞 체결로 판단합니다
+  (가격이 그 체결까지 올랐으면 매수, 내렸으면 매도): 이는 추정이며, <code>buyVolume</code>이 없는 봉의 델타와 같습니다.
+  행을 직접 보관하는 호스트는 그 행을 봉 단위로 넣고, <code>footprintOf</code>는 체결에서 한 번의 호출로 행을 만듭니다.
+</p>
+<pre><code>{`import { footprintOf, footprintStats } from '@tradecanvas/chart'
+
+chart.setChartTypeOptions({ footprint: { rowSize: 0.5, collect: false } })   // 행은 호스트의 것
+chart.setFootprint([
+  { time: bar.time, levels: [{ price: 100, buy: 12, sell: 30 }, { price: 100.5, buy: 41, sell: 9 }] },
+])
+chart.setFootprint(footprintOf(trades, '1m', 0.5))    // 또는 체결에서 만들기
+
+const rows = chart.getFootprint(bar.time)             // { time, levels }, 풋프린트가 없는 봉은 null
+if (rows) footprintStats(rows.levels)                 // { buy, sell, volume, delta, poc, … }
+chart.clearFootprint()                                // 다른 시리즈의 행을 넣기 전에`}</code></pre>
+<table>
+  <thead><tr><th>설정</th><th>기본값</th><th>하는 일</th></tr></thead>
+  <tbody>
+    <tr><td><code>rowSize</code></td><td><code>'auto'</code></td><td>한 행의 가격 높이. Auto는 마지막 가격의 약 만분의 일을 1, 2 또는 5로 반올림한 값(60,000에서는 5)이며, 심볼의 호가 단위의 정수배입니다. 행을 직접 넣은 경우에는 그 가격들 사이의 가장 작은 간격입니다. 다른 크기로 바꾸면 풋프린트는 처음부터 다시 시작합니다.</td></tr>
+    <tr><td><code>cells</code></td><td><code>'bidAsk'</code></td><td><code>'bidAsk'</code>: 양쪽을 따로. <code>'delta'</code>: 매수에서 매도를 뺀 값. <code>'volume'</code>: 둘의 합.</td></tr>
+    <tr><td><code>imbalance</code></td><td><code>3</code></td><td>한 행 떨어진 자리에서 한쪽이 다른 쪽의 몇 배가 되어야 표시되는지: 어떤 가격의 매수를 한 행 아래의 매도와, 매도를 한 행 위의 매수와 비교합니다. 0이면 아무것도 표시하지 않습니다.</td></tr>
+    <tr><td><code>collect</code></td><td><code>true</code></td><td>false: 차트가 피드에 체결을 요청하지 않습니다.</td></tr>
+    <tr><td><code>totals</code></td><td><code>true</code></td><td>각 봉 아래에 그 행들의 합계를 표시합니다. 매수에서 매도를 뺀 값을 부호의 색으로, 그 아래에 둘을 더한 값을 씁니다. 숫자 하나가 들어갈 만큼 넓은 봉에만 쓰이며, 가격 축은 가장 낮은 봉 아래에 그만큼 자리를 남깁니다. false: 표시하지 않습니다.</td></tr>
+  </tbody>
+</table>
+<p>
+  봉이 무엇을 담는지는 확대 정도가 정합니다. 풋프린트를 고르면 차트는 숫자가 읽히는 곳까지 확대하고, 그 봉은 캔들보다
+  훨씬 넓어질 수 있습니다. 축소하면 숫자는 양쪽에 하나씩의 막대로, 더 축소하면 보통 캔들로 바뀝니다. 읽기에 너무 얇은 행은
+  2, 5, 10… 행을 하나로 묶어 딱 떨어지는 가격에 맞춰 그립니다. 풋프린트는 가장 최근의 500개 봉에 대해 보관되며 차트 상태와 함께
+  저장되지 않습니다. 리플레이 중에는 아직 보이지 않은 봉에 셀이 없고, 더 작은 봉들로 형성 중인 봉에도 없습니다.
+  틱 차트에서는 체결이 도착했을 때 마지막으로 열려 있던 봉에 계산되므로, 봉의 첫 체결이 바로 앞 봉에 들어갈 수 있습니다. Canvas 2D로 그려지며, WebGL 렌더러에서도 마찬가지입니다.
+  <code>renderPriceChart</code>는 <code>footprint</code>에서, 곧 <code>chart.getFootprint()</code>가 돌려주는
+  행에서 그립니다.
+</p>
+
+<h2 id="tape">체결 내역, 그리고 체결 그 자체</h2>
+<p>
+  <code>chart.followTrades()</code>는 돌려주는 함수가 호출될 때까지 차트 심볼의 체결을 따라갑니다:
+  피드의 최근 체결, 이어서 실시간 체결을 <code>trades</code> 이벤트로 알립니다. 따라가는 쪽이 몇이든 피드에는 한 번만
+  요청하며, 풋프린트를 보여 주는 차트는 스스로 따라갑니다. <code>chart.addTrades()</code>로 넣은 체결도 같은 방식으로
+  알립니다. 피드의 체결은 두 번 알리지 않습니다: 같은 심볼의 다른 타임프레임에서도, 재연결 뒤에도 그렇고, 그때는 더 늦은 체결이
+  먼저 알려졌더라도 놓친 것만 알립니다. <code>chart.getTrades()</code>는 최근에 알린 체결을 최대 이천 건까지
+  돌려주며, 체결이 알려진 뒤에 온 리스너를 위한 것입니다.
+</p>
+<pre><code>{`const stop = chart.followTrades()
+chart.on('trades', (e) => {
+  // e.payload.trades: 오래된 것부터
+  // e.payload.recent: 피드의 최근 체결이며, 방금 이루어진 체결이 아님
+  for (const trade of e.payload.trades) log(trade.time, trade.price, trade.volume, trade.side)
+})
+stop()   // 아무도 따라가지 않고 차트가 풋프린트도 아니면 피드를 놓아 줌`}</code></pre>
+<p>
+  위젯에서는 <code>tape: true</code>가 체결 내역(time and sales)을 도크에 추가합니다: 최신 체결이 맨 위에 오고,
+  각각 시각, 가격, 수량이 있으며, 가격은 가져간 쪽의 색입니다. 목록 위의 막대는 보이는 행 가운데 매수 측과 매도 측이
+  각각 얼마나 가져갔는지를 보여 주고, 보통 크기의 열 배인 체결은 눈에 띄게 표시되며, 최소 수량보다 작은 체결은 뺄 수 있습니다
+  (<code>{`tape: { minSize: 0.5 }`}</code>, 또는 패널에 직접 입력). 위젯은 체결 내역이 열려 있는 동안에만 피드의 체결을
+  따라갑니다. <code>widget.openPanel('tape')</code>로 엽니다. 스위치는 <code>tape</code>와 <code>dock.tape</code>입니다.
+</p>
+<p>
+  체결 내역 머리글의 메뉴로 한쪽의 체결(매수 또는 매도)만 나열할 수 있고, 동시에 일어난 체결을 한 행으로 묶을 수 있습니다.
+  같은 시각, 같은 가격, 같은 쪽의 체결은 수량을 더하므로, 여러 대기 주문을 체결시킨 시장가 주문이 원래의 한 건으로 읽힙니다.
+  묶인 행은 합계 수량으로 최소 수량과 비교되고, 큰 체결인지도 합계로 판단합니다. 둘 다 처음부터 설정할 수 있습니다
+  (<code>{`tape: { side: 'buy', group: true }`}</code>). 패널에서 고른 내용은 브라우저에 저장되어 다음에도 그대로입니다.
+  쪽과 묶기는 모든 종목에, 최소 수량은 고른 종목별로 저장됩니다. 같은 수량도 종목마다 뜻이 다르기 때문입니다.
+  고른 내용은 처음의 옵션보다 우선하며, 항목마다 따로 적용됩니다. <code>persist: false</code>는 아무것도 저장하지 않습니다.
+</p>
+
 <h2>시장 상태와 뉴스</h2>
 <p>
   <code>marketStatus(info, now)</code>는 거래소 시간대 기준의 거래 시간(서머타임 전환 포함)으로 특정 시점에 종목의 시장이
@@ -360,13 +477,15 @@ chart.replayStart({ startIndex: 100, revealMarks: false })   // 처음부터 모
 
 <h3>리플레이 중 모의 거래</h3>
 <p>
-  <code>setMarkPrice(price, time)</code> 메서드가 있는 실행 어댑터(<code>PaperExecutionAdapter</code> 등)는
+  <code>setMarkPrice(price, time, symbol)</code> 메서드가 있는 실행 어댑터(<code>PaperExecutionAdapter</code> 등)는
   리플레이 위에서 거래합니다. 리플레이하는 동안 차트가 리플레이되는 가격과 시각을 차례로 넘겨 주므로,
   주문과 손절은 리플레이가 그 가격을 지날 때 체결되고 체결 내역은 리플레이된 봉 위에 놓입니다.
   각 스텝의 저가와 고가가 모두 반영되고, 앞으로 건너뛰면 그 사이의 스텝을 모두 거칩니다. 어댑터는 앞으로만
   나아가므로, 뒤로 이동한 뒤에는 리플레이가 지금까지 본 가장 먼 지점을 지날 때까지 기다립니다. 그동안 실시간
   가격은 영향을 주지 않으며, 리플레이가 끝나면 다시 실시간 가격을 따르고 체결 시각도 실제 시계로 돌아갑니다.
   가격 알림은 그동안에도 계속 실시간 시장을 감시하며, 지표 선에 건 알림은 리플레이가 끝날 때까지 기다립니다.
+  <code>chart.getTradingTime()</code>은 지금 내는 주문이 접수되는 시각입니다. 계좌가 리플레이 위에서 거래하는 동안에는
+  리플레이의 시각이고, 그렇지 않으면 실제 시계입니다. 위젯의 주문 티켓은 기한 지정 주문의 기한을 이 시각부터 셉니다.
 </p>
 <pre><code>{`chart.connectExecution(new PaperExecutionAdapter())
 chart.replayStart({ startIndex: 300, paused: true })

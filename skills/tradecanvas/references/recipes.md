@@ -326,12 +326,55 @@ import { Chart, BinanceAdapter, PaperExecutionAdapter } from '@tradecanvas/chart
 const adapter = new BinanceAdapter();
 const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' });
 await chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '1h' });
-chart.connectExecution(new PaperExecutionAdapter(), { brackets: 'place' }); // a confirmed bracket is an order too
+chart.connectExecution(new PaperExecutionAdapter()); // a confirmed bracket is an order too ({ brackets: 'event' }: only the event)
 
 // The chart fetches the minutes of the bars it is about to play (not the newest ones).
 chart.replayStart({ animate: true, step: 'auto', startIndex: 300, paused: true, speed: 2 });
 chart.replayResume();
 // … place orders from the chart; chart.replaySeekToBar(i) jumps, chart.replayStop() goes back to live
+
+// A bracket (entry, stop-loss, take-profit) to drag and confirm with Enter: it needs a size to be an order.
+chart.startBracket('buy', undefined, { risk: 50, quantityStep: 0.001 }); // the quantity that loses 50 at the stop
+// chart.startBracket('sell', 64_800, { quantity: 2 }); chart.setBracketSize({ quantity: 3 }); chart.getBracket()
+
+// A target and a stop for one exit: the first to fill cancels the other (their tags read OCO).
+chart.placeOrderIntent({ side: 'sell', type: 'limit', price: 66_000, quantity: 1, ocoGroup: 'exit' });
+chart.placeOrderIntent({ side: 'sell', type: 'stop', price: 63_000, stopPrice: 63_000, quantity: 1, ocoGroup: 'exit' });
+// timeInForce: 'gtc' | 'day' | 'gtd' (with expireTime, ms) | 'ioc' | 'fok' (filled at once, or refused: executionError)
+// Every order goes out with a clientOrderId (its own, else one the chart gives it); placeOrderIntent returns the order as sent.
+// 'orderPlaced' says the adapter took it; 'executionError' with the same clientOrderId says it was refused.
+const sent = chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1 });
+chart.on('orderPlaced', (e) => { if (e.payload.intent.clientOrderId === sent?.clientOrderId) console.info('taken', e.payload.order.id); });
+chart.on('executionError', (e) => { if (e.payload.clientOrderId === sent?.clientOrderId) console.warn('refused', e.payload.cause); });
+// Your own ExecutionAdapter: placeOrder must resolve with the order or reject with why (the widget's ticket waits on it),
+// and answer a repeat of a clientOrderId with the order already made.
+// An account of several symbols: orders, positions and fills each name their `symbol`; the chart draws those of the one it shows
+// (chart.getSymbol(); chart.setSymbol('ETHUSDT') says it for bars set by hand) and keeps the rest in getOrders()/getPositions()/getFills().
+// ChartWidget: orderRules / widget.setOrderRules({ orderKinds: [{ code: 'ATO', type: 'market' }], timesInForce: ['day'], lot: 100 })
+// give a broker's own kinds of order; the exchange's name goes with the order as exchangeType.
+// The chart names it on what it asks for; name it in an adapter of your own, and on the prices a paper account is fed:
+// broker.setMarkPrice(price, time, 'ETHUSDT') works and values that symbol alone (no symbol: the price of everything, as before)
+// an expireTime is to come by chart.getTradingTime(): the clock's, or a replay's while a paper account trades on it
+// type: 'stopLimit' has price (its limit) and stopPrice (where it begins to work): the chart draws both lines; dragging the order
+// moves both, dragging its stop moves the stop alone, and 'orderModify' then carries newStopPrice beside newPrice
+// Order flow: a bar may carry buyVolume (the part of its volume the buyers took) and a trade its side ('buy' | 'sell');
+// barDelta(bar) is bought less sold (null where the bar does not say), and chart.addIndicator('voldelta', { mode: 1, anchor: 'session' })
+// draws the true cumulative delta from such bars (an estimate from the close where they do not say). BinanceAdapter fills both in.
+// new PaperExecutionAdapter({ fillSize: 2 }) fills a limit order in parts, two at each price that reaches it:
+// the order stays in chart.getOrders() with its filledQuantity, each part is an 'executionFill' with what it left in `remaining`;
+// 'ioc' then fills what there is and drops the rest (its fill says how much in `dropped`), 'fok' larger than the size is refused;
+// market and stop orders fill whole
+// new PaperExecutionAdapter({ positions: 'net' }) keeps one net position, as a futures account does
+// new PaperExecutionAdapter({ balance: 10_000, leverage: 10, commission: { rate: 0.0004 } }) keeps its money:
+// chart.getAccount() gives { balance, equity, marginUsed, freeMargin, … }, 'accountChange' follows it,
+// and an order the free margin cannot carry is refused (executionError)
+// With marginCallLevel: 1 and stopOutLevel: 0.5 it warns as the equity falls under the margin held ('marginCall', once)
+// and closes positions under half of it, the one losing most first (fills with reason: 'liquidation'); marginLevel is in the account
+// Profit in parts: takeProfits: [{ price, quantity }, …] on an order's intent or chart.modifyPositionIntent({ positionId, takeProfits });
+// a part closes at each level, and takeProfit (or the stop-loss) closes what they leave;
+// a position's level is dragged on the chart like its stop: 'positionModify' then carries all its takeProfits
+// chart.getActivityLog(): each order placed, moved, cancelled or filled and what was refused, oldest first
+// (the widget's account panel shows it in its Log tab, and Sell and Buy buttons under the legend while an adapter is connected)
 ```
 
 Switching the interval mid-replay keeps the time: the replay waits for the new
@@ -417,12 +460,84 @@ const chart = new Chart(document.getElementById('chart')!, {
 chart.setSymbolInfo({ symbol: 'ZN', timeZone: 'America/Chicago', sessions: [{ start: '07:20', end: '14:00' }] });
 ```
 
+## A footprint chart: what traded at each price of a bar
+
+`chartType: 'footprint'` draws, by each bar, what the sellers took at the bid and what the buyers
+took at the ask at every price inside it. A feed with trades (`fetchTrades` and `subscribeTrades`,
+as `BinanceAdapter` has) is asked for them while the footprint shows; only the newest bars have one
+at first, and it grows with the live trades.
+
+```ts
+import { Chart, BinanceAdapter, footprintOf, footprintStats, type Trade } from '@tradecanvas/chart';
+
+const chart = new Chart(document.getElementById('chart')!, {
+  chartType: 'footprint',
+  // rowSize: the height of a row in price ('auto' unless set); cells: 'bidAsk' | 'delta' | 'volume';
+  // imbalance: how many times one side has to outdo the other, a row apart, to be marked (0: none)
+  // totals (true): bought less sold, and both together, written under each bar; false for none
+  chartTypeOptions: { footprint: { rowSize: 5, cells: 'bidAsk', imbalance: 3, totals: true } },
+});
+await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1m' });
+
+// Trades or rows of your own instead ({ collect: false } stops the chart asking the feed):
+declare const trades: Trade[]; // { time, price, volume, side?: 'buy' | 'sell' }
+chart.addTrades(trades); // each in the bar of its time and the row of its price
+chart.setFootprint(footprintOf(trades, '1m', 5)); // or whole rows: [{ time, levels: [{ price, buy, sell }] }]
+
+const last = chart.getData().at(-1)!;
+const rows = chart.getFootprint(last.time); // null for a bar with no footprint
+if (rows) footprintStats(rows.levels); // { buy, sell, volume, delta, poc, maxSide, maxVolume, maxDelta }
+```
+
+Zoomed out, the numbers give way to a bar for each side, then to candles. `chart.clearFootprint()`
+before another series' rows; a connected chart starts again by itself on another symbol or timeframe.
+`chart.getFootprint()` gives copies. With no `rowSize`, trades given before the bars are kept until the
+bars say the price a row is worked out from.
+
+## A tape (time and sales), and the trades themselves
+
+`tape: true` adds the tape to the widget's dock: the trades of the symbol newest on top, each with its
+time, price and size in the colour of who took it. The widget follows the feed's trades (a feed with
+`fetchTrades` and `subscribeTrades`) only while the tape is open. Without the widget,
+`chart.followTrades()` and the `trades` event give the trades themselves.
+
+```ts
+import { BinanceAdapter, type Trade } from '@tradecanvas/chart';
+import { ChartWidget } from '@tradecanvas/chart/widget';
+
+const widget = new ChartWidget(document.getElementById('chart')!, {
+  symbol: 'BTCUSDT',
+  timeframe: '1m',
+  adapter: new BinanceAdapter(),
+  tape: { minSize: 0.5 }, // or tape: true; minSize leaves out the smaller trades
+  // also side: 'buy' | 'sell' (one side's trades alone) and group: true (trades made together as one row);
+  // what a reader chooses in the panel is kept in the browser and used over these, the least size by symbol;
+  // persist: false keeps nothing
+});
+widget.openPanel('tape'); // or its rail button; false when the widget has no tape
+
+// The trades themselves: the feed's recent ones (recent: true), then its live ones, none told twice.
+declare function show(trade: Trade): void;
+const chart = widget.getChart();
+const stop = chart.followTrades(); // the feed is asked once, however many follow
+chart.on('trades', (e) => {
+  for (const trade of e.payload.trades) show(trade); // { time, price, volume, side?: 'buy' | 'sell' }
+});
+stop(); // let go of the feed (a footprint chart keeps following by itself)
+```
+
+Trades given with `chart.addTrades(trades)` are told as `trades` events too, and listed on the tape.
+`chart.getTrades()` gives the trades told lately (up to 2,000), for a listener that comes after them.
+
 ## A Vietnamese stock, and VN30 futures
 
 HOSE's rules on the chart: steps by price band, the day's ceiling and floor,
 lots of 100 in the order ticket, the price board's colours. Preset prices are
 in thousands of dong, as price boards show them (bars in thousands need
-nothing more); `scaleMarketPrices(MARKET_HOSE, 1000)` reads dong. The axis
+nothing more), and money is counted in dong: the presets' `contractMultiplier`
+is 1,000, which the ticket's value, the panel's profit and the chart's tags
+use; a `PaperExecutionAdapter` given no `multiplier` takes it from the chart.
+`scaleMarketPrices(MARKET_HOSE, 1000)` reads dong, with a multiplier of 1. The axis
 keeps its zone until `setTimeZone('exchange')`, and numbers their locale.
 
 ```ts
@@ -587,6 +702,152 @@ declare const result: ConstructorParameters<typeof PerformanceDashboard>[1]['res
 new PerformanceDashboard(el('report'), { result, title: 'Strategy', labels: { equityCurve: 'Equity', monthlyReturns: 'By month' } });
 ```
 
+## Options and portfolios: payoff, smile, box plot, radar, sunburst, stacked area
+
+An options position's profit and loss at expiry, and where it breaks even:
+
+```ts
+import { PayoffChart, optionPrice, payoffStats, positionValue, type OptionLeg } from '@tradecanvas/chart';
+
+const condor: OptionLeg[] = [
+  { type: 'put', side: 'long', strike: 90, premium: 1 },
+  { type: 'put', side: 'short', strike: 95, premium: 2.5 },
+  { type: 'call', side: 'short', strike: 105, premium: 2.5 },
+  { type: 'call', side: 'long', strike: 110, premium: 1 },
+];
+const payoff = new PayoffChart(document.getElementById('payoff')!, { legs: condor, multiplier: 100, spot: 101.4, spotLabel: 'Spot' });
+
+const { maxProfit, maxLoss, breakevens } = payoffStats(condor, 100); // 300, -200, [92, 108]; null where there is no limit
+
+// Before expiry: a second, dashed line by Black-Scholes (European options, one volatility; a model's answer, not a quote).
+payoff.setOptions({ model: { daysToExpiry: 30, volatility: 0.25, rate: 0.03 } });
+const withThirtyDays = positionValue(condor, 100, { daysToExpiry: 30, volatility: 0.25 }, 100);
+const oneCall = optionPrice('call', 100, 105, { years: 30 / 365, volatility: 0.25 });
+```
+
+Values against a strike or a tenor (`CurveChart`), how groups of values spread (`BoxPlotChart`), several measures at once (`RadarChart`), parts inside parts (`SunburstChart`) and a mix over time (`StackedAreaChart`):
+
+```ts
+import { CurveChart, BoxPlotChart, RadarChart, SunburstChart, StackedAreaChart } from '@tradecanvas/chart';
+
+new CurveChart(document.getElementById('smile')!, {
+  series: [{ name: '1M', points: [{ x: 90, y: 31 }, { x: 100, y: 24 }, { x: 110, y: 27 }] }],
+  markers: [{ x: 101.4, label: 'ATM' }],
+  // A term structure names its tenors: ticks: [{ x: 30, label: '1M' }, { x: 365, label: '1Y' }]
+});
+
+new BoxPlotChart(document.getElementById('spread')!, {
+  data: [{ label: 'Mon', values: [0.4, -1.2, 0.8, 2.1, -0.3] }, { label: 'Tue', values: [1.1, 0.2, -0.6, 0.9, 0.3] }],
+  colorBySign: true,
+  onBoxClick: (group, stats) => console.log(group.label, stats.median),
+});
+
+new RadarChart(document.getElementById('scorecard')!, {
+  axes: [{ label: 'Sharpe', max: 3 }, { label: 'Sortino', max: 3 }, { label: 'Calmar', max: 3 }],
+  series: [{ name: 'Strategy', values: [1.8, 2.4, 1.5] }, { name: 'Benchmark', values: [1, 1.3, 0.7] }],
+  onAxisClick: ({ axis, values }) => console.log(axis, values), // the measure, and each series' value on it
+});
+
+new SunburstChart(document.getElementById('holdings')!, {
+  data: [{ label: 'Stocks', children: [{ label: 'Banks', value: 22 }, { label: 'Technology', value: 14 }] }, { label: 'Bonds', value: 23 }],
+  onNodeClick: (node, path) => console.log(node.label, path),
+});
+
+new StackedAreaChart(document.getElementById('mix')!, {
+  categories: ['Jan', 'Feb', 'Mar'],
+  series: [{ name: 'Stocks', values: [40, 44, 47] }, { name: 'Bonds', values: [30, 29, 27] }],
+  normalized: true,
+});
+```
+
+Values over two axes in a box that a drag turns (`SurfaceChart`), and columns in the same box (`Bar3DChart`):
+
+```ts
+import { SurfaceChart, Bar3DChart, depthSurface, type DepthSnapshot } from '@tradecanvas/chart';
+
+// values[yIndex][xIndex]: numbers along an axis are placed by value, names evenly.
+const surface = new SurfaceChart(document.getElementById('vol-surface')!, {
+  x: [90, 100, 110],
+  y: ['1M', '3M', '1Y'],
+  values: [[0.31, 0.24, 0.27], [0.28, 0.23, 0.25], [0.26, 0.22, 0.23]],
+  xLabel: 'Strike', yLabel: 'Expiry', valueLabel: 'IV',
+  view: { yaw: -35, pitch: 28 }, // degrees; a drag turns it, a double click comes back here
+  onPointClick: (point) => console.log(point.x, point.y, point.value),
+});
+surface.setView({ yaw: 40 });
+
+// An order book's depth over time, each book a slice.
+declare const books: DepthSnapshot[]; // { time, bids: [{ price, volume }], asks: [...] }
+new SurfaceChart(document.getElementById('depth-history')!, {
+  ...depthSurface(books, { levels: 48 }),
+  style: 'slices',
+  yFormat: (ms) => new Date(ms).toISOString().slice(11, 16),
+});
+
+new Bar3DChart(document.getElementById('returns')!, {
+  categories: ['Q1', 'Q2', 'Q3', 'Q4'],
+  series: [{ name: 'Stocks', values: [4.2, 6.1, -2.4, 5.3] }, { name: 'Bonds', values: [1.1, 0.8, 1.6, -0.5] }],
+});
+```
+
+## A chart as a picture, on paper, and drawn with no page
+
+Every chart gives a picture of itself: the price chart (`Chart`, and `ChartWidget` through `widget.chart`) and each finance chart have the same methods.
+
+```ts
+import { Chart, EquityCurveChart, chartsToPdf, renderFinanceChart, renderPriceChart, type OHLCBar } from '@tradecanvas/chart';
+
+declare const chart: Chart;
+declare const equity: EquityCurveChart;
+
+chart.screenshot('btc-1h');                                  // btc-1h.png, read off the screen
+chart.screenshot('btc-1h', { pixelRatio: 3, type: 'webp' }); // drawn again with three times the pixels
+const url = chart.screenshotDataURL({ theme: 'light' });     // another theme; the chart on the page stays as it is
+const blob = await equity.screenshotBlob({ width: 1200, height: 400, type: 'jpeg', quality: 0.9 }); // a finance chart takes a size too
+const copied = await chart.copyScreenshot();                 // false where the browser has no clipboard for pictures
+const slide = chart.toCanvas({ width: 1920, height: 1080 }); // laid out again at that size, the same bars on view, no crosshair; the page's chart is left as it is
+
+chart.print({ title: 'BTCUSDT, 1h' });                       // the print dialog, for the chart alone; light and at 2x by default
+const pdf = await chart.toPdf({ pageSize: 'letter', title: 'BTCUSDT' });       // a Blob, or null with no picture to make
+const report = await chartsToPdf([chart, equity], { title: 'March' });        // a page each
+
+// With no page (Node with a canvas library, a worker): a finance chart on a context of your own.
+declare const ctx: OffscreenCanvasRenderingContext2D;
+ctx.scale(2, 2);
+renderFinanceChart(ctx, 'equityCurve', { data: [{ time: 0, value: 100 }, { time: 86_400_000, value: 104 }], theme: 'light' }, { width: 800, height: 400 });
+
+// The price chart with no page: one frame, the same picture `Chart` draws of the same bars.
+declare const bars: OHLCBar[];
+declare const NodePath2D: typeof Path2D; // in Node: import { Path2D } from '@napi-rs/canvas' (a worker has its own, and needs none given)
+renderPriceChart(
+  ctx,
+  {
+    data: bars, // every bar is on view when they fit; visibleRange: { from, to } (times) names others
+    symbol: 'BTCUSDT',
+    timeframe: '1d',
+    theme: 'light',
+    timeZone: 'Asia/Ho_Chi_Minh', // the machine's own zone with none
+    indicators: [
+      { id: 'ema', params: { period: 21 } },
+      { id: 'rsi', instanceId: 'momentum' }, // a pane of its own
+      { id: 'stochastic', pane: 'momentum' }, // in that pane
+    ],
+    drawings: [
+      ...chart.getDrawings(), // a chart set up in the browser, drawn again elsewhere
+      { type: 'horizontalLine', anchors: [{ time: bars[0].time, price: 70 }], paneId: 'momentum' }, // one by hand, on that pane
+    ],
+    markers: [{ time: bars[40].time, price: bars[40].low, direction: 'long', confidence: 0.8, source: 'strategy', label: 'Buy' }],
+    features: { volume: false },
+    path2D: NodePath2D,
+  },
+  { width: 800, height: 400 },
+);
+```
+
+`renderFinanceChart` names a chart by its class name without `Chart`, first letter small (`'bar'`, `'boxPlot'`, `'surface'`, `'bar3d'`).
+
+`renderPriceChart` takes what `Chart` takes of how the chart looks (`chartType`, `theme`, `font`, `overrides`, `density`, `logScale`, `numberLocale`, `priceFormat`, `watermark`, `features`), and as options what a chart on a page is given by calls: `data`, `symbol`, `timeframe`, `indicators` (as `chart.getIndicatorSetup()` gives them), `drawings` (as `getDrawings()` gives them or `addDrawing()` takes one), `markers`, `visibleRange`, `pricePrecision`, `timeZone`, `symbolSeries` (other symbols' bars, for `'compareSymbol'` and the like), and `plugins`. The picture is the one a chart on a page gives after `chart.fitContent()`. In Node it needs a canvas library with `Path2D` (`@napi-rs/canvas`, `skia-canvas`), given as `path2D`. It has no crosshair, orders, positions, alerts or compare lines, and it throws, naming the option, for one that is wrong (an indicator it does not know, a time zone, a theme).
+
 ## A dashboard: net flows, allocation and returns
 
 The finance charts take an element and their options, and size themselves to it.
@@ -647,7 +908,8 @@ new MatrixChart(document.getElementById('statement')!, {
 
 new HeatmapChart(document.getElementById('sectors')!, {
   data: [
-    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: 'Banks' },
+    // `logo`: drawn over the name where the cell has room; from another site it needs CORS headers.
+    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: 'Banks', logo: '/logos/vcb.png' },
     { id: 'hpg', label: 'HPG', value: 1.9, weight: 160, group: 'Steel' },
   ],
   grouped: true,
@@ -1160,6 +1422,8 @@ const workspace = new ChartWidgetGrid(document.getElementById('grid')!, {
   sync: { crosshair: true, interval: true },
 });
 workspace.getActiveWidget().getChart().addIndicator('rsi', { period: 14 });
+workspace.screenshot('majors', { pixelRatio: 2 }); // the charts as one picture, each in its cell; also toCanvas, screenshotBlob, copyScreenshot, print, toPdf
+// The bar's camera button does these from a menu; `picture: false` leaves it out.
 ```
 
 ## Named layouts on your own server
@@ -1328,8 +1592,9 @@ console.log(widget.getUI().sizes.control, WIDGET_UI_PRESETS.capsule.components.c
 ```
 
 The look changes shapes and sizes only; colours stay with `theme`, but for
-Modern's, the default: it brings a code editor's dark and light, on the chart
-too (`MODERN_DARK_THEME`, `MODERN_LIGHT_THEME`) unless `theme` is an object.
+Graphite's, the default: it brings a neutral dark and light, on the chart
+too (`GRAPHITE_DARK_THEME`, `GRAPHITE_LIGHT_THEME`) unless `theme` is an object;
+`ui: 'modern'` is the default before it, a code editor's colours.
 `ui: 'print'` gives back the look and colours the widget had before. Print
 keeps to the golden ratio: sizes in half steps of φ (20, 26, 33, 42, 53),
 Fibonacci spacing and corners, type a third of φ apart (11, 13, 15, 18, 21);

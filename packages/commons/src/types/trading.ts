@@ -3,16 +3,40 @@ export type OrderType = 'market' | 'limit' | 'stop' | 'stopLimit';
 export type OrderStatus = 'pending' | 'filled' | 'cancelled' | 'rejected';
 export type OrderLabel = 'LIMIT' | 'STOP' | 'SL' | 'TP' | 'STOP LIMIT';
 
-/** How long an order works: good till cancelled, or for the day. */
-export type TimeInForce = 'gtc' | 'day';
+/**
+ * How long an order works: good till cancelled (`'gtc'`), for the day
+ * (`'day'`), till a date (`'gtd'`, with `expireTime`), or not at all unless
+ * it fills at once: immediate or cancel (`'ioc'`), fill or kill (`'fok'`).
+ */
+export type TimeInForce = 'gtc' | 'day' | 'gtd' | 'ioc' | 'fok';
+
+/** A part of a position taken off at a price: one of its take-profit levels. */
+export interface TakeProfitLevel {
+  price: number;
+  /** How much of the position closes there. */
+  quantity: number;
+}
 
 export interface TradingOrder {
   id: string;
+  /** The exchange's own name for the order (`ATO`, `ATC`…), where it was asked for by one: kept as given. */
+  exchangeType?: string;
+  /**
+   * The symbol the order is of. An adapter for an account that trades more than one names it: the
+   * chart draws the orders of the symbol it shows, and keeps the others. Left out, the order is
+   * drawn on whatever symbol the chart shows: the chart does not guess whose it is.
+   */
+  symbol?: string;
   side: OrderSide;
   type: OrderType;
   price: number;
   stopPrice?: number;
   quantity: number;
+  /**
+   * How much of it has filled so far, for an order that fills in parts: the
+   * rest still works. Left out while nothing of it has filled.
+   */
+  filledQuantity?: number;
   label?: OrderLabel;
   draggable?: boolean;
   /** Stop-loss and take-profit the position gets when the order fills. */
@@ -21,11 +45,39 @@ export interface TradingOrder {
   /** The distance the position's stop-loss trails the price by once the order fills (see `TradingPosition.trailingStop`). */
   trailingStop?: number;
   timeInForce?: TimeInForce;
+  /** Take-profit levels the position gets when the order fills: a part of it closes at each (see `TradingPosition.takeProfits`). */
+  takeProfits?: TakeProfitLevel[];
+  /** When a good-till-date order ends (ms since the epoch). */
+  expireTime?: number;
+  /** The group it is one of, where one cancels the others: when one of them fills, the rest are cancelled. */
+  ocoGroup?: string;
   meta?: Record<string, unknown>;
 }
 
 export interface TradingPosition {
   id: string;
+  /**
+   * The symbol the position is of. An adapter for an account that trades more than one names it:
+   * the chart draws the positions of the symbol it shows, and keeps the others. Left out, the
+   * position is drawn on whatever symbol the chart shows: the chart does not guess whose it is.
+   */
+  symbol?: string;
+  /**
+   * The price the account values the position at, where the adapter says. The widget's account
+   * panel and the chart's tag on the position count its profit and loss at it, so a row agrees
+   * with the account's own total (`AccountSummary.unrealisedPnl`) where the broker's mark is not
+   * the chart's last trade: say the positions again as it moves. With none, a position of the
+   * symbol the chart shows is counted at the chart's latest price, and one of another symbol
+   * shows no profit (the chart's price is not that symbol's).
+   */
+  markPrice?: number;
+  /**
+   * What a move of one in price is worth for one unit of this position (its market's contract
+   * multiplier), where the adapter says: the paper account fixes it when the position opens. The
+   * chart's tags and the widget's account panel count the position's profit by it; without one
+   * they use the chart's market's.
+   */
+  multiplier?: number;
   side: OrderSide;
   entryPrice: number;
   quantity: number;
@@ -33,6 +85,14 @@ export interface TradingPosition {
   closedQuantity?: number;
   stopLoss?: number;
   takeProfit?: number;
+  /**
+   * Take-profit levels, the nearest first: a part of the position closes at
+   * each as the price reaches it, and the level goes. What they leave stays
+   * open, for `takeProfit` to close (or the stop-loss). The account takes
+   * the parts off (the paper account does; a broker's adapter reports its
+   * own), counting them in `closedQuantity`.
+   */
+  takeProfits?: TakeProfitLevel[];
   /**
    * The distance (in price) its stop-loss trails the best price by: the stop
    * follows the price up for a long and down for a short, and never moves
@@ -151,6 +211,12 @@ export interface TradingConfig {
   fillMarks?: boolean;
   /** Decimals of the prices on the trading tags; unset, the price axis's (the market's or the range's). */
   pricePrecision?: number;
+  /**
+   * What a move of one in price is worth for one unit, in the amounts on the trading tags (a
+   * position's profit, what a stop or a target would make). `setMarket` sets it from the market's
+   * `contractMultiplier`. Default 1.
+   */
+  amountMultiplier?: number;
   dragThreshold?: number;
 }
 
@@ -166,6 +232,30 @@ export interface OrderPlaceIntent {
   /** The distance, in price, the position's stop-loss is to trail the price by. */
   trailingStop?: number;
   timeInForce?: TimeInForce;
+  /** Take-profit levels for the position the order opens: a part of it closes at each. */
+  takeProfits?: TakeProfitLevel[];
+  /** When the order ends (ms since the epoch), with `timeInForce: 'gtd'`. */
+  expireTime?: number;
+  /** A name shared by orders of which one cancels the others: when one fills, the rest are cancelled. */
+  ocoGroup?: string;
+  /**
+   * The symbol the order is for: the one the chart shows as it is asked for, unless the order
+   * names another. An adapter keeps it on the order and the position it opens.
+   */
+  symbol?: string;
+  /**
+   * The exchange's own name for the order (HOSE: `LO`, `ATO`, `ATC`, `MP`), where the broker's
+   * rules give kinds of their own (`ChartWidget`'s `orderRules`). `type` is the kind the chart
+   * knows it as; an adapter sends this one to the broker as it is.
+   */
+  exchangeType?: string;
+  /**
+   * The id the order goes out with, its own: the chart gives one to every order asked for
+   * (`placeOrderIntent`) that has none. A broker that takes it turns away a repeat of the same
+   * order (a press sent twice, a retry after a slow answer), and `orderPlaced` and
+   * `executionError` name the order by it.
+   */
+  clientOrderId?: string;
 }
 
 export interface OrderModifyIntent {
@@ -174,6 +264,13 @@ export interface OrderModifyIntent {
   /** The price before the change, when known (e.g. from a drag). Optional so
    *  the chart's `orderModify` event payload routes straight to an adapter. */
   previousPrice?: number;
+  /**
+   * Where a stop-limit order's stop goes (see `OrderModifyPayload`). Left out,
+   * the paper account moves the stop with the order, the room between them kept.
+   */
+  newStopPrice?: number;
+  /** The stop before the change, when known. */
+  previousStopPrice?: number;
 }
 
 export interface OrderCancelIntent {
@@ -186,6 +283,8 @@ export interface PositionModifyIntent {
   stopLoss?: number | null;
   /** A new take-profit; null removes it, left out keeps it. */
   takeProfit?: number | null;
+  /** New take-profit levels, all of them; null removes them, left out keeps them. */
+  takeProfits?: TakeProfitLevel[] | null;
   /**
    * The distance (in price) the stop-loss is to trail the price by; null ends
    * the trail and leaves the stop where it is, left out keeps it.

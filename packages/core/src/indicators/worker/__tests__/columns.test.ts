@@ -95,3 +95,27 @@ describe('output columns', () => {
     expect(outputColumnBuffers(columns)).toHaveLength(3);
   });
 });
+
+describe('bar columns: what the buyers took', () => {
+  it('goes to the worker and back with the bars that say, in a column of its own', () => {
+    const bars = walkBars(6).map((bar, i) => (i % 2 === 0 ? { ...bar, buyVolume: bar.volume / 4 } : bar));
+    const columns = barsToColumns(bars);
+    expect(columns.buyVolume).toBeInstanceOf(Float64Array);
+    // The bars come back as they went: those that said still say, the others still do not.
+    expect(columnsToBars(columns)).toEqual(bars);
+    expect(columnsToBars(columns)[1]).not.toHaveProperty('buyVolume');
+    // Its buffer is transferred with the six others.
+    expect(barColumnBuffers(columns)).toHaveLength(7);
+  });
+
+  it('adds no column, and no buffer, for bars none of which say', () => {
+    const columns = barsToColumns(walkBars(4));
+    expect(columns.buyVolume).toBeUndefined();
+    expect(barColumnBuffers(columns)).toHaveLength(6);
+  });
+
+  it('carries nothing bought as nothing bought, not as a bar that does not say', () => {
+    const bars = walkBars(2).map((bar) => ({ ...bar, buyVolume: 0 }));
+    expect(columnsToBars(barsToColumns(bars)).map((bar) => bar.buyVolume)).toEqual([0, 0]);
+  });
+});

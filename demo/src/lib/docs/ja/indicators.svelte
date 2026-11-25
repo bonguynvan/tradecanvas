@@ -161,10 +161,12 @@ chart.addIndicator('vwap', { anchor: 'all' })   // 読み込んだ全バー、�
 </table>
 
 <p>
-  <code>voldelta</code>（Volume Delta）は、OHLCV から買い / 売りの圧力を近似します。上昇して引けたバーは
-  出来高をプラス、下落したバーはマイナスとして加えます。<code>mode: 0</code> はバーごとのヒストグラム、
-  <code>mode: 1</code> は累積デルタです。（本来のティックデルタには約定ごとの bid / ask データが必要ですが、
-  OHLCV の系列にはその情報が含まれていません。）
+  <code>voldelta</code>（Volume Delta）は、各バーで買い手が取った出来高から売り手が取った出来高を引いたものです。
+  誰が約定を取ったかを示すバー（その <code>buyVolume</code>）は本当のデルタを返します。示さないバーは引け方から読みます：
+  始値以上で引ければ出来高すべてをプラス、そうでなければマイナスとし、これが OHLCV のバーでできる最も近い値です。
+  <code>mode: 0</code> はバーごとのヒストグラム、<code>mode: 1</code> は累積デルタで、
+  <code>anchor</code> の期間ごとに数え直します（<code>'session'</code>、<code>'week'</code>、<code>'month'</code>。
+  既定の <code>'all'</code> では数え直しません）。
 </p>
 
 <h2>アジアの相場ソフトでおなじみの指標</h2>
@@ -195,6 +197,58 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   import するにはアプリの依存関係に <code>@tradecanvas/core</code> を加えます。
 </p>
 <pre><code>{`import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core/patterns'`}</code></pre>
+
+<h2 id="fair-value-gaps">フェアバリューギャップ</h2>
+<p>
+  3 本のバーのうち、3 本目の安値が 1 本目の高値より上にある（下落では 3 本目の高値が 1 本目の安値より下にある）とき、フェアバリューギャップが残ります。その間の価格では中央のバーだけが取引されています。チャートはその価格帯にボックスを描きます。ギャップが開いている間は中央のバーから右端まで、上昇のギャップはティール、下落のギャップはピンクです（ローソク足パターンのマークと同じ色で、ローソク足の緑と赤とは分けています。インジケーターのスタイルで変更できます）。その後、最初に全体を通過したバーがギャップを埋め、<code>showFilled</code> が 1 でない限りチャートから消えます。<code>detectFairValueGaps</code> はチャートなしですべてを返し、それぞれを埋めたバーも分かります。
+</p>
+<pre><code>{`chart.addIndicator('fvg')                              // 開いているギャップごとにボックス
+chart.addIndicator('fvg', { minPercent: 0.1 })         // 価格の 0.1% 未満のギャップを除く
+chart.addIndicator('fvg', { showFilled: 1 })           // 埋まったギャップも薄く残し、埋めたバーまで描く
+
+import { detectFairValueGaps } from '@tradecanvas/chart'
+
+detectFairValueGaps(bars, { minPercent: 0.1 })
+// [{ index, formed, direction: 'up' | 'down', top, bottom, filledAt }]`}</code></pre>
+
+<h2 id="divergences">ダイバージェンス</h2>
+<p>
+  ダイバージェンスとは、価格とオシレーターが 2 回ずつ転換しながら、同じ方向には動かないことです。強気は 2 つの安値で起こります。価格は安値を切り下げ、オシレーターは安値を切り上げます。弱気は 2 つの高値で起こります。価格は高値を切り上げ、オシレーターは高値を切り下げます。<code>rsidiv</code> は RSI に、各ダイバージェンスの 2 つの転換点を結ぶ線と 2 つ目の点のマークを加えたものです。<code>hidden: 1</code> で隠れたダイバージェンス（価格は保ち、RSI は保たない）も破線で加わります。転換点は前の <code>left</code> 本と後の <code>right</code> 本より突出している必要があるため、ダイバージェンスは <code>right</code> 本遅れて確定し、確定させるバーが確定した後は変わりません（そのバーが形成中のうちは、現れたり消えたりすることがあります）。2 つの転換点の間隔は <code>minBars</code> から <code>maxBars</code> 本です。<code>detectDivergences(bars, line, options)</code> はバーごとに 1 つの値を持つ任意の系列（値がない所は null）を読み、チャートは不要です。
+</p>
+<pre><code>{`chart.addIndicator('rsidiv', {}, 'bottom')                    // RSI とそのダイバージェンス
+chart.addIndicator('rsidiv', { hidden: 1 }, 'bottom')         // 隠れたダイバージェンスも、破線で
+chart.addIndicator('rsidiv', { left: 3, right: 3 }, 'bottom') // 近い転換点: 3 本遅れで確定し、数も増える
+
+import { detectDivergences } from '@tradecanvas/chart'
+
+detectDivergences(bars, macdHistogram, { left: 5, right: 5, minBars: 5, maxBars: 60, hidden: true })
+// [{ kind: 'bullish' | 'bearish', hidden, from, to, confirmed, valueFrom, valueTo, priceFrom, priceTo }]`}</code></pre>
+
+<h2 id="session-volume-profile">セッション出来高プロファイル</h2>
+<p>
+  <code>svp</code> は取引日ごとの価格別出来高を描きます。その日の値幅を <code>rows</code> 行に分け、各バーの出来高をその値幅がかかる行に均等に配り、その日の最初のバーから右へ伸びる行として描きます。その上に、その日のポイント・オブ・コントロール（出来高が最も多い行）とバリューエリア（その周りで、その日の出来高の <code>valueArea</code> パーセント、既定 70 を占める行。Market Profile と同じく、重い側から 2 行ずつ加えます）を、その日を横切る線で示します。1 日は取引所の時計の午前 0 時に始まります（<code>setExchangeTimeZone</code>）。Session VWAP と同じです。各バーの <code>poc</code>、<code>vah</code>、<code>val</code> はそのバーの 1 日全体の値なので、そのバーより後のバーも含みます。過去の日では朝のバーがその日の引け時点のプロファイルを持ち、取引中の日では取引とともに動きます。1 日を読むためのもので、そのバーでのシグナルやバックテストには向きません。<code>volumeProfile</code> は読み込んだ全バーで 1 つのプロファイルです。<code>sessionVolumeProfiles</code> はチャートなしで各日の行を返します。
+</p>
+<pre><code>{`chart.addIndicator('svp')                           // 1 日に 1 つのプロファイル、POC とバリューエリア付き
+chart.addIndicator('svp', { rows: 40, valueArea: 68 }) // 細かい行、狭いバリューエリア
+
+import { sessionVolumeProfiles } from '@tradecanvas/chart'
+
+sessionVolumeProfiles(bars, { rows: 24, valueArea: 70, timeZone: 'America/New_York' })
+// [{ start, end, time, low, high, rowHeight, volumes, total, poc, valueAreaLow, valueAreaHigh, valueAreaRows }]`}</code></pre>
+
+<h2 id="order-blocks">オーダーブロック</h2>
+<p>
+  スイングハイは、前の <code>length</code> 本より高く、後の <code>length</code> 本より低くないバーです（既定 5）。そのため <code>length</code> 本遅れて確定します。スイングローは下向きに同様です。まだ抜かれていない直近のスイングハイを終値が上抜けると、スイングとその終値の間で最も安いバーが強気のオーダーブロックになり、範囲はその高値から安値です。直近のスイングローを終値が下抜けると、その間で最も高いバーが弱気のオーダーブロックになります。1 つのスイングから作られるブロックは 1 つです。<code>orderblocks</code> は各ブロックをフェアバリューギャップと同じ色のボックスで描き、有効な間は右端まで伸ばします。終値がブロックを抜けると（強気は下へ、弱気は上へ）ブレイクとなり、<code>showBroken</code> が 1 でない限り消えます。有効なブロックは各側の直近 <code>count</code> 個だけを描きます（既定 5、0 ですべて）。古く遠いものは画面を散らかすだけです。<code>detectOrderBlocks</code> はチャートなしですべてを返し、それぞれを抜いたバーも分かります。
+</p>
+<pre><code>{`chart.addIndicator('orderblocks')                    // 有効なブロック
+chart.addIndicator('orderblocks', { count: 3 })        // 各側の直近 3 個
+chart.addIndicator('orderblocks', { length: 3 })       // 短いスイング: ブロックが増え、早く確定
+chart.addIndicator('orderblocks', { showBroken: 1 })   // ブレイクされたものも薄く、ブレイクしたバーまで
+
+import { detectOrderBlocks } from '@tradecanvas/chart'
+
+detectOrderBlocks(bars, { length: 5 })
+// [{ kind: 'bullish' | 'bearish', index, formed, top, bottom, swing, brokenAt }]`}</code></pre>
 
 <h2>独自のインジケーター</h2>
 <p>

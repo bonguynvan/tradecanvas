@@ -27,6 +27,10 @@
     <tr><td><code>appendBars(bars)</code></td><td>Añade en lote; recalcula los indicadores una sola vez.</td></tr>
     <tr><td><code>updateLastBar(bar)</code></td><td>Modifica la barra en formación.</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>Fusiona un tick en la última barra.</td></tr>
+    <tr><td><code>addTrades(trades)</code></td><td>Operaciones para el <a href={href('/docs/realtime#footprint')}>footprint</a>: cada una en la barra de su tiempo y en la fila de su precio, en el lado que la tomó.</td></tr>
+    <tr><td><code>followTrades()</code></td><td>Sigue las operaciones del feed, las recientes y después las que llegan en vivo, como eventos <code>trades</code>, hasta que se llama a la función que devuelve. Consulta <a href={href('/docs/realtime#tape')}>la cinta</a>.</td></tr>
+    <tr><td><code>getTrades()</code></td><td>Las operaciones comunicadas últimamente, de la más antigua a la más nueva: las del feed y las dadas a mano. Para un oyente que llega después de que se comunicaron.</td></tr>
+    <tr><td><code>setFootprint(bars)</code> / <code>getFootprint(time?)</code> / <code>clearFootprint()</code></td><td>Las filas del footprint, barra por barra: dadas a mano, leídas de vuelta (las de una barra, o las de todas), olvidadas.</td></tr>
     <tr><td><code>updateBar(bar)</code></td><td>Corrige una barra cargada: la que tiene el mismo tiempo, en cualquier lugar de la serie. La vista se mantiene; false si ninguna barra cargada tiene ese tiempo.</td></tr>
     <tr><td><code>getData()</code></td><td>Lee la serie OHLC sin procesar.</td></tr>
   </tbody>
@@ -48,7 +52,7 @@
 <table>
   <thead><tr><th>Método</th><th>Función</th></tr></thead>
   <tbody>
-    <tr><td><code>setChartType(type)</code></td><td>Uno de los 18 tipos; consulta <a href={href('/docs/chart-types')}>Tipos de gráfico</a>.</td></tr>
+    <tr><td><code>setChartType(type)</code></td><td>Uno de los 25 tipos; consulta <a href={href('/docs/chart-types')}>Tipos de gráfico</a>.</td></tr>
     <tr><td><code>getChartType()</code></td><td>El tipo con que se dibuja el gráfico (<code>'candlestick'</code> por defecto).</td></tr>
     <tr><td><code>setTheme(name | theme)</code></td><td>Cambia entre los temas integrados, o fija el tuyo. <code>getTheme()</code> lo devuelve tal como se fijó.</td></tr>
     <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>Da estilo a cualquier parte del gráfico por clave (<code>'grid.vertical.visible'</code>, <code>'series.candlestick.upColor'</code>…); <code>null</code> quita una clave. Ver <a href={href('/docs/styling#overrides')}>Estilos</a>.</td></tr>
@@ -256,6 +260,21 @@ formatVolumeLoc(345_000_000, 'ko')           // '3.45억'`}</code></pre>
   Un tema propio sin <code>priceLimits</code> toma los del tema claro sobre un fondo claro y los del oscuro sobre uno oscuro.
 </p>
 
+<h3 id="broker-limits">Los límites del día tal como los da el bróker</h3>
+<p>
+  <code>setPriceLimits</code> acepta el techo, el suelo y la referencia del día tal como son para el símbolo, en lugar
+  de solo la referencia. Pásalos cuando tu bróker o la bolsa los den: una banda especial, o la primera sesión de una
+  acción en otra bolsa, no son un porcentaje de la referencia, y los porcentajes del mercado son entonces solo lo que
+  se usa cuando no se sabe nada mejor. Las líneas del gráfico, los precios a los que se puede arrastrar una orden y las
+  comprobaciones del ticket siguen lo que se da. El ticket de orden del widget muestra los tres sobre su precio, y
+  pulsar uno lo pone como precio; <code>priceLimitOrder</code> los ordena como tu tablero y omite los no nombrados.
+</p>
+<pre><code>{`chart.setMarket(MARKET_HOSE)
+chart.setPriceLimits({ ceiling: 27.1, floor: 23.6, reference: 25.35 })   // as the broker gives them for the symbol
+chart.setPriceLimits(25.35)                                              // or the reference alone: the market's percentages of it
+
+new ChartWidget(host, { trading: true, priceLimitOrder: ['reference', 'ceiling', 'floor'] })   // the ticket's row, in your board's order`}</code></pre>
+
 <h3 id="comparing-symbols">Comparar símbolos</h3>
 <p>
   El cambio porcentual de otro símbolo en la escala de precio (<code>addCompareSymbol</code>), o su
@@ -340,6 +359,134 @@ chart.exportVisibleData('json', undefined, { indicators: false })
 const text = chart.getExportText('csv', { range: 'visible' })
 const { bars, columns } = chart.getExportData()          // columns: { name, values }[]`}</code></pre>
 
+<h3 id="pictures">Imágenes, impresión y PDF</h3>
+<p>
+  El gráfico como imagen: guardada en un archivo, copiada, o leída como una URL de datos, como bytes o como un
+  canvas. Si no se pide nada más, se lee de los canvas del gráfico tal como están en pantalla. Pide más píxeles
+  (<code>pixelRatio</code>) u otro tema (<code>theme</code>) y el fotograma se dibuja de nuevo para la
+  imagen, en Canvas 2D dibuje con lo que dibuje el propio gráfico: al gráfico de la página ni se le cambia el
+  tamaño ni se le avisa. Un <code>width</code> o un <code>height</code> dispone de nuevo el gráfico a ese tamaño,
+  con las barras que tiene a la vista a la vista también allí, y devuelve la disposición de la página: una imagen
+  para una diapositiva o una hoja de papel a partir de un gráfico en una barra lateral. Las barras son tan anchas
+  como las hace el tamaño, dentro de lo que puede medir una barra: pasado eso, se ven más o menos barras, en
+  torno al mismo centro. A un tamaño propio, la imagen no tiene nada de lo que sigue al puntero (la cruz, una
+  medición), ni un canvas que la aplicación puso sobre el gráfico, y un tamaño sin sitio para el área del gráfico
+  no da ninguna imagen. <code>type</code> es <code>'png'</code> (por defecto), <code>'jpeg'</code> o
+  <code>'webp'</code>, con <code>quality</code> para los dos últimos.
+</p>
+<pre><code>{`chart.screenshot('btc-1h')                                   // btc-1h.png, as on the screen
+chart.screenshot('btc-1h', { pixelRatio: 3, type: 'webp' })  // drawn again at three times the pixels
+await chart.copyScreenshot()                                 // a PNG on the clipboard; false where the browser refuses
+const url = chart.screenshotDataURL({ theme: 'light' })      // in the light theme; the chart stays as it is
+const blob = await chart.screenshotBlob({ type: 'jpeg', quality: 0.9 })
+const canvas = chart.toCanvas({ pixelRatio: 2 })             // to draw on, or to read yourself
+const slide = await chart.screenshotBlob({ width: 1920, height: 1080 })   // laid out again at that size`}</code></pre>
+<p>
+  <code>print()</code> abre el diálogo de impresión del navegador solo para el gráfico: una página que contiene su
+  imagen y nada de la página en la que está; devuelve <code>false</code> cuando no había imagen que imprimir.
+  <code>toPdf()</code> da un PDF de una página, con la imagen guardada sin pérdida y tan grande como quepa dentro
+  de los márgenes. Ambos dibujan el gráfico de nuevo para papel, en el tema claro y
+  con el doble de píxeles salvo que indiques otra cosa. <code>chartsToPdf</code> hace un solo PDF de varios
+  gráficos, una página cada uno: el gráfico de precios, los <a href={href('/docs/finance')}>gráficos financieros</a> o un canvas tuyo.
+</p>
+<pre><code>{`import { chartsToPdf } from '@tradecanvas/chart'
+
+chart.print({ title: 'BTCUSDT, 1h' })
+const pdf = await chart.toPdf({ pageSize: 'letter', margin: 12, title: 'BTCUSDT' })   // a Blob
+const full = await chart.toPdf({ width: 1123, height: 794 })   // laid out in the page's own shape: as large as its margins allow
+const report = await chartsToPdf([chart, equityChart, allocationChart], { title: 'March', theme: 'dark' })`}</code></pre>
+<p>
+  <code>pageSize</code> es <code>'a4'</code> (por defecto), <code>'a3'</code>, <code>'letter'</code>,
+  <code>'legal'</code> o los dos lados del papel en milímetros; <code>orientation</code> es
+  <code>'landscape'</code> (por defecto) o <code>'portrait'</code>; <code>margin</code> va en milímetros. El
+  PDF no contiene texto propio, así que no necesita ninguna fuente: las palabras del gráfico están en su imagen, en
+  cualquier idioma. Una imagen se limita a lo que un navegador puede dibujar (ningún lado de más de 16.384 píxeles,
+  unos 16 millones en total), así que un gráfico muy grande recibe menos píxeles de los pedidos. Los píxeles se
+  comprimen sin pérdida con el <code>CompressionStream</code> del navegador, que todos los navegadores actuales
+  tienen; uno que no lo tenga recibe un JPEG que conserva casi toda la imagen. Al imprimir, la imagen se pone en
+  un marco como URL <code>data:</code>, así que una página con una política de seguridad de contenido tiene que
+  permitirlas para las imágenes.
+</p>
+<p>
+  Lo que la imagen tiene es lo que el gráfico dibuja en sus canvas: el área del gráfico, los ejes, la leyenda, la
+  cruz si se está mostrando, y un canvas que la aplicación puso sobre el gráfico (salvo que esté oculto, o contenga
+  una imagen de otro sitio, que ninguna página puede leer de vuelta). Lo que está hecho de elementos de la página no sale en ella: los tooltips, y las barras del widget y sus filas de nombres de indicadores. Con
+  <code>features.screenshot</code> apagado no hay imagen, impresión ni PDF. ChartWidget tiene
+  <strong>Imprimir gráfico</strong> y <strong>Guardar gráfico como PDF</strong> en la paleta de comandos, y
+  <code>widget.printChart()</code> y <code>widget.saveChartPdf()</code>, ambos con el símbolo y la temporalidad del
+  gráfico por título, con un aviso cuando no había nada que imprimir o guardar; van con el interruptor
+  <code>screenshot</code>.
+</p>
+
+<h3 id="no-page">El gráfico dibujado sin página</h3>
+<p>
+  <code>renderPriceChart</code> dibuja el gráfico de precios en un contexto 2D tuyo, donde no hay página:
+  un canvas creado en Node, para una imagen en un correo, un informe o un mensaje de un bot, o un
+  <code>OffscreenCanvas</code> en un worker. Es un solo fotograma, armado como <code>Chart</code> arma el
+  suyo: al mismo tamaño es la imagen que un gráfico en una página da de las mismas barras una vez que
+  <code>chart.fitContent()</code> tiene todas las barras a la vista (o <code>chart.setVisibleRange()</code>, con
+  <code>visibleRange</code>).
+</p>
+<pre><code>{`import { createCanvas, Path2D } from '@napi-rs/canvas'   // or another canvas for Node that has Path2D
+import { renderPriceChart } from '@tradecanvas/chart'
+
+const canvas = createCanvas(1920, 1080)
+const ctx = canvas.getContext('2d')
+ctx.scale(2, 2)                                            // a 960 × 540 chart at twice the pixels
+renderPriceChart(ctx, {
+  data: bars,                                              // every bar is on view when they fit
+  symbol: 'BTCUSDT',
+  timeframe: '1d',
+  theme: 'light',
+  timeZone: 'Asia/Ho_Chi_Minh',
+  indicators: [
+    { id: 'ema', params: { period: 21 } },
+    { id: 'rsi', instanceId: 'momentum' },                 // a pane of its own under the prices
+    { id: 'stochastic', pane: 'momentum' },                // in that pane, on its scale
+  ],
+  drawings: [
+    { type: 'horizontalLine', anchors: [{ time: bars[0].time, price: 64000 }], style: { color: '#2266ff' } },
+    { type: 'horizontalLine', anchors: [{ time: bars[0].time, price: 70 }], paneId: 'momentum' },  // on that pane
+  ],
+  markers: [{ time: bars[40].time, price: bars[40].low, direction: 'long', confidence: 0.8, source: 'strategy', label: 'Buy' }],
+  path2D: Path2D,                                          // Node has no Path2D of its own
+}, { width: 960, height: 540 })
+const png = canvas.toBuffer('image/png')`}</code></pre>
+<p>
+  Las opciones son las de <code>Chart</code> donde dicen cómo se ve el gráfico: <code>chartType</code> y
+  <code>chartTypeOptions</code>, <code>theme</code>, <code>font</code>, <code>overrides</code>,
+  <code>density</code>, <code>logScale</code>, <code>numberLocale</code>, <code>priceFormat</code>,
+  <code>watermark</code>, y <code>features</code> para dejar fuera el volumen, la cuadrícula, un eje o la
+  leyenda. Lo que a un gráfico en una página se le da con llamadas, este lo recibe como opciones: <code>data</code>,
+  <code>symbol</code> y <code>timeframe</code> para la leyenda, <code>indicators</code>,
+  <code>drawings</code> (como recibe uno <code>addDrawing</code>), <code>markers</code> (como recibe uno
+  <code>addSignalMarker</code>), <code>visibleRange</code> (los tiempos de la primera y la última
+  barra a la vista), <code>pricePrecision</code>, <code>timeZone</code> (sin ella, la de la propia máquina: nombra la
+  zona en la que están tus lectores) y <code>symbolSeries</code> (las barras de otros símbolos, para
+  <code>'compareSymbol'</code>, <code>'spread'</code> y las correlaciones). Un indicador se lee como el de un diseño
+  guardado, así que <code>chart.getIndicatorSetup()</code> y <code>chart.getDrawings()</code> entran tal
+  cual, y con ellos un dibujo en el panel de un indicador: un gráfico que alguien configuró en el navegador se dibuja de nuevo
+  en el servidor. <code>plugins</code> recibe un indicador, un tipo de gráfico, una herramienta de dibujo o una capa
+  tuyos.
+</p>
+<p>
+  Dibuja el tamaño que das en las unidades propias del contexto, sobre el fondo del tema: escala primero el contexto
+  para más píxeles. Las barras se dibujan con <code>Path2D</code>, que Node no tiene:
+  <code>@napi-rs/canvas</code> y <code>skia-canvas</code> exportan cada uno el suyo, para darlo como
+  <code>path2D</code>; un worker tiene el suyo. El texto va en la fuente del tema, así que nombra con
+  <code>font</code> una que tu canvas tenga. Nada sigue a un puntero: no hay cruz, cuenta atrás ni tooltip. Las órdenes
+  y posiciones, las alertas, las líneas de comparación, los perfiles de volumen y de mercado, el sombreado de sesión y los
+  límites de precio de un mercado todavía no se dibujan así. Un gráfico financiero se dibuja de la misma manera con
+  <code>renderFinanceChart</code>, e <code>imagesToPdf</code> pone en un PDF las imágenes hechas así.
+</p>
+<p>
+  Lo que está mal en las opciones se dice antes de dibujar nada, con el nombre de la opción: un
+  <code>RangeError</code> para un indicador, un tema o una zona horaria que no conoce, dos indicadores con un mismo
+  <code>instanceId</code> y un número fuera de lo que puede ser; un <code>TypeError</code> para una opción que
+  es otra clase de cosa. Una barra que no es una barra se deja fuera, como la deja fuera un gráfico. El contexto
+  queda como se encontró; si un plugin tuyo lanza un error mientras dibuja, dibuja el siguiente gráfico en otro.
+</p>
+
 <h3>Perfil de volumen</h3>
 <p>
   Histograma horizontal del volumen negociado, agrupado por precio, sobre el rango
@@ -396,6 +543,15 @@ chart.setSessionShadingConfig({
 <pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
 chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
 chart.isExtendedHoursVisible()`}</code></pre>
+<p>
+  <strong>El día de negociación.</strong> Una sesión que pasa la medianoche (la de CME, de 17:00 a 16:00 en Chicago) empieza el día de negociación en su apertura. Los indicadores que se reinician cada día, semana o mes (Session VWAP, el anchor de VWAP y del delta acumulado, el perfil de volumen por sesión, los días de la media MTF), las líneas del día anterior y los días del market profile van entonces de 17:00 a 17:00, cada uno con la fecha en que termina. Las sesiones dentro de un día siguen en la medianoche. Las barras diarias y los días construidos con operaciones siguen en la medianoche de la zona. Las líneas de día del gráfico también empiezan ahí mientras muestra la hora de la bolsa (<code>setTimeZone('exchange')</code>, o la zona de la bolsa por su nombre); en otro reloj, un día va de medianoche a medianoche.
+</p>
+<pre><code>{`chart.setSymbolInfo({ symbol: 'ES', timeZone: 'America/Chicago', sessions: [{ start: '17:00', end: '16:00' }] })
+// Session VWAP, svp, las líneas del día anterior: de 17:00 a 17:00
+
+import { tradingDayStart } from '@tradecanvas/chart'
+tradingDayStart([{ start: '17:00', end: '16:00' }])   // 1020: minutes after midnight
+tradingDayStart([{ start: '09:30', end: '16:00' }])   // null: midnight`}</code></pre>
 
 <h3>Niveles del periodo anterior (PDH / PDL / PDC)</h3>
 <p>
@@ -415,7 +571,7 @@ const levels = computePeriodLevels(bars, 'day', 'Australia/Sydney')  // [{ id, l
 <p>
   Un histograma de tiempo por precio: cada barra aporta un TPO a cada tramo de
   precio que tocó su rango, lo que revela el punto de control (el precio más
-  concurrido) y el área de valor (≈70% de los TPO). Es distinto del perfil de
+  concurrido) y el área de valor (≈70% de los TPO, ampliada desde el POC de dos en dos por el lado más pesado, como lo cuenta el Market Profile). Es distinto del perfil de
   volumen —pondera por tiempo, no por volumen— y se ancla a la izquierda para que
   ambos puedan mostrarse a la vez. Desactivado por defecto; actívalo desde la
   hoja de configuración o directamente:
@@ -427,6 +583,7 @@ chart.setMarketProfileConfig({
   opacity: 0.32,
   valueAreaPct: 0.7,  // fraction of TPOs in the value area
   highlightPoC: true, // dashed line at the point of control
+  valueAreaColor: '#7e57c2', color: '#90a4ae', // colores propios; null: los del tema (la vela alcista, el texto secundario)
 })
 
 // split into one mini-profile per trading day, in the exchange's zone
@@ -483,6 +640,8 @@ chart.on('dataUpdate', e => /* { kind: 'bars', length } con setData y barras nue
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
+chart.on('marginCall', e => /* { marginLevel, level, equity, marginUsed }: se avisó a la cuenta de su margen */)
+chart.on('trades', e => /* { trades, recent }: operaciones del símbolo, mientras se siguen (followTrades, un footprint) o cuando se dan (addTrades) */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* pueden haber cambiado los dibujos, indicadores, alertas, el tipo de gráfico o el tema */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
@@ -618,7 +777,7 @@ widget.destroy()`}</code></pre>
   recibe el id del panel abierto, o <code>null</code>, cambie como cambie: el riel, un botón de cerrar, tu código,
   un widget que se estrecha.
 </p>
-<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder', or a page's id; false if not there
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder' | 'tape', or a page's id; false if not there
 widget.getOpenPanel()           // the panel open, or null
 widget.closePanel()
 
@@ -721,6 +880,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>Va a una fecha</td></tr>
     <tr><td><kbd>?</kbd></td><td>La hoja de atajos, que se busca por lo que hace una tecla o por la tecla</td></tr>
     <tr><td><kbd>Alt</kbd> + clic en el gráfico</td><td>Fija la información OHLC en la barra bajo el cursor (muestra la diferencia con la cruz en vivo)</td></tr>
+    <tr><td>Mantener pulsado sobre el gráfico</td><td>La información OHLCV flotante de la barra bajo el cursor, mientras se mantiene el botón: sigue al cursor y el gráfico no se desplaza (<code>{`chartOptions: { features: { crosshairTooltip: true } }`}</code> hace que siga a un cursor que solo pasa por encima, <code>false</code> nunca la muestra)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Desfija la información / cancela el dibujo</td></tr>
     <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td><td>Retroceder / avanzar la repetición</td></tr>
     <tr><td><kbd>Space</kbd></td><td>Reproducir o pausar la repetición (en el gráfico o su pista; fuera de una repetición ajusta el gráfico)</td></tr>
@@ -1247,10 +1407,22 @@ grid.setFeatures({ 'toolbar.replay': false })               // los interruptores
 grid.getActiveWidget().getChart()
 grid.getLayoutSession()?.saveAs('Majors')
 
+// Los gráficos como una sola imagen, cada uno en su celda: un archivo, el diálogo de impresión, un PDF
+grid.screenshot('majors', { pixelRatio: 2 })
+await grid.copyScreenshot()                             // al portapapeles, como PNG
+const sheet = await grid.toPdf({ title: 'Majors' })   // en claro y con el doble de píxeles, como el de un gráfico
+
 // Cada gráfico según se crea (al inicio y al crecer la cuadrícula)
 new ChartWidgetGrid(host, {
   onChartAdd: (widget, index) => widget.getChart().addIndicator('ema', { period: 21 }),
 })`}</code></pre>
+<p>
+  El botón de cámara de la barra hace lo mismo desde un menú: guarda la imagen de los gráficos,
+  la copia, la imprime o la guarda como PDF, con el nombre de los símbolos mostrados
+  (<code>charts</code> si son más de tres). <code>picture: false</code> quita el botón; también se
+  oculta mientras el interruptor <code>screenshot</code> de los gráficos está apagado, y no tiene la
+  entrada de copiar mientras lo está <code>copyImage</code>.
+</p>
 <p>
   La sincronización de la cruz muestra en todos los gráficos la hora bajo el puntero;
   la del tiempo desplaza y amplía los demás junto con el gráfico que se está usando;

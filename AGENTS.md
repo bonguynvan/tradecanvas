@@ -29,7 +29,7 @@ A pnpm workspace, TypeScript strict, no runtime dependencies in any package.
 |---|---|
 | `packages/commons` | Shared types, themes, the icon set (`src/icons/iconSet.ts`). No DOM. |
 | `packages/core` | The engine: viewport, renderers (Canvas 2D and WebGL), indicators, drawings, trading, data adapters. |
-| `packages/library` | `@tradecanvas/chart`: the `Chart` class (`src/Chart.ts`), its bars in `src/SeriesStore.ts` (every write goes through it), the chart's state with no DOM in `src/model` (the series a chart type draws, when the price scale is fitted, the panes as drawn, which pane each indicator is in, the indicators' undo steps and saved setup, the pane a drawing goes on, the other symbols indicators read, what the alerts are checked against and what they follow, the prices a paper account trades on in a replay), tested in plain Node, and `ChartWidget` with its UI in `src/widget`. |
+| `packages/library` | `@tradecanvas/chart`: the `Chart` class (`src/Chart.ts`), its bars in `src/SeriesStore.ts` (every write goes through it), the chart's state with no DOM in `src/model` (the series a chart type draws, when the price scale is fitted, the panes as drawn, which pane each indicator is in, the indicators' undo steps and saved setup, the pane a drawing goes on, the other symbols indicators read, what the alerts are checked against and what they follow, the prices a paper account trades on in a replay, the account's orders, positions and fills of every symbol, of which the chart draws its own), tested in plain Node, the chart's frame put together with no page in `src/static` (`renderPriceChart`: what `Chart` wires up for a frame, wired again there, so a part added to the chart's frame is added there too, and `sameAsChart.test.ts` and the `noPage` audit scene fail when the two draw apart), and `ChartWidget` with its UI in `src/widget`. |
 | `packages/analytics` | Backtester, strategies, risk metrics. |
 | `packages/mcp` | `@tradecanvas/mcp`: the MCP server for coding agents. Its catalog is generated from the other packages (`scripts/mcp-catalog.mjs`). |
 | `packages/react`, `vue`, `svelte` | Framework wrappers. They read the built output of `library`. |
@@ -37,7 +37,7 @@ A pnpm workspace, TypeScript strict, no runtime dependencies in any package.
 | `benchmarks` | Those two measured on one machine, by date: what a change to the engine is compared with. |
 | `evals` | Coding agents given tasks with and without the skill (`pnpm eval`); the runs to compare with in `evals/baselines`, and what they turned up in `evals/FINDINGS.md`; `pnpm eval:probe` asks, naming no library, which one a model would pick for a trading chart. |
 | `skills/tradecanvas` | The agent skill users install. Its code examples are type-checked. |
-| `scripts` | Docs generated from the code, and their checks; `bench-render.mjs` (`pnpm bench:render`) times the chart's frames in Chrome, `soak.mjs` (`pnpm soak`) leaves the widget on a million bars and a busy feed (`scripts/soak`) for minutes and reads its memory, nodes and frames, `size-report.mjs` (`pnpm size`) what a page downloads for each entry; a release has no version pull request: the Publish workflow releases every changeset merged since its last run, on Mondays at 01:00 UTC, or when run by hand for a fix that cannot wait. `release-version.mjs` is its version step (CI only): with changesets waiting on main it sets their versions, heads the root changelog's *Unreleased* section with the version and the day, and commits that to main; `publish-packages.mjs` is its publish step (CI only): it publishes the versions not on npm, one at a time, each after the ones it depends on and once they are live, through npm trusted publishing, from tarballs another job built (the job that publishes installs nothing), then tags the commit that set each version and makes one GitHub release for the versions one version commit set (`v2.12.1`, the chart's version, with the root changelog's section and each package's version), a version set on its own getting its own; a prerelease goes out under its own npm tag (`beta` while `.changeset/pre.json` is in pre mode). Run by hand on the `3.0` branch, the workflow versions and releases that branch, prereleases only: it refuses a branch other than main that is not in pre mode. The Publish workflow runs both, and run by hand also finishes a release that stopped part way. A new package is published by hand once and given a trusted publisher on npmjs.com (this repo, `publish.yml`, `npm publish` allowed) before CI can publish it; `redirects.mjs` sends the old GitHub Pages addresses on to tradecanvas.dev; `record-clips.mjs` records the README clips (`.github/assets/clips`) from the scenes in `scripts/clips`, and with `--web <dir>` an MP4 and a poster of each for a web page; `audit-scenes.mjs` (`pnpm audit:scenes`) shoots the chart's states in `scripts/audit` and checks them. `audit-finance.mjs` (`pnpm audit:finance`) does it for the finance charts: each of the fourteen and the dashboard, and the states that broke before, with every canvas checked against its box and its pixels and a pointer or a finger given a readout. |
+| `scripts` | Docs generated from the code, and their checks; `bench-render.mjs` (`pnpm bench:render`) times the chart's frames in Chrome, `soak.mjs` (`pnpm soak`) leaves the widget on a million bars and a busy feed (`scripts/soak`) for minutes and reads its memory, nodes and frames, `size-report.mjs` (`pnpm size`) what a page downloads for each entry; a release has no version pull request: the Publish workflow releases every changeset merged since its last run, on Mondays at 01:00 UTC, or when run by hand for a fix that cannot wait. `release-version.mjs` is its version step (CI only): with changesets waiting on main it sets their versions, heads the root changelog's *Unreleased* section with the version and the day, and commits that to main; `publish-packages.mjs` is its publish step (CI only): it publishes the versions not on npm, one at a time, each after the ones it depends on and once they are live, through npm trusted publishing, from tarballs another job built (the job that publishes installs nothing), then tags the commit that set each version and makes one GitHub release for the versions one version commit set (`v2.12.1`, the chart's version, with the root changelog's section and each package's version), a version set on its own getting its own; a prerelease goes out under its own npm tag (`beta` while `.changeset/pre.json` is in pre mode). Run by hand on the `3.0` branch, the workflow versions and releases that branch, prereleases only: it refuses a branch other than main that is not in pre mode. The Publish workflow runs both, and run by hand also finishes a release that stopped part way. A new package is published by hand once and given a trusted publisher on npmjs.com (this repo, `publish.yml`, `npm publish` allowed) before CI can publish it; `redirects.mjs` sends the old GitHub Pages addresses on to tradecanvas.dev; `record-clips.mjs` records the README clips (`.github/assets/clips`) from the scenes in `scripts/clips`, and with `--web <dir>` an MP4 and a poster of each for a web page; `audit-scenes.mjs` (`pnpm audit:scenes`) shoots the chart's states in `scripts/audit` and checks them. `audit-finance.mjs` (`pnpm audit:finance`) does it for the finance charts: each of the twenty-two and the dashboard, and the states that broke before, with every canvas checked against its box and its pixels and a pointer or a finger given a readout. |
 
 ## Commands
 
@@ -119,6 +119,10 @@ These fail CI, often far from the line that caused them.
 
 ## Widget UI
 
+- How the default look, Graphite, is drawn and why is in [DESIGN.md](DESIGN.md) (the
+  [DESIGN.md format](https://github.com/google-labs-code/design.md)): its tokens, its
+  components and what not to do. A change to the widget's UI follows it, and changes it when
+  a token changes.
 - Styles live in `src/widget/WidgetStyles.css`, `WidgetControls.css`
   (fields, lists, calendar, scrollbars), `WidgetDialogs.css`
   (the indicators dialog, the indicator settings and the chart settings) and
@@ -128,6 +132,13 @@ These fail CI, often far from the line that caused them.
 - Colours, radii and spacing are `--tcw-*` tokens, set for the dark default
   and `[data-tcw-theme='light']`; the Studio, Terminal, Capsule and Desk looks are
   presets in `src/widget/widgetUI.ts`. Use a token, not a literal colour.
+- A control takes 32 px of a press each way under a finger (`pointer: coarse`)
+  and 20 px under a mouse (`--tcw-hit-finger`, `--tcw-hit-pointer`). Sized by
+  `--tcw-control-h`, `--tcw-control-h-sm` or `--tcw-menu-item-h` it is raised
+  under a finger by itself; anything else is raised by name in "A finger's
+  press" at the end of `WidgetStyles.css`, or, where its drawing must stay
+  small, takes the press through an `::after` over it (a pane's buttons, the
+  legend's names). The audit measures it: see below.
 - Dialogs and menus open in the overlay layer (`overlayHost`), so they sit
   above the chart and inside the widget in fullscreen. Place a menu with
   `placeMenu()`; it flips above the anchor when there is no room below.
@@ -175,8 +186,11 @@ These fail CI, often far from the line that caused them.
   it. It shoots the chart in the states dialogs never show (the price at an
   order with a quote on, a linked grid under the pointer, a replay, compares,
   Renko, the day's limits, many indicators), in both themes at three widths.
-  It checks that no two price axis tags overlap and that a linked grid's
-  legends follow the pointer, and writes a sheet per scene to `.tmp/audit`
+  It checks that no two price axis tags overlap, that a linked grid's
+  legends follow the pointer, that every control takes a finger's press on
+  the phone and on a tablet (32 px each way) and a pointer's on the others
+  (20 px), and that the chart drawn with no page is the
+  chart's own picture pixel for pixel (scene `noPage`), and writes a sheet per scene to `.tmp/audit`
   to look over. Add a scene to `scripts/audit/scenes.js` for a state a bug
   turned up.
 - A change to the finance charts (`src/finance` in `core` or `library`) runs

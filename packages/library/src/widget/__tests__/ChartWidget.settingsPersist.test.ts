@@ -19,7 +19,7 @@ class FakeChart {
     return new Proxy(this, {
       get: (target, key, receiver) => {
         if (key in target) return Reflect.get(target, key, receiver);
-        return (arg: unknown) => { if (typeof key === 'string' && key.startsWith('set')) target.calls.push([key, arg]); };
+        return (arg: unknown) => { if (typeof key === 'string' && key.startsWith('set')) target.calls.push([key, typeof arg === 'function' ? 'function' : arg]); };
       },
     });
   }

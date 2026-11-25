@@ -51,7 +51,7 @@ All of them read only; none touches the network or your files.
 | `custom_indicator` | How to write and register an indicator of your own: the descriptor (plots, markers, inputs, colours by theme), `calculate`, the incremental `update` and `revisesBefore`, `render`, registering it before a saved layout is read, and what the legend, the axis and the export take from it. Type-checked code. |
 | `list_drawing_tools` | The drawing tools: the `type` that `addDrawing` and `setDrawingTool` take, the points each needs, its options. |
 | `list_finance_charts` | The charts that are not the trading chart (bars, donut, depth, equity curve, market map, gauge…): each class's name and what it is for. |
-| `list_options` | The options of `ChartWidget`, `Chart`, `ChartWidgetGrid` or a finance chart by its class name: name, TypeScript type, doc, allowed values. |
+| `list_options` | The options of `ChartWidget`, `Chart`, `ChartWidgetGrid`, a finance chart by its class name, or `renderPriceChart` (the price chart drawn with no page: in Node or a worker): name, TypeScript type, doc, allowed values. |
 | `list_widget_features` | The names `ChartWidget`'s `features` switch takes. |
 | `list_style_keys` | The chart's style keys and the value each takes, for `overrides` and `applyOverrides`. |
 | `validate_options` | Checks an options object before it is used: unknown names with the one likely meant, values outside the allowed ones, numbers given as strings, intervals, feature switches, style overrides, languages, and nested options. |

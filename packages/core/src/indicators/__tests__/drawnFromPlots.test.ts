@@ -13,6 +13,10 @@ const DRAWS_ITSELF: Record<string, string> = {
   zigzag: 'it joins swing points, not bars',
   volumeProfile: 'its rows stand on prices, not bars',
   candlepatterns: 'marks with labels above and below the bars',
+  fvg: 'a box from the bar that left the gap to the one that filled it',
+  rsidiv: 'a line between the two turns of each divergence, over its plots',
+  svp: 'each day’s rows of volume by price, under its lines',
+  orderblocks: 'a box from the block’s bar to the one that broke it',
   chopzone: 'each bar is coloured by the band its angle falls in',
   elderray: 'two histograms side by side in each bar',
 };

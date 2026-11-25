@@ -4,7 +4,7 @@ const es: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Gráficos de trading en Canvas para la web',
     description:
-      'TradeCanvas es una biblioteca de gráficos de trading para la web, dibujada con Canvas 2D o WebGL: 18 tipos de gráfico, 134 indicadores, 76 herramientas de dibujo, datos en vivo de exchanges, órdenes en el gráfico, replay y backtesting, en 30 idiomas. Sin dependencias, MIT.',
+      'TradeCanvas es una biblioteca de gráficos de trading para la web, dibujada con Canvas 2D o WebGL: 18 tipos de gráfico, 138 indicadores, 76 herramientas de dibujo, datos en vivo de exchanges, órdenes en el gráfico, replay y backtesting, en 30 idiomas. Sin dependencias, MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const es: SiteMessages = {
     release: 'renderizador WebGL, 30 idiomas',
     title: 'El motor de gráficos para apps de trading.',
     ledeHtml:
-      'De velas a Renko, 134 indicadores, 76 herramientas de dibujo, datos en vivo de exchanges y órdenes en el gráfico. Dibujado con Canvas 2D o WebGL, sin dependencias. Integra el <code>ChartWidget</code> completo o crea tu propia interfaz sobre el <code>Chart</code> headless.',
+      'De velas a Renko, 138 indicadores, 76 herramientas de dibujo, datos en vivo de exchanges y órdenes en el gráfico. Dibujado con Canvas 2D o WebGL, sin dependencias. Integra el <code>ChartWidget</code> completo o crea tu propia interfaz sobre el <code>Chart</code> headless.',
     getStarted: 'Empezar',
     browseExamples: 'Ver ejemplos',
     specsLabel: 'Cifras clave',
@@ -71,7 +71,7 @@ const es: SiteMessages = {
           title: 'Leer el mercado',
           text: 'Bandas, medias y osciladores sobre las velas, niveles de Fibonacci y líneas de tendencia encima, cada uno con sus ajustes y alertas.',
           points: [
-            '134 indicadores, cualquiera sobre otro, como una media del RSI',
+            '138 indicadores, cualquiera sobre otro, como una media del RSI',
             '76 herramientas de dibujo con imán, grupos y deshacer',
             'Alertas sobre precios, líneas y cruces de indicadores',
           ],
@@ -220,11 +220,11 @@ const es: SiteMessages = {
     },
     indicators: {
       title: 'Indicadores',
-      stat: '134 integrados',
+      stat: '138 integrados',
       blurb:
         'Superpuestos y en paneles, calculados internamente, sin dependencias matemáticas. Los ticks en vivo recalculan solo la barra en formación: 0.001 ms por tick con cuatro indicadores sobre 100k barras.',
       tryThis: [
-        'Pulsa el botón Indicadores (o Ctrl+K) y busca cualquiera de los 134',
+        'Pulsa el botón Indicadores (o Ctrl+K) y busca cualquiera de los 138',
         'Haz clic en el nombre de un indicador en la leyenda: parámetros, colores y niveles',
         'Pon como fuente de una media móvil la línea de otro indicador',
         'Arrastra la línea entre paneles para cambiar su tamaño; los botones de arriba a la derecha de un panel lo mueven, lo contraen o lo maximizan',
@@ -383,7 +383,7 @@ const es: SiteMessages = {
     },
     overrides: {
       title: 'Overrides de estilo',
-      stat: '107 claves',
+      stat: '122 claves',
       blurb:
         'Cualquier parte del aspecto del gráfico por clave, aparte del tema: la cuadrícula en cada dirección, el crosshair, los ejes, los paneles, la leyenda, el último precio, el volumen y los colores de cada tipo de gráfico. Aquí la cuadrícula vertical está apagada, la horizontal punteada, el crosshair continuo, y la línea de señal del MACD discontinua en un panel con su propio separador.',
       tryThis: [
@@ -437,6 +437,17 @@ const es: SiteMessages = {
         'Cambia entre Canvas 2D y WebGL sobre el gráfico: cada cambio mide un breve desplazamiento',
         'Busca las filas brillantes: muros de tamaño que se quedan en un precio con el tiempo',
         'Acerca el zoom a un muro y desplázate de un lado a otro: las celdas siguen a las barras',
+      ],
+    },
+    orderflow: {
+      title: 'Flujo de órdenes',
+      stat: 'Footprint + cinta',
+      blurb:
+        'Cada operación del feed, con quién la tomó. El gráfico footprint escribe, junto a cada barra, lo que los vendedores tomaron en el bid y lo que los compradores tomaron en el ask en cada precio de su interior, marca las filas en las que un lado superó al otro y suma cada barra debajo: lo comprado menos lo vendido, y ambos juntos. A su lado, la cinta lista las operaciones según se hacen, las más nuevas arriba, en el color de quien las tomó.',
+      tryThis: [
+        'Mira cómo la barra más nueva se llena fila a fila al llegar operaciones, y cómo cambian sus totales debajo',
+        'Abre el menú de la cabecera de la cinta: lista solo lo comprado o lo vendido, o agrupa en una fila las operaciones simultáneas',
+        'Escribe un tamaño mínimo en la cinta para quedarte con las operaciones grandes y aleja el gráfico: los números de cada fila dan paso a una barrita por lado, y los totales siguen',
       ],
     },
     switching: {
@@ -495,6 +506,23 @@ const es: SiteMessages = {
     counterClock: 'Curva antihoraria: precio frente a volumen, medias de 25 días',
     avgVolume: 'Volumen, media',
     avgPrice: 'Precio, media',
+    payoff: 'Iron condor: ganancias y pérdidas al vencimiento',
+    smile: 'Volatilidad implícita por strike',
+    weekdayReturns: 'Rentabilidad diaria por día de la semana',
+    scorecard: 'Estrategia frente a la referencia',
+    strategy: 'Estrategia',
+    benchmark: 'Referencia',
+    allocationRings: 'Asignación por clase de activo y sector',
+    allocationOverTime: 'Asignación a lo largo del año',
+    volSurface: 'Volatilidad implícita por strike y vencimiento',
+    strike: 'Strike',
+    expiry: 'Vencimiento',
+    depthOverTime: 'Profundidad del libro de órdenes en el tiempo',
+    quarterReturns: 'Rentabilidad por trimestre y clase de activo',
+    turnHint: 'Arrastra un gráfico para girarlo; con doble clic vuelve a su vista inicial.',
+    exportLabel: 'Guardar el gráfico de la cartera',
+    print: 'Imprimir',
+    reportPdf: 'Todos los gráficos en un PDF',
     waterfall: {
       start: 'Inicio',
       btcLong: 'BTC largo',
@@ -708,7 +736,7 @@ const es: SiteMessages = {
         { name: 'Sin dependencias de terceros en tiempo de ejecución', detail: 'Nada más que instalar ni auditar' },
       ],
       indicators: [
-        { name: '134 indicadores integrados', detail: 'Puntos pivote de seis tipos, MA Cross, correlación con otro símbolo' },
+        { name: '138 indicadores integrados', detail: 'Puntos pivote de seis tipos, MA Cross, correlación con otro símbolo' },
         { name: 'Fuente de precio', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: 'Un indicador sobre otro indicador', detail: 'Como una media móvil del RSI, actualizada con cada tick' },
         { name: 'Varios indicadores en un panel, movidos entre paneles', detail: 'moveIndicatorToPane' },
@@ -779,7 +807,7 @@ const es: SiteMessages = {
       ],
       customization: [
         { name: 'Tres aspectos para el widget', detail: 'Studio, Terminal, Capsule; ui y setUI; variables CSS --tcw-*' },
-        { name: 'El aspecto del gráfico por clave', detail: 'applyOverrides sobre 107 claves tipadas, en una capa de la aplicación y otra del usuario' },
+        { name: 'El aspecto del gráfico por clave', detail: 'applyOverrides sobre 122 claves tipadas, en una capa de la aplicación y otra del usuario' },
         { name: 'Una configuración que llega a cada clave', detail: 'Una pestaña de estilo para el tipo de gráfico visible, una pestaña de trading' },
         { name: '114 interruptores de funciones', detail: 'features, setFeatures, isFeatureOn; se cambian en marcha' },
         { name: 'Tus propias piezas en el widget', detail: 'Botones y desplegables en la barra de herramientas, botones laterales, elementos de estado, slots, entradas de menú' },
@@ -931,6 +959,7 @@ const es: SiteMessages = {
       frameworks: 'Frameworks',
       embed: 'Widget incrustable',
       migration: 'Migrar a la 2.0',
+      'migration-3': 'Migrar a la 3.0',
       'from-tradingview': 'Pasar desde TradingView',
       'how-it-works': 'Cómo funciona',
       api: 'Referencia de la API',

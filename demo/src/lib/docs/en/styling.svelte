@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Styling — TradeCanvas docs</title>
-  <meta name="description" content="The widget's look as tokens, with six presets — Modern, Print, Studio, Terminal, Capsule, Desk — on even pixels, and the chart's look by key: the grid, crosshair, axes, panes, legend, last price, volume and each chart type, indicator plots and panes." />
+  <meta name="description" content="The widget's look as tokens, with seven presets — Graphite, Modern, Print, Studio, Terminal, Capsule, Desk — on even pixels, and the chart's look by key: the grid, crosshair, axes, panes, legend, last price, volume and each chart type, indicator plots and panes." />
 </svelte:head>
 
 <h1>Styling the widget</h1>
@@ -14,15 +14,24 @@
   The widget's look is a set of tokens: the corners of each kind of part, control and bar sizes, type, borders,
   shadows, how a chosen button shows, and whether the toolbar and drawing tools sit along the edges or float.
   Start from a preset and change what you like. Colours stay with the theme (<code>dark</code> / <code>light</code>,
-  see <a href={href('/docs/api')}>the API</a>); a look works with either. Modern, the default, brings a dark and a
-  light of its own; the other looks share the colours that were the widget's before it.
+  see <a href={href('/docs/api')}>the API</a>); a look works with either. Graphite, the default, and Modern each
+  bring a dark and a light of their own; the other looks share the colours that were the widget's before them.
 </p>
 
 <h2>Presets</h2>
 <table>
   <thead><tr><th>Preset</th><th>Look</th></tr></thead>
   <tbody>
-    <tr><td><code>modern</code> (default)</td><td>
+    <tr><td><code>graphite</code> (default)</td><td>
+      A trading desk's chrome with no hue of its own: grounds a shade apart (<code>#131416</code> /
+      <code>#ffffff</code>) with hairlines between. Few sizes on purpose: controls 20, 24, 28, 36 or 40 px tall,
+      every corner 3 px, one shadow for what floats and none elsewhere. What is picked (an interval, a tool, a tab)
+      shows on a lighter ground in the text's own colour; amber is kept for what you act on. Switches are boxes
+      that are ticked, and the account table's columns are as wide as their figures. Its face is IBM Plex Sans
+      where your page loads it, the system's own otherwise. On the chart, without a theme object of yours, its
+      colours are <code>GRAPHITE_DARK_THEME</code> and <code>GRAPHITE_LIGHT_THEME</code>.
+    </td></tr>
+    <tr><td><code>modern</code></td><td>
       A code editor's window, in its Dark Modern and Light Modern colours. The chart on the editor's ground
       (<code>#1f1f1f</code> / <code>#ffffff</code>) with the bars around it a shade off it and hairlines between;
       16 px icons in 28 px buttons on a 38 px toolbar; 4 px controls, 6 px menus and 8 px dialogs. The logo's amber
@@ -36,7 +45,7 @@
       the accent tokens sets those too.
     </td></tr>
     <tr><td><code>print</code></td><td>
-      The default before Modern, colours and all. Paper and ink. An off-white and an off-black ground, grey for everything that is normal and colour only where
+      The default before Modern and Graphite, colours and all. Paper and ink. An off-white and an off-black ground, grey for everything that is normal and colour only where
       it means something; hairlines, 3 px controls, 5 px menus and 8 px dialogs; large icons drawn in fine lines;
       labels as written and a medium weight for emphasis; the system's own face (Segoe UI Variable on Windows 11);
       every figure, on the chart too, in a sans face whose digits are one width (Segoe UI on Windows, Helvetica Neue on
@@ -178,7 +187,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 
 <h2>Your own look</h2>
 <p>
-  A theme starts from a preset (Modern when you name none) and changes what it names. Corners set on the scale
+  A theme starts from a preset (Graphite when you name none) and changes what it names. Corners set on the scale
   reach every part that follows it, unless you set that part's own.
 </p>
 <pre><code>{`widget.setUI({
@@ -191,7 +200,8 @@ chart.setFont(null)                         // the theme's own font again`}</cod
   font: {
     family: "'Manrope', system-ui, sans-serif",
     mono: "'JetBrains Mono', monospace",
-    size: 13, weight: 500, strongWeight: 600,
+    size: 13, smallSize: 12,                          // body; figures in tables, field names (set, nothing to read is smaller)
+    weight: 500, strongWeight: 600,
     labelCase: 'uppercase', labelTracking: 0.06,      // small labels
   },
   borders: { width: 1, separators: true },           // rules between toolbar groups
@@ -257,7 +267,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 <h2>CSS variables</h2>
 <p>
   The tokens are CSS variables on the widget's root (and on its dialogs). Without the <code>ui</code> option they
-  stay the stylesheet's — Modern's — so your own CSS can set them: the widget puts its stylesheet first in the
+  stay the stylesheet's — Graphite's — so your own CSS can set them: the widget puts its stylesheet first in the
   page, so a rule of yours on <code>.tcw-root</code> wins. With <code>ui</code>, the widget writes them on the
   element, and they win.
 </p>
@@ -348,7 +358,9 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' or 'user'`}</c
     <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>The same four for the crosshair's lines (solid hairlines by default).</td></tr>
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>The price and time pills on the axes, and on the panes' scales.</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>Each axis's line and labels (the panes' scales take the price axis's).</td></tr>
-    <tr><td><code>axis.price.valueTagsOutlined</code></td><td><code>true</code> draws an indicator's value tags on the price axis outlined (the chart's background, or a pane's own, inside an edge of the line's colour, its text in that colour) instead of filled with the line's colour: in the price pane, the indicator panes and on the left scale. A line too close to the background to be read on it has its value written in the scale's text colour.</td></tr>
+    <tr><td><code>lastPrice.limitColors</code></td><td><code>true</code> draws the last price's line and tag in a day's limit's colour while the price is at that limit: the ceiling's at or over the ceiling, the floor's at or under the floor, the reference's at the reference price. Between them, and with no limits known, they keep the day's colour. At a limit its colour is over <code>lastPrice.labelBackground</code>, and the legend keeps the day's colours; the limit's own tag gives way to the last price's while the two would lie against each other. For a market with a day's limits whose boards colour prices by them; off unless you set it.</td></tr>
+    <tr><td><code>crosshair.labelChange</code></td><td><code>true</code> writes, under the price the crosshair names on the price axis, how far that price is from the last one, in percent (<code>+1.25%</code>), in the chart's locale. None is written with no last price, with the last price hidden, or on a scale that is in percent or indexed already. The axis is given room for it. The Graphite themes have it on (a theme's own <code>crosshairChange</code>); the others off.</td></tr>
+    <tr><td><code>axis.price.valueTagsOutlined</code></td><td><code>true</code> draws an indicator's value tags on the price axis outlined (the chart's background, or a pane's own, inside an edge of the line's colour, its text in that colour) instead of filled with the line's colour: in the price pane, the indicator panes and on the left scale. A line too close to the background to be read on it has its value written in a deeper shade of its own colour, until it reads at 4.5:1. The Graphite themes draw them outlined unless this is <code>false</code>. The bid's, the ask's and the high's and low's tags, and an order's and a position's, are outlined with them.</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>The legend's values, and its labels (O, H, L, Vol).</td></tr>
     <tr><td><code>legend.upColor</code>, <code>.downColor</code></td><td>A rise and a fall where a bar's values are read: the legend's close and change, the crosshair and pinned tooltips, the measure tool. They follow the series' unless set, so a chart that hides its candles (an overlay drawing its own) sets these and keeps them.</td></tr>
     <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>The last-price line and tag; their colours follow the series' unless set. The time left in the bar (<code>features.barCountdown</code>) hangs under the tag.</td></tr>

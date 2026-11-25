@@ -28,7 +28,7 @@
     <tr><td><code>symbol</code></td><td><code>BTCUSDT</code></td><td>Binance 交易对代码。</td></tr>
     <tr><td><code>timeframe</code></td><td><code>5m</code></td><td><code>1m</code>、<code>5m</code>、<code>15m</code>、<code>1h</code>、<code>4h</code>、<code>1d</code>。</td></tr>
     <tr><td><code>theme</code></td><td><code>dark</code></td><td><code>dark</code>、<code>light</code>、<code>darkTerminal</code>。</td></tr>
-    <tr><td><code>chartType</code></td><td><code>candlestick</code></td><td>18 种类型中的任意一种。</td></tr>
+    <tr><td><code>chartType</code></td><td><code>candlestick</code></td><td>25 种类型中的任意一种。</td></tr>
     <tr><td><code>indicators</code></td><td><em>无</em></td><td>以逗号分隔的 id，例如 <code>indicators=sma,rsi</code>。</td></tr>
     <tr><td><code>trading</code></td><td><code>false</code></td><td>显示交易面板。</td></tr>
   </tbody>
@@ -38,6 +38,7 @@
 <p>
   图表和组件可在任何 WebView 中运行：React Native（<code>react-native-webview</code>）、Capacitor、Tauri 或原生应用自己的 WebView。宽度小于 641 px 时，组件按手机布局：工具栏保留代码、周期、图表类型和指标，其余放进“更多”；绘图工具收在图表上的一个按钮后面；菜单以底部面板打开；网格一次只显示一个图表，每个图表一个标签。更宽时，放不下的工具栏也会这样。宽度约 320 px 以上时（没有你自己添加的项目时可窄得多），状态栏让时钟完整显示：空间不够时，显示范围按钮从最长的开始收进“更多”，然后是跳转到日期，最后市场状态改用更短的说法。手指能做鼠标能做的一切。
 </p>
+<p>在手指下（主指针为粗略指针的设备：手机，以及任意宽度的平板），无论哪种外观和 <code>density</code>，组件中没有任何控件在任一方向上小于 32 px：按钮、输入框和菜单行都会放大到这个尺寸，指标图例的每一行有一指高，窗格的按钮和窗格图例中的名称则在其图形周围占有 32 px 的点按区域。在鼠标下，控件的点按区域至少为 20 px。只有一处更小：画线工具上用来打开其菜单的角标，再大就会占去工具本身的点按区域。</p>
 <p>给页面一个覆盖整个屏幕的 viewport。组件会让面板避开刘海和主屏幕指示条，并位于屏幕键盘之上。</p>
 <pre><code>{`<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">`}</code></pre>
 <p>大多数 WebView 会在应用转入后台时报告页面已隐藏：图表随即自行停止绘制（<code>pauseWhenHidden</code>），沉默太久的数据流会在应用回来时重新连接。若你的 WebView 不报告，请由应用来暂停。</p>

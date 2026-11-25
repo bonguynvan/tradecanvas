@@ -7,20 +7,23 @@ import type {
   Theme,
   Point,
   FillEvent,
+  TakeProfitLevel,
 } from '@tradecanvas/commons';
 import { DARK_THEME, DEFAULT_TRADING_CONFIG, priceTagText } from '@tradecanvas/commons';
 import { inPlot } from './plot.js';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
-import { OrderRenderer } from './OrderRenderer.js';
+import { OrderRenderer, stopOf } from './OrderRenderer.js';
 import { PositionRenderer } from './PositionRenderer.js';
-import { TradingDragHandler } from './TradingDragHandler.js';
+import { TradingDragHandler, type DragResult } from './TradingDragHandler.js';
 import { TradingContextMenu } from './TradingContextMenu.js';
-import { BracketTool, bracketRiskReward } from './BracketTool.js';
+import { BracketTool, bracketRiskReward, type BracketDraft, type BracketSize } from './BracketTool.js';
 import { OrderDraftTool } from './OrderDraftTool.js';
 import { buttonAt, sameLineAction, type LineButton, type LineButtonAction } from './lineButtons.js';
 import { renderFillMarks } from './fillMarks.js';
 import { drawAxisBadge, drawTags, spreadAxisBadges, tagAt, type AxisBadge, type TagBox, type TagRect } from './tradingTags.js';
 import { clampToPlot } from './plot.js';
+import { boundsOnGrid, isWithinBounds, onGrid, onGridBeyond, withinBounds, type PriceBounds, type PriceRounding } from '../viewport/priceGrid.js';
+import { stopSide } from './positionStops.js';
 import { AXIS_LABEL_HEIGHT } from '../ui/axisValueLabels.js';
 
 /** Most fills kept for their marks; the oldest go first. */
@@ -50,6 +53,8 @@ export class TradingManager {
   private drawnTags: TagRect[] = [];
   /** A press on a tag drags its line: how far the line sits from the pointer. */
   private grabOffset = 0;
+  /** Whether the line pressed has moved in this press: a click moves none. */
+  private lineMoved = false;
   private fills: FillEvent[] = [];
   private realisedPnl = 0;
 
@@ -70,6 +75,43 @@ export class TradingManager {
     this.container = container;
   }
 
+  /** How a price set by hand is put on the market's grid (see `setPriceRounding`). */
+  private round: PriceRounding | null = null;
+
+  /**
+   * Put the prices set by hand on the market's grid: an order, a stop, a
+   * target or a level dragged, a bracket's and a draft order's lines (where
+   * they start too), a stop added from its button, the price the right-click
+   * menu places at. `round` gives a price on the grid (a chart's
+   * `roundPrice`); null leaves prices as the pointer has them.
+   */
+  setPriceRounding(round: PriceRounding | null): void {
+    this.round = round;
+    this.dragHandler.setRound(round);
+    this.bracket.setRound(round);
+    this.orderDraft.setRound(round);
+  }
+
+  /** The prices an order may be set at by hand today (see `setOrderPriceBounds`). */
+  private orderBounds: () => PriceBounds | null = () => null;
+
+  /**
+   * Keep the orders set by hand inside the day's limits: an order's line (and
+   * a stop-limit's stop) stops at the ceiling or the floor when dragged past
+   * it, a bracket's entry and a draft order start and stay inside them, and
+   * the right-click menu offers no order past them. `bounds` is asked each
+   * time (the day's limits change with the reference price); it gives null
+   * where the market has none. A position's stop, target and levels are not
+   * held: they are no orders of today's. Null takes the limits away.
+   */
+  setOrderPriceBounds(bounds: (() => PriceBounds | null) | null): void {
+    // As prices of the market's grid: a limit that is a per cent of a reference is a sum no order can be at.
+    this.orderBounds = bounds ? () => boundsOnGrid(this.round, bounds()) : () => null;
+    this.dragHandler.setOrderBounds(this.orderBounds);
+    this.bracket.setOrderBounds(this.orderBounds);
+    this.orderDraft.setOrderBounds(this.orderBounds);
+  }
+
   setRequestRender(cb: () => void): void {
     this.requestRender = cb;
   }
@@ -82,6 +124,7 @@ export class TradingManager {
 
   setOrders(orders: TradingOrder[]): void {
     this.orders = orders;
+    this.dropStaleOrderDrag();
     this.requestRender?.();
   }
 
@@ -141,15 +184,34 @@ export class TradingManager {
   }
 
   /**
+   * An order being dragged that is gone (it filled, or the broker cancelled
+   * it): the drag is called off, so letting go asks the broker to move no
+   * order it no longer has.
+   */
+  private dropStaleOrderDrag(): void {
+    const drag = this.dragHandler.getDragState();
+    if (!drag || (drag.sourceType !== 'order' && drag.sourceType !== 'orderStop')) return;
+    const order = this.orders.find((o) => o.id === drag.orderId);
+    // A stop being dragged whose order began to work as a limit: it has no stop to move.
+    if (order && (drag.sourceType === 'order' || stopOf(order, null) !== undefined)) return;
+    this.dragHandler.cancel();
+    this.grabOffset = 0;
+    this.lineMoved = false;
+  }
+
+  /**
    * A stop or target being dragged whose position is gone, or one being added
    * that the position now has (the broker set it meanwhile): the drag is
    * called off, so letting go sends nothing for it.
    */
   private dropStaleStopDrag(): void {
     const drag = this.dragHandler.getDragState();
-    if (!drag || drag.sourceType === 'order') return;
+    if (!drag || drag.sourceType === 'order' || drag.sourceType === 'orderStop') return;
     const position = this.positions.find((p) => p.id === drag.orderId);
-    if (position && !(drag.created && position[drag.sourceType] !== undefined)) return;
+    if (drag.sourceType === 'level') {
+      // A level the account took off or moved meanwhile: what is at its place now is not what was pressed.
+      if (position && drag.level !== undefined && position.takeProfits?.[drag.level]?.price === drag.startPrice) return;
+    } else if (position && !(drag.created && position[drag.sourceType] !== undefined)) return;
     this.dragHandler.cancel();
     this.grabOffset = 0;
   }
@@ -234,10 +296,22 @@ export class TradingManager {
 
   // --- Bracket placement ---
 
-  /** Begin placing a bracket (entry + SL + TP) at `entry` for `side`. */
-  startBracket(side: OrderSide, entry: number): void {
-    this.bracket.start(side, entry);
+  /** Begin placing a bracket (entry + SL + TP) at `entry` for `side`, of this `size` (none: it has no quantity). */
+  startBracket(side: OrderSide, entry: number, size?: BracketSize): void {
+    this.bracket.start(side, entry, size);
     this.requestRender?.();
+  }
+
+  /** Size the bracket being placed anew; with none being placed it does nothing. */
+  setBracketSize(size: BracketSize | undefined): void {
+    if (!this.bracket.isActive()) return;
+    this.bracket.setSize(size);
+    this.requestRender?.();
+  }
+
+  /** The bracket being placed, with the quantity its size gives it now; null with none. */
+  getBracket(): BracketDraft | null {
+    return this.bracket.getDraft();
   }
 
   cancelBracket(): void {
@@ -248,6 +322,8 @@ export class TradingManager {
 
   /** Emit `bracketPlace` with the current draft and clear it. No-op if inactive. */
   confirmBracket(): boolean {
+    // The day's limits may have come since it was started: it goes out inside them.
+    this.bracket.settle();
     const draft = this.bracket.getDraft();
     if (!draft) return false;
     this.eventCallback?.('bracketPlace', {
@@ -255,6 +331,7 @@ export class TradingManager {
       entry: draft.entry,
       stopLoss: draft.stopLoss,
       takeProfit: draft.takeProfit,
+      ...(draft.quantity === undefined ? {} : { quantity: draft.quantity }),
       riskReward: bracketRiskReward(draft),
     });
     this.bracket.cancel();
@@ -282,7 +359,8 @@ export class TradingManager {
 
   /** Emit `orderPlace` with the drafted order (type inferred vs the market). */
   confirmOrderDraft(): boolean {
-    const intent = this.orderDraft.toIntent(this.currentPrice);
+    this.orderDraft.settle();
+    const intent = this.orderDraft.toIntent(this.marketOnGrid());
     if (!intent) return false;
     this.eventCallback?.('orderPlace', intent);
     this.orderDraft.cancel();
@@ -294,7 +372,7 @@ export class TradingManager {
     return this.orderDraft.isActive();
   }
 
-  /** Whether `pos` is over an order line or a position's SL/TP that can be dragged. */
+  /** Whether `pos` is over an order line, or a position's SL, TP or take-profit level, that can be dragged. */
   isOverDraggableLine(pos: Point, viewport: ViewportState, tolerance = 8): boolean {
     if (!this.config.enabled) return false;
     const tag = tagAt(this.tagBoxes, pos.x, pos.y);
@@ -307,10 +385,11 @@ export class TradingManager {
     };
     if (this.locked) return false;
     for (const o of this.shownOrders()) {
-      if (o.draggable !== false && near(o.price)) return true;
+      // An order's line, and a stop-limit's stop.
+      if (o.draggable !== false && (near(o.price) || near(stopOf(o, null)))) return true;
     }
     for (const p of this.shownPositions()) {
-      if (near(p.stopLoss) || near(p.takeProfit)) return true;
+      if (near(p.stopLoss) || near(p.takeProfit) || p.takeProfits?.some((level) => near(level.price))) return true;
     }
     return false;
   }
@@ -356,9 +435,15 @@ export class TradingManager {
    */
   private dragOutStop(action: Extract<LineButtonAction, { type: 'addStop' }>, pos: Point, viewport: ViewportState): boolean {
     const position = this.positions.find((p) => p.id === action.positionId);
+    if (!position) return false;
+    // Where it starts is a price of the market's too, still beyond the entry and the price now: not hit as it is set.
+    const way = stopSide(position, action.which);
+    const now = this.currentPrice !== null && Number.isFinite(this.currentPrice) ? this.currentPrice : position.entryPrice;
+    const bound = way > 0 ? Math.max(position.entryPrice, now) : Math.min(position.entryPrice, now);
+    const price = onGridBeyond(this.round, bound, action.price, way);
     // The drag is measured on the line, as a tag's is: the pointer only moves it.
-    const lineY = priceToY(action.price, viewport);
-    if (!position || !this.dragHandler.beginNewStop(position, action.which, action.price, lineY)) return false;
+    const lineY = priceToY(price, viewport);
+    if (!this.dragHandler.beginNewStop(position, action.which, price, lineY)) return false;
     this.grabOffset = lineY - pos.y;
     this.requestRender?.();
     return true;
@@ -378,12 +463,32 @@ export class TradingManager {
         const order = this.orders.find((o) => o.id === grab.orderId);
         return order !== undefined && this.dragHandler.beginOrder(order, tag.lineY);
       }
+      case 'orderStop': {
+        if (this.locked) return false;
+        const order = this.orders.find((o) => o.id === grab.orderId);
+        return order !== undefined && this.dragHandler.beginOrderStop(order, tag.lineY);
+      }
       case 'stop': {
         if (this.locked) return false;
         const position = this.positions.find((p) => p.id === grab.positionId);
         return position !== undefined && this.dragHandler.beginStop(position, grab.which, tag.lineY);
       }
+      case 'level': {
+        if (this.locked) return false;
+        const position = this.positions.find((p) => p.id === grab.positionId);
+        return position !== undefined && this.dragHandler.beginLevel(position, grab.index, tag.lineY);
+      }
     }
+  }
+
+  /**
+   * Whether a line is being dragged to a price: an order's, a position's stop
+   * or target, a bracket's or a draft order's. From its first move to the
+   * release: a line pressed and not moved is a click, and a button pressed on
+   * a line moves none.
+   */
+  isDraggingLine(): boolean {
+    return this.lineMoved && (this.bracket.isDragging() || this.orderDraft.isDragging() || this.dragHandler.isActive());
   }
 
   onPointerMove(pointer: Point, viewport: ViewportState): boolean {
@@ -392,16 +497,20 @@ export class TradingManager {
     const pos = this.grabOffset === 0 ? pointer : { x: pointer.x, y: clampToPlot(pointer.y + this.grabOffset, viewport) };
     if (this.bracket.isDragging()) {
       const consumed = this.bracket.drag(pos, viewport);
+      if (consumed) this.lineMoved = true;
       if (consumed) this.requestRender?.();
       return consumed;
     }
     if (this.orderDraft.isDragging()) {
       const consumed = this.orderDraft.drag(pos, viewport);
+      if (consumed) this.lineMoved = true;
       if (consumed) this.requestRender?.();
       return consumed;
     }
     if (!this.dragHandler.isActive()) return false;
     const consumed = this.dragHandler.onPointerMove(pos, viewport);
+    // An order's line moves only past the threshold that tells a drag from a click.
+    if (this.dragHandler.isDragging()) this.lineMoved = true;
     if (consumed) this.requestRender?.();
     return consumed;
   }
@@ -409,6 +518,7 @@ export class TradingManager {
   /** End a press; `pos` is where it ended (none when the pointer left: a pressed button does nothing). */
   onPointerUp(pos?: Point): boolean {
     this.grabOffset = 0;
+    this.lineMoved = false;
     if (this.armed) {
       const action = this.armed;
       this.armed = null;
@@ -428,12 +538,12 @@ export class TradingManager {
     }
     const result = this.dragHandler.onPointerUp();
     if (result) {
-      if (result.sourceType === 'order') {
-        this.eventCallback?.('orderModify', {
-          orderId: result.id,
-          newPrice: result.newPrice,
-          previousPrice: result.previousPrice,
-        });
+      if (result.sourceType === 'order' || result.sourceType === 'orderStop') {
+        const moved = this.orderMove(result);
+        if (moved) this.eventCallback?.('orderModify', moved);
+      } else if (result.sourceType === 'level') {
+        const takeProfits = this.levelsWith(result.id, result.level, result.newPrice);
+        if (takeProfits) this.eventCallback?.('positionModify', { positionId: result.id, takeProfits });
       } else {
         this.eventCallback?.('positionModify', {
           positionId: result.id,
@@ -447,12 +557,60 @@ export class TradingManager {
   }
 
   /**
+   * A position's take-profit levels with the one at `index` moved to
+   * `price`, the nearest to the entry first, as an account keeps them. Null
+   * when it cannot go there: a level is a profit, so one let go at the entry
+   * or past it the losing way goes back where it was; and so does one let go
+   * at a price of nothing or under it, where an account keeps no level.
+   */
+  private levelsWith(positionId: string, index: number | undefined, price: number): TakeProfitLevel[] | null {
+    const position = this.positions.find((p) => p.id === positionId);
+    const levels = position?.takeProfits;
+    if (!position || !levels || index === undefined || !levels[index] || !Number.isFinite(price) || !(price > 0)) return null;
+    const long = position.side === 'buy';
+    if (long ? price <= position.entryPrice : price >= position.entryPrice) return null;
+    return levels
+      .map((level, i) => (i === index ? { ...level, price } : { ...level }))
+      .sort((a, b) => (long ? a.price - b.price : b.price - a.price));
+  }
+
+  /**
+   * The price now as the market's grid has it: what a draft order's kind is
+   * told against. A draft started at the market is on the grid, a step from
+   * the price to the digit, and is still an order at the market: a limit.
+   */
+  private marketOnGrid(): number | null {
+    return this.currentPrice === null ? null : onGrid(this.round, this.currentPrice);
+  }
+
+  /**
+   * What a drag asks of the broker for an order: where it goes, and where a
+   * stop-limit's stop goes with it (the room between them kept) or alone.
+   * Null for a stop whose order is gone, or has no stop any more.
+   */
+  private orderMove(result: DragResult): { orderId: string; newPrice: number; previousPrice: number; newStopPrice?: number; previousStopPrice?: number } | null {
+    const order = this.orders.find((o) => o.id === result.id);
+    const stop = order ? stopOf(order, null) : undefined;
+    if (result.sourceType === 'orderStop') {
+      if (!order || stop === undefined) return null;
+      return { orderId: order.id, newPrice: order.price, previousPrice: order.price, newStopPrice: result.newPrice, previousStopPrice: result.previousPrice };
+    }
+    const move = { orderId: result.id, newPrice: result.newPrice, previousPrice: result.previousPrice };
+    if (stop === undefined) return move;
+    // Taken with the order, the stop lands on the grid of where it is now (the step may change on the way, and a sum
+    // leaves dust), and inside the day's limits as the order itself is.
+    const newStopPrice = withinBounds(this.orderBounds(), onGrid(this.round, stop + (result.newPrice - result.previousPrice)));
+    return { ...move, newStopPrice, previousStopPrice: stop };
+  }
+
+  /**
    * Call the press off (the browser took a touch back, a second finger
    * landed): a dragged line or handle goes back where it was, a pressed
    * button does nothing, and nothing is reported. True when there was one.
    */
   cancelPointer(): boolean {
     this.grabOffset = 0;
+    this.lineMoved = false;
     let had = false;
     if (this.armed) {
       this.armed = null;
@@ -471,10 +629,22 @@ export class TradingManager {
     return had;
   }
 
+  /**
+   * Whether its right-click menu is on and has no order to offer at `pos`: a
+   * price past the day's limits. `onContextMenu` then opens nothing, but the
+   * click is still the chart's: the browser's own menu is not to stand in.
+   */
+  refusesContextMenu(pos: Point, viewport: ViewportState): boolean {
+    if (!this.config.enabled || !this.config.contextMenu?.enabled || !this.container || this.hidden) return false;
+    return !isWithinBounds(this.orderBounds(), onGrid(this.round, yToPrice(pos.y, viewport)));
+  }
+
   onContextMenu(pos: Point, viewport: ViewportState): boolean {
     // Hidden, the orders would be placed out of sight: no menu to place them.
     if (!this.config.enabled || !this.config.contextMenu?.enabled || !this.container || this.hidden) return false;
-    const price = yToPrice(pos.y, viewport);
+    const price = onGrid(this.round, yToPrice(pos.y, viewport));
+    // Past the day's limits no order may be: the menu has nothing to offer there.
+    if (!isWithinBounds(this.orderBounds(), price)) return false;
     this.contextMenu.show(pos, price, this.container, this.config, (p) => priceTagText(p, viewport, this.config.pricePrecision));
     return true;
   }
@@ -532,7 +702,7 @@ export class TradingManager {
     this.orderDraft.renderLines(ctx, viewport, theme);
     const tags = [
       ...this.bracket.tags(viewport, theme),
-      ...this.orderDraft.tags(viewport, theme, this.currentPrice),
+      ...this.orderDraft.tags(viewport, theme, this.marketOnGrid()),
       ...this.positionRenderer.tags(positions, this.currentPrice, viewport, positionConfig, drag),
       ...this.orderRenderer.tags(orders, viewport, config, drag),
     ];

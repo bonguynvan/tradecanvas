@@ -18,6 +18,16 @@
     MatrixChart,
     correlationMatrix,
     CounterClockChart,
+    PayoffChart,
+    CurveChart,
+    BoxPlotChart,
+    RadarChart,
+    SunburstChart,
+    StackedAreaChart,
+    SurfaceChart,
+    Bar3DChart,
+    depthSurface,
+    chartsToPdf,
     DARK_THEME,
     LIGHT_THEME,
   } from '@tradecanvas/chart';
@@ -256,6 +266,15 @@
   let sectorContainer: HTMLDivElement | undefined = $state();
   let matrixContainer: HTMLDivElement | undefined = $state();
   let clockContainer: HTMLDivElement | undefined = $state();
+  let payoffContainer: HTMLDivElement | undefined = $state();
+  let smileContainer: HTMLDivElement | undefined = $state();
+  let boxContainer: HTMLDivElement | undefined = $state();
+  let radarContainer: HTMLDivElement | undefined = $state();
+  let ringsContainer: HTMLDivElement | undefined = $state();
+  let mixContainer: HTMLDivElement | undefined = $state();
+  let surfaceContainer: HTMLDivElement | undefined = $state();
+  let depthHistoryContainer: HTMLDivElement | undefined = $state();
+  let quartersContainer: HTMLDivElement | undefined = $state();
 
   // --- Chart instances ---
   let sparkCharts: SparklineChart[] = [];
@@ -264,7 +283,7 @@
   let heatmapChart: HeatmapChart | null = null;
   let waterfallChart: WaterfallChart | null = null;
   let gaugeChart: GaugeChart | null = null;
-  let newCharts: (BarChart | DonutChart | ScatterChart | HistogramChart | CalendarChart | MatrixChart | HeatmapChart | CounterClockChart)[] = [];
+  let newCharts: (BarChart | DonutChart | ScatterChart | HistogramChart | CalendarChart | MatrixChart | HeatmapChart | CounterClockChart | PayoffChart | CurveChart | BoxPlotChart | RadarChart | SunburstChart | StackedAreaChart | SurfaceChart | Bar3DChart)[] = [];
   let gaugeInterval: ReturnType<typeof setInterval> | null = null;
 
 
@@ -275,6 +294,29 @@
   }
 
   let stopThemeSync: (() => void) | null = null;
+
+  /** Every chart of the section that is drawn now, in the order of the page. */
+  function chartsOnPage() {
+    return [equityChart, depthChart, heatmapChart, waterfallChart, gaugeChart, ...newCharts].filter((chart) => chart !== null);
+  }
+
+  /** How long after a file was saved its address is let go of, ms. */
+  const REVOKE_AFTER_MS = 40_000;
+
+  /** Saves a PDF the browser has just made, and lets go of it. */
+  async function savePdf(make: () => Promise<Blob | null>, filename: string): Promise<void> {
+    const pdf = await make();
+    if (!pdf) return;
+    const url = URL.createObjectURL(pdf);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    // Later, not in the click's own task: a browser may not have begun to save yet.
+    setTimeout(() => URL.revokeObjectURL(url), REVOKE_AFTER_MS);
+  }
 
   function applyThemeToAll(theme: Theme): void {
     for (const sc of sparkCharts) {
@@ -460,6 +502,157 @@
       }));
     }
 
+    // Options and portfolios.
+    const percent = (v: number) => `${v.toFixed(1)}%`;
+    const tag = i18n.language.tag;
+    if (payoffContainer) {
+      newCharts.push(new PayoffChart(payoffContainer, {
+        legs: [
+          { type: 'put', side: 'long', strike: 90, premium: 1 },
+          { type: 'put', side: 'short', strike: 95, premium: 2.5 },
+          { type: 'call', side: 'short', strike: 105, premium: 2.5 },
+          { type: 'call', side: 'long', strike: 110, premium: 1 },
+        ],
+        multiplier: 100,
+        spot: 101.4,
+        model: { daysToExpiry: 30, volatility: 0.22, rate: 0.03 },
+        ariaLabel: i18n.m.finance.payoff,
+        locale: tag,
+        theme,
+      }));
+    }
+    if (smileContainer) {
+      const strikes = [80, 85, 90, 95, 100, 105, 110, 115, 120];
+      const smile = (level: number, bend: number) => strikes.map((x) => ({ x, y: level + ((x - 100) / 10) ** 2 * bend - (x - 100) * 0.12 }));
+      newCharts.push(new CurveChart(smileContainer, {
+        series: [{ name: '1M', points: smile(22, 1.6) }, { name: '3M', points: smile(24, 0.9) }, { name: '6M', points: smile(25, 0.5) }],
+        markers: [{ x: 101.4, label: 'ATM' }],
+        valueFormat: percent,
+        ariaLabel: i18n.m.finance.smile,
+        locale: tag,
+        theme,
+      }));
+    }
+    if (boxContainer) {
+      const boxRng = seededRandom(909);
+      // 1 January 2024 was a Monday.
+      const weekday = new Intl.DateTimeFormat(tag, { weekday: 'short', timeZone: 'UTC' });
+      newCharts.push(new BoxPlotChart(boxContainer, {
+        data: Array.from({ length: 5 }, (_, d) => ({
+          label: weekday.format(new Date(Date.UTC(2024, 0, 1 + d))),
+          values: Array.from({ length: 60 }, (_, i) => (boxRng() - 0.5 + (d - 2) * 0.06) * 3 + (i % 29 === 0 ? 5 : 0)),
+        })),
+        colorBySign: true,
+        valueFormat: percent,
+        ariaLabel: i18n.m.finance.weekdayReturns,
+        locale: tag,
+        theme,
+      }));
+    }
+    if (radarContainer) {
+      newCharts.push(new RadarChart(radarContainer, {
+        axes: ['Sharpe', 'Sortino', 'Calmar', 'Alpha', 'Omega'].map((label) => ({ label, max: 3 })),
+        series: [
+          { name: i18n.m.finance.strategy, values: [1.8, 2.4, 1.5, 1.1, 2] },
+          { name: i18n.m.finance.benchmark, values: [1, 1.3, 0.7, 0.4, 1.2] },
+        ],
+        ariaLabel: i18n.m.finance.scorecard,
+        locale: tag,
+        theme,
+      }));
+    }
+    if (ringsContainer) {
+      const { assets, sectors } = i18n.m.finance;
+      newCharts.push(new SunburstChart(ringsContainer, {
+        data: [
+          { label: assets.stocks, children: [{ label: sectors.banks, value: 22 }, { label: sectors.tech, value: 14 }, { label: sectors.steel, value: 9 }, { label: sectors.retail, value: 7 }] },
+          { label: assets.bonds, value: 23 },
+          { label: assets.cash, value: 18 },
+          { label: assets.gold, value: 7 },
+        ],
+        centerLabel: i18n.m.finance.allocationTotal,
+        centerValue: '100%',
+        valueFormat: (v) => `${v}%`,
+        ariaLabel: i18n.m.finance.allocationRings,
+        locale: tag,
+        theme,
+      }));
+    }
+    if (mixContainer) {
+      const { assets } = i18n.m.finance;
+      const month = new Intl.DateTimeFormat(tag, { month: 'short', timeZone: 'UTC' });
+      const months = Array.from({ length: 12 }, (_, i) => i);
+      newCharts.push(new StackedAreaChart(mixContainer, {
+        categories: months.map((i) => month.format(new Date(Date.UTC(2026, i, 15)))),
+        series: [
+          { name: assets.stocks, values: months.map((i) => 40 + i * 2 + Math.sin(i) * 3) },
+          { name: assets.bonds, values: months.map((i) => 30 - i) },
+          { name: assets.cash, values: months.map((i) => 20 - i * 0.6) },
+          { name: assets.gold, values: months.map((i) => 8 + Math.cos(i / 2) * 2) },
+        ],
+        normalized: true,
+        ariaLabel: i18n.m.finance.allocationOverTime,
+        locale: tag,
+        theme,
+      }));
+    }
+
+    // In three dimensions.
+    if (surfaceContainer) {
+      const strikes = [80, 85, 90, 95, 100, 105, 110, 115, 120];
+      const tenors = ['1W', '2W', '1M', '2M', '3M', '6M', '1Y'];
+      newCharts.push(new SurfaceChart(surfaceContainer, {
+        x: strikes,
+        y: tenors,
+        // A smile that flattens as the expiry moves out, with a skew to the downside.
+        values: tenors.map((_, t) => strikes.map((k) => 0.2 + ((k - 100) / 100) ** 2 * (2.4 / (1 + t * 0.6)) - (k - 100) * 0.0012 + t * 0.005)),
+        xLabel: i18n.m.finance.strike,
+        yLabel: i18n.m.finance.expiry,
+        valueLabel: 'IV',
+        valueFormat: (v) => `${(v * 100).toFixed(1)}%`,
+        ariaLabel: i18n.m.finance.volSurface,
+        locale: tag,
+        theme,
+      }));
+    }
+    if (depthHistoryContainer) {
+      const bookRng = seededRandom(5150);
+      const opened = Date.UTC(2026, 0, 5, 9, 0);
+      const books = Array.from({ length: 30 }, (_, t) => {
+        const mid = 100 + Math.sin(t / 5) * 1.1;
+        const level = (i: number, wall: number, size: number) => 4 + i * 0.55 + (i === wall ? size : 0) + bookRng() * 3;
+        return {
+          time: opened + t * 60_000,
+          bids: Array.from({ length: 30 }, (_, i) => ({ price: Math.round((mid - 0.1 - i * 0.1) * 10) / 10, volume: level(i, 12, 24 + t) })),
+          asks: Array.from({ length: 30 }, (_, i) => ({ price: Math.round((mid + 0.1 + i * 0.1) * 10) / 10, volume: level(i, 18, 52 - t) })),
+        };
+      });
+      const clock = new Intl.DateTimeFormat(tag, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'UTC' });
+      newCharts.push(new SurfaceChart(depthHistoryContainer, {
+        ...depthSurface(books, { levels: 48 }),
+        style: 'slices',
+        yFormat: (ms) => clock.format(new Date(ms)),
+        ariaLabel: i18n.m.finance.depthOverTime,
+        locale: tag,
+        theme,
+      }));
+    }
+    if (quartersContainer) {
+      const { assets } = i18n.m.finance;
+      newCharts.push(new Bar3DChart(quartersContainer, {
+        categories: ['Q1', 'Q2', 'Q3', 'Q4'],
+        series: [
+          { name: assets.stocks, values: [4.2, 6.1, -2.4, 5.3] },
+          { name: assets.bonds, values: [1.1, 0.8, 1.6, -0.5] },
+          { name: assets.gold, values: [2.5, -1.2, 3.8, 2.1] },
+        ],
+        valueFormat: percent,
+        ariaLabel: i18n.m.finance.quarterReturns,
+        locale: tag,
+        theme,
+      }));
+    }
+
     // Gauge
     if (gaugeContainer) {
       gaugeChart = new GaugeChart(gaugeContainer, {
@@ -606,6 +799,66 @@
     <div class="card-label">{m.finance.counterClock}</div>
     <div class="card-chart card-chart--320" bind:this={clockContainer}></div>
   </div>
+
+  <!-- Options and portfolios -->
+  <div class="mid-grid" data-reveal data-reveal-stagger>
+    <div class="chart-card">
+      <div class="card-label">{m.finance.payoff}</div>
+      <div class="card-chart card-chart--300" bind:this={payoffContainer}></div>
+    </div>
+    <div class="chart-card">
+      <div class="card-label">{m.finance.smile}</div>
+      <div class="card-chart card-chart--300" bind:this={smileContainer}></div>
+    </div>
+  </div>
+
+  <div class="mid-grid" data-reveal data-reveal-stagger>
+    <div class="chart-card">
+      <div class="card-label">{m.finance.weekdayReturns}</div>
+      <div class="card-chart card-chart--300" bind:this={boxContainer}></div>
+    </div>
+    <div class="chart-card">
+      <div class="card-label">{m.finance.scorecard}</div>
+      <div class="card-chart card-chart--300" bind:this={radarContainer}></div>
+    </div>
+  </div>
+
+  <div class="mid-grid" data-reveal data-reveal-stagger>
+    <div class="chart-card">
+      <div class="card-label">{m.finance.allocationRings}</div>
+      <div class="card-chart card-chart--300" bind:this={ringsContainer}></div>
+    </div>
+    <div class="chart-card">
+      <div class="card-label">{m.finance.allocationOverTime}</div>
+      <div class="card-chart card-chart--300" bind:this={mixContainer}></div>
+    </div>
+  </div>
+
+  <!-- In three dimensions: a box is about as wide as it is high, so three to a row -->
+  <div class="tri-grid" data-reveal data-reveal-stagger>
+    <div class="chart-card">
+      <div class="card-label">{m.finance.volSurface}</div>
+      <div class="card-chart card-chart--350" bind:this={surfaceContainer}></div>
+    </div>
+    <div class="chart-card">
+      <div class="card-label">{m.finance.depthOverTime}</div>
+      <div class="card-chart card-chart--350" bind:this={depthHistoryContainer}></div>
+    </div>
+    <div class="chart-card">
+      <div class="card-label">{m.finance.quarterReturns}</div>
+      <div class="card-chart card-chart--350" bind:this={quartersContainer}></div>
+    </div>
+  </div>
+  <p class="chart-note" data-reveal>{m.finance.turnHint}</p>
+
+  <!-- A chart as a picture, on paper, and all of them as one PDF -->
+  <div class="export-row" data-reveal>
+    <span class="export-label">{m.finance.exportLabel}</span>
+    <button type="button" class="export-btn" onclick={() => equityChart?.screenshot('portfolio', { pixelRatio: 2 })}>PNG</button>
+    <button type="button" class="export-btn" onclick={() => savePdf(async () => (equityChart ? equityChart.toPdf({ title: m.finance.portfolio }) : null), 'portfolio.pdf')}>PDF</button>
+    <button type="button" class="export-btn" onclick={() => equityChart?.print({ title: m.finance.portfolio })}>{m.finance.print}</button>
+    <button type="button" class="export-btn" onclick={() => savePdf(() => chartsToPdf(chartsOnPage(), { title: m.finance.title }), 'charts.pdf')}>{m.finance.reportPdf}</button>
+  </div>
 </section>
 
 <style>
@@ -707,6 +960,60 @@
     border-bottom: 1px solid var(--border);
   }
 
+  /* --- A row of three (the charts in a box) --- */
+  .tri-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 12px;
+  }
+
+  .tri-grid .chart-card {
+    min-width: 0;
+  }
+
+  .chart-note {
+    margin: 0 0 20px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* --- A chart to take away: a picture, paper, a PDF --- */
+  .export-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .export-label {
+    margin-right: 4px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .export-btn {
+    padding: 6px 12px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 150ms, color 150ms;
+  }
+
+  .export-btn:hover {
+    border-color: var(--text-muted);
+  }
+
+  .export-btn:focus-visible {
+    outline: 2px solid var(--text);
+    outline-offset: 2px;
+  }
+
   .card-chart {
     width: 100%;
   }
@@ -731,6 +1038,10 @@
   @media (max-width: 1024px) {
     .spark-grid {
       grid-template-columns: repeat(3, 1fr);
+    }
+
+    .tri-grid {
+      grid-template-columns: 1fr;
     }
   }
 

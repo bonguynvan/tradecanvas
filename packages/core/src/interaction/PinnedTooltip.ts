@@ -1,15 +1,14 @@
 import type { OHLCBar, Theme, TimeZoneSetting, ViewportState } from '@tradecanvas/commons';
-import { UI_ICONS, priceReadoutColors, barDateParts, formatPrice, iconSvg, normalizeBarTime, timeParts, type BarTimeUnit } from '@tradecanvas/commons';
+import { UI_ICONS, barDateParts, formatPrice, iconSvg, normalizeBarTime, timeParts, type BarTimeUnit } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 import { isolateFontFeatures } from '../engine/CanvasLayer.js';
+import { readoutTextColors } from '../ui/chartType.js';
 import { writtenDate } from '../axis/writtenDate.js';
 
 /** Decimals prices show when neither the chart nor the market sets them. */
 const DEFAULT_DECIMALS = 2;
 /** Decimals the move's percentage shows. */
 const PERCENT_DECIMALS = 2;
-/** How far the move's percentage fades beside the price it follows. */
-const PERCENT_OPACITY = '0.7';
 
 /**
  * Pinned OHLC tooltip — a second DOM tooltip anchored to a specific bar index.
@@ -42,6 +41,10 @@ export class PinnedTooltip {
   private priceFormatter: ((price: number) => string) | null = null;
   private pricePrecision: number | null = null;
   private locale = 'en-US';
+  /** The theme the card's colours were last set in. */
+  private themed: Theme | null = null;
+  /** The face last written: a browser gives it back in other words, so it is kept as it was set. */
+  private fontFamily: string | null = null;
 
   /** The time zone the bar's time is shown in; null for the browser's. */
   setTimezone(tz: TimeZoneSetting): void {
@@ -81,9 +84,8 @@ export class PinnedTooltip {
       display: 'none',
       padding: '6px 10px',
       borderRadius: 'var(--tcw-tooltip-radius, 4px)',
-      fontSize: '11px',
-      fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif',
       lineHeight: '1.5',
+      fontVariantNumeric: 'tabular-nums',
       pointerEvents: 'auto',
       cursor: 'pointer',
       zIndex: '99',
@@ -98,9 +100,7 @@ export class PinnedTooltip {
     this.deltaEl = document.createElement('div');
     this.deltaEl.style.marginTop = '4px';
     this.deltaEl.style.paddingTop = '4px';
-    this.deltaEl.style.borderTop = '1px solid currentColor';
-    this.deltaEl.style.opacity = '0.85';
-    this.deltaEl.style.fontVariantNumeric = 'tabular-nums';
+    this.deltaEl.style.borderTop = '1px solid transparent';
 
     this.el.appendChild(this.timeEl);
     this.el.appendChild(this.ohlcEl);
@@ -109,15 +109,12 @@ export class PinnedTooltip {
     // Small "pin" badge so the user knows what they're looking at.
     const pinBadge = document.createElement('div');
     // The pin of the icon set, then the word: no emoji, which draws differently on every system.
-    pinBadge.innerHTML = `${iconSvg(UI_ICONS.pin, 10)}<span>pinned</span>`;
+    pinBadge.innerHTML = `${iconSvg(UI_ICONS.pin, 12)}<span>Pinned</span>`;
     pinBadge.style.display = 'flex';
     pinBadge.style.alignItems = 'center';
     pinBadge.style.gap = '3px';
-    pinBadge.style.fontSize = '9px';
     pinBadge.style.opacity = '0.6';
     pinBadge.style.marginBottom = '2px';
-    pinBadge.style.letterSpacing = '0.04em';
-    pinBadge.style.textTransform = 'uppercase';
     this.el.insertBefore(pinBadge, this.timeEl);
 
     container.appendChild(this.el);
@@ -133,40 +130,72 @@ export class PinnedTooltip {
     this.pinnedBar = bar;
     this.pinnedIndex = barIndex;
 
-    const isUp = bar.close >= bar.open;
-    const readout = priceReadoutColors(theme);
-    const color = isUp ? readout.up : readout.down;
+    const color = this.readout(theme, bar.close >= bar.open);
 
     const ms = normalizeBarTime(bar.time, unit);
     const d = daily ? barDateParts(ms, this.tz, this.exchangeZone) : timeParts(ms, this.tz);
     // The month by name, as the crosshair's tag writes it: 11/12 is two different days to two readers.
     const date = writtenDate(this.locale, d.year, d.month, d.day, daily);
     this.timeEl.textContent = daily ? date : `${date} ${pad(d.hours)}:${pad(d.minutes)}`;
-    this.timeEl.style.color = theme.textSecondary;
 
     // Built as nodes: the colours are set as style values, never parsed as markup.
     const parts: Node[] = [];
     for (const [label, value] of [['O ', bar.open], [' H ', bar.high], [' L ', bar.low], [' C ', bar.close]] as const) {
       const name = document.createElement('span');
-      name.style.opacity = '.6';
+      name.dataset.name = '';
       name.textContent = label;
       const number = document.createElement('span');
+      number.dataset.figure = '';
       number.style.color = color;
       number.textContent = this.fmt(value);
       parts.push(name, number);
     }
     this.ohlcEl.replaceChildren(...parts);
 
-    const isDark = isDarkColor(theme.background);
-    this.el.style.background = withAlpha(theme.background, isDark ? 0.96 : 0.97);
-    this.el.style.border = `1px solid ${color}`;
-    this.el.style.boxShadow = isDark
-      ? '0 4px 12px rgba(0,0,0,0.55)'
-      : '0 4px 12px rgba(0,0,0,0.18)';
-    this.el.style.color = theme.text;
-    this.el.style.backdropFilter = 'blur(8px)';
+    this.themed = null;
+    this.applyTheme(theme);
 
     this.el.style.display = 'block';
+  }
+
+  /** A rise's or a fall's colour as text: taken toward the chart's text until it reads on its ground. */
+  private readout(theme: Theme, up: boolean): string {
+    const read = readoutTextColors(theme);
+    return up ? read.up : read.down;
+  }
+
+  /** The card's ground, edge, shadow and colours, in `theme`: once per theme, and its type each time. */
+  private applyTheme(theme: Theme): void {
+    this.applyFont(theme);
+    if (!this.el || !this.pinnedBar || this.themed === theme) return;
+    this.themed = theme;
+    const color = this.readout(theme, this.pinnedBar.close >= this.pinnedBar.open);
+    const isDark = isDarkColor(theme.background);
+    // As the card beside the crosshair: the widget's look may give its ground, edge and shadow.
+    this.el.style.background = `var(--tcw-chart-card-bg, ${withAlpha(theme.background, isDark ? 0.96 : 0.97)})`;
+    this.el.style.border = `1px solid var(--tcw-chart-card-border, ${color})`;
+    this.el.style.boxShadow = `var(--tcw-chart-card-shadow, ${isDark
+      ? '0 4px 12px rgba(0,0,0,0.55)'
+      : '0 4px 12px rgba(0,0,0,0.18)'})`;
+    this.el.style.color = theme.text;
+    this.el.style.backdropFilter = 'var(--tcw-chart-card-blur, blur(8px))';
+    if (this.timeEl) this.timeEl.style.color = theme.textSecondary;
+    // The rule over the move is the chart's own line: in the move's colour it read as part of the figure.
+    if (this.deltaEl) this.deltaEl.style.borderTopColor = theme.axisLine;
+    for (const figure of this.ohlcEl?.querySelectorAll<HTMLElement>('[data-figure]') ?? []) figure.style.color = color;
+    // A price's name is the theme's quieter text: the text faded read at whatever the fade left it.
+    for (const name of this.ohlcEl?.querySelectorAll<HTMLElement>('[data-name]') ?? []) name.style.color = theme.textSecondary;
+  }
+
+  /** In the chart's own face and small size: it was a face of its own, at 11 px in every theme. */
+  private applyFont(theme: Theme): void {
+    if (!this.el) return;
+    const size = `${theme.font.sizeSmall}px`;
+    if (this.el.style.fontSize !== size) this.el.style.fontSize = size;
+    if (this.fontFamily !== theme.font.family) {
+      this.fontFamily = theme.font.family;
+      this.el.style.fontFamily = theme.font.family;
+    }
   }
 
   unpin(): void {
@@ -190,6 +219,8 @@ export class PinnedTooltip {
    */
   reposition(viewport: ViewportState, hoverBar: OHLCBar | null, hoverIndex: number | null, theme: Theme): void {
     if (!this.el || !this.pinnedBar) return;
+    // The card follows the theme while the bar stays pinned: a look or a size set since is taken here.
+    this.applyTheme(theme);
 
     const x = barIndexToX(this.pinnedIndex, viewport);
     const y = priceToY(this.pinnedBar.close, viewport);
@@ -211,15 +242,13 @@ export class PinnedTooltip {
         const pct = this.pinnedBar.close !== 0 ? (priceΔ / this.pinnedBar.close) * 100 : 0;
         const sign = priceΔ > 0 ? '+' : priceΔ < 0 ? '−' : '';
         const barΔ = hoverIndex - this.pinnedIndex;
-        const readout = priceReadoutColors(theme);
-        const direction = priceΔ >= 0 ? readout.up : readout.down;
+        const direction = this.readout(theme, priceΔ >= 0);
         this.deltaEl.style.color = direction;
         // The percentage in the locale too: a price in it beside a plain 1.23 reads as two systems.
         const pctText = formatPrice(Math.abs(pct), PERCENT_DECIMALS, this.locale);
         // Built as nodes, its fade set as a style value: a style attribute in markup is refused
         // by a Content-Security-Policy whose style-src leaves out 'unsafe-inline'.
         const pctEl = document.createElement('span');
-        pctEl.style.opacity = PERCENT_OPACITY;
         pctEl.textContent = `(${sign}${pctText}%)`;
         this.deltaEl.replaceChildren(`Δ ${sign}${this.fmt(Math.abs(priceΔ))} `, pctEl, ` · ${barΔ > 0 ? '+' : ''}${barΔ} bars`);
         this.deltaEl.style.display = 'block';

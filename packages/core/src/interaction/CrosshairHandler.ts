@@ -1,11 +1,12 @@
 import type { Point, ViewportState, Theme, DataSeries, TimeFormatter, TimeZoneSetting, ResolvedLineLook, CrosshairCursor } from '@tradecanvas/commons';
-import { PRICE_AXIS_WIDTH, TIME_AXIS_HEIGHT, autoPricePrecision, timeParts, isDateOnly, barDateParts, barsAreDaily, barTimeUnit, lineDash, withAlpha } from '@tradecanvas/commons';
+import { PRICE_AXIS_WIDTH, TIME_AXIS_HEIGHT, autoPricePrecision, formatPrice, timeParts, isDateOnly, barDateParts, barsAreDaily, barTimeUnit, lineDash, withAlpha } from '@tradecanvas/commons';
 import { crosshairLooks } from './crosshairLooks.js';
 import { crispX, crispY } from '../charts/pixelGrid.js';
 import { panelPrecision, priceScaleText, roundStep } from '../axis/PriceAxis.js';
 import { AXIS_TAG_TEXT_INSET, fillTag } from '../ui/shapes.js';
 import { axisTimes } from '../charts/transforms/axisTimes.js';
 import { xToBarIndex, yToPrice, barIndexToX, barIndexToTime, priceToY, timeToX } from '../viewport/ScaleMapping.js';
+import { onGrid, type PriceRounding } from '../viewport/priceGrid.js';
 import { readableText } from '../finance/colorScale.js';
 import type { AxisSpan } from '../drawings/axisSpan.js';
 import { writtenDate } from '../axis/writtenDate.js';
@@ -66,6 +67,12 @@ export class CrosshairHandler {
   private magnetMode = true;
   private mode: CrosshairMode = 'magnet';
   private cursor: CrosshairCursor = 'cross';
+  /** Whether a line is being dragged to a price just now: asked at each frame. */
+  private priceHeld: () => boolean = () => false;
+  /** How the price written on the axis is put on the market's grid; null writes the pointer's own. */
+  private priceRound: PriceRounding | null = null;
+  /** The last price, read at each frame: what the price on the axis is counted from. Null with none. */
+  private changeBase: (() => number | null) | null = null;
   /** The span tints drawn on the axes this frame: a label cleared for a pill gets its tint back. */
   private spanTints: SpanTint[] = [];
   /** Fixed decimals for the price pill; `null` follows the price axis. */
@@ -170,6 +177,54 @@ export class CrosshairHandler {
     this.position = pos;
   }
 
+  /**
+   * While `held()` says so, the crosshair draws no horizontal line and no
+   * price on the axis: a line dragged to a price (an order's, a stop's)
+   * writes that price itself, a few pixels from where the pointer is, and two
+   * lines and two prices that near read as one mistake. The vertical line and
+   * the time stay.
+   */
+  setPriceHeld(held: () => boolean): void {
+    this.priceHeld = held;
+  }
+
+  /**
+   * Write the price under the pointer as the market has it: on its step
+   * (`round`, a chart's `roundPrice`), which is the price an order or an
+   * alert placed there gets. The line stays under the pointer. Null writes
+   * the pointer's own price.
+   */
+  setPriceRounding(round: PriceRounding | null): void {
+    this.priceRound = round;
+  }
+
+  /**
+   * The price the pointer's is counted from (the last price), read at each
+   * frame: where the theme says so (`crosshair.labelChange`), the price on
+   * the axis has under it how far it is from this one, in percent. Null, or a
+   * base that is no price, writes the price alone.
+   */
+  setChangeBase(base: (() => number | null) | null): void {
+    this.changeBase = base;
+  }
+
+  /** "+1.25%" for `price` against the last price, or null where none is written. */
+  private changeText(price: number, viewport: ViewportState, theme: Theme): string | null {
+    if (!crosshairLooks(theme).labelChange) return null;
+    // Not from a last price the chart's style has switched off: it is on the chart nowhere.
+    if (theme.style?.lastPrice.visible === false) return null;
+    // A scale in percent or indexed already says how far a price is from its base.
+    const mode = viewport.scaleMode;
+    if (mode === 'percentage' || mode === 'indexedTo100') return null;
+    const base = this.changeBase?.() ?? null;
+    if (base === null || !Number.isFinite(base) || base <= 0 || !Number.isFinite(price)) return null;
+    const pct = ((price - base) / base) * 100;
+    const figures = formatPrice(Math.abs(pct), CHANGE_DECIMALS, this.locale);
+    // A change that rounds to nothing has no sign: "−0.00%" says a fall there is not.
+    const flat = Number(Math.abs(pct).toFixed(CHANGE_DECIMALS)) === 0;
+    return `${flat ? '' : pct > 0 ? '+' : MINUS}${figures}%`;
+  }
+
   /** The bar last reported under the pointer (the callback's `barIndex`); null with none. */
   getReportedBarIndex(): number | null {
     return this.lastCallbackBarIndex >= 0 ? this.lastCallbackBarIndex : null;
@@ -245,7 +300,7 @@ export class CrosshairHandler {
     drawVerticalLine(ctx, x, chartRect, looks.vertical);
 
     const h = looks.horizontal;
-    if (h.visible) {
+    if (h.visible && !this.priceHeld()) {
       ctx.setLineDash(lineDash(h.style, CROSSHAIR_DASH, h.width));
       ctx.strokeStyle = h.color;
       // On the same device-pixel row a drawing line this wide at this y takes.
@@ -297,22 +352,7 @@ export class CrosshairHandler {
     const font = `600 ${theme.font.sizeSmall}px ${theme.font.family}`;
 
     // ── Price pill (right axis) ──
-    const price = yToPrice(y, viewport);
-    const precision = this.pricePrecision ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
-    const priceText = priceScaleText(price, viewport, precision, this.locale);
-    const priceAxisX = chartRect.x + chartRect.width;
-    clearCoveredRows(ctx, priceRows, y, priceAxisX, viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH, theme, this.spanTints);
-    drawAxisPill(ctx, {
-      text: priceText,
-      anchorX: priceAxisX,
-      anchorY: y,
-      orientation: 'right',
-      axisWidth: viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH,
-      bg: crosshairLooks(theme).labelBackground,
-      fg: crosshairLooks(theme).labelText,
-      theme,
-      font,
-    });
+    if (!this.priceHeld()) this.drawPricePill(ctx, viewport, theme, y, font, priceRows);
 
     // ── Time pill (bottom axis) ──
     this.drawTimePill(ctx, viewport, theme, data, slot, x, timeAxisY, timeColumns);
@@ -434,6 +474,33 @@ export class CrosshairHandler {
       : formatBarTime(time * barTimeUnit(times), this.tz, barsAreDaily(times), this.exchangeZone, this.locale);
   }
 
+  private drawPricePill(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, y: number, font: string, priceRows: readonly number[]): void {
+    const { chartRect } = viewport;
+    const price = onGrid(this.priceRound, yToPrice(y, viewport));
+    const precision = this.pricePrecision ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
+    const priceText = priceScaleText(price, viewport, precision, this.locale);
+    const priceAxisX = chartRect.x + chartRect.width;
+    const change = this.changeText(price, viewport, theme);
+    const height = change === null ? PILL_HEIGHT : twoLinePillHeight(theme);
+    // A tag of two lines stays on the plot: by its top or its bottom it stops there, as the time's does by the sides.
+    const half = height / 2;
+    const at = change === null ? y : Math.max(chartRect.y + half, Math.min(chartRect.y + chartRect.height - half, y));
+    clearCoveredRows(ctx, priceRows, at, priceAxisX, viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH, theme, this.spanTints, height);
+    drawAxisPill(ctx, {
+      text: priceText,
+      below: change ?? undefined,
+      belowFont: `500 ${theme.font.sizeSmall}px ${theme.font.family}`,
+      anchorX: priceAxisX,
+      anchorY: at,
+      orientation: 'right',
+      axisWidth: viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH,
+      bg: crosshairLooks(theme).labelBackground,
+      fg: crosshairLooks(theme).labelText,
+      theme,
+      font,
+    });
+  }
+
   private drawTimePill(
     ctx: CanvasRenderingContext2D,
     viewport: ViewportState,
@@ -486,6 +553,11 @@ export class CrosshairHandler {
   }
 }
 
+/** Decimals of the percentage under the crosshair's price. */
+const CHANGE_DECIMALS = 2;
+/** The minus a fall is written with: the sign's own character, as wide as a plus. */
+const MINUS = '\u2212';
+
 /** The crosshair's dashes when `dashed`. */
 const CROSSHAIR_DASH = [4, 4];
 
@@ -518,6 +590,9 @@ interface AxisPillOptions {
   orientation: 'right' | 'bottom';
   /** A tag on the price axis (`'right'`) is this wide: the axis's width. */
   axisWidth?: number;
+  /** A second line under the text, on the price axis: the tag is then two lines tall. */
+  below?: string;
+  belowFont?: string;
   bg: string;
   fg: string;
   font: string;
@@ -534,6 +609,14 @@ interface AxisPillOptions {
 /** Height (px) of the crosshair's axis pills, and the room each side of their text. */
 const PILL_HEIGHT = 20;
 const PILL_PAD_X = 8;
+/** Room over the first and under the second line of a tag of two lines, and between the two (px). */
+const TWO_LINE_PAD = 4;
+const TWO_LINE_GAP = 2;
+
+/** Height of the price tag when it has a line under its price. */
+function twoLinePillHeight(theme: Theme): number {
+  return theme.font.sizeSmall * 2 + TWO_LINE_GAP + TWO_LINE_PAD * 2;
+}
 
 /** A label's span along the time axis (px). */
 type TimeColumn = { left: number; right: number };
@@ -572,9 +655,10 @@ function clearCoveredColumns(
 function clearCoveredRows(
   ctx: CanvasRenderingContext2D, rows: readonly number[], y: number, axisX: number, axisWidth: number, theme: Theme,
   tints: readonly SpanTint[] = [],
+  pillHeight = PILL_HEIGHT,
 ): void {
   const half = Math.ceil(theme.font.sizeSmall / 2) + 1;
-  const covered = rows.filter((row) => Math.abs(row - y) < PILL_HEIGHT / 2 + half);
+  const covered = rows.filter((row) => Math.abs(row - y) < pillHeight / 2 + half);
   if (covered.length === 0) return;
   ctx.save();
   for (const row of covered) {
@@ -605,11 +689,23 @@ function drawAxisPill(ctx: CanvasRenderingContext2D, opts: AxisPillOptions): voi
   ctx.textBaseline = 'middle';
   if (opts.orientation === 'right') {
     const x = opts.anchorX + 1;
-    const y = opts.anchorY - h / 2;
-    fillTag(ctx, x, y, opts.axisWidth === undefined ? w : opts.axisWidth - 2, h, opts.theme);
+    const tall = opts.below === undefined ? h : twoLinePillHeight(opts.theme);
+    fillTag(ctx, x, opts.anchorY - tall / 2, opts.axisWidth === undefined ? w : opts.axisWidth - 2, tall, opts.theme);
     ctx.fillStyle = opts.fg;
     ctx.textAlign = 'left';
-    ctx.fillText(opts.text, x + AXIS_TAG_TEXT_INSET, opts.anchorY);
+    if (opts.below === undefined) {
+      ctx.fillText(opts.text, x + AXIS_TAG_TEXT_INSET, opts.anchorY);
+    } else {
+      // The price over the pointer's line, how far it is from the last price under it. Cut at the tag: the
+      // axis has room for a change of two figures, and a wider one must not run over the chart's edge.
+      ctx.beginPath();
+      ctx.rect(x, opts.anchorY - tall / 2, opts.axisWidth === undefined ? w : opts.axisWidth - 2, tall);
+      ctx.clip();
+      const line = (opts.theme.font.sizeSmall + TWO_LINE_GAP) / 2;
+      ctx.fillText(opts.text, x + AXIS_TAG_TEXT_INSET, opts.anchorY - line);
+      if (opts.belowFont) ctx.font = opts.belowFont;
+      ctx.fillText(opts.below, x + AXIS_TAG_TEXT_INSET, opts.anchorY + line);
+    }
   } else {
     const x = opts.anchorX - w / 2;
     const y = opts.anchorY + notch;

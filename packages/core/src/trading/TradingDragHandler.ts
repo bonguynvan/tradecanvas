@@ -1,11 +1,14 @@
 import type { TradingOrder, TradingPosition, ViewportState, Point } from '@tradecanvas/commons';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
-import type { DragState } from './OrderRenderer.js';
+import { stopOf, type DragState } from './OrderRenderer.js';
 import { inPlot } from './plot.js';
+import { boundsWithRoom, onGrid, withinBounds, type PriceBounds, type PriceRounding } from '../viewport/priceGrid.js';
 
 export interface DragResult {
-  sourceType: 'order' | 'stopLoss' | 'takeProfit';
+  sourceType: 'order' | 'orderStop' | 'stopLoss' | 'takeProfit' | 'level';
   id: string;
+  /** Which of the position's take-profit levels, for a `'level'`. */
+  level?: number;
   newPrice: number;
   previousPrice: number;
 }
@@ -17,10 +20,23 @@ export class TradingDragHandler {
   private dragState: DragState | null = null;
   private startY = 0;
   private dragging = false;
+  /** How a price dragged to is put on the market's grid; null leaves it as the pointer has it. */
+  private round: PriceRounding | null = null;
 
   constructor(private dragThreshold = 3) {}
 
-  /** A press at `pos`: the first order line within `tolerance`, else the first stop or target. */
+  setRound(round: PriceRounding | null): void {
+    this.round = round;
+  }
+
+  /** The prices an order may be dragged to today, asked as it is dragged; none holds it nowhere. */
+  private bounds: () => PriceBounds | null = () => null;
+
+  setOrderBounds(bounds: () => PriceBounds | null): void {
+    this.bounds = bounds;
+  }
+
+  /** A press at `pos`: the first order line within `tolerance`, else the first stop or target, else the take-profit level nearest it. */
   onPointerDown(
     pos: Point,
     orders: TradingOrder[],
@@ -33,6 +49,9 @@ export class TradingDragHandler {
       return inPlot(y, viewport) && Math.abs(pos.y - y) <= tolerance;
     };
     const order = orders.find((o) => o.draggable !== false && near(o.price));
+    // A stop-limit's stop is a line of its own: of an order's two lines, the nearer to the press.
+    const stopped = this.nearestStop(pos, orders, viewport, tolerance);
+    if (stopped && (!order || stopped.distance < Math.abs(pos.y - priceToY(order.price, viewport)))) return this.beginOrderStop(stopped.order, pos.y);
     if (order) return this.beginOrder(order, pos.y);
     for (const position of positions) {
       for (const which of STOPS) {
@@ -40,13 +59,48 @@ export class TradingDragHandler {
         if (price !== undefined && near(price)) return this.beginStop(position, which, pos.y);
       }
     }
-    return false;
+    // Levels lie close together, a part of the way to a target each: the nearest to the press, not the first in reach.
+    let taken: { position: TradingPosition; index: number } | null = null;
+    let reach = Infinity;
+    for (const position of positions) {
+      const levels = position.takeProfits ?? [];
+      for (let index = 0; index < levels.length; index++) {
+        const distance = Math.abs(pos.y - priceToY(levels[index].price, viewport));
+        if (!near(levels[index].price) || distance >= reach) continue;
+        taken = { position, index };
+        reach = distance;
+      }
+    }
+    return taken !== null && this.beginLevel(taken.position, taken.index, pos.y);
   }
 
   /** Drag `order`'s line, pressed at `y`. */
   beginOrder(order: TradingOrder, y: number): boolean {
     if (order.draggable === false) return false;
-    return this.start({ orderId: order.id, sourceType: 'order', startPrice: order.price, currentPrice: order.price }, y);
+    // A stop-limit takes its stop with it: how far apart the two are is kept, at the day's limits too.
+    const stop = stopOf(order, null);
+    const state: DragState = { orderId: order.id, sourceType: 'order', startPrice: order.price, currentPrice: order.price };
+    return this.start(stop === undefined ? state : { ...state, room: stop - order.price }, y);
+  }
+
+  /** Drag the stop of a stop-limit `order`, pressed at `y`: the stop alone, the order where it is. */
+  beginOrderStop(order: TradingOrder, y: number): boolean {
+    const stop = stopOf(order, null);
+    if (order.draggable === false || stop === undefined) return false;
+    return this.start({ orderId: order.id, sourceType: 'orderStop', startPrice: stop, currentPrice: stop }, y);
+  }
+
+  /** The stop-limit order whose stop is nearest `pos`, within `tolerance` and on the plot; null with none. */
+  private nearestStop(pos: Point, orders: readonly TradingOrder[], viewport: ViewportState, tolerance: number): { order: TradingOrder; distance: number } | null {
+    let nearest: { order: TradingOrder; distance: number } | null = null;
+    for (const order of orders) {
+      const stop = order.draggable === false ? undefined : stopOf(order, null);
+      if (stop === undefined) continue;
+      const y = priceToY(stop, viewport);
+      const distance = Math.abs(pos.y - y);
+      if (inPlot(y, viewport) && distance <= tolerance && (!nearest || distance < nearest.distance)) nearest = { order, distance };
+    }
+    return nearest;
   }
 
   /** Drag `position`'s stop or target, pressed at `y`. */
@@ -54,6 +108,13 @@ export class TradingDragHandler {
     const price = position[which];
     if (price === undefined) return false;
     return this.start({ orderId: position.id, sourceType: which, startPrice: price, currentPrice: price }, y);
+  }
+
+  /** Drag `position`'s take-profit level at `index`, pressed at `y`. */
+  beginLevel(position: TradingPosition, index: number, y: number): boolean {
+    const level = position.takeProfits?.[index];
+    if (!level) return false;
+    return this.start({ orderId: position.id, sourceType: 'level', level: index, startPrice: level.price, currentPrice: level.price }, y);
   }
 
   /**
@@ -80,7 +141,12 @@ export class TradingDragHandler {
       this.dragging = true;
     }
 
-    this.dragState.currentPrice = yToPrice(pos.y, viewport);
+    const price = onGrid(this.round, yToPrice(pos.y, viewport));
+    // An order's own price (and a stop-limit's stop) is one of today's: a position's stop or target need not be.
+    const ordered = this.dragState.sourceType === 'order' || this.dragState.sourceType === 'orderStop';
+    // With its stop beside it, it stops where the nearer of the two reaches the limit.
+    const bounds = ordered ? boundsWithRoom(this.bounds(), this.dragState.room ?? 0) : null;
+    this.dragState.currentPrice = withinBounds(bounds, price);
     return true;
   }
 
@@ -92,10 +158,13 @@ export class TradingDragHandler {
     // A press that never moved changes nothing, but a stop being added is set where it started.
     if (!this.dragging && !state.created) return null;
     this.dragging = false;
+    // Nor does a line let go at the price it was at: on a grid, a pull of less than a step.
+    if (!state.created && state.currentPrice === state.startPrice) return null;
 
     return {
       sourceType: state.sourceType,
       id: state.orderId,
+      ...(state.level === undefined ? {} : { level: state.level }),
       newPrice: state.currentPrice,
       previousPrice: state.startPrice,
     };
@@ -115,5 +184,10 @@ export class TradingDragHandler {
 
   isActive(): boolean {
     return this.dragState !== null;
+  }
+
+  /** Whether the line pressed has been moved: past the threshold that tells a drag from a click. */
+  isDragging(): boolean {
+    return this.dragState !== null && this.dragging;
   }
 }

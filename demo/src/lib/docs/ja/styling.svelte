@@ -14,7 +14,7 @@
   ウィジェットの外観はトークンの集まりです。パーツの種類ごとの角の丸み、コントロールとバーのサイズ、文字、枠線、影、
   選択中のボタンの見せ方、そしてツールバーと描画ツールを端に沿わせるか浮かせるか。プリセットから始めて、好きなところを
   変えられます。色はテーマ（<code>dark</code> / <code>light</code>。<a href={href('/docs/api')}>API リファレンス</a>を参照）が
-  受け持ち、どの外観もどちらのテーマとも組み合わせられます。既定の Modern は独自の dark と light を持ち、
+  受け持ち、どの外観もどちらのテーマとも組み合わせられます。既定の Graphite と Modern はそれぞれ独自の dark と light を持ち、
   ほかの外観は Modern より前にウィジェットが使っていた色を共有します。
 </p>
 
@@ -22,7 +22,16 @@
 <table>
   <thead><tr><th>プリセット</th><th>外観</th></tr></thead>
   <tbody>
-    <tr><td><code>modern</code>（既定）</td><td>
+    <tr><td><code>graphite</code>（既定）</td><td>
+      取引デスクの枠で、固有の色相を持ちません。地は一段ずつ違い（<code>#131416</code> /
+      <code>#ffffff</code>）、細い線で区切ります。寸法は意図して少なく、コントロールの高さは 20、24、28、36、40 px、
+      角はすべて 3 px、浮く層の影は一種類で、ほかに影はありません。選択中のもの（足種、ツール、タブ）は
+      明るい地に本文の色で示し、アンバーは操作するものだけに使います。スイッチはチェックボックスで、
+      口座の表の列は数値の幅に合わせます。書体はページが読み込んでいれば IBM Plex Sans、なければシステムの書体です。
+      チャートでは、テーマのオブジェクトを渡さない限り、色は <code>GRAPHITE_DARK_THEME</code> と
+      <code>GRAPHITE_LIGHT_THEME</code> です。
+    </td></tr>
+    <tr><td><code>modern</code></td><td>
       コードエディターのウィンドウを、その Dark Modern と Light Modern の色で。チャートはエディターの地
       （<code>#1f1f1f</code> / <code>#ffffff</code>）の上にあり、周りのバーは地から一段ずらした色で、間は細い線です。
       38 px のツールバーに 28 px のボタンと 16 px のアイコン、4 px のコントロール、6 px のメニュー、8 px のダイアログ。ロゴの琥珀色
@@ -171,7 +180,8 @@ chart.setFont(null)                         // the theme's own font again`}</cod
   font: {
     family: "'Manrope', system-ui, sans-serif",
     mono: "'JetBrains Mono', monospace",
-    size: 13, weight: 500, strongWeight: 600,
+    size: 13, smallSize: 12,                          // body; figures in tables, field names
+    weight: 500, strongWeight: 600,
     labelCase: 'uppercase', labelTracking: 0.06,      // small labels
   },
   borders: { width: 1, separators: true },           // rules between toolbar groups
@@ -326,7 +336,9 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>クロスヘアの線にも同じ 4 つ（既定は細い実線）。</td></tr>
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>軸とペインの目盛り上の価格・時刻ラベル。</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>各軸の線とラベル（ペインの目盛りは価格軸に従う）。</td></tr>
-    <tr><td><code>axis.price.valueTagsOutlined</code></td><td><code>true</code> で、価格軸上のインジケーターの値タグを、線の色で塗りつぶす代わりに枠線で描く（線の色の縁の内側はチャートの背景、またはペイン独自の背景で、文字はその線の色）：価格ペイン、インジケーターのペイン、左側のスケールで。背景に近すぎてその上では読めない線は、値がスケールの文字色で書かれる。</td></tr>
+    <tr><td><code>lastPrice.limitColors</code></td><td><code>true</code> で、価格がその日の制限値にある間、現在値の線とタグをその制限の色で描く：上限以上なら上限の色、下限以下なら下限の色、基準値ちょうどなら基準値の色。その間、または制限がないときは、その日の上げ下げの色のまま。値幅制限があり、気配板がそれで色分けされる市場向け。既定ではオフ。</td></tr>
+    <tr><td><code>crosshair.labelChange</code></td><td><code>true</code> で、価格軸上でクロスヘアが示す価格の下に、その価格が現在値からどれだけ離れているかをパーセントで書く（<code>+1.25%</code>、チャートのロケールで）。現在値がないとき、またはスケールがすでにパーセントや指数のときは書かない。軸はその分の幅を確保する。Graphite テーマでは既定でオン（テーマ自身の <code>crosshairChange</code>）、ほかのテーマではオフ。</td></tr>
+    <tr><td><code>axis.price.valueTagsOutlined</code></td><td><code>true</code> で、価格軸上のインジケーターの値タグを、線の色で塗りつぶす代わりに枠線で描く（線の色の縁の内側はチャートの背景、またはペイン独自の背景で、文字はその線の色）：価格ペイン、インジケーターのペイン、左側のスケールで。背景に近すぎてその上では読めない線は、値がその色を濃くした色で書かれる（4.5:1 で読めるところまで）。 Graphite のテーマでは、これが <code>false</code> でない限り枠線で描く。 買い気配・売り気配と高値・安値のタグも、同じく枠線で描かれる。</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>凡例の値と、そのラベル（O、H、L、Vol）。</td></tr>
     <tr><td><code>legend.upColor</code>, <code>.downColor</code></td><td>バーの値を読む場所での上昇と下落：凡例の終値と変化、クロスヘアのツールチップと固定したツールチップ、計測ツール。未設定ならメイン系列の色に従うので、ローソク足を隠すチャート（独自に描くオーバーレイ）は、これらを設定して色を保つ。</td></tr>
     <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>最新価格の線とタグ。未設定なら色はメイン系列に従う。バーの残り時間（<code>features.barCountdown</code>）はタグの下に付く。</td></tr>

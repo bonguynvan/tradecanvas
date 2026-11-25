@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { DARK_THEME, LIGHT_THEME, LayerType, VN_COLORS } from '@tradecanvas/commons';
+import { DARK_THEME, LIGHT_THEME, LayerType, VN_COLORS, resolveChartTheme } from '@tradecanvas/commons';
 import type { DataSeries, Theme, ViewportState } from '@tradecanvas/commons';
 import { RenderEngine } from '../RenderEngine.js';
 import type { RenderContext } from '../RenderEngine.js';
 import { PriceAxis } from '../../axis/PriceAxis.js';
+import { CurrentPriceLine } from '../../realtime/CurrentPriceLine.js';
 import { SessionBreaks } from '../../ui/SessionBreaks.js';
 import { AXIS_LABEL_HEIGHT } from '../../ui/axisValueLabels.js';
 
@@ -905,6 +906,88 @@ describe('RenderEngine — the price limits’ colours', () => {
     }
   });
 
+  /** Each limit's axis tag as drawn: what it was filled with, the ink and the font of its figure. */
+  function limitTags(theme: Theme, colors?: { ceiling: string; floor: string; reference: string }): { text: string; fill: string; ink: string; font: string }[] {
+    const { ctx } = makeContext();
+    ctx.theme = theme;
+    ctx.priceLimits = { ceiling: 99_800, floor: 98_100, reference: 98_937, colors };
+    ctx.viewport = { ...ctx.viewport, priceRange: { min: 98_000, max: 100_000 } };
+    engine.setRenderContext(ctx);
+    engine.start();
+    engine.requestRender(LayerType.Main);
+    const layer = engine.layerManager.getLayer(LayerType.Main)!.ctx;
+    const tags: { text: string; fill: string; ink: string; font: string }[] = [];
+    let filled = '';
+    layer.fillRect = () => { filled = String(layer.fillStyle); };
+    layer.fill = () => { filled = String(layer.fillStyle); };
+    layer.fillText = (text: string) => { if (!/^[A-Z]/.test(text)) tags.push({ text, fill: filled, ink: String(layer.fillStyle), font: layer.font }); };
+    runFrame();
+    return tags.filter((tag) => /^9[89],/.test(tag.text) && /937|800|100/.test(tag.text));
+  }
+
+  it('fills a limit’s tag a shade deeper where no ink reads on the colour a host gave, as every filled tag on the axis is', () => {
+    // Colours of a middle lightness: white is about 4:1 on each, dark ink no better.
+    const host = { ceiling: '#d93f45', floor: '#0b8f6f', reference: '#d93f45' };
+    for (const theme of [LIGHT_THEME, DARK_THEME]) {
+      const tags = limitTags(theme, host);
+      expect(tags).toHaveLength(3);
+      for (const tag of tags) expect(contrast(tag.ink, tag.fill), `${theme.name} ${tag.text}`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('writes a limit’s figure in the theme’s small size, as the tags beside it are', async () => {
+    const { GRAPHITE_DARK_THEME } = await import('@tradecanvas/commons');
+    for (const theme of [DARK_THEME, GRAPHITE_DARK_THEME]) {
+      const tags = limitTags(theme);
+      expect(tags).toHaveLength(3);
+      for (const tag of tags) expect(tag.font, theme.name).toContain(`${theme.font.sizeSmall}px`);
+    }
+  });
+
+  /** The figures written on the price axis (not the names on the lines) with the last price at `last`, and each one's font. */
+  function axisFigures(last: number, overrides: Record<string, unknown>): { text: string; font: string }[] {
+    const { ctx } = makeContext();
+    ctx.theme = resolveChartTheme(DARK_THEME, 'candlestick', overrides as never) as Theme;
+    ctx.priceLimits = { ceiling: 99_800, floor: 98_100, reference: 98_937 };
+    // Room over the ceiling and under the floor: a tag by the plot's edge is pushed off it, limit or not.
+    ctx.viewport = { ...ctx.viewport, priceRange: { min: 96_000, max: 102_000 } };
+    const line = new CurrentPriceLine();
+    line.setPrice(last, 98_937);
+    ctx.currentPriceLine = line;
+    engine.setRenderContext(ctx);
+    engine.start();
+    engine.requestRender(LayerType.Main);
+    const layer = engine.layerManager.getLayer(LayerType.Main)!.ctx;
+    const figures: { text: string; font: string }[] = [];
+    layer.fillText = (text: string) => { if (!/^[A-Z]/.test(text)) figures.push({ text, font: layer.font }); };
+    runFrame();
+    return figures;
+  }
+
+  it('writes a limit’s price once where the last price sits on it in the limit’s colour: the limit’s own tag gives way', () => {
+    const count = (figures: { text: string }[], text: string) => figures.filter((f) => f.text === text).length;
+    for (const [last, text] of [[99_800, '99,800.00'], [98_100, '98,100.00'], [98_937, '98,937.00']] as const) {
+      // The key off: the limit's tag and the last price's, each with the figure.
+      expect(count(axisFigures(last, {}), text), `${text} off`).toBe(2);
+      const on = axisFigures(last, { 'lastPrice.limitColors': true });
+      expect(count(on, text), `${text} on`).toBe(1);
+      // The one left is the last price's, in its bold.
+      expect(on.find((f) => f.text === text)!.font).toContain('bold');
+      // The other two limits keep their tags.
+      for (const other of ['99,800.00', '98,100.00', '98,937.00']) if (other !== text) expect(count(on, other), `${other} beside ${text}`).toBe(1);
+    }
+  });
+
+  it('keeps a limit’s tag where the last price has gone through it, or is hidden', () => {
+    // Through the ceiling, far enough for the two tags to stand apart: the limit is still named at its own price.
+    const through = axisFigures(101_500, { 'lastPrice.limitColors': true });
+    expect(through.filter((f) => f.text === '99,800.00')).toHaveLength(1);
+    expect(through.filter((f) => f.text === '101,500.00')).toHaveLength(1);
+    const hidden = axisFigures(99_800, { 'lastPrice.limitColors': true, 'lastPrice.visible': false });
+    expect(hidden.filter((f) => f.text === '99,800.00')).toHaveLength(1);
+    expect(hidden.find((f) => f.text === '99,800.00')!.font).not.toContain('bold');
+  });
+
   it('takes the light colours for a light theme of its own that gives none', () => {
     const { priceLimits: _none, ...plain } = LIGHT_THEME;
     const inks = limitInks({ ...plain, background: '#fbfaf7' } as Theme);
@@ -1061,3 +1144,43 @@ describe('RenderEngine — a drawing’s span on the axes', () => {
     expect(spans(false).renderSpan).not.toHaveBeenCalled();
   });
 });
+
+describe('RenderEngine — the frame on a context of the caller’s', () => {
+  /** A context of the caller's own: a stand-in, as the layers' are here. */
+  const own = () => fakeContext(document.createElement('canvas'));
+
+  it('draws the scene and what is over it there, and leaves its own canvases as they are', () => {
+    const { ctx, scene, top } = makeContext();
+    engine.setRenderContext(ctx);
+    const cleared = [LayerType.Main, LayerType.Hover].map((type) => vi.spyOn(engine.layerManager.getLayer(type)!, 'clear'));
+    const target = own();
+    engine.renderTo(target);
+    expect(scene).toHaveBeenCalledTimes(1);
+    expect(scene.mock.calls[0][0]).toBe(target);
+    expect(top).toHaveBeenCalledTimes(1);
+    expect(top.mock.calls[0][0]).toBe(target);
+    for (const clear of cleared) expect(clear).not.toHaveBeenCalled();
+    // No frame was asked of the loop either.
+    expect(frames).toEqual([]);
+  });
+
+  it('draws it all in Canvas 2D where the chart itself draws with the GPU', () => {
+    const { ctx, scene } = makeContext();
+    const grid = vi.fn();
+    ctx.gridRenderer = { isVisible: () => true, render: grid } as unknown as RenderContext['gridRenderer'];
+    const canvas = document.createElement('canvas');
+    const gpu = { canvas, label: 'test GPU', render: vi.fn(() => ({ series: true, volume: true, background: true })), onLost: () => {}, onRestored: () => {}, destroy: () => canvas.remove() };
+    engine.attachGpu(gpu as never);
+    engine.setRenderContext(ctx);
+    const target = own();
+    engine.renderTo(target);
+    expect(gpu.render).not.toHaveBeenCalled();
+    expect(scene.mock.calls[0][0]).toBe(target);
+    expect(grid.mock.calls[0][0]).toBe(target);
+  });
+
+  it('draws nothing before it has a frame to draw', () => {
+    expect(() => engine.renderTo(own())).not.toThrow();
+  });
+});
+

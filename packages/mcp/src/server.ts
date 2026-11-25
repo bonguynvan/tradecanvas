@@ -23,7 +23,7 @@ const INSTRUCTIONS = [
   'Look names up instead of guessing them: list_indicators and get_indicator for indicator ids, params and line keys; list_drawing_tools for drawing types and their anchors;',
   'list_options for the options of each entry point; list_widget_features and list_style_keys for feature switches and style keys.',
   'For a chart that is not a trading chart (bars, a donut, an order book\'s depth, an equity curve, a market map, a gauge), list_finance_charts names the classes, and list_options takes a class name.',
-  'Before handing an options object to new ChartWidget, new Chart, new ChartWidgetGrid or a finance chart, run it through validate_options.',
+  'For a chart drawn with no page (a picture made in Node or a worker), list_options takes renderPriceChart. Before handing an options object to new ChartWidget, new Chart, new ChartWidgetGrid, a finance chart or renderPriceChart, run it through validate_options.',
   'To write an indicator of your own (a plugin), custom_indicator has the guide and type-checked code.',
 ].join(' ');
 

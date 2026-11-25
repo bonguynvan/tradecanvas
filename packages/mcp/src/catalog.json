@@ -1426,14 +1426,25 @@
       "placement": "panel",
       "category": "volume",
       "params": {
-        "mode": 0
+        "mode": 0,
+        "anchor": "all"
       },
       "inputs": {
         "mode": {
           "kind": "int",
+          "label": "Cumulative",
           "min": 0,
           "max": 1,
           "step": 1
+        },
+        "anchor": {
+          "kind": "choice",
+          "options": [
+            "all",
+            "session",
+            "week",
+            "month"
+          ]
         }
       },
       "plots": [
@@ -4714,6 +4725,221 @@
           "kind": "dots"
         }
       ]
+    },
+    {
+      "id": "fvg",
+      "name": "Fair Value Gaps",
+      "shortName": "FVG",
+      "placement": "overlay",
+      "category": "patterns",
+      "params": {
+        "minPercent": 0,
+        "showFilled": 0
+      },
+      "inputs": {
+        "minPercent": {
+          "kind": "number",
+          "min": 0,
+          "step": 0.05
+        },
+        "showFilled": {
+          "kind": "int",
+          "min": 0,
+          "max": 1,
+          "step": 1
+        }
+      },
+      "plots": [
+        {
+          "key": "bull",
+          "title": "Bullish top",
+          "kind": "line"
+        },
+        {
+          "key": "bullLow",
+          "title": "Bullish bottom",
+          "kind": "line"
+        },
+        {
+          "key": "bear",
+          "title": "Bearish top",
+          "kind": "line"
+        },
+        {
+          "key": "bearLow",
+          "title": "Bearish bottom",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "rsidiv",
+      "name": "RSI Divergence",
+      "shortName": "RSI Div",
+      "placement": "panel",
+      "category": "oscillators",
+      "params": {
+        "period": 14,
+        "left": 5,
+        "right": 5,
+        "minBars": 5,
+        "maxBars": 60,
+        "hidden": 0
+      },
+      "inputs": {
+        "period": {
+          "kind": "int",
+          "min": 1,
+          "step": 1
+        },
+        "left": {
+          "kind": "int",
+          "min": 1,
+          "step": 1
+        },
+        "right": {
+          "kind": "int",
+          "min": 1,
+          "step": 1
+        },
+        "minBars": {
+          "kind": "int",
+          "min": 1,
+          "step": 1
+        },
+        "maxBars": {
+          "kind": "int",
+          "min": 1,
+          "step": 1
+        },
+        "hidden": {
+          "kind": "int",
+          "min": 0,
+          "max": 1,
+          "step": 1
+        }
+      },
+      "plots": [
+        {
+          "key": "value",
+          "title": "RSI",
+          "kind": "line"
+        },
+        {
+          "key": "bull",
+          "title": "Bullish",
+          "kind": "markers"
+        },
+        {
+          "key": "bear",
+          "title": "Bearish",
+          "kind": "markers"
+        }
+      ],
+      "levels": [
+        30,
+        70
+      ],
+      "scale": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    {
+      "id": "svp",
+      "name": "Session Volume Profile",
+      "shortName": "SVP",
+      "placement": "overlay",
+      "category": "volume",
+      "params": {
+        "rows": 24,
+        "valueArea": 70
+      },
+      "inputs": {
+        "rows": {
+          "kind": "int",
+          "min": 1,
+          "max": 200,
+          "step": 1
+        },
+        "valueArea": {
+          "kind": "number",
+          "min": 1,
+          "max": 100,
+          "step": 1
+        }
+      },
+      "plots": [
+        {
+          "key": "poc",
+          "title": "POC",
+          "kind": "line"
+        },
+        {
+          "key": "vah",
+          "title": "VAH",
+          "kind": "line"
+        },
+        {
+          "key": "val",
+          "title": "VAL",
+          "kind": "line"
+        }
+      ]
+    },
+    {
+      "id": "orderblocks",
+      "name": "Order Blocks",
+      "shortName": "OB",
+      "placement": "overlay",
+      "category": "patterns",
+      "params": {
+        "length": 5,
+        "showBroken": 0,
+        "count": 5
+      },
+      "inputs": {
+        "length": {
+          "kind": "int",
+          "min": 1,
+          "max": 50,
+          "step": 1
+        },
+        "showBroken": {
+          "kind": "int",
+          "min": 0,
+          "max": 1,
+          "step": 1
+        },
+        "count": {
+          "kind": "int",
+          "min": 0,
+          "max": 100,
+          "step": 1
+        }
+      },
+      "plots": [
+        {
+          "key": "bull",
+          "title": "Bullish top",
+          "kind": "line"
+        },
+        {
+          "key": "bullLow",
+          "title": "Bullish bottom",
+          "kind": "line"
+        },
+        {
+          "key": "bear",
+          "title": "Bearish top",
+          "kind": "line"
+        },
+        {
+          "key": "bearLow",
+          "title": "Bearish bottom",
+          "kind": "line"
+        }
+      ]
     }
   ],
   "drawingTools": [
@@ -6090,12 +6316,19 @@
     "bar",
     "volumeCandles",
     "equivolume",
+    "footprint",
     "line",
     "area",
     "baseline",
     "hlcArea",
     "stepLine",
     "lineWithMarkers",
+    "columns",
+    "hlcBars",
+    "dots",
+    "stepArea",
+    "spline",
+    "smoothedHeikinAshi",
     "hiLo",
     "renko",
     "lineBreak",
@@ -6156,8 +6389,10 @@
     "fullscreen",
     "accountPanel",
     "orderTicket",
+    "tradeButtons",
     "bracketOrders",
     "depthLadder",
+    "tape",
     "layouts",
     "indicatorTemplates",
     "compare",
@@ -6215,6 +6450,7 @@
     "dock.dataWindow",
     "dock.symbolInfo",
     "dock.depthLadder",
+    "dock.tape",
     "statusBar.range",
     "statusBar.goToDate",
     "statusBar.market",
@@ -6292,6 +6528,7 @@
     "crosshair.vertical.width": "width",
     "crosshair.labelBackground": "color",
     "crosshair.labelTextColor": "color",
+    "crosshair.labelChange": "boolean",
     "axis.price.lineColor": "color",
     "axis.price.textColor": "color",
     "axis.price.valueTagsOutlined": "boolean",
@@ -6309,6 +6546,7 @@
     "lastPrice.width": "width",
     "lastPrice.labelBackground": "color",
     "lastPrice.labelTextColor": "color",
+    "lastPrice.limitColors": "boolean",
     "volume.upColor": "color",
     "volume.downColor": "color",
     "sessionBreaks.color": "color",
@@ -6335,6 +6573,10 @@
     "series.heikinAshi.downColor": "color",
     "series.heikinAshi.wickUpColor": "color",
     "series.heikinAshi.wickDownColor": "color",
+    "series.smoothedHeikinAshi.upColor": "color",
+    "series.smoothedHeikinAshi.downColor": "color",
+    "series.smoothedHeikinAshi.wickUpColor": "color",
+    "series.smoothedHeikinAshi.wickDownColor": "color",
     "series.hollowCandle.upColor": "color",
     "series.hollowCandle.downColor": "color",
     "series.volumeCandles.upColor": "color",
@@ -6345,10 +6587,18 @@
     "series.equivolume.downColor": "color",
     "series.equivolume.wickUpColor": "color",
     "series.equivolume.wickDownColor": "color",
+    "series.footprint.upColor": "color",
+    "series.footprint.downColor": "color",
+    "series.footprint.wickUpColor": "color",
+    "series.footprint.wickDownColor": "color",
     "series.bar.upColor": "color",
     "series.bar.downColor": "color",
     "series.hiLo.upColor": "color",
     "series.hiLo.downColor": "color",
+    "series.hlcBars.upColor": "color",
+    "series.hlcBars.downColor": "color",
+    "series.columns.upColor": "color",
+    "series.columns.downColor": "color",
     "series.renko.upColor": "color",
     "series.renko.downColor": "color",
     "series.lineBreak.upColor": "color",
@@ -6368,16 +6618,24 @@
     "series.stepLine.lineWidth": "width",
     "series.lineWithMarkers.color": "color",
     "series.lineWithMarkers.lineWidth": "width",
+    "series.spline.color": "color",
+    "series.spline.lineWidth": "width",
+    "series.dots.color": "color",
     "series.area.lineColor": "color",
     "series.area.lineWidth": "width",
     "series.area.topColor": "color",
     "series.area.bottomColor": "color",
+    "series.stepArea.lineColor": "color",
+    "series.stepArea.lineWidth": "width",
+    "series.stepArea.topColor": "color",
+    "series.stepArea.bottomColor": "color",
     "series.hlcArea.lineColor": "color",
     "series.hlcArea.lineWidth": "width",
     "series.hlcArea.topColor": "color",
     "series.hlcArea.bottomColor": "color"
   },
   "looks": [
+    "graphite",
     "modern",
     "print",
     "studio",
@@ -6555,7 +6813,7 @@
       {
         "name": "ui",
         "type": "WidgetUIPreset | WidgetUITheme",
-        "doc": "The widget's look: its corners, sizes, type, lines, shadows and bars. A preset (`'modern'`, the default; `'print'`; `'studio'`; `'terminal'`; `'capsule'`; `'desk'`) or your theme over one; a theme object without `preset` starts from Modern (`preset: 'print'` for the look before it)."
+        "doc": "The widget's look: its corners, sizes, type, lines, shadows and bars. A preset (`'graphite'`, the default; `'modern'`; `'print'`; `'studio'`; `'terminal'`; `'capsule'`; `'desk'`) or your theme over one; a theme object without `preset` starts from Graphite (`preset: 'modern'` for the default before it, `'print'` for the one before that)."
       },
       {
         "name": "locale",
@@ -6657,6 +6915,11 @@
         "kind": "boolean"
       },
       {
+        "name": "tape",
+        "type": "boolean | TapeOptions",
+        "doc": "The tape (time and sales), a page of the dock: the trades of the chart's symbol as they are made, newest on top, each with its time, price and size in the colour of who took it. Off until this is `true` (its switch only hides it), or the settings it starts with."
+      },
+      {
         "name": "accountPanel",
         "type": "boolean",
         "doc": "The account panel at the bottom: open positions with their profit and loss, working orders and the fills so far, with close, reverse and cancel, and an order ticket. A toolbar button opens it. Default `true` when trading is on.",
@@ -6733,7 +6996,14 @@
           "stepLine",
           "lineWithMarkers",
           "equivolume",
-          "hiLo"
+          "hiLo",
+          "columns",
+          "hlcBars",
+          "dots",
+          "stepArea",
+          "spline",
+          "smoothedHeikinAshi",
+          "footprint"
         ]
       },
       {
@@ -6755,6 +7025,42 @@
       {
         "name": "historyLimit",
         "type": "number",
+        "kind": "number"
+      },
+      {
+        "name": "confirmOrders",
+        "type": "boolean",
+        "doc": "Ask before a trade that one press would make: a position closed or reversed (its row in the account panel, its buttons on the chart), an order from the right-click menu or the depth ladder. The dialog says what it is in full (side, quantity, price, symbol); Enter does it, Escape leaves it.",
+        "kind": "boolean"
+      },
+      {
+        "name": "orderRules",
+        "type": "BrokerOrderRules",
+        "doc": "The broker's rules for orders, to start with: see `BrokerOrderRules`. `widget.setOrderRules` gives others as the symbol or the session changes."
+      },
+      {
+        "name": "priceLimitOrder",
+        "type": "readonly ('ceiling' | 'reference' | 'floor')[]",
+        "doc": "The order the ticket shows the day's ceiling, reference and floor in, over its price: boards differ, and a trader reads them where their broker's board has them. Leave one out not to show it. Default `['ceiling', 'reference', 'floor']`. The row shows on a market with limits for the day (`chart.setPriceLimits`), and a press on a price is the order's price.",
+        "items": [
+          "ceiling",
+          "reference",
+          "floor"
+        ]
+      },
+      {
+        "name": "ticketPlace",
+        "type": "'dock' | 'dialog'",
+        "doc": "Where the order ticket opens. `'dock'` (the default): a page of the dock beside the chart, which hides no price and stays for the next order; `openPanel('orderTicket')` opens it too. `'dialog'`: a dialog over the chart, as before 3.0. A widget with no dock (`features.dock` off), or one too narrow for it (a phone), opens the dialog whatever this says.",
+        "values": [
+          "dock",
+          "dialog"
+        ]
+      },
+      {
+        "name": "feedQuietAfter",
+        "type": "number",
+        "doc": "How long, seconds, the widget's feed may be connected and tell nothing before its price stops counting as live: the status bar then says so in place of \"Live\", and the ticket warns and sends no order at the market.",
         "kind": "number"
       },
       {
@@ -6988,7 +7294,14 @@
           "stepLine",
           "lineWithMarkers",
           "equivolume",
-          "hiLo"
+          "hiLo",
+          "columns",
+          "hlcBars",
+          "dots",
+          "stepArea",
+          "spline",
+          "smoothedHeikinAshi",
+          "footprint"
         ]
       },
       {
@@ -7283,7 +7596,13 @@
       {
         "name": "bar",
         "type": "boolean",
-        "doc": "The bar above the charts: arrangement, sync, layouts. Default `true`.",
+        "doc": "The bar above the charts: arrangement, sync, the charts' picture, layouts. Default `true`.",
+        "kind": "boolean"
+      },
+      {
+        "name": "picture",
+        "type": "boolean",
+        "doc": "The bar's picture button: the charts together saved as an image, copied, printed or saved as a PDF. Default `true`. It is hidden as well while a chart's `screenshot` switch is off: the picture shows every chart.",
         "kind": "boolean"
       },
       {
@@ -7334,7 +7653,14 @@
           "stepLine",
           "lineWithMarkers",
           "equivolume",
-          "hiLo"
+          "hiLo",
+          "columns",
+          "hlcBars",
+          "dots",
+          "stepArea",
+          "spline",
+          "smoothedHeikinAshi",
+          "footprint"
         ]
       },
       {
@@ -7707,9 +8033,8 @@
       },
       {
         "name": "crosshairTooltip",
-        "type": "boolean",
-        "doc": "Show the floating OHLCV tooltip that follows the cursor on hover. Pro trading charts usually rely on the top-left legend (`legend`) instead of a cursor-following popup — set this to `false` to match that and keep only the legend updating on hover.",
-        "kind": "boolean"
+        "type": "boolean | 'hold'",
+        "doc": "The floating OHLCV tooltip beside the crosshair. `true`: it follows the pointer as it hovers. `'hold'`: it shows only while a mouse press is held still on the plot (half a second, the wait of a long press), then follows the pointer until the button is let go; the chart does not pan meanwhile, and a pointer that only hovers shows none. `false`: never."
       },
       {
         "name": "keyboard",
@@ -7840,6 +8165,62 @@
         "name": "defaultTimeframeFavorites",
         "type": "TimeFrame[]",
         "doc": "ChartWidget: timeframes on the quick-access bar until the user changes them."
+      }
+    ],
+    "renderPriceChart.features": [
+      {
+        "name": "grid",
+        "type": "boolean",
+        "doc": "Show grid lines",
+        "kind": "boolean"
+      },
+      {
+        "name": "priceAxis",
+        "type": "boolean",
+        "doc": "Show price axis",
+        "kind": "boolean"
+      },
+      {
+        "name": "timeAxis",
+        "type": "boolean",
+        "doc": "Show time axis",
+        "kind": "boolean"
+      },
+      {
+        "name": "watermark",
+        "type": "boolean",
+        "doc": "Show watermark text",
+        "kind": "boolean"
+      },
+      {
+        "name": "sessionBreaks",
+        "type": "boolean",
+        "doc": "Show session break lines (day separators)",
+        "kind": "boolean"
+      },
+      {
+        "name": "volume",
+        "type": "boolean",
+        "doc": "Show volume bars below candles",
+        "kind": "boolean"
+      },
+      {
+        "name": "legend",
+        "type": "boolean",
+        "doc": "Show OHLCV legend overlay",
+        "kind": "boolean"
+      },
+      {
+        "name": "indicatorValueLabels",
+        "type": "boolean",
+        "doc": "Tag each indicator line's latest value on its value axis. Default false: the legend shows the values.",
+        "kind": "boolean"
+      },
+      {
+        "name": "alignAxisLabels",
+        "type": "boolean",
+        "doc": "Move the price axis's tags apart where they would cover one another: the last price's stays on its line, those above it go up and those below it down (orders, positions, bid/ask, high/low, limits). Default true; false keeps each tag on its line.",
+        "kind": "boolean"
       }
     ]
   },
@@ -8410,6 +8791,12 @@
         {
           "name": "showValues",
           "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "showLogos",
+          "type": "boolean",
+          "doc": "Whether the cells that have a `logo` draw it (`true`).",
           "kind": "boolean"
         },
         {
@@ -9011,6 +9398,709 @@
       ]
     },
     {
+      "name": "PayoffChart",
+      "what": "What an options position makes or loses at expiry over the underlying's price, with its breakevens: a spread, a straddle, a condor.",
+      "options": [
+        {
+          "name": "legs",
+          "type": "OptionLeg[]",
+          "required": true,
+          "doc": "The position's legs: what they make or lose together at expiry is the line."
+        },
+        {
+          "name": "model",
+          "type": "PayoffModel",
+          "doc": "Draws a second line: what the position makes or loses with this many days still to go, by a model (`PayoffModel`). The pointer reads both."
+        },
+        {
+          "name": "expiryLabel",
+          "type": "string",
+          "doc": "The payoff's name in the legend, beside the model's line. Default `'At expiry'`.",
+          "kind": "string"
+        },
+        {
+          "name": "multiplier",
+          "type": "number",
+          "doc": "The units one contract is for (100 for a US stock option). Default `1`.",
+          "kind": "number"
+        },
+        {
+          "name": "spot",
+          "type": "number",
+          "doc": "The underlying's price now: a marked line.",
+          "kind": "number"
+        },
+        {
+          "name": "spotLabel",
+          "type": "string",
+          "doc": "A word before the price now on its mark (`'Spot'`).",
+          "kind": "string"
+        },
+        {
+          "name": "range",
+          "type": "{ min: number; max: number }",
+          "doc": "The underlying's prices drawn. Default: from under the lowest strike to over the highest."
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "doc": "How a profit or a loss is written.",
+          "kind": "function"
+        },
+        {
+          "name": "priceFormat",
+          "type": "(value: number) => string",
+          "doc": "How the underlying's price is written.",
+          "kind": "function"
+        },
+        {
+          "name": "profitColor",
+          "type": "string",
+          "doc": "The line and the area above zero. Default: the theme's up colour.",
+          "kind": "string"
+        },
+        {
+          "name": "lossColor",
+          "type": "string",
+          "doc": "The line and the area below zero. Default: the theme's down colour.",
+          "kind": "string"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "doc": "Show the profit or loss at the price under the pointer. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "CurveChart",
+      "what": "Values against a strike or a tenor, a line for each series: a volatility smile, a term structure, a yield curve.",
+      "options": [
+        {
+          "name": "series",
+          "type": "CurveSeries[]",
+          "required": true,
+          "doc": "The curves: values against a strike, a tenor, a maturity."
+        },
+        {
+          "name": "ticks",
+          "type": "{ x: number; label: string }[]",
+          "doc": "Labels along x in place of the scale's own: a tenor each (`{ x: 30, label: '1M' }`)."
+        },
+        {
+          "name": "xFormat",
+          "type": "(value: number) => string",
+          "doc": "How an x is written, without `ticks`.",
+          "kind": "function"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "smooth",
+          "type": "boolean",
+          "doc": "Round the lines through their points, never past a value they do not reach. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "showPoints",
+          "type": "boolean",
+          "doc": "A dot at each point. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "markers",
+          "type": "CurveMarker[]",
+          "doc": "Labelled lines at x values."
+        },
+        {
+          "name": "legend",
+          "type": "boolean",
+          "doc": "The curves' names over the plot. Default `true` with more than one.",
+          "kind": "boolean"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "doc": "Show each curve's value at the x under the pointer. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "BoxPlotChart",
+      "what": "How each group's values spread, as quartiles, whiskers and outliers: returns by weekday or by strategy.",
+      "options": [
+        {
+          "name": "data",
+          "type": "BoxPlotGroup[]",
+          "required": true,
+          "doc": "A box for each group: returns by weekday, by month, by strategy."
+        },
+        {
+          "name": "whiskers",
+          "type": "number",
+          "doc": "How far a whisker may reach past the box, in box heights (the interquartile range): values further out are outliers. Default `1.5`; `Infinity` takes the whiskers to the lowest and the highest value.",
+          "kind": "number"
+        },
+        {
+          "name": "colorBySign",
+          "type": "boolean",
+          "doc": "A box whose median is under zero in the theme's down colour, the rest in its up colour.",
+          "kind": "boolean"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "labels",
+          "type": "Partial<BoxPlotLabels>",
+          "doc": "The readout's words, for another language. Default: `Max`, `Q3`, `Median`, `Q1`, `Min`."
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "doc": "Show the hovered box's numbers. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "onBoxClick",
+          "type": "(group: BoxPlotGroup, stats: BoxPlotStats) => void",
+          "doc": "Called with the group a click falls on, and its five numbers: anywhere up and down its place across the plot, as the pointer's readout picks it.",
+          "kind": "function"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "RadarChart",
+      "what": "Several measures at once, a spoke each: a strategy's scorecard, factor exposures beside an index's.",
+      "options": [
+        {
+          "name": "axes",
+          "type": "RadarAxis[]",
+          "required": true,
+          "doc": "The spokes, clockwise from twelve o'clock: at least three."
+        },
+        {
+          "name": "series",
+          "type": "ChartSeries[]",
+          "required": true,
+          "doc": "A shape for each series: `values[i]` is its value on `axes[i]`."
+        },
+        {
+          "name": "rings",
+          "type": "number",
+          "doc": "The rings of the grid between the centre and the rim. Default `4`.",
+          "kind": "number"
+        },
+        {
+          "name": "fill",
+          "type": "boolean",
+          "doc": "Tint each shape with its colour. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "legend",
+          "type": "boolean",
+          "doc": "The series' names. Default `true` with more than one.",
+          "kind": "boolean"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "doc": "Show every series' value on the spoke nearest the pointer. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "onAxisClick",
+          "type": "(hit: RadarAxisHit) => void",
+          "doc": "Called with the measure nearest a click on the radar, and each series' value on it: the spoke the pointer's readout picks, wherever between two the click falls.",
+          "kind": "function"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "SunburstChart",
+      "what": "Parts of a whole and the parts inside them, a ring a level: an allocation by asset class, then sector.",
+      "options": [
+        {
+          "name": "data",
+          "type": "SunburstNode[]",
+          "required": true,
+          "doc": "The first ring's parts, clockwise from twelve o'clock; their children are the rings outside."
+        },
+        {
+          "name": "maxDepth",
+          "type": "number",
+          "doc": "How many rings are drawn. Default: as many as the data is deep, four at most.",
+          "kind": "number"
+        },
+        {
+          "name": "innerRadius",
+          "type": "number",
+          "doc": "The hole as a share of the radius. Default `0.3`.",
+          "kind": "number"
+        },
+        {
+          "name": "centerLabel",
+          "type": "string",
+          "doc": "Text in the hole: a caption and a figure (`'Total'`, `'1.2B'`).",
+          "kind": "string"
+        },
+        {
+          "name": "centerValue",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "showLabels",
+          "type": "boolean",
+          "doc": "Print a part's name on it when it fits. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "doc": "Show the hovered part's path, value and share. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "onNodeClick",
+          "type": "(node: SunburstNode, path: string[]) => void",
+          "doc": "`path` is the labels from the first ring down to the part.",
+          "kind": "function"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "StackedAreaChart",
+      "what": "Several series one on another over time: what a total is made of, or how its mix changes.",
+      "options": [
+        {
+          "name": "categories",
+          "type": "string[]",
+          "required": true,
+          "doc": "A label for each point along x: dates, periods."
+        },
+        {
+          "name": "series",
+          "type": "ChartSeries[]",
+          "required": true,
+          "doc": "The areas, the first at the bottom: `values[i]` belongs to `categories[i]`. A value under zero counts as none."
+        },
+        {
+          "name": "normalized",
+          "type": "boolean",
+          "doc": "Each point's values as shares of their total, so the areas fill the height: how a mix changes.",
+          "kind": "boolean"
+        },
+        {
+          "name": "legend",
+          "type": "boolean",
+          "doc": "The series' names. Default `true` with more than one.",
+          "kind": "boolean"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "doc": "Show every series' value at the point under the pointer. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "SurfaceChart",
+      "what": "Values over two axes as a sheet in a 3D box that a drag turns: implied volatility by strike and expiry (a volatility surface), a profit by price and day, or as slices, depth over time.",
+      "options": [
+        {
+          "name": "x",
+          "type": "number[] | string[]",
+          "required": true,
+          "doc": "The points along x: strikes, prices. Numbers are placed by their value (and drawn by rising value, whatever their order); names are spaced evenly, in the order given. A number that is none (`NaN`, `Infinity`) is left out with its values. With fewer than two points along x, or none along y, nothing is drawn."
+        },
+        {
+          "name": "y",
+          "type": "number[] | string[]",
+          "required": true,
+          "doc": "The points along y, the axis that runs back: days to expiry, times. Numbers or names, as `x`."
+        },
+        {
+          "name": "values",
+          "type": "number[][]",
+          "required": true,
+          "doc": "`values[yIndex][xIndex]`; a missing or non-finite value leaves a hole."
+        },
+        {
+          "name": "style",
+          "type": "'surface' | 'wireframe' | 'slices'",
+          "doc": "`'surface'` (default): a shaded sheet through the values. `'wireframe'`: its lines only. `'slices'`: each y as a filled line of its own, one behind another: an order book's depth over time.",
+          "values": [
+            "surface",
+            "wireframe",
+            "slices"
+          ]
+        },
+        {
+          "name": "colorRamp",
+          "type": "ColorRamp",
+          "doc": "The colours values are drawn in. Default: one hue over the values' range."
+        },
+        {
+          "name": "mesh",
+          "type": "boolean",
+          "doc": "The lines between a surface's cells. Default `true`; left out anyway where the cells are too small for them.",
+          "kind": "boolean"
+        },
+        {
+          "name": "xFormat",
+          "type": "(value: number) => string",
+          "doc": "How an x and a y are written, when they are numbers.",
+          "kind": "function"
+        },
+        {
+          "name": "yFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "legend",
+          "type": "boolean",
+          "doc": "The colours' bar under the chart. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "onPointClick",
+          "type": "(point: SurfacePoint) => void",
+          "kind": "function"
+        },
+        {
+          "name": "view",
+          "type": "View3D",
+          "doc": "Where the chart is seen from at first, and what a double click goes back to."
+        },
+        {
+          "name": "rotate",
+          "type": "boolean",
+          "doc": "Turn the chart by dragging it: a mouse turns and tilts it, a finger turns it only, so that a page still scrolls under it. With the keyboard, once Tab has reached the chart: the arrows turn and tilt it (further with Shift), Home goes back to `view`. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "describeView",
+          "type": "(view: Required<View3D>) => string",
+          "doc": "What a screen reader says after a key turned the chart, in your words. Default `'Turned to -35°, tilted to 28°'`.",
+          "kind": "function"
+        },
+        {
+          "name": "onViewChange",
+          "type": "(view: Required<View3D>) => void",
+          "doc": "Called as the chart is turned, by a drag or a key, with where it is seen from now.",
+          "kind": "function"
+        },
+        {
+          "name": "xLabel",
+          "type": "string",
+          "doc": "The axes' titles: across, back and up.",
+          "kind": "string"
+        },
+        {
+          "name": "yLabel",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "valueLabel",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "doc": "Show what is under the pointer. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "Bar3DChart",
+      "what": "A column for each value in rows a series deep, in a 3D box that a drag turns: returns by quarter and asset class, volume by hour and weekday.",
+      "options": [
+        {
+          "name": "categories",
+          "type": "string[]",
+          "required": true,
+          "doc": "A label for each column along x. No more than the first 120 are drawn."
+        },
+        {
+          "name": "series",
+          "type": "ChartSeries[]",
+          "required": true,
+          "doc": "A row of columns for each series, the first where the y axis starts (the front, as the chart is first seen): `values[i]` belongs to `categories[i]`. No more than the first 120 are drawn."
+        },
+        {
+          "name": "legend",
+          "type": "boolean",
+          "doc": "The series' names. Default `true` with more than one.",
+          "kind": "boolean"
+        },
+        {
+          "name": "onBarClick",
+          "type": "(hit: BarHit) => void",
+          "kind": "function"
+        },
+        {
+          "name": "view",
+          "type": "View3D",
+          "doc": "Where the chart is seen from at first, and what a double click goes back to."
+        },
+        {
+          "name": "rotate",
+          "type": "boolean",
+          "doc": "Turn the chart by dragging it: a mouse turns and tilts it, a finger turns it only, so that a page still scrolls under it. With the keyboard, once Tab has reached the chart: the arrows turn and tilt it (further with Shift), Home goes back to `view`. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "describeView",
+          "type": "(view: Required<View3D>) => string",
+          "doc": "What a screen reader says after a key turned the chart, in your words. Default `'Turned to -35°, tilted to 28°'`.",
+          "kind": "function"
+        },
+        {
+          "name": "onViewChange",
+          "type": "(view: Required<View3D>) => void",
+          "doc": "Called as the chart is turned, by a drag or a key, with where it is seen from now.",
+          "kind": "function"
+        },
+        {
+          "name": "xLabel",
+          "type": "string",
+          "doc": "The axes' titles: across, back and up.",
+          "kind": "string"
+        },
+        {
+          "name": "yLabel",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "valueLabel",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "doc": "Show what is under the pointer. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
       "name": "PerformanceDashboard",
       "what": "A backtest's result as a page: stats, the equity curve, drawdown and monthly returns.",
       "options": [
@@ -9048,6 +10138,217 @@
           "name": "labels",
           "type": "Partial<DashboardLabels>",
           "doc": "The panels' titles and the stats' names in your words; those left out stay in English."
+        }
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "renderPriceChart",
+      "what": "The price chart drawn on a 2D context of your own, with no page: a picture made in Node or in a worker, for an email, a report or a message from a bot.",
+      "usage": "import { renderPriceChart } from '@tradecanvas/chart';\nrenderPriceChart(ctx, options, { width: 800, height: 400 }); // one frame on your context; in Node give your canvas library's Path2D as options.path2D",
+      "options": [
+        {
+          "name": "data",
+          "type": "DataSeries",
+          "required": true,
+          "doc": "The bars, oldest first. One that is no bar (a price missing, a high under its low) is left out."
+        },
+        {
+          "name": "symbol",
+          "type": "string",
+          "doc": "The symbol's name, for the legend.",
+          "kind": "string"
+        },
+        {
+          "name": "timeframe",
+          "type": "TimeFrame",
+          "doc": "The bars' interval (`'1d'`, `'15m'`): the legend names it, and indicators kept to some intervals follow it."
+        },
+        {
+          "name": "indicators",
+          "type": "PriceChartIndicator[]",
+          "doc": "The indicators, in the order they are listed and drawn."
+        },
+        {
+          "name": "drawings",
+          "type": "PriceChartDrawing[]",
+          "doc": "Drawings on the chart, as `chart.getDrawings()` gives them or as `chart.addDrawing()` takes one. One with a `paneId` is on the pane of the indicator of that `instanceId`."
+        },
+        {
+          "name": "markers",
+          "type": "PriceChartMarker[]",
+          "doc": "Buy and sell marks on the bars, as `chart.addSignalMarker()` takes one."
+        },
+        {
+          "name": "footprint",
+          "type": "FootprintBar[]",
+          "doc": "The rows of a footprint chart (`chartType: 'footprint'`), as `chart.getFootprint()` gives them and `chart.setFootprint()` takes them: what traded at each price of each bar. Their row size is `chartTypeOptions.footprint.rowSize`, or the smallest step between their prices."
+        },
+        {
+          "name": "symbolSeries",
+          "type": "Record<string, DataSeries>",
+          "doc": "Other symbols' bars, by symbol, for the indicators that read them (`'compareSymbol'`, `'compareSymbolPane'`, `'spread'`, `'correlation'`, `'correlationlog'`): what `chart.setSymbolSeries()` gives a chart on a page. An indicator whose symbol is not here draws nothing."
+        },
+        {
+          "name": "visibleRange",
+          "type": "{ from: number; to: number; }",
+          "doc": "The times (ms) of the first and the last bar on view, as `chart.setVisibleRange()` takes them. With none, every bar is on view when they fit and the newest ones when they do not, as `chart.fitContent()` shows them."
+        },
+        {
+          "name": "timeZone",
+          "type": "string | number | null",
+          "doc": "The zone times are read in: an IANA name (`'Asia/Ho_Chi_Minh'`) or minutes east of UTC. With none it is the machine's own, which on a server is seldom your readers': name theirs. `'exchange'` reads as UTC: a still chart has no exchange to ask."
+        },
+        {
+          "name": "pricePrecision",
+          "type": "number",
+          "doc": "The decimals prices show, a whole number from 0 to 20; fitted to the prices on view with none.",
+          "kind": "number"
+        },
+        {
+          "name": "lastPriceLine",
+          "type": "boolean",
+          "doc": "A line and a tag at the last close. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "features",
+          "type": "PriceChartFeatures",
+          "doc": "What is shown or left out."
+        },
+        {
+          "name": "path2D",
+          "type": "typeof Path2D",
+          "doc": "The `Path2D` of your canvas library, where there is no global one: Node has none, and `@napi-rs/canvas` and `skia-canvas` each export theirs. A browser and a worker need none."
+        },
+        {
+          "name": "chartType",
+          "type": "ChartType",
+          "doc": "Default `'candlestick'`.",
+          "values": [
+            "candlestick",
+            "line",
+            "area",
+            "bar",
+            "heikinAshi",
+            "hollowCandle",
+            "baseline",
+            "renko",
+            "lineBreak",
+            "kagi",
+            "pointAndFigure",
+            "rangeBars",
+            "volumeCandles",
+            "hlcArea",
+            "stepLine",
+            "lineWithMarkers",
+            "equivolume",
+            "hiLo",
+            "columns",
+            "hlcBars",
+            "dots",
+            "stepArea",
+            "spline",
+            "smoothedHeikinAshi",
+            "footprint"
+          ]
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme"
+        },
+        {
+          "name": "density",
+          "type": "ChartDensity",
+          "doc": "How much room the chart leaves around its bars: `'comfortable'` (the default) or `'compact'`, the chart as it was before 2.0 (see `ChartDensity`). `barLayout` and `rightMargin` win over it. Change it with `chart.setDensity`. ChartWidget sets it from its `ui.density`.",
+          "values": [
+            "comfortable",
+            "compact"
+          ]
+        },
+        {
+          "name": "rightMargin",
+          "type": "number",
+          "doc": "Empty slots past the newest bar when the chart rests at its end. Default 8 (5 when `density` is `'compact'`).",
+          "kind": "number"
+        },
+        {
+          "name": "barLayout",
+          "type": "BarLayout",
+          "doc": "How a bar fills its slot: `'golden'` (the default), the body φ⁻¹ of the slot at every zoom (more bars on screen, air between them), or `'classic'`, a 2 px gap (the default when `density` is `'compact'`). Change it with `chart.setBarLayout`.",
+          "values": [
+            "golden",
+            "classic"
+          ]
+        },
+        {
+          "name": "grid",
+          "type": "GridOptions",
+          "doc": "The grid's lines: shorthand for the `grid.*` overrides."
+        },
+        {
+          "name": "overrides",
+          "type": "ChartStyleOverridesPatch",
+          "doc": "Style overrides to start with, on the host's layer: any part of the chart's look, by key (`'grid.vertical.visible': false`, `'series.candlestick.upColor': '#26a69a'`, which colours the rising candles' wicks too). `CHART_STYLE_KEYS` lists the keys; see `chart.applyOverrides`."
+        },
+        {
+          "name": "watermark",
+          "type": "WatermarkConfig"
+        },
+        {
+          "name": "logScale",
+          "type": "boolean",
+          "doc": "Start with logarithmic price scale",
+          "kind": "boolean"
+        },
+        {
+          "name": "sessionBreaks",
+          "type": "SessionBreakOptions",
+          "doc": "Session break line configuration"
+        },
+        {
+          "name": "numberLocale",
+          "type": "string",
+          "doc": "The BCP 47 locale numbers are written in: grouping and decimal marks on the axis, the legend, tooltips, labels and volumes ('de-DE': 72.202,13). `'ko-KR'` also writes volumes in 만, 억 and 조. Defaults to 'en-US'.",
+          "kind": "string"
+        },
+        {
+          "name": "priceFormat",
+          "type": "PriceFormatter | PriceFraction",
+          "doc": "How prices read on the price scale and everything that prints one (axis, crosshair, last-price tag, legend, tooltip, orders, alerts, drawings): a function of yours, or fractions of a point (a bond in 32nds: `101'16`). Indicator panes keep their own numbers. Default: decimals."
+        },
+        {
+          "name": "timeFormatter",
+          "type": "TimeFormatter",
+          "doc": "How times read on the time axis, the crosshair and the tooltip. Default: the chart's own.",
+          "kind": "function"
+        },
+        {
+          "name": "chartTypeOptions",
+          "type": "ChartTypeOptions",
+          "doc": "Settings of Renko, Line Break, Kagi, Point & Figure and range bars."
+        },
+        {
+          "name": "highLowLines",
+          "type": "boolean",
+          "doc": "Mark the highest high and lowest low on screen with a line and a price tag.",
+          "kind": "boolean"
+        },
+        {
+          "name": "shapes",
+          "type": "ShapeConfig",
+          "doc": "The shapes the chart draws: price tags, axis pills and order badges square (default), rounded or pills."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's own text (the axes, the tags, the crosshair's pills) over every theme: `{ family: MONO_FONT_FAMILY }` for monospaced figures, where the default is a sans face whose digits are one width (`FIGURES_FONT_FAMILY`)."
+        },
+        {
+          "name": "plugins",
+          "type": "ChartPlugin[]",
+          "doc": "Plugins, as `new Chart(el, { plugins })` takes them; those registered for every chart are here too."
         }
       ]
     }

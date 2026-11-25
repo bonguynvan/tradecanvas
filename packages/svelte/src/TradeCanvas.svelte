@@ -195,7 +195,7 @@
 
   $effect(() => { instance?.setTheme(resolveTheme(theme)); });
   $effect(() => { instance?.setChartType(chartType); });
-  const barKey = (b: OHLCBar | undefined) => (b ? `${b.time},${b.open},${b.high},${b.low},${b.close},${b.volume}` : '');
+  const barKey = (b: OHLCBar | undefined) => (b ? `${b.time},${b.open},${b.high},${b.low},${b.close},${b.volume},${b.buyVolume ?? ''}` : '');
 
   /**
    * Bars into the chart: bars that go on from those given before (a bar pushed

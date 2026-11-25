@@ -165,10 +165,13 @@ chart.addIndicator('vwap', { anchor: 'all' })   // every bar loaded, as it was b
 </table>
 
 <p>
-  <code>voldelta</code> (Volume Delta) approximates buy/sell pressure from OHLCV — bars closing up
-  add positive volume, down bars negative. <code>mode: 0</code> is the per-bar histogram,
-  <code>mode: 1</code> cumulative delta. (A true tick delta needs per-trade bid/ask data, which an
-  OHLCV series doesn't carry.)
+  <code>voldelta</code> (Volume Delta) is what the buyers took of each bar less what the sellers did.
+  A bar that says who took its trades (its <code>buyVolume</code>) gives its true delta. One that
+  does not is read from the way it closed: all its volume up when it closed at or over its open,
+  down otherwise, which is the nearest an OHLCV bar comes. <code>mode: 0</code> is the per-bar
+  histogram, <code>mode: 1</code> the cumulative delta, which starts again with each
+  <code>anchor</code> period (<code>'session'</code>, <code>'week'</code> or <code>'month'</code>;
+  never with <code>'all'</code>, the default).
 </p>
 
 <h2>Indicators from Asian price boards</h2>
@@ -199,6 +202,58 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   <code>@tradecanvas/core</code> in the app's dependencies to import it.
 </p>
 <pre><code>{`import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core/patterns'`}</code></pre>
+
+<h2 id="fair-value-gaps">Fair value gaps</h2>
+<p>
+  Three bars leave a fair value gap where the third bar's low is over the first bar's high (or, going down, its high under the first bar's low): between the two, only the middle bar traded. The chart draws a box over those prices, from the middle bar to the right edge while the gap is open, teal for a gap going up and pink for a gap going down (the colours of the candlestick patterns' marks, kept apart from the candles' green and red; the indicator's style changes them). A gap is filled by the first later bar that trades through all of it, and is then taken off the chart unless <code>showFilled</code> is 1. <code>detectFairValueGaps</code> gives them all with no chart, with the bar that filled each.
+</p>
+<pre><code>{`chart.addIndicator('fvg')                              // a box over each gap still open
+chart.addIndicator('fvg', { minPercent: 0.1 })         // leave out gaps under 0.1% of the price
+chart.addIndicator('fvg', { showFilled: 1 })           // keep the filled ones, fainter, to the bar that filled them
+
+import { detectFairValueGaps } from '@tradecanvas/chart'
+
+detectFairValueGaps(bars, { minPercent: 0.1 })
+// [{ index, formed, direction: 'up' | 'down', top, bottom, filledAt }]`}</code></pre>
+
+<h2 id="divergences">Divergences</h2>
+<p>
+  A divergence is the price and an oscillator turning twice and not the same way. Bullish, at two lows: the price makes a lower low and the oscillator a higher one. Bearish, at two highs: the price makes a higher high and the oscillator a lower one. <code>rsidiv</code> is the RSI with a line between its two turns at each divergence and a mark at the second; <code>hidden: 1</code> adds the hidden ones (the price holds, the RSI does not), dashed. A turn stands out from <code>left</code> bars before it and <code>right</code> bars after, so a divergence is known <code>right</code> bars late and, once the bar that confirms it has closed, does not change (on that bar, still forming, it can come and go); the two turns are <code>minBars</code> to <code>maxBars</code> apart. <code>detectDivergences(bars, line, options)</code> reads any line with one value a bar (null where it has none) and needs no chart.
+</p>
+<pre><code>{`chart.addIndicator('rsidiv', {}, 'bottom')                    // the RSI, its divergences marked
+chart.addIndicator('rsidiv', { hidden: 1 }, 'bottom')         // the hidden ones too, dashed
+chart.addIndicator('rsidiv', { left: 3, right: 3 }, 'bottom') // nearer turns: known 3 bars late, and more of them
+
+import { detectDivergences } from '@tradecanvas/chart'
+
+detectDivergences(bars, macdHistogram, { left: 5, right: 5, minBars: 5, maxBars: 60, hidden: true })
+// [{ kind: 'bullish' | 'bearish', hidden, from, to, confirmed, valueFrom, valueTo, priceFrom, priceTo }]`}</code></pre>
+
+<h2 id="session-volume-profile">Session volume profile</h2>
+<p>
+  <code>svp</code> draws each trading day's volume by price: the day's range split into <code>rows</code>, each bar's volume shared by the rows its range covers, drawn as rows growing right from the day's first bar. Over them, the day's point of control (the busiest row) and its value area (the rows around it holding <code>valueArea</code> percent of the day's volume, 70 by default, taken on two rows at a time from the heavier side, as Market Profile counts it) are lines across the day. A day starts at midnight on the exchange's clock (<code>setExchangeTimeZone</code>), as Session VWAP's does. Each bar's <code>poc</code>, <code>vah</code> and <code>val</code> are its whole day's, the bars after it included: on a past day a morning bar carries the day's closing profile, and on the day still trading they move as it trades. They are for reading a day, not for signals or a backtest at that bar. <code>volumeProfile</code> is one profile of every bar loaded; <code>sessionVolumeProfiles</code> gives the days' rows with no chart.
+</p>
+<pre><code>{`chart.addIndicator('svp')                           // a profile a day, with its POC and value area
+chart.addIndicator('svp', { rows: 40, valueArea: 68 }) // finer rows, a narrower value area
+
+import { sessionVolumeProfiles } from '@tradecanvas/chart'
+
+sessionVolumeProfiles(bars, { rows: 24, valueArea: 70, timeZone: 'America/New_York' })
+// [{ start, end, time, low, high, rowHeight, volumes, total, poc, valueAreaLow, valueAreaHigh, valueAreaRows }]`}</code></pre>
+
+<h2 id="order-blocks">Order blocks</h2>
+<p>
+  A swing high is a bar higher than the <code>length</code> bars before it and no lower than the <code>length</code> after (5), so it is known <code>length</code> bars late; a swing low the same way down. When a close goes over the latest swing high not yet broken, the lowest bar between the swing and that close is a bullish order block, its high to its low; a close under the latest swing low makes the highest bar between a bearish one. A swing makes one block. <code>orderblocks</code> draws each as a box, in the colours of fair value gaps, to the right edge while it stands; a close through it (under a bullish block, over a bearish one) breaks it and takes it off, unless <code>showBroken</code> is 1. Only the latest <code>count</code> standing blocks of each side are drawn (5; 0 for all): older far ones only clutter. <code>detectOrderBlocks</code> gives them all with no chart, with the bar that broke each.
+</p>
+<pre><code>{`chart.addIndicator('orderblocks')                    // the blocks standing
+chart.addIndicator('orderblocks', { count: 3 })        // the latest three a side
+chart.addIndicator('orderblocks', { length: 3 })       // shorter swings: more blocks, known sooner
+chart.addIndicator('orderblocks', { showBroken: 1 })   // the broken ones too, fainter, to the bar that broke them
+
+import { detectOrderBlocks } from '@tradecanvas/chart'
+
+detectOrderBlocks(bars, { length: 5 })
+// [{ kind: 'bullish' | 'bearish', index, formed, top, bottom, swing, brokenAt }]`}</code></pre>
 
 <h2>Your own indicator</h2>
 <p>

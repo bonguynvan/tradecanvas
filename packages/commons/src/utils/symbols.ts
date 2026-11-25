@@ -1,4 +1,4 @@
-import type { SymbolInfo } from '../types/symbol.js';
+import type { SymbolInfo, SymbolSession } from '../types/symbol.js';
 
 /**
  * The longest symbol kept, in a watchlist, a list of symbols or a quote: room
@@ -15,6 +15,21 @@ export const MAX_SYMBOL_LENGTH = 160;
 export function tickerOf(symbol: string): string {
   const at = symbol.lastIndexOf(':');
   return at <= 0 || at === symbol.length - 1 ? symbol : symbol.slice(at + 1);
+}
+
+/**
+ * Whether two symbols name one instrument: the same letters in any case, and, where one alone
+ * names its venue ("BINANCE:BTCUSDT" and "BTCUSDT"), the same ticker. Two that each name a venue
+ * are the same only whole: "BINANCE:BTCUSDT" is not "SIM:BTCUSDT". An account's orders and a
+ * chart's symbol are matched by it, so that one named the other way is not taken for another's.
+ */
+export function sameSymbol(a: string, b: string): boolean {
+  const one = a.toUpperCase();
+  const other = b.toUpperCase();
+  if (one === other) return true;
+  const ticker = tickerOf(one);
+  // A venue on one alone: the other is taken for the same market's.
+  return (ticker === one) !== (tickerOf(other) === other) && ticker === tickerOf(other);
 }
 
 /** How well `query` (upper case) matches `text` (upper case): 0 when it doesn't. */
@@ -68,6 +83,9 @@ export function symbolTimeZone(info: Pick<SymbolInfo, 'timeZone'> | null | undef
   return info?.timeZone;
 }
 
+/** Minutes in a day: `'24:00'` is its end. */
+const MINUTES_A_DAY = 1440;
+
 /** `'09:30'` → 570 (`'24:00'`, a day's end, → 1440), or null for anything that isn't a time of day. */
 export function sessionMinute(time: string): number | null {
   const match = /^(\d{1,2}):(\d{2})$/.exec(time.trim());
@@ -76,4 +94,25 @@ export function sessionMinute(time: string): number | null {
   const minutes = Number(match[2]);
   if (hours === 24 && minutes === 0) return 1440;
   return hours < 24 && minutes < 60 ? hours * 60 + minutes : null;
+}
+
+/**
+ * When a symbol's trading day starts, in minutes after midnight on its
+ * exchange's clock: the open of a session that runs past midnight (CME's
+ * 17:00 to 16:00 in Chicago, 1020), the trading day then running from it to
+ * the next day's, and named by the date it ends on. Null when every session
+ * is inside a day, or none is given: the day starts at midnight.
+ */
+export function tradingDayStart(sessions: readonly SymbolSession[] | null | undefined): number | null {
+  const minutes = (sessions ?? []).flatMap((session) => {
+    const start = sessionMinute(session.start);
+    const end = sessionMinute(session.end);
+    return start === null || end === null ? [] : [{ start, end }];
+  });
+  // One session past midnight (17:00 to 16:00), or around the clock from its open (17:00 to 17:00).
+  const wrapping = minutes.find(({ start, end }) => start > 0 && end <= start);
+  if (wrapping) return wrapping.start;
+  // The same day cut at midnight: one session up to 24:00 and another from 00:00.
+  const toMidnight = minutes.find(({ start, end }) => start > 0 && end === MINUTES_A_DAY);
+  return toMidnight && minutes.some(({ start }) => start === 0) ? toMidnight.start : null;
 }

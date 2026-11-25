@@ -111,6 +111,56 @@ describe('SessionBreaks in the display timezone', () => {
     const utcBreaks = (breaks as unknown as { computeBreaksTyped(d: DataSeries): { idx: number }[] }).computeBreaksTyped(data);
     expect(utcBreaks.map((b) => b.idx)).toEqual([24]);
   });
+
+  it('breaks the day at the trading day’s start when one is given, and at midnight again without', () => {
+    // 1h bars from 2026-07-01 00:00 UTC: 17:00 in Chicago (CDT, UTC-5) is 22:00 UTC.
+    const start = Date.UTC(2026, 6, 1);
+    const data: DataSeries = Array.from({ length: 30 }, (_, i) => ({
+      time: start + i * 3_600_000, open: 1, high: 1, low: 1, close: 1, volume: 1,
+    }));
+    const breaks = new SessionBreaks();
+    breaks.setConfig({ visible: true });
+    breaks.setTimezone('America/Chicago');
+    const find = () => (breaks as unknown as { computeBreaksTyped(d: DataSeries): { idx: number }[] }).computeBreaksTyped(data).map((b) => b.idx);
+    // Midnight in Chicago is 05:00 UTC.
+    expect(find()).toEqual([5, 29]);
+    breaks.setDayStart(17 * 60);
+    expect(find()).toEqual([22]);
+    breaks.setDayStart(null);
+    expect(find()).toEqual([5, 29]);
+  });
+
+  it('opens the week with Sunday evening’s session, and keeps 17:00 through a change of the clocks', () => {
+    const hour = 3_600_000;
+    const hourly = (from: number, n: number): DataSeries => Array.from({ length: n }, (_, i) => ({ time: from + i * hour, open: 1, high: 1, low: 1, close: 1, volume: 1 }));
+    const breaks = new SessionBreaks();
+    breaks.setConfig({ visible: true });
+    breaks.setTimezone('America/Chicago');
+    breaks.setDayStart(17 * 60);
+    const find = (data: DataSeries) => (breaks as unknown as { computeBreaksTyped(d: DataSeries): { idx: number; kind: string }[] }).computeBreaksTyped(data);
+    // Friday 3 July 2026, 15:00 in Chicago (20:00 UTC), to Sunday 5 July, 18:00: the 17:00 Sunday bar opens Monday's week.
+    const weekend = hourly(Date.UTC(2026, 6, 3, 20), 52);
+    const sunday = weekend.findIndex((b) => b.time === Date.UTC(2026, 6, 5, 22));
+    expect(find(weekend).find((b) => b.idx === sunday)?.kind).toBe('week');
+    // 1 November 2026, when the clocks go back at 02:00: Saturday's and Sunday's 17:00 opens stay the breaks (22:00 then 23:00 UTC).
+    breaks.invalidateCache();
+    const fallBack = hourly(Date.UTC(2026, 9, 31, 12), 40);
+    const at = (utc: number) => fallBack.findIndex((b) => b.time === utc);
+    expect(find(fallBack).map((b) => b.idx)).toEqual([at(Date.UTC(2026, 9, 31, 22)), at(Date.UTC(2026, 10, 1, 23))]);
+  });
+
+  it('reads a day that starts before the clocks change on the wall clock: 01:00 stays 01:00 on the night they go forward', () => {
+    const hour = 3_600_000;
+    const breaks = new SessionBreaks();
+    breaks.setConfig({ visible: true });
+    breaks.setTimezone('America/Chicago');
+    breaks.setDayStart(60);
+    // 8 March 2026, 02:00 in Chicago, goes to 03:00: 01:00 is 07:00 UTC on the 8th and 06:00 UTC on the 9th.
+    const data: DataSeries = Array.from({ length: 48 }, (_, i) => ({ time: Date.UTC(2026, 2, 7, 12) + i * hour, open: 1, high: 1, low: 1, close: 1, volume: 1 }));
+    const at = (utc: number) => data.findIndex((b) => b.time === utc);
+    const found = (breaks as unknown as { computeBreaksTyped(d: DataSeries): { idx: number }[] }).computeBreaksTyped(data).map((b) => b.idx);
+    expect(found).toEqual([at(Date.UTC(2026, 2, 8, 7)), at(Date.UTC(2026, 2, 9, 6))]);
+  });
 });
 
 

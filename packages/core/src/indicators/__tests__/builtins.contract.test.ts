@@ -18,6 +18,7 @@ const NOT_DRAWN: Record<string, readonly string[]> = {
   volindex: ['long'],
   supertrend: ['trend'],
   svwap: ['session'],
+  svp: ['session'],
   vwap: ['session'],
   ao: ['up'],
   ac: ['up'],
@@ -32,10 +33,13 @@ const NOT_DRAWN: Record<string, readonly string[]> = {
 };
 
 /** Parameters that give these a value within 400 hourly bars. */
-const PARAMS: Record<string, Record<string, number>> = { mtfma: { period: 3 } };
+const PARAMS: Record<string, Record<string, number>> = { mtfma: { period: 3 }, fvg: { showFilled: 1 }, orderblocks: { length: 2, showBroken: 1 } };
 
 /** Not drawn bar by bar: a profile over price. */
 const NOT_PER_BAR = new Set(['volumeProfile']);
+
+/** Lines a bar, drawn over rows of volume by price whose edges are no plot's value: the scale is checked by the lines' own test. */
+const ROWS_BY_PRICE = new Set(['svp']);
 
 /**
  * Marks drawn beside their value, px: a candle pattern's arrow sits off the
@@ -123,7 +127,7 @@ describe('built-in indicators keep to their declarations', () => {
         expect(hasValues).toBe(true);
       });
 
-      if (NOT_PER_BAR.has(descriptor.id)) return;
+      if (NOT_PER_BAR.has(descriptor.id) || ROWS_BY_PRICE.has(descriptor.id)) return;
 
       it('draws on the scale the axis shows, in its declared colours', () => {
         const from = 250;

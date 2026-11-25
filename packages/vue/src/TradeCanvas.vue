@@ -205,7 +205,7 @@ onUnmounted(() => {
 watch(() => [props.symbol, props.timeframe, !props.data, props.stream] as const, syncStream);
 /** The bars last given to the chart (`feedBars`). */
 let fed: FedBars | null = null;
-const barKey = (b: OHLCBar | undefined) => (b ? `${b.time},${b.open},${b.high},${b.low},${b.close},${b.volume}` : '');
+const barKey = (b: OHLCBar | undefined) => (b ? `${b.time},${b.open},${b.high},${b.low},${b.close},${b.volume},${b.buyVolume ?? ''}` : '');
 /** The fields of the forming bar and of the bars before it a change to is a correction (`CORRECTABLE_BARS`). */
 const tailKey = (bars: readonly OHLCBar[] | undefined) => (bars ? bars.slice(-1 - CORRECTABLE_BARS).map(barKey).join(';') : '');
 

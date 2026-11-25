@@ -14,7 +14,7 @@
   Look của widget là một tập token: góc bo của từng loại thành phần, kích thước control và thanh, kiểu chữ, viền,
   bóng đổ, cách hiển thị nút đang chọn, và toolbar cùng công cụ vẽ nằm sát cạnh hay nổi.
   Bắt đầu từ một preset rồi đổi phần cần đổi. Màu sắc thuộc về theme (<code>dark</code> / <code>light</code>,
-  xem <a href={href('/docs/api')}>API</a>); một look dùng được với cả hai. Modern, preset mặc định, có dark và
+  xem <a href={href('/docs/api')}>API</a>); một look dùng được với cả hai. Graphite, preset mặc định, và Modern đều có dark và
   light riêng; các look khác dùng chung bộ màu mà widget dùng trước khi có Modern.
 </p>
 
@@ -22,7 +22,16 @@
 <table>
   <thead><tr><th>Preset</th><th>Look</th></tr></thead>
   <tbody>
-    <tr><td><code>modern</code> (mặc định)</td><td>
+    <tr><td><code>graphite</code> (mặc định)</td><td>
+      Khung của một bàn giao dịch, không mang sắc màu riêng: các nền lệch nhau một bậc (<code>#131416</code> /
+      <code>#ffffff</code>), ngăn bằng đường kẻ mảnh. Ít cỡ một cách có chủ ý: control cao 20, 24, 28, 36 hoặc
+      40 px, mọi góc bo 3 px, một kiểu bóng cho lớp nổi và không bóng ở chỗ khác. Thứ đang chọn (interval, tool,
+      tab) hiện trên nền sáng hơn với màu chữ thường; màu amber dành cho thứ bạn bấm để hành động. Công tắc là ô
+      tick, và cột của bảng tài khoản rộng vừa bằng số liệu. Font là IBM Plex Sans nếu trang của bạn tải nó, nếu
+      không thì font hệ thống. Trên chart, khi bạn không đưa theme object, màu là
+      <code>GRAPHITE_DARK_THEME</code> và <code>GRAPHITE_LIGHT_THEME</code>.
+    </td></tr>
+    <tr><td><code>modern</code></td><td>
       Giống cửa sổ một trình soạn code, dùng bộ màu Dark Modern và Light Modern. Chart nằm trên nền của vùng soạn
       (<code>#1f1f1f</code> / <code>#ffffff</code>), toolbar và các thanh quanh chart đậm hoặc nhạt hơn nền một chút, ngăn cách bằng đường mảnh;
       icon 16 px trong nút 28 px trên toolbar 38 px; control bo 4 px, menu 6 px và dialog 8 px. Màu amber của logo
@@ -191,7 +200,8 @@ chart.setFont(null)                         // the theme's own font again`}</cod
   font: {
     family: "'Manrope', system-ui, sans-serif",
     mono: "'JetBrains Mono', monospace",
-    size: 13, weight: 500, strongWeight: 600,
+    size: 13, smallSize: 12,                          // body; figures in tables, field names
+    weight: 500, strongWeight: 600,
     labelCase: 'uppercase', labelTracking: 0.06,      // small labels
   },
   borders: { width: 1, separators: true },           // rules between toolbar groups
@@ -348,7 +358,9 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' or 'user'`}</c
     <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>Bốn thuộc tính trên cho các đường của crosshair (mặc định là đường mảnh liền).</td></tr>
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>Pill giá và thời gian trên trục, và trên thang của các pane.</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>Đường và nhãn của từng trục (thang của pane dùng giá trị của trục giá).</td></tr>
-    <tr><td><code>axis.price.valueTagsOutlined</code></td><td><code>true</code> vẽ các tag giá trị của chỉ báo trên trục giá ở dạng viền (nền của biểu đồ, hoặc nền riêng của pane, bên trong một viền theo màu của đường, chữ theo màu đó) thay vì tô đặc bằng màu của đường: trong pane giá, các pane chỉ báo và trên thang bên trái. Đường có màu quá gần màu nền nên không đọc được trên nền thì giá trị của nó được ghi bằng màu chữ của thang.</td></tr>
+    <tr><td><code>lastPrice.limitColors</code></td><td><code>true</code> vẽ đường và tag của giá cuối bằng màu của giới hạn trong ngày khi giá đang ở giới hạn đó: màu trần khi giá bằng hoặc vượt giá trần, màu sàn khi bằng hoặc dưới giá sàn, màu tham chiếu khi bằng giá tham chiếu. Ở giữa các mức đó, và khi không có giới hạn nào, chúng giữ màu tăng/giảm trong ngày. Dành cho thị trường có biên độ ngày và bảng giá tô màu theo đó; mặc định tắt.</td></tr>
+    <tr><td><code>crosshair.labelChange</code></td><td><code>true</code> ghi, bên dưới giá mà crosshair chỉ trên trục giá, khoảng cách từ giá đó tới giá cuối, tính theo phần trăm (<code>+1.25%</code>), theo locale của biểu đồ. Không ghi khi chưa có giá cuối, hoặc trên thang đã tính theo phần trăm hay theo chỉ số. Trục được chừa chỗ cho dòng này. Các theme Graphite bật sẵn (<code>crosshairChange</code> của chính theme); các theme khác tắt.</td></tr>
+    <tr><td><code>axis.price.valueTagsOutlined</code></td><td><code>true</code> vẽ các tag giá trị của chỉ báo trên trục giá ở dạng viền (nền của biểu đồ, hoặc nền riêng của pane, bên trong một viền theo màu của đường, chữ theo màu đó) thay vì tô đặc bằng màu của đường: trong pane giá, các pane chỉ báo và trên thang bên trái. Đường có màu quá gần màu nền nên không đọc được trên nền thì giá trị của nó được ghi bằng một sắc đậm hơn của chính màu đó, cho tới khi đọc được ở 4.5:1. Các theme Graphite vẽ chúng ở dạng viền, trừ khi key này là <code>false</code>. Các tag của bid, ask, high và low cũng được vẽ viền cùng với chúng.</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>Giá trị của legend, và nhãn của nó (O, H, L, Vol).</td></tr>
     <tr><td><code>legend.upColor</code>, <code>.downColor</code></td><td>Màu tăng và màu giảm ở những chỗ đọc giá trị của một nến: giá đóng cửa và mức thay đổi của legend, tooltip của crosshair và tooltip đã ghim, công cụ đo. Chúng theo màu của chuỗi nếu không đặt, nên biểu đồ ẩn nến của nó (một overlay tự vẽ nến riêng) đặt các key này và giữ được chúng.</td></tr>
     <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>Đường và tag giá cuối; màu theo chuỗi nếu không đặt. Thời gian còn lại của nến (<code>features.barCountdown</code>) nằm dưới tag.</td></tr>

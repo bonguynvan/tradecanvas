@@ -8,6 +8,8 @@ export interface ExportColumn {
 }
 
 const BAR_COLUMNS = ['Time', 'Open', 'High', 'Low', 'Close', 'Volume'];
+/** The column of what the buyers took, after the volume, when a bar has it. */
+const BUY_VOLUME_COLUMN = 'Buy Volume';
 
 /** A bar's time as an ISO date, in its series' unit (`barTimeUnit`). */
 function isoTime(time: number, unit: BarTimeUnit): string {
@@ -56,11 +58,14 @@ const valueText = (v: number | null | undefined): string => {
 
 export class DataExporter {
   static toCSV(data: ReadonlyArray<OHLCBar>, columns: readonly ExportColumn[] = []): string {
-    const header = [...BAR_COLUMNS, ...columns.map((c) => csvCell(c.name))].join(',');
+    // What the buyers took has a column of its own when a bar says; a bar that does not leaves its cell empty.
+    const bought = data.some((bar) => bar.buyVolume !== undefined);
+    const header = [...BAR_COLUMNS, ...(bought ? [BUY_VOLUME_COLUMN] : []), ...columns.map((c) => csvCell(c.name))].join(',');
     const unit = barTimeUnit(data);
     const rows = data.map((bar, i) => [
       isoTime(bar.time, unit),
       ...[bar.open, bar.high, bar.low, bar.close, bar.volume].map(valueText),
+      ...(bought ? [valueText(bar.buyVolume)] : []),
       ...columns.map((c) => valueText(c.values[i])),
     ].join(','));
     return [header, ...rows].join('\n');
@@ -77,6 +82,7 @@ export class DataExporter {
         close: exportNumber(bar.close),
         volume: exportNumber(bar.volume),
       };
+      if (bar.buyVolume !== undefined) row.buyVolume = exportNumber(bar.buyVolume);
       for (const c of columns) row[c.name] = exportNumber(c.values[i]);
       return row;
     }), null, 2);

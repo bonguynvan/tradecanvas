@@ -5,7 +5,11 @@ import {
   BarRenderer,
   BaselineRenderer,
   CandlestickRenderer,
+  ColumnsRenderer,
+  DotsRenderer,
   EquivolumeRenderer,
+  FootprintRenderer,
+  HLCBarRenderer,
   HiLoRenderer,
   HLCAreaRenderer,
   HollowCandleRenderer,
@@ -14,6 +18,8 @@ import {
   LineWithMarkersRenderer,
   PointAndFigureRenderer,
   RenkoRenderer,
+  SplineRenderer,
+  StepAreaRenderer,
   StepLineRenderer,
   VolumeCandleRenderer,
   pointAndFigureColumns,
@@ -22,6 +28,7 @@ import {
   toLineBreak,
   toRangeBars,
   toRenko,
+  toSmoothedHeikinAshi,
 } from '@tradecanvas/core';
 import type { ChartRendererInterface, PointAndFigureColumns, ReshapeMemo } from '@tradecanvas/core';
 import type { ChartTypePlugin } from '../plugins/contracts.js';
@@ -29,12 +36,13 @@ import type { ChartTypePlugin } from '../plugins/contracts.js';
 /**
  * Pure mapping from `ChartType` to the renderer class that draws it. Several
  * chart types reuse `CandlestickRenderer` against transformed data
- * (heikinAshi, lineBreak, rangeBars).
+ * (heikinAshi, smoothedHeikinAshi, lineBreak, rangeBars).
  */
 export function createRendererFor(type: ChartType): ChartRendererInterface {
   switch (type) {
     case 'candlestick':
     case 'heikinAshi':
+    case 'smoothedHeikinAshi':
     case 'lineBreak':
     case 'rangeBars':
       return new CandlestickRenderer();
@@ -66,6 +74,18 @@ export function createRendererFor(type: ChartType): ChartRendererInterface {
       return new LineWithMarkersRenderer();
     case 'hiLo':
       return new HiLoRenderer();
+    case 'footprint':
+      return new FootprintRenderer();
+    case 'columns':
+      return new ColumnsRenderer();
+    case 'hlcBars':
+      return new HLCBarRenderer();
+    case 'dots':
+      return new DotsRenderer();
+    case 'stepArea':
+      return new StepAreaRenderer();
+    case 'spline':
+      return new SplineRenderer();
     default:
       return new CandlestickRenderer();
   }
@@ -93,6 +113,8 @@ export function transformDisplayData(
   switch (type) {
     case 'heikinAshi':
       return toHeikinAshi(raw);
+    case 'smoothedHeikinAshi':
+      return toSmoothedHeikinAshi(raw, options.smoothedHeikinAshi?.period);
     case 'renko': {
       const box = options.renko?.boxSize;
       return typeof box === 'number'
@@ -117,6 +139,7 @@ export function transformDisplayData(
 export function isTransformedChartType(type: ChartType): boolean {
   switch (type) {
     case 'heikinAshi':
+    case 'smoothedHeikinAshi':
     case 'renko':
     case 'lineBreak':
     case 'kagi':
@@ -131,10 +154,10 @@ export function isTransformedChartType(type: ChartType): boolean {
 /**
  * Transformed chart types that redraw the series into bars of their own
  * (bricks, lines, columns), so a drawn bar is not a data bar. Heikin-Ashi
- * keeps one bar per data bar.
+ * and its smoothed kind keep one bar per data bar.
  */
 export function isReshapedChartType(type: ChartType): boolean {
-  return type !== 'heikinAshi' && isTransformedChartType(type);
+  return type !== 'heikinAshi' && type !== 'smoothedHeikinAshi' && isTransformedChartType(type);
 }
 
 /**

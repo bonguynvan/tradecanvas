@@ -24,7 +24,12 @@ export interface MarketConfig {
   priceSteps?: readonly PriceStepBand[];
   /** The exchange's IANA time zone, which its session times are in. */
   timeZone?: string;
-  /** Currency per point of a futures contract (VN30F: 100,000 dong). */
+  /**
+   * What a move of one in price is worth for one unit, in the market's currency: a futures
+   * contract's money per point (VN30F: 100,000 dong), or 1,000 where a share's price is written
+   * in thousands (HOSE, HNX, UPCoM: 26.40 is 26,400 dong). An order's value, a position's profit
+   * and the amounts on the chart's tags are counted by it. Default 1: the price is the money.
+   */
   contractMultiplier?: number;
 
   /** The day's ceiling and floor, a percentage either side of the reference price. */
@@ -36,6 +41,15 @@ export interface MarketConfig {
     floorPercent?: number;
     /** The price the limits are counted from, the last session's close; `chart.setPriceLimits(price)` sets it. */
     referencePrice?: number;
+    /**
+     * The day's ceiling, as the broker or the exchange gives it for this symbol
+     * (`chart.setPriceLimits({ ceiling, floor, reference })`). With `floor`, it
+     * stands over what the percentages make: a special band, or a stock's first
+     * session on another exchange, is not the exchange's percentage of anything.
+     */
+    ceiling?: number;
+    /** The day's floor as given, with `ceiling`. */
+    floor?: number;
     /**
      * Round the move first (KRX): the percentage of the reference is rounded
      * down to the reference's step, then each limit down to the step of the

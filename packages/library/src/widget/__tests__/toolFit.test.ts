@@ -86,6 +86,15 @@ describe('watchToolFit', () => {
     expect(fit()).toBe('24px');
   });
 
+  it('gives way no further than a finger’s press on a coarse pointer: the column scrolls from there', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(pointer: coarse)', media: query, addEventListener() {}, removeEventListener() {} }));
+    const { column, flush, fit } = setup(500, 745);
+    column.style.setProperty('--tcw-hit-finger', '32px');
+    watchToolFit(column);
+    await flush();
+    expect(fit()).toBe('32px');
+  });
+
   it('fits again when the root changes what shows the tools, though the column keeps its size', async () => {
     const { root, box, column, flush, fit } = setup(700, 745);
     watchToolFit(column);

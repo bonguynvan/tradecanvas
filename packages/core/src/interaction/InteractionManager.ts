@@ -123,6 +123,10 @@ export class InteractionManager {
   private touchStartPos: Point = { x: 0, y: 0 };
   private longPressTimer: ReturnType<typeof setTimeout> | null = null;
   private longPressed = false;
+  /** A mouse press held still on the plot is told to the chart (`setHoldHandler`): the gesture that asks for the price popup. */
+  private onHold: ((held: boolean, pos: Point) => void) | null = null;
+  /** The mouse's press is being held: it pans nothing until the button is let go. */
+  private holding = false;
   /** The finger's press fell through to a pan (nothing took it). */
   private touchFallthrough = false;
   /** Whose the first move made the gesture has been decided (where the page pans too). */
@@ -178,6 +182,18 @@ export class InteractionManager {
    */
   setAltClickHandler(handler: (pos: Point) => void): void {
     this.onAltClick = handler;
+  }
+
+  /**
+   * A mouse press held still on the plot for as long as a finger's long press:
+   * told with `true` where it is held, and with `false` where the button is let
+   * go. The pan it began is let go, and it is no click. With no handler (null)
+   * a press held is a pan that has not moved.
+   */
+  setHoldHandler(handler: ((held: boolean, pos: Point) => void) | null): void {
+    this.onHold = handler;
+    // No one to tell any more: a press being held is held no longer.
+    if (!handler) this.holding = false;
   }
 
   /** Wire an `Escape` keydown to the host — used to unpin tooltips, etc. */
@@ -586,6 +602,26 @@ export class InteractionManager {
       return 'pan';
     };
 
+    /**
+     * A mouse press that nothing took, held still, where the chart asks to be
+     * told (`setHoldHandler`): after a long press's wait the pan it began is
+     * let go and the chart is told, as a finger's long press pins the tooltip.
+     */
+    const holdForTooltip = (pos: Point) => {
+      if (!this.onHold) return;
+      this.clearLongPress();
+      this.longPressTimer = setTimeout(() => {
+        this.longPressTimer = null;
+        this.holding = true;
+        this.pressForClick = false;
+        this.panHandler?.onPointerUp();
+        this.panHandler?.cancelMomentum();
+        setCursor(hoverCursor(pos));
+        this.onHold?.(true, pos);
+        this.onOverlayDirty?.(true);
+      }, LONG_PRESS_MS);
+    };
+
     const onMouseDown = (e: MouseEvent) => {
       lastPressedChart = this.element;
       // Only the primary button starts gestures; right-click belongs to the
@@ -598,8 +634,11 @@ export class InteractionManager {
       this.invalidateRect();
       const mods = { ctrl: e.ctrlKey || e.metaKey, shift: e.shiftKey, alt: e.altKey };
       this.drawingManager?.setModifiers({ ctrl: mods.ctrl, shift: mods.shift });
+      const pos = this.getMousePos(e);
+      const taken = press(pos, mods, 'mouse');
       // Keep focus where the "+" menu puts it.
-      if (press(this.getMousePos(e), mods, 'mouse') === 'menu') e.preventDefault();
+      if (taken === 'menu') e.preventDefault();
+      if (taken === 'pan') holdForTooltip(pos);
     };
 
     const onMouseMove = (e: MouseEvent) => {
@@ -645,7 +684,11 @@ export class InteractionManager {
       // A pending click (or tap) ends once the pointer drifts past the slop.
       if (this.downPos && !this.downMoved) {
         const slop = kind === 'mouse' ? MOUSE_CLICK_SLOP_PX : TOUCH_SLOP_PX;
-        if (Math.hypot(pos.x - this.downPos.x, pos.y - this.downPos.y) > slop) this.downMoved = true;
+        if (Math.hypot(pos.x - this.downPos.x, pos.y - this.downPos.y) > slop) {
+          this.downMoved = true;
+          // A mouse that moves is panning: it is no press held still.
+          if (kind === 'mouse' && !this.holding) this.clearLongPress();
+        }
       }
 
       // Axis drag in progress — owns the gesture exclusively.
@@ -693,8 +736,8 @@ export class InteractionManager {
       }
       this.panHandler?.onPointerMove(panAt);
       this.crosshairHandler?.onPointerMove(pos);
-      // Hover-only unless a press is panning the chart.
-      this.onOverlayDirty?.(!held);
+      // Hover-only unless a press is panning the chart (one held still pans nothing).
+      this.onOverlayDirty?.(!held || this.holding);
     };
 
     /**
@@ -774,9 +817,15 @@ export class InteractionManager {
       if (!pressActive) return;
       endPress();
       const pos = this.getMousePos(e);
+      // Let go before the wait was over: it was no press held still.
+      this.clearLongPress();
       // Back to the hover cursor for wherever the pointer was released.
       setCursor(hoverCursor(pos));
       release(pos, 'mouse');
+      if (this.holding) {
+        this.holding = false;
+        this.onHold?.(false, pos);
+      }
     };
 
     const onDblClick = (e: MouseEvent) => {
@@ -881,6 +930,9 @@ export class InteractionManager {
         return;
       }
       if (this.onChartContextMenu?.(areaAt(pos), pos)) e.preventDefault();
+      // The trading menu is on and had no order to offer there (a price past the day's limits):
+      // the host may have a menu for it, and the browser's own does not stand in for either.
+      else if (this.tradingManager?.refusesContextMenu(pos, vp)) e.preventDefault();
     };
 
     // --- Touch events ---
@@ -1169,6 +1221,7 @@ export class InteractionManager {
     this.boundHandlers = [];
     this.cachedRect = null;
     this.clearLongPress();
+    this.holding = false;
   }
 
   private clearLongPress(): void {

@@ -1,6 +1,6 @@
-import type { TradingPosition, TradingConfig, ViewportState, Theme } from '@tradecanvas/commons';
+import type { TakeProfitLevel, TradingPosition, TradingConfig, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
-import { UI_ICONS, priceTagText } from '@tradecanvas/commons';
+import { UI_ICONS, priceTagText, quantityText } from '@tradecanvas/commons';
 import {
   amountAt,
   buildPositionLabelContext,
@@ -9,6 +9,7 @@ import {
   pickPnLColor,
   resolvePositionLabel,
 } from './positionFormat.js';
+import { positionMark } from '@tradecanvas/commons';
 import type { LineButton } from './lineButtons.js';
 import type { DragState } from './OrderRenderer.js';
 import { inPlot, levelLine } from './plot.js';
@@ -70,6 +71,18 @@ function stopPrice(pos: TradingPosition, which: Stop, dragState: DragState | nul
   return dragState?.orderId === pos.id && dragState.sourceType === which ? dragState.currentPrice : pos[which];
 }
 
+/** The index of the take-profit level of `pos` being dragged, or -1. */
+function draggedLevel(pos: TradingPosition, dragState: DragState | null): number {
+  return dragState?.orderId === pos.id && dragState.sourceType === 'level' && dragState.level !== undefined ? dragState.level : -1;
+}
+
+/** A position's take-profit levels where they are: the one being dragged at where it is dragged to. */
+function levelsShown(pos: TradingPosition, dragState: DragState | null): readonly TakeProfitLevel[] | undefined {
+  const dragged = draggedLevel(pos, dragState);
+  if (dragged < 0 || !dragState) return pos.takeProfits;
+  return pos.takeProfits?.map((level, i) => (i === dragged ? { ...level, price: dragState.currentPrice } : level));
+}
+
 export class PositionRenderer {
   /** The lines and their tags, the tags laid out among themselves. */
   render(
@@ -99,7 +112,8 @@ export class PositionRenderer {
     for (const pos of positions) {
       const entryY = priceToY(pos.entryPrice, viewport);
       levelLine(ctx, viewport, entryY, colors.entry, []);
-      if (currentPrice !== null) this.renderBand(ctx, pos, entryY, priceToY(currentPrice, viewport), currentPrice, viewport, config);
+      // The band reaches the chart's price, which is where it is drawn; its colour is the profit's as the tag counts it.
+      if (currentPrice !== null) this.renderBand(ctx, pos, entryY, priceToY(currentPrice, viewport), positionMark(pos) ?? currentPrice, viewport, config);
       for (const which of STOPS) {
         const price = stopPrice(pos, which, dragState);
         const y = price === undefined ? NaN : priceToY(price, viewport);
@@ -113,6 +127,18 @@ export class PositionRenderer {
           ctx.globalAlpha = 1;
         }
       }
+      // Its take-profit levels: a line each, as the target's; one being dragged where it is dragged to, and faint where it was.
+      const dragged = draggedLevel(pos, dragState);
+      (levelsShown(pos, dragState) ?? []).forEach((level, i) => {
+        const y = priceToY(level.price, viewport);
+        if (inPlot(y, viewport)) levelLine(ctx, viewport, y, colors.profit, STOP_DASH);
+        const from = pos.takeProfits?.[i]?.price;
+        if (i === dragged && from !== undefined && from !== level.price) {
+          ctx.globalAlpha = GHOST_ALPHA;
+          levelLine(ctx, viewport, priceToY(from, viewport), colors.profit, GHOST_DASH);
+          ctx.globalAlpha = 1;
+        }
+      });
     }
   }
 
@@ -128,7 +154,7 @@ export class PositionRenderer {
   ): void {
     const { chartRect } = viewport;
     const colors = colorsOf(config);
-    const labelCtx = buildPositionLabelContext(pos, currentPrice, config.pricePrecision ?? 2);
+    const labelCtx = buildPositionLabelContext(pos, currentPrice, config.pricePrecision ?? 2, undefined, undefined, pos.multiplier ?? config.amountMultiplier);
     const top = Math.min(entryY, currentY);
     const height = Math.abs(currentY - entryY);
     ctx.fillStyle = pickPnLColor(labelCtx.pnl, config.pnlThresholds, labelCtx.pnl >= 0 ? colors.profit : colors.loss);
@@ -162,6 +188,7 @@ export class PositionRenderer {
         const stop = this.stopTag(pos, which, viewport, config, dragState, currentPrice);
         if (stop) tags.push(stop);
       }
+      tags.push(...levelTags(levelsShown(pos, dragState), pos.side, pos.entryPrice, openQuantity(pos), viewport, config, pos.id, pos.multiplier));
     }
     return tags;
   }
@@ -177,18 +204,20 @@ export class PositionRenderer {
     const colors = colorsOf(config);
     const side = pos.side === 'buy' ? 'Long' : 'Short';
     const cells: TagCell[] = [{ kind: 'stamp', text: String(openQuantity(pos)) }];
-    if (currentPrice === null) {
+    // At the adapter's own price for it where it gives one: the amount the account counts.
+    const valuedAt = positionMark(pos) ?? currentPrice;
+    if (valuedAt === null) {
       cells.push({ kind: 'text', text: side });
     } else {
       const precision = config.pricePrecision ?? 2;
       const labelCtx = buildPositionLabelContext(
-        pos, currentPrice, precision, (p) => priceTagText(p, viewport, config.pricePrecision), viewport.numberLocale,
+        pos, valuedAt, precision, (p) => priceTagText(p, viewport, config.pricePrecision), viewport.numberLocale, pos.multiplier ?? config.amountMultiplier,
       );
       if (config.positionLabel !== undefined) {
         cells.push({ kind: 'text', text: resolvePositionLabel(config.positionLabel, labelCtx) });
       } else {
         const color = pickPnLColor(labelCtx.pnl, config.pnlThresholds, labelCtx.pnl >= 0 ? colors.profit : colors.loss);
-        cells.push({ kind: 'text', text: side }, { kind: 'text', text: formatAmount(labelCtx.pnl, amountDecimals(labelCtx.pnl, currentPrice, config.pricePrecision), viewport.numberLocale), color });
+        cells.push({ kind: 'text', text: side }, { kind: 'text', text: formatAmount(labelCtx.pnl, amountDecimals(labelCtx.pnl, valuedAt, config.pricePrecision), viewport.numberLocale), color });
       }
     }
     const show = config.lineButtons ?? {};
@@ -218,7 +247,7 @@ export class PositionRenderer {
     const y = price === undefined ? NaN : priceToY(price, viewport);
     if (price === undefined || !inPlot(y, viewport)) return null;
     const colors = colorsOf(config);
-    const amount = amountAt(pos.side, pos.entryPrice, openQuantity(pos), price);
+    const amount = amountAt(pos.side, pos.entryPrice, openQuantity(pos), price, pos.multiplier ?? config.amountMultiplier);
     // A distance, not the 0 or null a broker's own record may hold for "none".
     const trailing = typeof pos.trailingStop === 'number' && pos.trailingStop > 0;
     const cells: TagCell[] = [
@@ -267,6 +296,7 @@ export class PositionRenderer {
       const prices = [
         [stopPrice(pos, 'stopLoss', dragState), colors.loss],
         [stopPrice(pos, 'takeProfit', dragState), colors.profit],
+        ...(levelsShown(pos, dragState) ?? []).map((level) => [level.price, colors.profit] as const),
         [pos.entryPrice, colors.entry],
       ] as const;
       for (const [price, color] of prices) {
@@ -277,4 +307,47 @@ export class PositionRenderer {
     }
     return badges;
   }
+}
+
+/**
+ * A tag for each take-profit level on the plot: which it is (TP1 is the
+ * nearest still waiting), the part it takes off, and what that part would
+ * make from `entry`. A level takes no more than is left of `open` after the
+ * levels before it, and one with nothing left to take has no tag. With the
+ * position's id each is a handle for its line; an order's, which are a plan
+ * the order brings, are none.
+ */
+export function levelTags(
+  levels: readonly TakeProfitLevel[] | undefined,
+  side: TradingPosition['side'],
+  entry: number,
+  open: number,
+  viewport: ViewportState,
+  config: TradingConfig,
+  positionId?: string,
+  /** What the position's own price is worth, where it says: else the chart's market's. */
+  multiplier?: number,
+): TradingTag[] {
+  const colors = colorsOf(config);
+  const tags: TradingTag[] = [];
+  let left = open;
+  (levels ?? []).forEach((level, i) => {
+    const part = Math.min(level.quantity, left);
+    left -= part;
+    if (!(part > 0)) return;
+    const y = priceToY(level.price, viewport);
+    if (!inPlot(y, viewport)) return;
+    const amount = amountAt(side, entry, part, level.price, multiplier ?? config.amountMultiplier);
+    tags.push({
+      y,
+      color: colors.profit,
+      cells: [
+        { kind: 'stamp', text: `TP${i + 1}` },
+        { kind: 'text', text: quantityText(part) },
+        { kind: 'text', text: formatAmount(amount, amountDecimals(amount, entry, config.pricePrecision), viewport.numberLocale), color: amount >= 0 ? colors.profit : colors.loss },
+      ],
+      ...(positionId === undefined ? {} : { grab: { kind: 'level' as const, positionId, index: i } }),
+    });
+  });
+  return tags;
 }

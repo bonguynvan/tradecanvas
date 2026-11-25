@@ -2,9 +2,10 @@ import type { DataSeries, IndicatorOutput, IndicatorValue, OHLCBar } from '@trad
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 
 /**
- * Bars as six columns of numbers. A worker is handed the columns' buffers
- * (transferred, not copied), which costs nothing however many bars there
- * are; an array of bar objects would be copied object by object.
+ * Bars as columns of numbers: six, and a seventh for what the buyers took
+ * when a bar says. A worker is handed the columns' buffers (transferred,
+ * not copied), which costs nothing however many bars there are; an array
+ * of bar objects would be copied object by object.
  */
 export interface BarColumns {
   /** Each bar's time, in milliseconds. */
@@ -14,6 +15,8 @@ export interface BarColumns {
   low: Float64Array;
   close: Float64Array;
   volume: Float64Array;
+  /** Each bar's `buyVolume`, NaN where the bar does not say; left out when no bar does. */
+  buyVolume?: Float64Array;
 }
 
 /** The bars as columns. */
@@ -35,24 +38,31 @@ export function barsToColumns(bars: DataSeries): BarColumns {
     columns.low[i] = bar.low;
     columns.close[i] = bar.close;
     columns.volume[i] = bar.volume;
+    if (bar.buyVolume !== undefined) {
+      // The column is made at the first bar that says, and holds NaN for the bars that do not.
+      columns.buyVolume ??= new Float64Array(n).fill(NaN);
+      columns.buyVolume[i] = bar.buyVolume;
+    }
   }
   return columns;
 }
 
 /** The bars the columns hold, as objects again. */
 export function columnsToBars(columns: BarColumns): OHLCBar[] {
-  const { time, open, high, low, close, volume } = columns;
+  const { time, open, high, low, close, volume, buyVolume } = columns;
   const out: OHLCBar[] = new Array(time.length);
   for (let i = 0; i < time.length; i++) {
     out[i] = { time: time[i], open: open[i], high: high[i], low: low[i], close: close[i], volume: volume[i] };
+    // A bar that said what the buyers took says it again: an indicator that reads it is the same on either thread.
+    if (buyVolume && !Number.isNaN(buyVolume[i])) out[i].buyVolume = buyVolume[i];
   }
   return out;
 }
 
 /** The buffers to transfer with the columns. */
 export function barColumnBuffers(columns: BarColumns): ArrayBuffer[] {
-  const { time, open, high, low, close, volume } = columns;
-  return [time, open, high, low, close, volume].map((column) => column.buffer as ArrayBuffer);
+  const { time, open, high, low, close, volume, buyVolume } = columns;
+  return [time, open, high, low, close, volume, ...(buyVolume ? [buyVolume] : [])].map((column) => column.buffer as ArrayBuffer);
 }
 
 /**

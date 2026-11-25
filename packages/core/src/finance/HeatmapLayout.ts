@@ -244,3 +244,29 @@ export function layoutGroupedTreemap(
   }
   return { groups, cells: placed };
 }
+
+/** The room between a heatmap's cells, px, when its options do not say. */
+const DEFAULT_CELL_PADDING = 2;
+
+/**
+ * Where a heatmap's cells go in a chart `width` × `height`, as its options
+ * ask: equal cells in a grid; with `weighted`, a treemap by weight; with
+ * `grouped`, the cells of a group together under its name. A cell with no
+ * weight takes its value's size.
+ */
+export function computeHeatmapLayout(
+  options: { data: readonly { id: string; value: number; weight?: number; group?: string }[]; weighted?: boolean; grouped?: boolean; cellPadding?: number },
+  width: number,
+  height: number,
+): { rects: LayoutRect[]; groups: GroupRect[] } {
+  const bounds = { x: 0, y: 0, width, height };
+  const padding = options.cellPadding ?? DEFAULT_CELL_PADDING;
+  const weightOf = (cell: { value: number; weight?: number }) => cell.weight ?? (Math.abs(cell.value) || 1);
+  if (options.grouped) {
+    const { groups, cells } = layoutGroupedTreemap(options.data.map((cell) => ({ id: cell.id, weight: weightOf(cell), group: cell.group, value: cell.value })), bounds, padding, GROUP_HEADER);
+    return { rects: cells, groups };
+  }
+  if (options.weighted) return { rects: layoutSquarifiedTreemap(options.data.map((cell) => ({ id: cell.id, weight: weightOf(cell) })), bounds, padding), groups: [] };
+  return { rects: layoutUniformGrid(options.data.map((cell) => ({ id: cell.id })), bounds, padding), groups: [] };
+}
+

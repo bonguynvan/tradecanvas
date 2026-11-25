@@ -165,10 +165,13 @@ chart.addIndicator('vwap', { anchor: 'all' })   // every bar loaded, as it was b
 </table>
 
 <p>
-  <code>voldelta</code> (Volume Delta) ước lượng lực mua/bán từ OHLCV: nến đóng cửa tăng
-  cộng khối lượng dương, nến giảm cộng khối lượng âm. <code>mode: 0</code> là histogram theo từng nến,
-  <code>mode: 1</code> là delta tích luỹ. (Delta theo tick thực sự cần dữ liệu bid/ask của từng lệnh khớp, mà
-  chuỗi OHLCV không có.)
+  <code>voldelta</code> (Volume Delta) là phần khối lượng bên mua chủ động lấy trong mỗi nến trừ đi phần bên bán
+  chủ động lấy. Nến có ghi bên nào chủ động khớp (<code>buyVolume</code> của nến) cho delta thật. Nến không ghi
+  thì được đọc theo cách nó đóng cửa: toàn bộ khối lượng tính là tăng khi nến đóng cửa bằng hoặc trên giá mở,
+  ngược lại tính là giảm; đây là mức gần nhất mà một nến OHLCV cho được. <code>mode: 0</code> là histogram
+  theo từng nến, <code>mode: 1</code> là delta tích luỹ, bắt đầu lại ở mỗi kỳ <code>anchor</code>
+  (<code>'session'</code>, <code>'week'</code> hoặc <code>'month'</code>; với <code>'all'</code>, giá trị mặc
+  định, thì không bao giờ bắt đầu lại).
 </p>
 
 <h2>Chỉ báo từ bảng giá châu Á</h2>
@@ -199,6 +202,58 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   <code>@tradecanvas/core</code> trong dependencies của ứng dụng để import.
 </p>
 <pre><code>{`import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core/patterns'`}</code></pre>
+
+<h2 id="fair-value-gaps">Fair value gap</h2>
+<p>
+  Ba bar tạo ra một fair value gap khi đáy của bar thứ ba nằm trên đỉnh của bar thứ nhất (hoặc, theo chiều giảm, đỉnh của nó nằm dưới đáy của bar thứ nhất): giữa hai mức đó chỉ có bar ở giữa giao dịch. Biểu đồ vẽ một hộp phủ vùng giá ấy, từ bar ở giữa đến mép phải khi gap còn mở, màu xanh ngọc với gap đi lên và màu hồng với gap đi xuống (màu của các dấu mẫu hình nến, tách khỏi xanh và đỏ của nến; đổi được trong style của chỉ báo). Một gap được lấp bởi bar đầu tiên về sau giao dịch qua hết vùng đó, và khi ấy không còn vẽ nữa trừ khi <code>showFilled</code> là 1. <code>detectFairValueGaps</code> trả về tất cả mà không cần biểu đồ, kèm bar đã lấp từng gap.
+</p>
+<pre><code>{`chart.addIndicator('fvg')                              // một hộp trên mỗi gap còn mở
+chart.addIndicator('fvg', { minPercent: 0.1 })         // bỏ các gap nhỏ hơn 0,1% giá
+chart.addIndicator('fvg', { showFilled: 1 })           // giữ các gap đã lấp, mờ hơn, đến bar đã lấp
+
+import { detectFairValueGaps } from '@tradecanvas/chart'
+
+detectFairValueGaps(bars, { minPercent: 0.1 })
+// [{ index, formed, direction: 'up' | 'down', top, bottom, filledAt }]`}</code></pre>
+
+<h2 id="divergences">Divergence</h2>
+<p>
+  Divergence là khi giá và một oscillator cùng đảo chiều hai lần nhưng không theo cùng một hướng. Bullish, ở hai đáy: giá tạo đáy thấp hơn còn oscillator tạo đáy cao hơn. Bearish, ở hai đỉnh: giá tạo đỉnh cao hơn còn oscillator tạo đỉnh thấp hơn. <code>rsidiv</code> là RSI kèm một đường nối hai điểm đảo chiều ở mỗi divergence và một dấu ở điểm thứ hai; <code>hidden: 1</code> thêm các hidden divergence (giá giữ được, RSI thì không), vẽ nét đứt. Một điểm đảo chiều phải nổi lên so với <code>left</code> bar trước nó và <code>right</code> bar sau nó, nên divergence được biết trễ <code>right</code> bar và khi bar xác nhận nó đã đóng thì không đổi nữa (trên bar đó, lúc còn đang chạy, nó có thể hiện rồi mất); hai điểm cách nhau từ <code>minBars</code> đến <code>maxBars</code>. <code>detectDivergences(bars, line, options)</code> đọc bất kỳ đường nào có một giá trị mỗi bar (null ở chỗ không có) và không cần biểu đồ.
+</p>
+<pre><code>{`chart.addIndicator('rsidiv', {}, 'bottom')                    // RSI, có đánh dấu divergence
+chart.addIndicator('rsidiv', { hidden: 1 }, 'bottom')         // thêm hidden divergence, nét đứt
+chart.addIndicator('rsidiv', { left: 3, right: 3 }, 'bottom') // điểm đảo chiều gần hơn: biết trễ 3 bar, và nhiều hơn
+
+import { detectDivergences } from '@tradecanvas/chart'
+
+detectDivergences(bars, macdHistogram, { left: 5, right: 5, minBars: 5, maxBars: 60, hidden: true })
+// [{ kind: 'bullish' | 'bearish', hidden, from, to, confirmed, valueFrom, valueTo, priceFrom, priceTo }]`}</code></pre>
+
+<h2 id="session-volume-profile">Volume profile theo phiên</h2>
+<p>
+  <code>svp</code> vẽ khối lượng theo giá của từng ngày giao dịch: biên độ của ngày được chia thành <code>rows</code> hàng, khối lượng của mỗi bar chia đều cho các hàng mà biên độ của nó phủ qua, vẽ thành các hàng kéo sang phải từ bar đầu tiên của ngày. Phía trên là point of control của ngày (hàng nhiều khối lượng nhất) và value area (các hàng quanh nó chứa <code>valueArea</code> phần trăm khối lượng của ngày, mặc định 70, mở rộng mỗi lần hai hàng về phía nặng hơn, theo cách của Market Profile), vẽ thành các đường ngang qua ngày. Một ngày bắt đầu lúc nửa đêm theo giờ của sàn (<code>setExchangeTimeZone</code>), giống Session VWAP. <code>poc</code>, <code>vah</code> và <code>val</code> của mỗi bar là của cả ngày chứa nó, tính cả các bar sau nó: ở một ngày đã qua, bar buổi sáng mang profile lúc đóng cửa của ngày, còn với ngày đang giao dịch chúng dịch chuyển theo giao dịch. Chúng dùng để đọc một ngày, không dùng làm tín hiệu hay backtest tại bar đó. <code>volumeProfile</code> là một profile cho mọi bar đã tải; <code>sessionVolumeProfiles</code> trả về các hàng của từng ngày mà không cần biểu đồ.
+</p>
+<pre><code>{`chart.addIndicator('svp')                           // mỗi ngày một profile, kèm POC và value area
+chart.addIndicator('svp', { rows: 40, valueArea: 68 }) // hàng mịn hơn, value area hẹp hơn
+
+import { sessionVolumeProfiles } from '@tradecanvas/chart'
+
+sessionVolumeProfiles(bars, { rows: 24, valueArea: 70, timeZone: 'America/New_York' })
+// [{ start, end, time, low, high, rowHeight, volumes, total, poc, valueAreaLow, valueAreaHigh, valueAreaRows }]`}</code></pre>
+
+<h2 id="order-blocks">Order block</h2>
+<p>
+  Swing high là bar cao hơn <code>length</code> bar trước nó và không thấp hơn <code>length</code> bar sau nó (5), nên được biết trễ <code>length</code> bar; swing low tương tự theo chiều xuống. Khi một giá đóng cửa vượt lên trên swing high gần nhất chưa bị phá, bar thấp nhất nằm giữa swing đó và cây nến đóng cửa ấy là một bullish order block, từ đỉnh đến đáy của nó; giá đóng cửa xuống dưới swing low gần nhất thì bar cao nhất ở giữa là một bearish order block. Mỗi swing tạo một block. <code>orderblocks</code> vẽ mỗi block thành một hộp, cùng màu với fair value gap, kéo tới mép phải khi block còn đứng; một giá đóng cửa xuyên qua nó (dưới bullish block, trên bearish block) phá block và bỏ nó đi, trừ khi <code>showBroken</code> là 1. Chỉ <code>count</code> block còn đứng gần nhất của mỗi phía được vẽ (5; 0 là tất cả): block cũ ở xa chỉ làm rối. <code>detectOrderBlocks</code> trả về tất cả mà không cần biểu đồ, kèm bar đã phá từng block.
+</p>
+<pre><code>{`chart.addIndicator('orderblocks')                    // các block còn đứng
+chart.addIndicator('orderblocks', { count: 3 })        // ba block gần nhất mỗi phía
+chart.addIndicator('orderblocks', { length: 3 })       // swing ngắn hơn: nhiều block hơn, biết sớm hơn
+chart.addIndicator('orderblocks', { showBroken: 1 })   // cả block đã bị phá, mờ hơn, đến bar đã phá
+
+import { detectOrderBlocks } from '@tradecanvas/chart'
+
+detectOrderBlocks(bars, { length: 5 })
+// [{ kind: 'bullish' | 'bearish', index, formed, top, bottom, swing, brokenAt }]`}</code></pre>
 
 <h2>Chỉ báo tự viết</h2>
 <p>

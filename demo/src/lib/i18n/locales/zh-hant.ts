@@ -4,7 +4,7 @@ const zhHant: SiteMessages = {
   meta: {
     title: 'TradeCanvas · 網頁用的 Canvas 交易圖表',
     description:
-      'TradeCanvas 是一套網頁用的交易圖表函式庫，可用 Canvas 2D 或 WebGL 繪製：18 種圖表類型、134 個指標、76 種繪圖工具、交易所即時行情、直接在圖上下單、回放與回測，支援 30 種語言。零相依套件，MIT 授權。',
+      'TradeCanvas 是一套網頁用的交易圖表函式庫，可用 Canvas 2D 或 WebGL 繪製：18 種圖表類型、138 個指標、76 種繪圖工具、交易所即時行情、直接在圖上下單、回放與回測，支援 30 種語言。零相依套件，MIT 授權。',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const zhHant: SiteMessages = {
     release: 'WebGL 渲染器，30 種語言',
     title: '為交易應用打造的圖表引擎。',
     ledeHtml:
-      '從蠟燭圖到 Renko，134 個指標、76 種繪圖工具、交易所即時行情，還能直接在圖上下單。以 Canvas 2D 或 WebGL 繪製，零相依套件。可直接放入完整的 <code>ChartWidget</code>，或在 headless 的 <code>Chart</code> 上打造自己的介面。',
+      '從蠟燭圖到 Renko，138 個指標、76 種繪圖工具、交易所即時行情，還能直接在圖上下單。以 Canvas 2D 或 WebGL 繪製，零相依套件。可直接放入完整的 <code>ChartWidget</code>，或在 headless 的 <code>Chart</code> 上打造自己的介面。',
     getStarted: '開始使用',
     browseExamples: '瀏覽範例',
     specsLabel: '關鍵數字',
@@ -71,7 +71,7 @@ const zhHant: SiteMessages = {
           title: '解讀行情',
           text: 'K線上疊加通道、均線與震盪指標，再在上面畫斐波那契與趨勢線，每一項都有自己的設定與警示。',
           points: [
-            '134 個指標，可以互相疊加，例如 RSI 的均線',
+            '138 個指標，可以互相疊加，例如 RSI 的均線',
             '76 種繪圖工具，具備磁吸、群組與復原',
             '價格、線條與指標交叉都能警示',
           ],
@@ -218,11 +218,11 @@ const zhHant: SiteMessages = {
     },
     indicators: {
       title: '指標',
-      stat: '內建 134 個',
+      stat: '內建 138 個',
       blurb:
         '疊加與副圖指標皆自行計算，不依賴任何數學套件。即時 tick 只重算正在形成的那根K線——10 萬根K線、四個指標下，每個 tick 僅需 0.001 ms。',
       tryThis: [
-        '按下「指標」按鈕（或 Ctrl+K），從 134 個指標中搜尋',
+        '按下「指標」按鈕（或 Ctrl+K），從 138 個指標中搜尋',
         '點擊圖例中的指標名稱：參數、顏色與水平線',
         '把移動平均線的「Source」設為另一個指標的線',
         '拖曳副圖之間的分隔線來調整大小；副圖右上角的按鈕可以移動、收合或最大化副圖',
@@ -381,7 +381,7 @@ const zhHant: SiteMessages = {
     },
     overrides: {
       title: '樣式覆寫',
-      stat: '107 個鍵',
+      stat: '122 個鍵',
       blurb:
         '依鍵單獨設定圖表外觀的任何部分，不受主題限制：每個方向的格線、十字游標、座標軸、窗格、圖例、最新價、成交量以及每種圖表類型的顏色。這裡關閉了直向格線，橫向格線為點線，十字游標為實線，MACD 的訊號線在擁有自己分隔線的窗格中顯示為虛線。',
       tryThis: [
@@ -435,6 +435,17 @@ const zhHant: SiteMessages = {
         '在圖表上方切換 Canvas 2D 與 WebGL：每次切換都會測一次短暫平移',
         '尋找明亮的橫列：長時間停在同一價位的掛單牆',
         '放大某一道掛單牆後來回平移：格子與K線同步移動',
+      ],
+    },
+    orderflow: {
+      title: '訂單流',
+      stat: '足跡圖 + 逐筆成交',
+      blurb:
+        '資料來源的每一筆成交，以及是哪一方主動成交。足跡圖在每根K線旁寫出其內部每個價位上賣方在買價成交的數量和買方在賣價成交的數量，標記一方明顯壓過另一方的橫列，並在每根K線下方給出合計：買入減賣出，以及兩者之和。旁邊的逐筆成交依發生順序列出成交，最新的在最上面，顏色表示主動成交的一方。',
+      tryThis: [
+        '看最新的K線隨著成交到來逐列填滿，下方的合計隨之變化',
+        '開啟逐筆成交標題列裡的選單：只列出買入或賣出，或把同時發生的成交合併為一列',
+        '在逐筆成交裡輸入最小數量只保留大單，然後縮小圖表：各列變成長條，合計仍在',
       ],
     },
     switching: {
@@ -493,6 +504,23 @@ const zhHant: SiteMessages = {
     counterClock: '逆時鐘曲線：價格對成交量，25 日均值',
     avgVolume: '成交量，均值',
     avgPrice: '價格，均值',
+    payoff: '鐵兀鷹選擇權：到期損益',
+    smile: '各履約價的隱含波動率',
+    weekdayReturns: '依星期劃分的日報酬',
+    scorecard: '策略與基準對比',
+    strategy: '策略',
+    benchmark: '基準',
+    allocationRings: '依資產類別與產業的配置',
+    allocationOverTime: '全年配置變化',
+    volSurface: '各履約價與到期日的隱含波動率',
+    strike: '履約價',
+    expiry: '到期日',
+    depthOverTime: '委託簿深度隨時間的變化',
+    quarterReturns: '各季度、各資產類別的報酬',
+    turnHint: '拖曳圖表即可旋轉，按兩下回到原本的視角。',
+    exportLabel: '儲存投資組合圖表',
+    print: '列印',
+    reportPdf: '所有圖表合成一個 PDF',
     waterfall: {
       start: '期初',
       btcLong: 'BTC 多單',
@@ -704,7 +732,7 @@ const zhHant: SiteMessages = {
         { name: '無第三方執行期相依套件', detail: '不必另外安裝或稽核任何東西' },
       ],
       indicators: [
-        { name: '134 個內建指標', detail: '六種樞紐點、MA Cross、與另一商品的相關性' },
+        { name: '138 個內建指標', detail: '六種樞紐點、MA Cross、與另一商品的相關性' },
         { name: '價格來源', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: '以指標為基礎的指標', detail: '例如 RSI 的移動平均，每筆 tick 都會更新' },
         { name: '一個副圖中放多個指標，並可在副圖間移動', detail: 'moveIndicatorToPane' },
@@ -775,7 +803,7 @@ const zhHant: SiteMessages = {
       ],
       customization: [
         { name: '元件的三種外觀', detail: 'Studio、Terminal、Capsule；ui 與 setUI；--tcw-* CSS 變數' },
-        { name: '依鍵自訂圖表外觀', detail: 'applyOverrides 涵蓋 107 個具型別的鍵，分為宿主層與使用者層' },
+        { name: '依鍵自訂圖表外觀', detail: 'applyOverrides 涵蓋 122 個具型別的鍵，分為宿主層與使用者層' },
         { name: '涵蓋每個鍵的設定', detail: '目前圖表類型的樣式分頁，以及交易分頁' },
         { name: '114 個功能開關', detail: 'features、setFeatures、isFeatureOn；執行中即可變更' },
         { name: '在元件中加入你自己的部件', detail: '工具列按鈕與下拉選單、側邊欄按鈕、狀態列項目、插槽、選單項目' },
@@ -927,6 +955,7 @@ const zhHant: SiteMessages = {
       frameworks: '框架整合',
       embed: '可嵌入的元件',
       migration: '遷移至 2.0',
+      'migration-3': '遷移至 3.0',
       'from-tradingview': '從 TradingView 遷移',
       'how-it-works': '運作原理',
       api: 'API 參考',

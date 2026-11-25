@@ -28,7 +28,7 @@
   <a href="README.md">English</a> · <b>Tiếng Việt</b> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
-**TradeCanvas là thư viện biểu đồ mã nguồn mở cho ứng dụng giao dịch** ([tradecanvas.dev](https://tradecanvas.dev/vi/)), theo giấy phép MIT. Từ nến đến Renko, 134 chỉ báo, 76 công cụ vẽ, feed trực tiếp và lệnh trên biểu đồ, chạy trên Canvas 2D hoặc WebGL, không có dependency bên thứ ba. Dùng `ChartWidget` đầy đủ, hoặc tự xây giao diện trên `Chart` headless, bằng TypeScript, React, Vue hoặc Svelte.
+**TradeCanvas là thư viện biểu đồ mã nguồn mở cho ứng dụng giao dịch** ([tradecanvas.dev](https://tradecanvas.dev/vi/)), theo giấy phép MIT. Từ nến đến Renko, 138 chỉ báo, 76 công cụ vẽ, feed trực tiếp và lệnh trên biểu đồ, chạy trên Canvas 2D hoặc WebGL, không có dependency bên thứ ba. Dùng `ChartWidget` đầy đủ, hoặc tự xây giao diện trên `Chart` headless, bằng TypeScript, React, Vue hoặc Svelte.
 
 Đây là một chart engine thuộc quyền bạn: giấy phép MIT, cài từ npm và phục vụ cùng ứng dụng của bạn, lấy dữ liệu từ nguồn của bạn, hiển thị dưới thương hiệu của bạn. Không có logo trên biểu đồ, không phải đăng ký xin dùng, không có nền tảng nào đứng giữa bạn và người dùng. Đang dùng charting library của TradingView hoặc Lightweight Charts? Giữ nguyên datafeed: [chuyển từ TradingView](https://tradecanvas.dev/vi/docs/from-tradingview/).
 
@@ -38,12 +38,13 @@
 
 ## Điểm chính
 
-- **18 loại biểu đồ, 134 chỉ báo, 76 công cụ vẽ**, chỉ báo tính trên chỉ báo, cảnh báo trên đường vẽ, undo và redo.
+- **25 loại biểu đồ, 138 chỉ báo, 76 công cụ vẽ**, chỉ báo tính trên chỉ báo, cảnh báo trên đường vẽ, undo và redo.
 - **Giao dịch trên biểu đồ**: position với P&L trực tiếp, order và stop kéo được bằng chuột, broker paper trading hoặc broker của bạn.
 - **Dữ liệu trực tiếp** từ Binance, Bybit, Coinbase, Kraken và Upbit, hoặc feed của bạn trong khoảng hai mươi dòng code.
 - **Nhanh**: pan một triệu nến ở 60 fps với WebGL; một tick trực tiếp mất khoảng một micro giây; mười phút với 30,000 giao dịch mỗi giây trên một triệu nến mà bộ nhớ không tăng ([soak](benchmarks/2026-11-03.md)).
 - **Workspace**: grid nhiều biểu đồ, layout, bar replay, backtest.
-- **Thêm mười bốn loại biểu đồ** cho các trang xung quanh biểu đồ chính: depth chart, equity curve, waterfall, heatmap và market map theo ngành, biểu đồ cột, donut, scatter, histogram, calendar, correlation matrix, gauge, sparkline, và một dashboard backtest.
+- **Thêm hai mươi hai loại biểu đồ** cho các trang xung quanh biểu đồ chính: depth chart, equity curve, waterfall, heatmap và market map theo ngành, biểu đồ cột, donut, scatter, histogram, calendar, correlation matrix, gauge, sparkline, payoff của options, curve (volatility smile, term structure), box plot, radar, sunburst, stacked area, surface 3D xoay được bằng cách kéo (volatility surface, depth theo thời gian), cột 3D, và một dashboard backtest.
+- **In ấn, và không cần trang web**: mọi biểu đồ xuất được thành ảnh sắc nét, in riêng hoặc lưu thành PDF; biểu đồ giá và các biểu đồ ở trên còn vẽ được trong Node hoặc worker, không cần trang trình duyệt.
 - **Tuỳ biến**: theme, năm look, 133 công tắc tính năng, plugin; 30 ngôn ngữ; điện thoại và ứng dụng.
 
 <table>

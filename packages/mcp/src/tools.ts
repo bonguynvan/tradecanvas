@@ -1,6 +1,6 @@
 import { CATALOG, TARGETS, type Catalog, type IndicatorEntry, type OptionEntry, type Target } from './catalog.js';
 import { closest } from './similar.js';
-import { validateFinanceOptions, validateOptions } from './validate.js';
+import { validateFinanceOptions, validateFunctionOptions, validateOptions } from './validate.js';
 import { MIGRATION_TOOLS } from './migration/tools.js';
 
 /** What a tool answers: data for clients that read structured content, and the same as text for the rest. */
@@ -33,10 +33,11 @@ function matches(query: string | undefined, ...fields: string[]): boolean {
 }
 
 const FINANCE_NAMES = CATALOG.financeCharts.map((c) => c.name);
+const FUNCTION_NAMES = CATALOG.functions.map((f) => f.name);
 const TARGET_SCHEMA = {
   type: 'string',
-  enum: [...TARGETS, ...FINANCE_NAMES],
-  description: 'The entry point: ChartWidget (the full trading UI), Chart (the headless chart), ChartWidgetGrid (several charts), or a finance chart by its class name (list_finance_charts names them).',
+  enum: [...TARGETS, ...FINANCE_NAMES, ...FUNCTION_NAMES],
+  description: 'The entry point: ChartWidget (the full trading UI), Chart (the headless chart), ChartWidgetGrid (several charts), a finance chart by its class name (list_finance_charts names them), or renderPriceChart (the price chart drawn with no page: in Node or a worker).',
 };
 
 /** The one finance class that is a page of charts, not a chart: it has no `setOptions` and takes no `ariaLabel`. */
@@ -54,7 +55,7 @@ function targetOf(args: Record<string, unknown>): Target | null {
 
 /** What to say of a target that is none of the names. */
 const noTarget = (catalog: Catalog): string =>
-  `'target' is one of ${TARGETS.join(', ')}, or a finance chart: ${catalog.financeCharts.map((c) => c.name).join(', ')}.`;
+  `'target' is one of ${[...TARGETS, ...catalog.functions.map((f) => f.name)].join(', ')}, or a finance chart: ${catalog.financeCharts.map((c) => c.name).join(', ')}.`;
 
 /** The indicators a name means: its id exactly, else every one it is the id, short name or name of (case aside). */
 function findIndicators(catalog: Catalog, wanted: string): IndicatorEntry[] {
@@ -178,7 +179,7 @@ export const TOOLS: readonly ToolDefinition[] = [
   {
     name: 'list_finance_charts',
     title: 'List the finance charts',
-    description: 'Lists the charts of @tradecanvas/chart that are not the trading chart: bars, donut, scatter, histogram, calendar, correlation matrix, heatmap and sector map, depth, equity curve, waterfall, gauge, sparkline, and a backtest dashboard. Each with its class name and what it is for; list_options with that name gives its options. Search by words of the name or the purpose.',
+    description: 'Lists the charts of @tradecanvas/chart that are not the trading chart: bars, donut, scatter, histogram, calendar, correlation matrix, heatmap and sector map, depth, equity curve, waterfall, gauge, sparkline, an options payoff, curves (a volatility smile, a term structure), box plot, radar, sunburst, stacked area, a 3D surface (a volatility surface, depth over time), 3D bars, and a backtest dashboard. Each with its class name and what it is for; list_options with that name gives its options. Search by words of the name or the purpose.',
     inputSchema: {
       type: 'object',
       properties: { query: { type: 'string', description: 'Words to find in the name or the purpose, e.g. "order book" or "returns".' } },
@@ -197,7 +198,7 @@ export const TOOLS: readonly ToolDefinition[] = [
   {
     name: 'list_options',
     title: 'List the options of an entry point',
-    description: 'Lists the options that new ChartWidget(el, options), new Chart(el, options), new ChartWidgetGrid(el, options) or a finance chart (new BarChart(el, options)…) take: each name, its TypeScript type, its doc, and the values it allows where it allows only some. Search by words of the name or doc.',
+    description: 'Lists the options that new ChartWidget(el, options), new Chart(el, options), new ChartWidgetGrid(el, options), a finance chart (new BarChart(el, options)…) or renderPriceChart(ctx, options, size) take: each name, its TypeScript type, its doc, and the values it allows where it allows only some. Search by words of the name or doc.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -213,6 +214,11 @@ export const TOOLS: readonly ToolDefinition[] = [
       if (finance) {
         const found = finance.options.filter((o) => matches(query, o.name, o.doc ?? ''));
         return ok({ target: finance.name, what: finance.what, count: found.length, options: found, usage: financeUsage(finance.name) });
+      }
+      const drawn = catalog.functions.find((f) => f.name === args.target);
+      if (drawn) {
+        const found = drawn.options.filter((o) => matches(query, o.name, o.doc ?? ''));
+        return ok({ target: drawn.name, what: drawn.what, count: found.length, options: found, usage: drawn.usage });
       }
       const target = targetOf(args);
       if (!target) return fail(noTarget(catalog));
@@ -257,7 +263,7 @@ export const TOOLS: readonly ToolDefinition[] = [
   {
     name: 'validate_options',
     title: 'Check an options object',
-    description: 'Checks an options object before it goes to new ChartWidget, new Chart, new ChartWidgetGrid or a finance chart (by its class name): unknown option names (with the one likely meant, and where an option of another entry point belongs), values outside the allowed ones, numbers given as strings, intervals, feature switch names, style override keys and values, and languages, nested options included. Write functions and adapters as strings; they pass.',
+    description: 'Checks an options object before it goes to new ChartWidget, new Chart, new ChartWidgetGrid, a finance chart (by its class name) or renderPriceChart: unknown option names (with the one likely meant, and where an option of another entry point belongs), values outside the allowed ones, numbers given as strings, intervals, feature switch names, style override keys and values, and languages, nested options included. Write functions and adapters as strings; they pass.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -270,7 +276,12 @@ export const TOOLS: readonly ToolDefinition[] = [
     },
     run(args, catalog) {
       const target = targetOf(args);
-      const result = target ? validateOptions(target, args.options, catalog) : typeof args.target === 'string' ? validateFinanceOptions(args.target, args.options, catalog) : null;
+      const named = typeof args.target === 'string' ? args.target : null;
+      const result = target
+        ? validateOptions(target, args.options, catalog)
+        : named
+          ? validateFinanceOptions(named, args.options, catalog) ?? validateFunctionOptions(named, args.options, catalog)
+          : null;
       if (!result) return fail(noTarget(catalog));
       const lines = result.valid ? ['No problems found.'] : result.problems.map((p) => `- ${p.path || '(options)'}: ${p.message}${p.suggestion ? ` Did you mean '${p.suggestion}'?` : ''}`);
       return { text: [...lines, ...result.notes.map((n) => `Note: ${n}`)].join('\n'), data: result };

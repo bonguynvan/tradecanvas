@@ -10,7 +10,9 @@ export type ChartType =
   | 'renko' | 'lineBreak' | 'kagi' | 'pointAndFigure'
   | 'rangeBars'
   | 'volumeCandles' | 'hlcArea' | 'stepLine' | 'lineWithMarkers'
-  | 'equivolume' | 'hiLo';
+  | 'equivolume' | 'hiLo'
+  | 'columns' | 'hlcBars' | 'dots' | 'stepArea' | 'spline' | 'smoothedHeikinAshi'
+  | 'footprint';
 
 /**
  * Settings of the chart types that build bars of their own. What isn't set
@@ -25,6 +27,8 @@ export interface ChartTypeOptions {
    * no more.
    */
   renko?: { boxSize?: number | 'atr'; atrPeriod?: number };
+  /** How many bars the smoothed Heikin-Ashi averages each price over before it makes its candles: a whole number from 1 to 500 (10). */
+  smoothedHeikinAshi?: { period?: number };
   /** How many lines a reversal has to break (3). A bar makes one line at most. */
   lineBreak?: { lines?: number };
   /**
@@ -56,6 +60,48 @@ export interface ChartTypeOptions {
    * last bar drawn is the one still forming.
    */
   rangeBars?: { range?: number | 'auto' };
+  /** How the footprint chart keeps and draws what traded at each price of a bar. */
+  footprint?: FootprintOptions;
+}
+
+/** What a footprint cell shows: the two sides apart, their difference, or their sum. */
+export type FootprintCells = 'bidAsk' | 'delta' | 'volume';
+
+/** Settings of the footprint chart (`chartTypeOptions.footprint`). */
+export interface FootprintOptions {
+  /**
+   * The height of a row in price ('auto', the default: about a
+   * ten-thousandth of the last price, rounded to 1, 2 or 5). Trades are
+   * kept in rows of this size; where they would be too thin to read, 2, 5,
+   * 10… of them are drawn as one. Another size starts the footprint again.
+   */
+  rowSize?: number | 'auto';
+  /**
+   * What a cell shows. `'bidAsk'` (default): what the sellers took at the
+   * bid on the left, what the buyers took at the ask on the right.
+   * `'delta'`: bought less sold. `'volume'`: both together.
+   */
+  cells?: FootprintCells;
+  /**
+   * How many times one side has to outdo the other, a row apart, to be
+   * marked (3): what was bought at a price against what was sold one row
+   * below, and what was sold against what was bought one row above. 0
+   * marks none.
+   */
+  imbalance?: number;
+  /**
+   * Whether the chart asks its feed for trades (`fetchTrades` and
+   * `subscribeTrades`) while it shows a footprint (true). false for a host
+   * that gives the rows itself, with `setFootprint` or `addTrades`.
+   */
+  collect?: boolean;
+  /**
+   * Whether what a bar's rows add up to is written under it (true): bought
+   * less sold, in the colour of its sign, and both together under that.
+   * They are written where a bar is wide enough for a number, and the price
+   * scale leaves them room under the lowest bar.
+   */
+  totals?: boolean;
 }
 
 export type LineStyle = 'solid' | 'dashed' | 'dotted';
@@ -141,12 +187,16 @@ export interface FeaturesConfig {
   /** Enable crosshair */
   crosshair?: boolean;
   /**
-   * Show the floating OHLCV tooltip that follows the cursor on hover.
-   * Pro trading charts usually rely on the top-left legend (`legend`) instead
-   * of a cursor-following popup — set this to `false` to match that and
-   * keep only the legend updating on hover.
+   * The floating OHLCV tooltip beside the crosshair. `true`: it follows the
+   * pointer as it hovers. `'hold'`: it shows only while a mouse press is held
+   * still on the plot (half a second, the wait of a long press), then follows
+   * the pointer until the button is let go; the chart does not pan meanwhile,
+   * and a pointer that only hovers shows none. `false`: never. Trading charts
+   * mostly keep to the top-left legend (`legend`) and ask for the popup with a
+   * press: `ChartWidget` starts on `'hold'`, `Chart` on `true`. A finger's long
+   * press pins a tooltip at its bar whatever this is, as Alt-click does.
    */
-  crosshairTooltip?: boolean;
+  crosshairTooltip?: boolean | 'hold';
   /** Enable keyboard shortcuts (arrows, +/-, Home/End, Space) */
   keyboard?: boolean;
 

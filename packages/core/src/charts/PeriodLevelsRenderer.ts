@@ -1,3 +1,4 @@
+import { chartFont } from '../ui/chartType.js';
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
 import { fillTag } from '../ui/shapes.js';
@@ -9,11 +10,15 @@ import { computePeriodLevels, type LevelPeriod, type PriceLevel } from './period
  * open, or the weekly equivalents) as labelled horizontal lines — the levels
  * intraday traders watch for support/resistance.
  */
+/** Height (px) of the ground under a level's name: its type stays inside it. */
+const LABEL_BOX = 14;
+
 export class PeriodLevelsRenderer {
   private visible = false;
   private period: LevelPeriod = 'day';
   /** The zone whose midnight starts each day and week (null: UTC's). */
   private exchangeZone: string | null = null;
+  private dayStart: number | null = null;
 
   setVisible(v: boolean): void {
     this.visible = v;
@@ -31,10 +36,14 @@ export class PeriodLevelsRenderer {
   setExchangeTimeZone(zone: string | null): void {
     this.exchangeZone = zone;
   }
+  /** When the trading day starts, minutes after the exchange's midnight; null for midnight. */
+  setDayStart(minute: number | null): void {
+    this.dayStart = minute;
+  }
 
   render(ctx: CanvasRenderingContext2D, data: DataSeries, viewport: ViewportState, theme: Theme): void {
     if (!this.visible || data.length === 0) return;
-    const levels = computePeriodLevels(data, this.period, this.exchangeZone);
+    const levels = computePeriodLevels(data, this.period, this.exchangeZone, this.dayStart);
     if (levels.length === 0) return;
 
     const { chartRect } = viewport;
@@ -42,7 +51,7 @@ export class PeriodLevelsRenderer {
     const bottom = chartRect.y + chartRect.height;
 
     ctx.save();
-    ctx.font = `600 10px ${theme.font.family}`;
+    ctx.font = chartFont(theme, 1, '600', LABEL_BOX);
     ctx.textBaseline = 'middle';
 
     for (const level of levels) {
@@ -66,7 +75,7 @@ export class PeriodLevelsRenderer {
       const tagX = chartRect.x + chartRect.width - tw - 10;
       ctx.fillStyle = theme.background;
       ctx.globalAlpha = 0.85;
-      fillTag(ctx, tagX - 4, y - 7, tw + 8, 14, theme);
+      fillTag(ctx, tagX - 4, y - LABEL_BOX / 2, tw + 8, LABEL_BOX, theme);
       ctx.globalAlpha = 1;
       ctx.fillStyle = color;
       ctx.textAlign = 'left';

@@ -28,7 +28,7 @@
   <b>English</b> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.vi.md">Tiếng Việt</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.zh-CN.md">简体中文</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.ja.md">日本語</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.ko.md">한국어</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.es.md">Español</a>
 </p>
 
-**TradeCanvas is the open-source chart library for trading apps** ([tradecanvas.dev](https://tradecanvas.dev/)), under the MIT licence. Candlesticks to Renko, 134 indicators, 76 drawing tools, live feeds and orders on the chart, on Canvas 2D or WebGL, with no third-party dependencies. Use the full `ChartWidget`, or build your own interface on the headless `Chart`, in TypeScript, React, Vue or Svelte.
+**TradeCanvas is the open-source chart library for trading apps** ([tradecanvas.dev](https://tradecanvas.dev/)), under the MIT licence. Candlesticks to Renko, 138 indicators, 76 drawing tools, live feeds and orders on the chart, on Canvas 2D or WebGL, with no third-party dependencies. Use the full `ChartWidget`, or build your own interface on the headless `Chart`, in TypeScript, React, Vue or Svelte.
 
 It is a charting engine you own: MIT-licensed, installed from npm and served with your app, fed by your own data, shown under your own brand. No logo on the chart, nothing to apply for, no platform between you and your users. Coming from TradingView's charting library or Lightweight Charts? Keep your datafeed: [moving from TradingView](https://tradecanvas.dev/docs/from-tradingview/).
 
@@ -38,12 +38,13 @@ It is a charting engine you own: MIT-licensed, installed from npm and served wit
 
 ## Highlights
 
-- **18 chart types, 134 indicators, 76 drawing tools**, indicators on indicators, alerts on lines, undo and redo.
+- **25 chart types, 138 indicators, 76 drawing tools**, indicators on indicators, alerts on lines, undo and redo.
 - **Trading on the chart**: positions with live P&L, orders and stops you drag, a paper broker or your own.
 - **Live data** from Binance, Bybit, Coinbase, Kraken and Upbit, or your own feed in about twenty lines.
 - **Fast**: a million bars panned at 60 fps with WebGL; a live tick in about a microsecond; ten minutes of 30,000 trades a second on a million bars with no memory growth ([soak](https://github.com/bonguynvan/tradecanvas/blob/main/benchmarks/2026-11-03.md)).
 - **A workspace**: grids of charts, layouts, bar replay, backtesting.
-- **Fourteen more charts** for the pages around the chart: depth, equity curve, waterfall, heatmap and sector map, bars, donut, scatter, histogram, calendar, correlation matrix, gauge, sparkline, and a backtest dashboard.
+- **Twenty-two more charts** for the pages around the chart: depth, equity curve, waterfall, heatmap and sector map, bars, donut, scatter, histogram, calendar, correlation matrix, gauge, sparkline, an options payoff, curves (a volatility smile, a term structure), box plot, radar, sunburst, stacked area, a 3D surface you turn by dragging (a volatility surface, depth over time), 3D bars, and a backtest dashboard.
+- **On paper, and with no page**: any chart as a sharp picture, printed on its own or saved as a PDF; the price chart and the charts above also draw in Node or a worker, with no browser page.
 - **Yours to shape**: themes, five looks, 133 switches, plugins; 30 languages; phones and apps.
 
 <table>
@@ -64,7 +65,7 @@ It is a charting engine you own: MIT-licensed, installed from npm and served wit
     </td>
     <td width="50%" valign="top">
       <img src="https://raw.githubusercontent.com/bonguynvan/tradecanvas/main/.github/assets/clips/looks.webp" alt="One chart switching between the Print, Terminal, Capsule and Studio looks, dark and light">
-      <br><b>Your look</b>: Modern (a code editor's window, the default), Print (paper and ink, kept to the golden ratio), Studio, Terminal, Capsule, Desk (a desktop trading window), light or dark, or your own tokens.
+      <br><b>Your look</b>: Graphite (a trading desk's neutral chrome, the default), Modern (a code editor's window), Print (paper and ink, kept to the golden ratio), Studio, Terminal, Capsule, Desk (a desktop trading window), light or dark, or your own tokens.
     </td>
   </tr>
   <tr>

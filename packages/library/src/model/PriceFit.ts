@@ -23,7 +23,12 @@ export interface FitSources {
   compareRange(data: DataSeries, vs: ViewportState): PriceRange | null;
   /** The volume band's share of the plot when volume is on view, else null. */
   volumeRatio(data: DataSeries, from: number, to: number): number | null;
+  /** Room to leave under the lowest price, px, for what is written under the bars on view (a footprint's totals); none when left out. */
+  footRoom?(data: DataSeries, vs: ViewportState): number;
 }
+
+/** The most of the plot left to what is written under the bars. */
+const FOOT_SHARE_MOST = 1 / 3;
 
 /**
  * When the main price scale is fitted to the bars, and what it is fitted to.
@@ -51,6 +56,17 @@ export class PriceFit {
   constructor(autoScale: boolean) {
     this.auto = autoScale;
     this.preferred = autoScale;
+  }
+
+  /** What it holds of the series on the page, to put back with `restore` after a frame fitted for a picture. */
+  snapshot(): { auto: boolean; pending: boolean; arriving: boolean } {
+    return { auto: this.auto, pending: this.pending, arriving: this.arriving };
+  }
+
+  restore(kept: { auto: boolean; pending: boolean; arriving: boolean }): void {
+    this.auto = kept.auto;
+    this.pending = kept.pending;
+    this.arriving = kept.arriving;
   }
 
   /** The margins the next fit leaves (the chart's density). */
@@ -108,7 +124,8 @@ export class PriceFit {
   /**
    * Fit the scale to the bars on view, the overlay indicators and the compare
    * lines, in the density's margins above and below; with volume on view, the
-   * band at the bottom is left to it, and a gap over it.
+   * band at the bottom is left to it, and a gap over it; and what is written
+   * under the bars (`footRoom`) has room under the lowest of them.
    */
   fit(target: FitTarget, data: DataSeries, vs: ViewportState, sources: FitSources): void {
     if (data.length === 0) return;
@@ -120,13 +137,20 @@ export class PriceFit {
     )!;
     const ratio = sources.volumeRatio(data, from, to);
     const { priceMargin, volumeGap } = this.spacing;
-    const band = ratio === null ? priceMargin : ratio + volumeGap;
+    // What is written under the bars stands between the lowest of them and the volume's band.
+    const band = (ratio === null ? priceMargin : ratio + volumeGap) + footShare(sources.footRoom?.(data, vs) ?? 0, vs.chartRect.height);
     // The band is at the screen's bottom: on an upside-down scale that is above the highest price.
     target.setScaleMargins(target.isInvertScale()
       ? { top: band, bottom: priceMargin }
       : { top: priceMargin, bottom: band });
     target.fitToPrices(range.min, range.max);
   }
+}
+
+/** The share of a plot `height` high that `room` px under the bars take; none for room or a height that is none. */
+function footShare(room: number, height: number): number {
+  if (!(room > 0) || !(height > 0)) return 0;
+  return Math.min(FOOT_SHARE_MOST, room / height);
 }
 
 /** Whether any bar from `from` to `to` traded. */

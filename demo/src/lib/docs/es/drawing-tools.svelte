@@ -176,6 +176,9 @@ chart.addDrawing({ type: 'horizontalLine', anchors: [{ time: t, price: 100 }], i
 <p>
   En el widget, al hacer clic en un dibujo aparece una pequeña barra justo encima: color, grosor y estilo de línea, y luego ajustes, una alerta en su línea, bloqueo, el menú completo del dibujo (el mismo que con el botón derecho) y borrar. Con varios dibujos seleccionados se sitúa sobre todos y sus cambios van a cada uno. Sigue al dibujo cuando se mueve, se desplaza o se hace zoom, se aparta mientras hay una herramienta de dibujo, la goma o el zoom de área activos, y es una sola parada de tabulación que las flechas recorren.
 </p>
+<p>
+  En un gráfico demasiado estrecho para todos sus botones (un teléfono) se mantiene en una línea y cede botones: primero los que también tiene el menú del dibujo (la alerta, el bloqueo, el texto, los ajustes, cada uno solo mientras el menú tenga su entrada), luego la cifra junto al grosor de línea, luego los colores que también están en los ajustes. El color, el grosor y el estilo de la línea, el menú y borrar se quedan. En un teléfono espera al pie del área del gráfico, junto al botón de las herramientas de dibujo. Los menús y los paneles se abren por encima.
+</p>
 <pre><code>{`new ChartWidget(host, { features: { selectionToolbar: false } })  // turn it off
 widget.setFeatures({ selectionToolbar: true })
 

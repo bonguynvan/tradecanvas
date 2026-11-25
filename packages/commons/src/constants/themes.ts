@@ -27,6 +27,9 @@ export const FIGURES_FONT_FAMILY = "'Segoe UI', Roboto, 'Helvetica Neue', Arial,
  */
 export const SANS_FONT_FAMILY = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
+/** Graphite's: its small size is the chrome's small size, 12, so a figure on the chart is the size of one beside it. */
+const GRAPHITE_FONT = { family: FIGURES_FONT_FAMILY, sizeSmall: 12, sizeMedium: 13, sizeLarge: 15 };
+
 /** Three sizes a third of φ apart (11, 13, 15), as the widget's type scale climbs. */
 const DEFAULT_FONT = {
   family: FIGURES_FONT_FAMILY,
@@ -222,6 +225,74 @@ export const MODERN_LIGHT_THEME: Theme = {
   axisLabel: '#616161',
   axisLabelBackground: '#f2f2f2',
   font: DEFAULT_FONT,
+  priceLimits: LIGHT_PRICE_LIMITS,
+};
+
+/**
+ * The widget's Graphite look in colour, its default: graphite grounds with no hue of their own,
+ * so that the only colours on the chart are the market's. The candles are a teal and a coral
+ * that read on the ground as shapes (8:1 and 6:1 at night; 4:1 and 4.4:1 by day, each its own
+ * shade); the axes and the grid are the ground's own greys. Named `'dark'` and `'light'`, as
+ * Modern's are.
+ */
+const GRAPHITE_NIGHT = '#131416';
+const GRAPHITE_NIGHT_INK = '#e8e9eb';
+const GRAPHITE_DAY = '#ffffff';
+const GRAPHITE_DAY_INK = '#1a1c20';
+const GRAPHITE_NIGHT_UP = '#2fc29a';
+const GRAPHITE_NIGHT_DOWN = '#f2665c';
+const GRAPHITE_DAY_UP = '#0b8f6f';
+const GRAPHITE_DAY_DOWN = '#d93f45';
+
+export const GRAPHITE_DARK_THEME: Theme = {
+  name: 'dark',
+  background: GRAPHITE_NIGHT,
+  text: GRAPHITE_NIGHT_INK,
+  textSecondary: '#90939b',
+  grid: '#1d1f22',
+  // 3.9:1 on the ground, quiet beside the data.
+  crosshair: '#6f737b',
+  candleUp: GRAPHITE_NIGHT_UP,
+  candleDown: GRAPHITE_NIGHT_DOWN,
+  candleUpWick: GRAPHITE_NIGHT_UP,
+  candleDownWick: GRAPHITE_NIGHT_DOWN,
+  lineColor: GRAPHITE_NIGHT_INK,
+  areaTopColor: withAlpha(GRAPHITE_NIGHT_INK, 0.14),
+  areaBottomColor: withAlpha(GRAPHITE_NIGHT_INK, 0),
+  volumeUp: withAlpha(GRAPHITE_NIGHT_INK, 0.14),
+  volumeDown: withAlpha(GRAPHITE_NIGHT_INK, 0.08),
+  axisLine: '#2a2c31',
+  axisLabel: '#90939b',
+  axisLabelBackground: '#2b2d33',
+  font: GRAPHITE_FONT,
+  valueTagsOutlined: true,
+  crosshairChange: true,
+  priceLimits: DARK_PRICE_LIMITS,
+};
+
+export const GRAPHITE_LIGHT_THEME: Theme = {
+  name: 'light',
+  background: GRAPHITE_DAY,
+  text: GRAPHITE_DAY_INK,
+  textSecondary: '#5f6570',
+  grid: '#eef0f2',
+  // 3.3:1 on the ground.
+  crosshair: '#8a8e96',
+  candleUp: GRAPHITE_DAY_UP,
+  candleDown: GRAPHITE_DAY_DOWN,
+  candleUpWick: GRAPHITE_DAY_UP,
+  candleDownWick: GRAPHITE_DAY_DOWN,
+  lineColor: GRAPHITE_DAY_INK,
+  areaTopColor: withAlpha(GRAPHITE_DAY_INK, 0.12),
+  areaBottomColor: withAlpha(GRAPHITE_DAY_INK, 0),
+  volumeUp: withAlpha(GRAPHITE_DAY_INK, 0.13),
+  volumeDown: withAlpha(GRAPHITE_DAY_INK, 0.08),
+  axisLine: '#dfe1e5',
+  axisLabel: '#5f6570',
+  axisLabelBackground: '#eceef1',
+  font: GRAPHITE_FONT,
+  valueTagsOutlined: true,
+  crosshairChange: true,
   priceLimits: LIGHT_PRICE_LIMITS,
 };
 

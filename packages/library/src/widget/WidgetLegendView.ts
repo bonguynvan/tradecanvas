@@ -12,8 +12,26 @@ import type { ChartWidget } from './ChartWidget.js';
 /** A pane's row starts below the divider's grab zone (±6 px), so it never blocks a resize. */
 const PANE_ROW_TOP = 7;
 
-/** Rows of the indicators sharing a pane, one under the other (px). */
-const PANE_ROW_STEP = 17;
+/**
+ * From one row's top to the next, of the indicators sharing a pane (px): a row is 16 px, and its
+ * name takes a pointer's 20 px of a press, down from its top; under a finger 32, and a pixel between.
+ * As `.tcw-ind-legend-name::after` in WidgetStyles.css makes it: change both together.
+ */
+const PANE_ROW_STEP = 20;
+const PANE_ROW_STEP_COARSE = 33;
+/** A pane's row and the pixel under it (px): the last row of a short pane is kept this far inside its foot. */
+const PANE_ROW_FOOT = 17;
+
+/**
+ * Where a row starts under its pane's top (px). The rows of one pane stand `step` apart; in a pane
+ * too short for that they stand closer, evenly, the last a pixel inside the pane's foot, so that
+ * each name shows; in one with no room for two, they lie over each other at its top.
+ */
+function paneRowTop(row: number, rows: number, height: number, step: number): number {
+  const last = Math.max(PANE_ROW_TOP, height - PANE_ROW_FOOT);
+  const apart = rows > 1 ? Math.min(step, (last - PANE_ROW_TOP) / (rows - 1)) : step;
+  return Math.round(PANE_ROW_TOP + row * apart);
+}
 
 /** Where a pane's buttons (move, fold, maximise) sit below its top edge. */
 const PANE_CONTROLS_TOP = 3;
@@ -23,11 +41,12 @@ const PANE_CONTROLS_TOP = 3;
  * `.tcw-pane-controls` in WidgetStyles.css draw them: change both together.
  */
 const PANE_BUTTON = 18;
-const PANE_BUTTON_GAP = 1;
-/** The gap between two on a coarse pointer, where each reaches half of it to the side for a finger. */
-const PANE_BUTTON_GAP_COARSE = 12;
+/** The gap between two: each reaches a pixel into it, so a pointer's press takes 20 px of a button. */
+const PANE_BUTTON_GAP = 2;
+/** The gap between two on a coarse pointer, where each reaches all of it to its left: a finger's 32 px. */
+const PANE_BUTTON_GAP_COARSE = 14;
 /** How far left of a pane's buttons the first one's reach goes on a coarse pointer: a row keeps clear of it too. */
-const PANE_HIT_REACH_COARSE = 12;
+const PANE_HIT_REACH_COARSE = 14;
 const PANE_CONTROLS_PAD = 1;
 /** Between a pane's first row and its buttons (px). */
 const PANE_ROW_CONTROLS_GAP = 4;
@@ -85,6 +104,8 @@ export interface LegendHost {
   readonly featureState: ChartWidget['featureState'];
   handleRemoveIndicator: ChartWidget['handleRemoveIndicator'];
   readonly indicatorLegend: ChartWidget['indicatorLegend'];
+  /** Sell and Buy under the legend: the indicators' rows stand under them. */
+  readonly quoteButtons: ChartWidget['trading']['quoteButtons'];
   indicatorValueText: ChartWidget['indicatorValueText'];
   readonly legendHoverIndex: ChartWidget['legendHoverIndex'];
   openIndicatorSettings: ChartWidget['openIndicatorSettings'];
@@ -106,9 +127,15 @@ export class WidgetLegendView {
   /** The legend row's "more" menu: move the indicator to another pane. */
   legendMenu: WidgetContextMenu | null = null;
 
-  /** Redraw the on-chart indicator list on the next frame (coalesced). */
-  scheduleLegend(): void {
-    if (!this.host.indicatorLegend || this.legendFrame || !this.host.featureState.indicatorLegend) return;
+  /**
+   * Redraw what stands under the chart's legend on the next frame
+   * (coalesced): the Sell and Buy buttons, and the indicators' rows.
+   * `placeOnly`: the buttons were just taken away, and there may be nothing
+   * shown to ask for the frame.
+   */
+  scheduleLegend(placeOnly = false): void {
+    const rows = this.host.indicatorLegend !== null && this.host.featureState.indicatorLegend;
+    if (this.legendFrame || (!rows && !placeOnly && !this.host.quoteButtons?.isShown())) return;
     this.legendFrame = requestAnimationFrame(() => {
       this.legendFrame = 0;
       this.renderLegend();
@@ -116,13 +143,18 @@ export class WidgetLegendView {
   }
 
   private renderLegend(): void {
-    if (!this.host.indicatorLegend || this.host.destroyed) return;
+    if (this.host.destroyed) return;
+    const plot = this.host.chart.getPlotRect();
+    const inset = legendRowInset(this.host.chart);
+    const top = this.host.chart.getLegendBottom() + STACK_GAP;
+    // The buttons first, at the legend's foot; the rows under them.
+    const rowsTop = top + (this.host.quoteButtons?.place(plot.x + inset, top) ?? 0);
+    if (!this.host.indicatorLegend || !this.host.featureState.indicatorLegend) return;
     const last = this.host.chart.getData().length - 1;
     // On Renko, Kagi and the like the hovered index is a brick's, and the
     // indicators are worked out on the bricks: each reads its own series there.
     const aligned = this.host.chart.isTimeAligned();
     const hover = this.host.legendHoverIndex;
-    const inset = legendRowInset(this.host.chart);
     const idx = hover === null ? last : Math.min(Math.max(hover, 0), last);
     const maximized = this.host.chart.getMaximizedPane();
     // As the panes show: one maximised folds the others.
@@ -135,13 +167,14 @@ export class WidgetLegendView {
     }));
     // Each pane's indicators, its own first, stacked down from its top; the first on the line of
     // the pane's buttons, short of them (on a phone they covered its values).
-    const panes = new Map<string, { x: number; y: number; width: number; height: number; row: number; room: number }>();
+    const panes = new Map<string, { x: number; y: number; width: number; height: number; row: number; rows: number; room: number }>();
+    const rowStep = coarsePointer() ? PANE_ROW_STEP_COARSE : PANE_ROW_STEP;
     const features = this.host.featureState;
     const on = { move: features['pane.move'], collapse: features['pane.collapse'], maximize: features['pane.maximize'] };
     for (const state of paneStates) {
       const { pane } = state;
-      (pane.instanceIds ?? [pane.instanceId]).forEach((id, row) => panes.set(id, {
-        ...pane.rect, row, room: row === 0 ? paneControlsRoom(paneButtonCount(state, on)) : 0,
+      (pane.instanceIds ?? [pane.instanceId]).forEach((id, row, ids) => panes.set(id, {
+        ...pane.rect, row, rows: ids.length, room: row === 0 ? paneControlsRoom(paneButtonCount(state, on)) : 0,
       }));
     }
     const locale = this.host.settingsState.numberLocale || 'en-US';
@@ -171,15 +204,14 @@ export class WidgetLegendView {
         pane: pane
           ? {
             x: pane.x + inset,
-            // A short pane with many indicators: the last rows overlap rather than spill out.
-            y: pane.y + Math.min(PANE_ROW_TOP + pane.row * PANE_ROW_STEP, Math.max(PANE_ROW_TOP, pane.height - PANE_ROW_STEP)),
+            y: pane.y + paneRowTop(pane.row, pane.rows, pane.height, rowStep),
             width: pane.width - 2 * inset - pane.room,
+            fullWidth: pane.width - 2 * inset,
           }
           : null,
       };
     });
     const rows = [...compares, ...indicators];
-    const plot = this.host.chart.getPlotRect();
     const labelOf = (id: string) => rows.find((r) => r.instanceId === id)?.label ?? '';
     const paneControls: IndicatorLegendPane[] = paneStates.map(({ pane, ...state }) => ({
       instanceId: pane.instanceId,
@@ -188,7 +220,7 @@ export class WidgetLegendView {
       label: labelOf(pane.instanceId),
       ...state,
     }));
-    this.host.indicatorLegend.update(rows, { left: plot.x + inset, top: this.host.chart.getLegendBottom() + STACK_GAP }, paneControls);
+    this.host.indicatorLegend.update(rows, { left: plot.x + inset, top: rowsTop, room: plot.width - 2 * inset }, paneControls);
   }
 
   /** A pane's button on the chart. */

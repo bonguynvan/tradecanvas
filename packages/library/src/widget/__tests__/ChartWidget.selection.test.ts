@@ -120,9 +120,17 @@ beforeAll(preloadDialogs);
 
 describe('ChartWidget OHLCV legend font', () => {
   it('draws the legend in the look’s figures face, at the size of the indicator rows', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, ui: 'print' });
     const print = resolveWidgetUI('print').font;
     expect(FakeChart.last.legend.at(-1)).toMatchObject({ fontFamily: print.mono, fontSize: typeSize(print.size, -1) });
+  });
+
+  // The indicators' rows under it are in the look's small size: the prices over them were a pixel smaller.
+  it('is in the look’s own small size where it has one: Graphite’s 12', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    expect(FakeChart.last.legend.at(-1)).toMatchObject({ fontSize: 12 });
+    widget.setUI({ font: { smallSize: 14 } });
+    expect(FakeChart.last.legend.at(-1)).toMatchObject({ fontSize: 14 });
   });
 
   it('follows the look when it changes', () => {
@@ -300,6 +308,35 @@ describe('ChartWidget selection toolbar', () => {
     button('lock').click();
     expect(document.activeElement).toBe(button('lock'));
     expect(button('lock').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  /** A widget 240 px wide, its toolbar as wide as the buttons it shows (jsdom lays nothing out): seven are 292 px. */
+  function narrow(): void {
+    Object.defineProperty(host.querySelector('.tcw-root')!, 'clientWidth', { value: 240, configurable: true });
+    const shown = () => [...bar()!.querySelectorAll<HTMLButtonElement>('button')].filter((b) => !b.hidden).length;
+    Object.defineProperty(bar()!, 'offsetWidth', { configurable: true, get: () => 54 + shown() * 34 });
+  }
+  const given = () => ['settings', 'lock'].filter((name) => button(name).hidden);
+
+  it('gives up on a narrow chart the buttons its menu holds too', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    narrow();
+    FakeChart.last.select(['d1']);
+    expect(given()).toEqual(['settings', 'lock']);
+    expect(button('delete').hidden).toBe(false);
+  });
+
+  it('keeps a button whose entry the host took out of the menu, and all of them with the menu off', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, features: { 'menu.drawing.lock': false } });
+    narrow();
+    FakeChart.last.select(['d1']);
+    expect(given()).toEqual(['settings']);
+    widget.destroy();
+    host.replaceChildren();
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, features: { 'menu.drawing': false } });
+    narrow();
+    FakeChart.last.select(['d1']);
+    expect(given()).toEqual([]);
   });
 
   it('can be switched off by the host', () => {

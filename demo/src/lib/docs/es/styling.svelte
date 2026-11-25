@@ -15,15 +15,25 @@
   barras, la tipografía, los bordes, las sombras, cómo se ve un botón elegido y si la barra de herramientas y las
   herramientas de dibujo van pegadas a los bordes o flotan. Parte de un preajuste y cambia lo que quieras. Los colores
   siguen dependiendo del tema (<code>dark</code> / <code>light</code>; consulta la
-  <a href={href('/docs/api')}>referencia de la API</a>); cualquier aspecto funciona con ambos. Modern, el predeterminado, trae un
-  oscuro y un claro propios; los demás aspectos comparten los colores que tenía el widget antes de él.
+  <a href={href('/docs/api')}>referencia de la API</a>); cualquier aspecto funciona con ambos. Graphite, el predeterminado, y Modern traen cada uno un
+  oscuro y un claro propios; los demás aspectos comparten los colores que tenía el widget antes de ellos.
 </p>
 
 <h2>Preajustes</h2>
 <table>
   <thead><tr><th>Preajuste</th><th>Aspecto</th></tr></thead>
   <tbody>
-    <tr><td><code>modern</code> (predeterminado)</td><td>
+    <tr><td><code>graphite</code> (predeterminado)</td><td>
+      El marco de una mesa de trading, sin tono propio: fondos a un paso uno de otro (<code>#131416</code> /
+      <code>#ffffff</code>) separados por líneas finas. Pocos tamaños a propósito: controles de 20, 24, 28, 36 o
+      40 px de alto, todas las esquinas de 3 px, una sola sombra para lo que flota y ninguna en lo demás. Lo
+      elegido (un intervalo, una herramienta, una pestaña) se muestra sobre un fondo más claro con el color del
+      texto; el ámbar queda para lo que se ejecuta. Los interruptores son casillas que se marcan, y las columnas
+      de la tabla de la cuenta miden lo que sus cifras. Su tipografía es IBM Plex Sans si tu página la carga, la
+      del sistema si no. En el gráfico, sin un objeto de tema tuyo, sus colores son
+      <code>GRAPHITE_DARK_THEME</code> y <code>GRAPHITE_LIGHT_THEME</code>.
+    </td></tr>
+    <tr><td><code>modern</code></td><td>
       La ventana de un editor de código, con sus colores Dark Modern y Light Modern. El gráfico sobre el fondo del editor
       (<code>#1f1f1f</code> / <code>#ffffff</code>), las barras de alrededor un tono por encima o por debajo y líneas finas
       entre ellas; iconos de 16 px en botones de 28 px sobre una barra de herramientas de 38 px; controles de 4 px, menús de
@@ -178,7 +188,8 @@ chart.setFont(null)                         // the theme's own font again`}</cod
   font: {
     family: "'Manrope', system-ui, sans-serif",
     mono: "'JetBrains Mono', monospace",
-    size: 13, weight: 500, strongWeight: 600,
+    size: 13, smallSize: 12,                          // body; figures in tables, field names
+    weight: 500, strongWeight: 600,
     labelCase: 'uppercase', labelTracking: 0.06,      // small labels
   },
   borders: { width: 1, separators: true },           // rules between toolbar groups
@@ -336,7 +347,9 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>Las mismas cuatro para las líneas del crosshair (líneas finas continuas por defecto).</td></tr>
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>Las etiquetas de precio y hora en los ejes, y en las escalas de los paneles.</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>La línea y las etiquetas de cada eje (las escalas de los paneles siguen al eje de precios).</td></tr>
-    <tr><td><code>axis.price.valueTagsOutlined</code></td><td><code>true</code> dibuja las etiquetas de valor de un indicador en el eje de precios con contorno (el fondo del gráfico, o el propio de un panel, dentro de un borde del color de la línea, con su texto en ese color) en lugar de rellenas con el color de la línea: en el panel de precio, en los paneles de indicadores y en la escala izquierda. Una línea demasiado cercana al fondo para leerse sobre él tiene su valor escrito en el color de texto de la escala.</td></tr>
+    <tr><td><code>lastPrice.limitColors</code></td><td><code>true</code> dibuja la línea y la etiqueta del último precio en el color de un límite del día mientras el precio está en ese límite: el del techo en el techo o por encima, el del suelo en el suelo o por debajo, el de la referencia en el precio de referencia. Entre ellos, y sin límites conocidos, conservan el color del día. Para un mercado con límites diarios cuyos paneles colorean los precios según ellos; desactivado salvo que lo actives.</td></tr>
+    <tr><td><code>crosshair.labelChange</code></td><td><code>true</code> escribe, bajo el precio que el crosshair señala en el eje de precios, cuánto dista ese precio del último, en porcentaje (<code>+1.25%</code>), en la configuración regional del gráfico. No se escribe sin último precio, ni en una escala que ya está en porcentaje o indexada. El eje reserva sitio para ello. Los temas Graphite lo traen activado (el <code>crosshairChange</code> del propio tema); los demás, desactivado.</td></tr>
+    <tr><td><code>axis.price.valueTagsOutlined</code></td><td><code>true</code> dibuja las etiquetas de valor de un indicador en el eje de precios con contorno (el fondo del gráfico, o el propio de un panel, dentro de un borde del color de la línea, con su texto en ese color) en lugar de rellenas con el color de la línea: en el panel de precio, en los paneles de indicadores y en la escala izquierda. Una línea demasiado cercana al fondo para leerse sobre él tiene su valor escrito en un tono más profundo de su propio color, hasta leerse a 4.5:1. Los temas Graphite las dibujan con contorno salvo que esto sea <code>false</code>. Las etiquetas del bid, del ask y del máximo y el mínimo se dibujan con contorno junto con ellas.</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>Los valores de la leyenda, y sus etiquetas (O, H, L, Vol).</td></tr>
     <tr><td><code>legend.upColor</code>, <code>.downColor</code></td><td>Una subida y una bajada donde se leen los valores de una barra: el cierre y el cambio de la leyenda, los tooltips del crosshair y los fijados, la herramienta de medición. Siguen a los de la serie si no se fijan, así que un gráfico que oculta sus velas (una capa que dibuja las suyas) fija estos y los conserva.</td></tr>
     <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>La línea y la etiqueta del último precio; sus colores siguen a la serie si no se fijan. El tiempo que le queda a la barra (<code>features.barCountdown</code>) cuelga bajo la etiqueta.</td></tr>

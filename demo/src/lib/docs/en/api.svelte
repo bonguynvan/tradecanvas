@@ -27,6 +27,10 @@
     <tr><td><code>appendBars(bars)</code></td><td>Batch append; recalculates indicators once.</td></tr>
     <tr><td><code>updateLastBar(bar)</code></td><td>Mutate the current forming bar.</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>Merge a tick into the last bar.</td></tr>
+    <tr><td><code>addTrades(trades)</code></td><td>Trades into the <a href={href('/docs/realtime#footprint')}>footprint</a>: each in the bar of its time and the row of its price, on the side that took it.</td></tr>
+    <tr><td><code>followTrades()</code></td><td>Follow the feed's trades, its recent ones and then its live ones, as <code>trades</code> events, until the function it returns is called. See <a href={href('/docs/realtime#tape')}>the tape</a>.</td></tr>
+    <tr><td><code>getTrades()</code></td><td>The trades told lately, oldest first: the feed's and those given by hand. For a listener that comes after trades were told.</td></tr>
+    <tr><td><code>setFootprint(bars)</code> / <code>getFootprint(time?)</code> / <code>clearFootprint()</code></td><td>The footprint's rows, bar by bar: given by hand, read back (a bar's, or every bar's), forgotten.</td></tr>
     <tr><td><code>updateBar(bar)</code></td><td>Correct a loaded bar: the one with the same time, anywhere in the series. The view stays; false when no loaded bar has that time.</td></tr>
     <tr><td><code>getData()</code></td><td>Read the raw OHLC series.</td></tr>
   </tbody>
@@ -48,7 +52,7 @@
 <table>
   <thead><tr><th>Method</th><th>Purpose</th></tr></thead>
   <tbody>
-    <tr><td><code>setChartType(type)</code></td><td>One of 18 types — see <a href={href('/docs/chart-types')}>Chart types</a>.</td></tr>
+    <tr><td><code>setChartType(type)</code></td><td>One of 25 types — see <a href={href('/docs/chart-types')}>Chart types</a>.</td></tr>
     <tr><td><code>getChartType()</code></td><td>The type the chart is drawn as (<code>'candlestick'</code> by default).</td></tr>
     <tr><td><code>setTheme(name | theme)</code></td><td>Switch between built-in themes, or set your own. <code>getTheme()</code> gives it back as set.</td></tr>
     <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>Style any part of the chart by key (<code>'grid.vertical.visible'</code>, <code>'series.candlestick.upColor'</code>…); <code>null</code> takes a key away. See <a href={href('/docs/styling#overrides')}>Styling</a>.</td></tr>
@@ -250,6 +254,23 @@ formatVolumeLoc(345_000_000, 'ko')           // '3.45억'`}</code></pre>
   A theme of your own without <code>priceLimits</code> takes the light theme's on a light background, the dark theme's on a dark one.
 </p>
 
+<h3 id="broker-limits">The day's limits as the broker gives them</h3>
+<p>
+  <code>setPriceLimits</code> takes the day's ceiling, floor and reference as they are for the symbol, in place of the
+  reference alone. Pass them where your broker or the exchange gives them: a special band, or a stock's first session
+  on another exchange, is no percentage of the reference, and the market's percentages are then only what is used when
+  nothing better is known. The lines on the chart, the prices an order may be dragged to and the ticket's checks all
+  follow what is given. The widget's order ticket shows the three over its price, each a press that sets the price;
+  <code>priceLimitOrder</code> puts them in the order of your board, and leaves out the ones not named.
+  The ticket itself is a page of the dock beside the chart (<code>widget.openPanel('orderTicket')</code>);
+  <code>ticketPlace: 'dialog'</code> makes it a dialog over the chart, as it is on a phone.
+</p>
+<pre><code>{`chart.setMarket(MARKET_HOSE)
+chart.setPriceLimits({ ceiling: 27.1, floor: 23.6, reference: 25.35 })   // as the broker gives them for the symbol
+chart.setPriceLimits(25.35)                                              // or the reference alone: the market's percentages of it
+
+new ChartWidget(host, { trading: true, priceLimitOrder: ['reference', 'ceiling', 'floor'] })   // the ticket's row, in your board's order`}</code></pre>
+
 <h3 id="comparing-symbols">Comparing symbols</h3>
 <p>
   Another symbol's percent change on the price scale (<code>addCompareSymbol</code>), or
@@ -329,6 +350,132 @@ chart.exportVisibleData('json', undefined, { indicators: false })
 const text = chart.getExportText('csv', { range: 'visible' })
 const { bars, columns } = chart.getExportData()          // columns: { name, values }[]`}</code></pre>
 
+<h3 id="pictures">Pictures, print and PDF</h3>
+<p>
+  The chart as a picture: saved to a file, copied, or read as a data URL, as bytes or as a canvas. With
+  nothing more asked, it is read off the chart's canvases as they are on the screen. Ask for more pixels
+  (<code>pixelRatio</code>) or another theme (<code>theme</code>) and the frame is drawn again for the
+  picture, in Canvas 2D whatever the chart itself draws with: the chart on the page is neither resized nor
+  told. A <code>width</code> or a <code>height</code> lays the chart out again at that size, the bars it has
+  on view on view there, and puts the page's layout back: a picture for a slide or a sheet of paper from a
+  chart in a sidebar. The bars are as wide as the size makes them, within what a bar can be: past that, more
+  or fewer of them are on view, about the same middle. At a size of its own the picture has nothing that
+  follows the pointer (the crosshair, a measure), nor a canvas a host laid over the chart, and a size with no
+  room for a plot gives no picture. <code>type</code> is <code>'png'</code> (default), <code>'jpeg'</code> or
+  <code>'webp'</code>, with <code>quality</code> for the last two.
+</p>
+<pre><code>{`chart.screenshot('btc-1h')                                   // btc-1h.png, as on the screen
+chart.screenshot('btc-1h', { pixelRatio: 3, type: 'webp' })  // drawn again at three times the pixels
+await chart.copyScreenshot()                                 // a PNG on the clipboard; false where the browser refuses
+const url = chart.screenshotDataURL({ theme: 'light' })      // in the light theme; the chart stays as it is
+const blob = await chart.screenshotBlob({ type: 'jpeg', quality: 0.9 })
+const canvas = chart.toCanvas({ pixelRatio: 2 })             // to draw on, or to read yourself
+const slide = await chart.screenshotBlob({ width: 1920, height: 1080 })   // laid out again at that size`}</code></pre>
+<p>
+  <code>print()</code> opens the browser's print dialog for the chart alone: a page that holds its picture
+  and nothing of the page it is on; it gives <code>false</code> when there was no picture to print.
+  <code>toPdf()</code> gives a PDF of one page, the picture kept without loss and as large as fits within the
+  margins. Both draw the chart again for paper, in the light theme and
+  at twice the pixels unless you say otherwise. <code>chartsToPdf</code> makes one PDF of several charts, a
+  page each: the price chart, the <a href={href('/docs/finance')}>finance charts</a>, or a canvas of your own.
+</p>
+<pre><code>{`import { chartsToPdf } from '@tradecanvas/chart'
+
+chart.print({ title: 'BTCUSDT, 1h' })
+const pdf = await chart.toPdf({ pageSize: 'letter', margin: 12, title: 'BTCUSDT' })   // a Blob
+const full = await chart.toPdf({ width: 1123, height: 794 })   // laid out in the page's own shape: as large as its margins allow
+const report = await chartsToPdf([chart, equityChart, allocationChart], { title: 'March', theme: 'dark' })`}</code></pre>
+<p>
+  <code>pageSize</code> is <code>'a4'</code> (default), <code>'a3'</code>, <code>'letter'</code>,
+  <code>'legal'</code> or the paper's two sides in millimetres; <code>orientation</code> is
+  <code>'landscape'</code> (default) or <code>'portrait'</code>; <code>margin</code> is in millimetres. The
+  PDF holds no text of its own, so it needs no font: the chart's words are in its picture, in any language.
+  A picture is held to what a browser can draw (no side past 16,384 pixels, some 16 million in all), so a
+  very large chart gets fewer pixels than asked. The pixels are packed without loss by the browser's
+  <code>CompressionStream</code>, which every current browser has; one without it gets a JPEG that keeps
+  nearly all of the picture. Printing puts the picture in a frame as a <code>data:</code> URL, so a page with
+  a content security policy has to allow those for images.
+</p>
+<p>
+  What the picture has is what the chart draws on its canvases: the plot, the axes, the legend, the
+  crosshair if it is showing, and a canvas a host laid over the chart (unless it is hidden, or holds a
+  picture from another site, which no page may read back). What is built of page elements is not on it: the tooltips, and the widget's bars and its rows of indicator names. With
+  <code>features.screenshot</code> off there is no picture, print or PDF. ChartWidget has
+  <strong>Print chart</strong> and <strong>Save chart as PDF</strong> in the command palette, and
+  <code>widget.printChart()</code> and <code>widget.saveChartPdf()</code>, both under the chart's symbol and
+  interval, with a toast when there was nothing to print or to save; they go with the <code>screenshot</code>
+  switch.
+</p>
+
+<h3 id="no-page">The chart drawn with no page</h3>
+<p>
+  <code>renderPriceChart</code> draws the price chart on a 2D context of your own, where there is no page:
+  a canvas made in Node, for a picture in an email, a report or a message from a bot, or an
+  <code>OffscreenCanvas</code> in a worker. It is one frame, put together as <code>Chart</code> puts its
+  own together: at the same size it is the picture a chart on a page gives of the same bars once
+  <code>chart.fitContent()</code> has every bar on view (or <code>chart.setVisibleRange()</code>, with
+  <code>visibleRange</code>).
+</p>
+<pre><code>{`import { createCanvas, Path2D } from '@napi-rs/canvas'   // or another canvas for Node that has Path2D
+import { renderPriceChart } from '@tradecanvas/chart'
+
+const canvas = createCanvas(1920, 1080)
+const ctx = canvas.getContext('2d')
+ctx.scale(2, 2)                                            // a 960 × 540 chart at twice the pixels
+renderPriceChart(ctx, {
+  data: bars,                                              // every bar is on view when they fit
+  symbol: 'BTCUSDT',
+  timeframe: '1d',
+  theme: 'light',
+  timeZone: 'Asia/Ho_Chi_Minh',
+  indicators: [
+    { id: 'ema', params: { period: 21 } },
+    { id: 'rsi', instanceId: 'momentum' },                 // a pane of its own under the prices
+    { id: 'stochastic', pane: 'momentum' },                // in that pane, on its scale
+  ],
+  drawings: [
+    { type: 'horizontalLine', anchors: [{ time: bars[0].time, price: 64000 }], style: { color: '#2266ff' } },
+    { type: 'horizontalLine', anchors: [{ time: bars[0].time, price: 70 }], paneId: 'momentum' },  // on that pane
+  ],
+  markers: [{ time: bars[40].time, price: bars[40].low, direction: 'long', confidence: 0.8, source: 'strategy', label: 'Buy' }],
+  path2D: Path2D,                                          // Node has no Path2D of its own
+}, { width: 960, height: 540 })
+const png = canvas.toBuffer('image/png')`}</code></pre>
+<p>
+  The options are <code>Chart</code>'s where they say how the chart looks: <code>chartType</code> and
+  <code>chartTypeOptions</code>, <code>theme</code>, <code>font</code>, <code>overrides</code>,
+  <code>density</code>, <code>logScale</code>, <code>numberLocale</code>, <code>priceFormat</code>,
+  <code>watermark</code>, and <code>features</code> to leave out the volume, the grid, an axis or the
+  legend. What a chart on a page is given by calls, this one takes as options: <code>data</code>,
+  <code>symbol</code> and <code>timeframe</code> for the legend, <code>indicators</code>,
+  <code>drawings</code> (as <code>addDrawing</code> takes one), <code>markers</code> (as
+  <code>addSignalMarker</code> takes one), <code>visibleRange</code> (the times of the first and the last
+  bar on view), <code>pricePrecision</code>, <code>timeZone</code> (the machine's own with none: name the
+  zone your readers are in) and <code>symbolSeries</code> (other symbols' bars, for
+  <code>'compareSymbol'</code>, <code>'spread'</code> and the correlations). An indicator reads as a saved
+  layout's does, so <code>chart.getIndicatorSetup()</code> and <code>chart.getDrawings()</code> go in as
+  they are, a drawing on an indicator's pane with them: a chart someone set up in the browser is drawn again
+  on the server. <code>plugins</code> takes an indicator, a chart type, a drawing tool or an overlay of your
+  own.
+</p>
+<p>
+  It draws the size you give in the context's own units, over the theme's ground: scale the context first
+  for more pixels. The bars are drawn with <code>Path2D</code>, which Node does not have:
+  <code>@napi-rs/canvas</code> and <code>skia-canvas</code> each export theirs, to give as
+  <code>path2D</code>; a worker has its own. The text is in the theme's font, so name one your canvas has
+  with <code>font</code>. Nothing follows a pointer: there is no crosshair, countdown or tooltip. Orders
+  and positions, alerts, compare lines, the volume and market profiles, session shading and a market's
+  price limits are not drawn this way yet. A finance chart is drawn the same way by
+  <code>renderFinanceChart</code>, and <code>imagesToPdf</code> puts pictures made this way in a PDF.
+</p>
+<p>
+  What is wrong with the options is said before anything is drawn, by the option's name: a
+  <code>RangeError</code> for an indicator, a theme or a time zone it does not know, two indicators of one
+  <code>instanceId</code>, and a number outside what it can be; a <code>TypeError</code> for an option that
+  is the wrong kind of thing. A bar that is no bar is left out, as a chart leaves it out. The context is
+  left as it was found; should a plugin of yours throw while it draws, draw the next chart on another.
+</p>
+
 <h3>Volume Profile</h3>
 <p>
   Horizontal histogram of traded volume bucketed by price over the visible
@@ -383,6 +530,15 @@ chart.setSessionShadingConfig({
 <pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
 chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
 chart.isExtendedHoursVisible()`}</code></pre>
+<p>
+  <strong>The trading day.</strong> A session that runs past midnight (CME's 17:00 to 16:00 in Chicago) starts the trading day at its open. The indicators that start again each day, week or month (Session VWAP, VWAP's and the cumulative delta's anchor, the session volume profile, the MTF average's days), the prior-day lines and the market profile's days then run from 17:00 to 17:00, each named by the date it ends on. Sessions inside a day keep midnight. Daily bars and the days built from trades keep the zone's midnight. The chart's day lines start there too while it shows the exchange's time (<code>setTimeZone('exchange')</code>, or the exchange's zone by name); on another clock a day there runs midnight to midnight.
+</p>
+<pre><code>{`chart.setSymbolInfo({ symbol: 'ES', timeZone: 'America/Chicago', sessions: [{ start: '17:00', end: '16:00' }] })
+// Session VWAP, svp, the prior-day lines: from 17:00 to 17:00
+
+import { tradingDayStart } from '@tradecanvas/chart'
+tradingDayStart([{ start: '17:00', end: '16:00' }])   // 1020: minutes after midnight
+tradingDayStart([{ start: '09:30', end: '16:00' }])   // null: midnight`}</code></pre>
 
 <h3>Prior-period levels (PDH / PDL / PDC)</h3>
 <p>
@@ -401,7 +557,7 @@ const levels = computePeriodLevels(bars, 'day', 'Australia/Sydney')  // [{ id, l
 <p>
   A time-at-price histogram: each bar contributes one TPO to every price bucket
   its range touched, surfacing the Point of Control (busiest price) and the
-  value area (≈70% of TPOs). Distinct from Volume Profile — it weights by time,
+  value area (≈70% of TPOs, grown from the POC two buckets at a time toward the heavier pair, as Market Profile counts it). Distinct from Volume Profile — it weights by time,
   not volume — and is left-pinned so both can show together. Off by default;
   toggle from the settings sheet or directly:
 </p>
@@ -412,6 +568,7 @@ chart.setMarketProfileConfig({
   opacity: 0.32,
   valueAreaPct: 0.7,  // fraction of TPOs in the value area
   highlightPoC: true, // dashed line at the point of control
+  valueAreaColor: '#7e57c2', color: '#90a4ae', // colours of its own; null: the theme's (the rising candle's, the secondary text's)
 })
 
 // split into one mini-profile per trading day, in the exchange's zone
@@ -468,6 +625,8 @@ chart.on('dataUpdate', e => /* { kind: 'bars', length } on setData and new bars;
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
+chart.on('marginCall', e => /* { marginLevel, level, equity, marginUsed }: the account was warned of its margin */)
+chart.on('trades', e => /* { trades, recent }: trades of the symbol, while they are followed (followTrades, a footprint) or given (addTrades) */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* drawings, indicators, alerts, chart type or theme may have changed */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
@@ -602,7 +761,7 @@ widget.destroy()`}</code></pre>
   option is told the open panel's id, or <code>null</code>, however it changed: the rail, a close button, your code,
   a widget turning narrow.
 </p>
-<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder', or a page's id; false if not there
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder' | 'tape', or a page's id; false if not there
 widget.getOpenPanel()           // the panel open, or null
 widget.closePanel()
 
@@ -702,6 +861,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>Go to a date</td></tr>
     <tr><td><kbd>?</kbd></td><td>The shortcut sheet, searchable by what a key does or by the keys</td></tr>
     <tr><td><kbd>Alt</kbd> + click chart</td><td>Pin OHLC tooltip at the hovered bar (delta to live crosshair shown)</td></tr>
+    <tr><td>Press and hold on the chart</td><td>The floating OHLCV tooltip for the bar under the pointer, while the button is held: it follows the pointer, and the chart does not pan (<code>{`chartOptions: { features: { crosshairTooltip: true } }`}</code> has it follow a pointer that only hovers, <code>false</code> never shows it)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Unpin tooltip / cancel drawing</td></tr>
     <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td><td>Step the replay back / forward</td></tr>
     <tr><td><kbd>Space</kbd></td><td>Play or pause the replay (on the chart or its track; outside a replay it fits the chart)</td></tr>
@@ -1208,10 +1368,22 @@ grid.setFeatures({ 'toolbar.replay': false })               // every chart's swi
 grid.getActiveWidget().getChart()
 grid.getLayoutSession()?.saveAs('Majors')
 
+// The charts as one picture, each in its cell: a file, the print dialog, a PDF
+grid.screenshot('majors', { pixelRatio: 2 })
+await grid.copyScreenshot()                             // onto the clipboard, as a PNG
+const sheet = await grid.toPdf({ title: 'Majors' })   // light and at twice the pixels, as a chart's
+
 // Each chart as it is made (at the start, and when the grid grows)
 new ChartWidgetGrid(host, {
   onChartAdd: (widget, index) => widget.getChart().addIndicator('ema', { period: 21 }),
 })`}</code></pre>
+<p>
+  The bar's camera button does the same from a menu: it saves the charts' picture as an image,
+  copies it, prints it or saves it as a PDF, named after the symbols shown (<code>charts</code>
+  for more than three). <code>picture: false</code> leaves the button out; it is hidden as well
+  while the charts' <code>screenshot</code> switch is off, and has no copy entry while
+  <code>copyImage</code> is.
+</p>
 <p>
   Crosshair sync shows the time under the pointer on every chart; time sync
   scrolls and zooms the others with the chart being used; drawings are copied

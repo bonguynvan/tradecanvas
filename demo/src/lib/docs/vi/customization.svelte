@@ -62,7 +62,7 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
 <p>
   Công tắc hiện và ẩn các phần của widget. Để chặn một việc trên chính biểu đồ (vẽ, giao dịch,
   zoom, một khung thời gian), dùng feature của biểu đồ (<code>chartOptions.features</code>). Các phần cần dữ liệu
-  hoặc bộ lưu trữ đi kèm vẫn là tuỳ chọn: <code>trading</code>, <code>watchlist</code>, <code>depthLadder</code> và
+  hoặc bộ lưu trữ đi kèm vẫn là tuỳ chọn: <code>trading</code>, <code>watchlist</code>, <code>depthLadder</code>, <code>tape</code> và
   <code>layouts</code> quyết định chúng có tồn tại hay không, còn công tắc ẩn các nút của chúng. Bật công tắc không thêm phần nào trong số đó: chỉ <code>features: &#123; depthLadder: true &#125;</code> thì không tạo ra ladder.
 </p>
 <p>Các tuỳ chọn bật/tắt cũ là chính các công tắc này, giữ nguyên như trước:</p>
@@ -88,7 +88,7 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
       <code>indicatorSettings</code> <code>drawingSettings</code> <code>dataWindow</code> <code>commandPalette</code>
       <code>hotkeySheet</code> <code>goToDate</code> <code>replay</code> <code>screenshot</code> <code>copyImage</code>
       <code>shareView</code> <code>autoFib</code> <code>themeToggle</code> <code>fullscreen</code> <code>accountPanel</code>
-      <code>orderTicket</code> <code>bracketOrders</code> <code>depthLadder</code> <code>layouts</code>
+      <code>orderTicket</code> <code>tradeButtons</code> <code>bracketOrders</code> <code>depthLadder</code> <code>tape</code> <code>layouts</code>
       <code>indicatorTemplates</code> <code>compare</code> <code>indicatorLegend</code> <code>navigation</code>
       <code>customTimeframes</code> <code>marks</code> <code>intervalTyping</code> <code>symbolTyping</code> <code>dragDropImport</code> <code>hotkeys</code>
       <code>toasts</code> <code>favoritesBar</code>
@@ -104,7 +104,7 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
     </td></tr>
     <tr><td>Dock</td><td>
       <code>dock.watchlist</code> <code>dock.alerts</code> <code>dock.objectTree</code> <code>dock.dataWindow</code>
-      <code>dock.symbolInfo</code> <code>dock.depthLadder</code>
+      <code>dock.symbolInfo</code> <code>dock.depthLadder</code> <code>dock.tape</code>
     </td></tr>
     <tr><td>Sidebar công cụ vẽ</td><td>
       <code>sidebar.cursor</code> <code>sidebar.favorites</code> <code>sidebar.lines</code> <code>sidebar.fibonacci</code>
@@ -145,6 +145,7 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
   <code>menu.chart.*</code> áp dụng cho cả nút "+" cạnh trục giá lẫn menu chuột phải; <code>compare</code>
   bỏ nút thêm trong object tree, còn các mã so sánh đang có vẫn được liệt kê; <code>toasts</code> tắt
   thông báo của widget (lỗi vẫn hiện), còn thông báo của bạn qua <code>widget.toast()</code> vẫn hiện.
+  Mỗi lúc chỉ hiện một toast: toast mới thay cho toast đang hiện, và toast dài thì xuống dòng.
   Tắt <code>selectionToolbar</code> thì ẩn toolbar của hình vẽ đang chọn; menu chuột phải vẫn còn.
   Tắt <code>statusBar.rangeTimeframe</code> thì giữ nguyên khung thời gian khi một khoảng trên range bar dài hơn số nến có thể chứa; bật thì chuyển sang tuần hoặc tháng rồi chuyển lại.
   Các công cụ giao dịch gom vào một menu Giao dịch trên toolbar: <code>toolbar.bracketOrders</code>, <code>toolbar.depthLadder</code>,

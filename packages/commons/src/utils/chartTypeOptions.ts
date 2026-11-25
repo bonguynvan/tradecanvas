@@ -7,7 +7,7 @@ const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
 
 /**
  * The chart type settings in `raw` the chart can use: boxes, ranges and
- * reversals above 0, whole line and box counts in range. A type given at
+ * reversals above 0, whole line, box and bar counts in range. A type given at
  * all is in the result (empty when none of its settings were usable), so
  * a type's settings can be put back to their defaults.
  */
@@ -39,9 +39,23 @@ export function readChartTypeOptions(raw: unknown): ChartTypeOptions {
       ...(wholeIn(reversal, 1, 10) ? { reversal } : {}),
     };
   }
+  if (isObject(raw.smoothedHeikinAshi)) {
+    const { period } = raw.smoothedHeikinAshi;
+    out.smoothedHeikinAshi = wholeIn(period, 1, 500) ? { period } : {};
+  }
   if (isObject(raw.rangeBars)) {
     const { range } = raw.rangeBars;
     out.rangeBars = positive(range) || range === 'auto' ? { range } : {};
+  }
+  if (isObject(raw.footprint)) {
+    const { rowSize, cells, imbalance, collect, totals } = raw.footprint;
+    out.footprint = {
+      ...(positive(rowSize) || rowSize === 'auto' ? { rowSize } : {}),
+      ...(cells === 'bidAsk' || cells === 'delta' || cells === 'volume' ? { cells } : {}),
+      ...(typeof imbalance === 'number' && Number.isFinite(imbalance) && imbalance >= 0 ? { imbalance } : {}),
+      ...(typeof collect === 'boolean' ? { collect } : {}),
+      ...(typeof totals === 'boolean' ? { totals } : {}),
+    };
   }
   return out;
 }

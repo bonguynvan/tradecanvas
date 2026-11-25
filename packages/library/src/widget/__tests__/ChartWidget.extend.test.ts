@@ -1178,13 +1178,11 @@ describe('ChartWidget symbol fetches out of order', () => {
 });
 
 describe('ChartWidget look', () => {
-  it('starts in the Modern look, takes a preset or a theme, and gives the chart its tag shape', () => {
+  it('starts in the Graphite look, takes a preset or a theme, and gives the chart its tag shape', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
     const root = host.querySelector<HTMLElement>('.tcw-root')!;
-    expect(root.dataset.tcwUi).toBe('modern');
-    // Without `ui` the tokens stay the stylesheet's (Modern's), yours to override in CSS.
-    expect(root.style.getPropertyValue('--tcw-control-radius')).toBe('');
-    expect(FakeChart.last.shapes.at(-1)).toEqual({ tagRadius: 2 });
+    expect(root.dataset.tcwUi).toBe('graphite');
+    expect(FakeChart.last.shapes.at(-1)).toEqual({ tagRadius: 3 });
 
     widget.setUI({ preset: 'capsule', radius: { lg: 14 } });
     expect(root.dataset.tcwToolbar).toBe('floating');
@@ -1194,6 +1192,16 @@ describe('ChartWidget look', () => {
     // The modal portal carries the same look.
     const portal = (widget as unknown as { portal: HTMLElement }).portal;
     expect(portal.dataset.tcwToolbar).toBe('floating');
+  });
+
+  it('tidies the toolbar’s and the rail’s dividers again for the new look, which may draw others', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const parts = widget as unknown as { toolbar: { tidy(): void }; sidebar: { tidy(): void } };
+    const toolbar = vi.spyOn(parts.toolbar, 'tidy');
+    const sidebar = vi.spyOn(parts.sidebar, 'tidy');
+    widget.setUI('modern');
+    expect(toolbar).toHaveBeenCalled();
+    expect(sidebar).toHaveBeenCalled();
   });
 
   it('keeps the look across a theme switch, on the root and the dialogs alike', () => {
@@ -1253,7 +1261,7 @@ describe('ChartWidget look', () => {
   });
 
   it('writes the classic density’s spacing on the root, and takes it off for the stylesheet’s', () => {
-    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, ui: { density: 'classic' } });
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, ui: { preset: 'modern', density: 'classic' } });
     const root = host.querySelector<HTMLElement>('.tcw-root')!;
     expect(root.style.getPropertyValue('--tcw-space-2')).toBe('3px');
     expect(root.style.getPropertyValue('--tcw-control-h')).toBe('28px');
@@ -1290,7 +1298,7 @@ describe('ChartWidget look', () => {
     expect(FakeChart.last.fonts.at(-1)).toEqual({ family: figures, textFamily: words });
     widget.setUI('desk');
     expect((FakeChart.last.fonts.at(-1) as { family: string }).family).toMatch(/^Tahoma,/);
-    widget.setUI('modern');
+    widget.setUI('graphite');
     expect(FakeChart.last.fonts.at(-1)).toEqual({ family: figures, textFamily: words });
   });
 
@@ -1372,12 +1380,42 @@ describe('ChartWidget on a wide screen', () => {
   it('draws its bars, buttons, icons and type bigger on 4K, and the chart’s type with them', () => {
     (FakeChart.prototype as unknown as Record<string, unknown>).getFont = () => ({ ...chartFont });
     wide(2600);
-    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, ui: 'modern' });
     const root = host.querySelector<HTMLElement>('.tcw-root')!;
     expect(root.style.getPropertyValue('--tcw-toolbar-h')).toBe('44px');
     expect(root.style.getPropertyValue('--tcw-font-size')).toBe('15px');
     const fonts = FakeChart.last.fonts as Record<string, unknown>[];
     expect(fonts[fonts.length - 1]).toMatchObject({ sizeSmall: 13, sizeMedium: 15, sizeLarge: 18 });
+  });
+
+  // Graphite's chart is set a size up from the other looks': the sizes a grown widget wrote for one
+  // look were taken for the next look's own.
+  it('grows the chart’s type from the new look’s own sizes when the look changes', () => {
+    const own = { graphite: { sizeSmall: 12, sizeMedium: 13, sizeLarge: 15 }, modern: { sizeSmall: 11, sizeMedium: 13, sizeLarge: 15 } };
+    let look: keyof typeof own = 'graphite';
+    const proto = FakeChart.prototype as unknown as Record<string, unknown>;
+    const sizesWritten = () => (FakeChart.last?.fonts as (Record<string, unknown> | null)[] ?? []).reduce<Record<string, unknown>>((font, next) => (next === null ? {} : { ...font, ...next }), {});
+    // As the chart does: what `setFont` wrote is on the theme it gives back, over the theme's own sizes.
+    proto.getTheme = () => ({ font: { family: 'x', ...own[look], ...sizesWritten() } });
+    proto.getFont = () => ({ family: 'x', ...own[look], ...sizesWritten() });
+    wide(2600);
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const last = () => { const f = sizesWritten(); return [f.sizeSmall, f.sizeMedium, f.sizeLarge]; };
+    const scale = (last()[0] as number) / 12;
+    expect(scale).toBeGreaterThan(1);
+    look = 'modern';
+    widget.setUI('modern');
+    expect(last()).toEqual([Math.round(11 * scale), Math.round(13 * scale), Math.round(15 * scale)]);
+    // And however often: sizes written were once taken for the theme's own, and grew at every change.
+    for (let i = 0; i < 4; i++) {
+      look = 'graphite';
+      widget.setUI('graphite');
+      expect(last(), `graphite, turn ${i}`).toEqual([Math.round(12 * scale), Math.round(13 * scale), Math.round(15 * scale)]);
+      look = 'modern';
+      widget.setUI('modern');
+      expect(last(), `modern, turn ${i}`).toEqual([Math.round(11 * scale), Math.round(13 * scale), Math.round(15 * scale)]);
+    }
+    delete proto.getTheme;
   });
 
   it('sets only the sizes it grows, so the other tokens a host sets in CSS stay', () => {
@@ -1386,10 +1424,10 @@ describe('ChartWidget on a wide screen', () => {
     const root = host.querySelector<HTMLElement>('.tcw-root')!;
     expect(root.style.getPropertyValue('--tcw-icon')).toBe('18px');
     // The drawing tools grow with the rest: their icon and button a half step over the others'
-    // (22 against 18, 40 against 32), in a column grown to 52.
+    // (22 against 18, 40 against 32), in a column grown to 50.
     expect(root.style.getPropertyValue('--tcw-tool-h')).toBe('40px');
     expect(root.style.getPropertyValue('--tcw-tool-icon')).toBe('22px');
-    expect(root.style.getPropertyValue('--tcw-sidebar-w')).toBe('52px');
+    expect(root.style.getPropertyValue('--tcw-sidebar-w')).toBe('50px');
     // A line of the grown type is an even height too: 22 px at 15 px.
     expect(parseFloat(root.style.getPropertyValue('--tcw-line-height')) * 15).toBeCloseTo(22, 3);
     // Spacing is the stylesheet's still.
@@ -1412,7 +1450,7 @@ describe('ChartWidget on a wide screen', () => {
     expect(root.style.getPropertyValue('--tcw-toolbar-h')).toBe('');
     width.mockReturnValue(1830);
     resized();
-    expect(root.style.getPropertyValue('--tcw-toolbar-h')).toBe('42px');
+    expect(root.style.getPropertyValue('--tcw-toolbar-h')).toBe('44px');
     vi.unstubAllGlobals();
   });
 
@@ -1423,7 +1461,7 @@ describe('ChartWidget on a wide screen', () => {
     widget.destroy();
     wide(2600);
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, ui: { scale: 1 } });
-    expect(host.querySelector<HTMLElement>('.tcw-root')!.style.getPropertyValue('--tcw-toolbar-h')).toBe('38px');
+    expect(host.querySelector<HTMLElement>('.tcw-root')!.style.getPropertyValue('--tcw-toolbar-h')).toBe('40px');
   });
 });
 

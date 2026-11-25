@@ -5,7 +5,7 @@ const zh: SiteMessages = {
   meta: {
     title: 'TradeCanvas · 面向 Web 的 Canvas 交易图表',
     description:
-      'TradeCanvas 是一个面向 Web 的交易图表库，可用 Canvas 2D 或 WebGL 绘制：18 种图表类型、134 个指标、76 种画线工具、交易所实时行情、图表上直接下单、回放与回测，支持 30 种语言。零依赖，MIT 许可。',
+      'TradeCanvas 是一个面向 Web 的交易图表库，可用 Canvas 2D 或 WebGL 绘制：18 种图表类型、138 个指标、76 种画线工具、交易所实时行情、图表上直接下单、回放与回测，支持 30 种语言。零依赖，MIT 许可。',
   },
 
   nav: {
@@ -48,7 +48,7 @@ const zh: SiteMessages = {
     release: 'WebGL 渲染器，30 种语言',
     title: '为交易应用打造的图表引擎。',
     ledeHtml:
-      '从蜡烛图到 Renko，134 个指标、76 种画线工具、交易所实时行情，还能直接在图表上下单。用 Canvas 2D 或 WebGL 绘制，零依赖。可以直接放入完整的 <code>ChartWidget</code>，也可以在无界面的 <code>Chart</code> 之上构建自己的界面。',
+      '从蜡烛图到 Renko，138 个指标、76 种画线工具、交易所实时行情，还能直接在图表上下单。用 Canvas 2D 或 WebGL 绘制，零依赖。可以直接放入完整的 <code>ChartWidget</code>，也可以在无界面的 <code>Chart</code> 之上构建自己的界面。',
     getStarted: '开始使用',
     browseExamples: '浏览示例',
     specsLabel: '关键数据',
@@ -72,7 +72,7 @@ const zh: SiteMessages = {
           title: '读懂行情',
           text: 'K线上叠加通道、均线和振荡指标，再在上面画斐波那契和趋势线，每一项都有自己的设置和提醒。',
           points: [
-            '134 个指标，可以互相叠加，比如 RSI 的均线',
+            '138 个指标，可以互相叠加，比如 RSI 的均线',
             '76 种画线工具，带磁吸、分组和撤销',
             '价格、画线和指标交叉都能提醒',
           ],
@@ -219,11 +219,11 @@ const zh: SiteMessages = {
     },
     indicators: {
       title: '指标',
-      stat: '134 个内置',
+      stat: '138 个内置',
       blurb:
         '叠加指标和副图指标全部自行计算，数学运算零依赖。实时 tick 只重算正在形成的K线——10 万根K线、四个指标下，每个 tick 仅需 0.001 ms。',
       tryThis: [
-        '点击“指标”按钮（或按 Ctrl+K），搜索 134 个指标中的任意一个',
+        '点击“指标”按钮（或按 Ctrl+K），搜索 138 个指标中的任意一个',
         '点击图例中的指标名称：参数、颜色和水平线',
         '把移动平均线的数据源设为另一个指标的线',
         '拖动副图之间的分隔线来调整大小；副图右上角的按钮可以移动、收起或最大化副图',
@@ -382,7 +382,7 @@ const zh: SiteMessages = {
     },
     overrides: {
       title: '样式覆盖',
-      stat: '107 个键',
+      stat: '122 个键',
       blurb:
         '按键单独设置图表外观的任何部分，不受主题限制：每个方向的网格、十字光标、坐标轴、面板、图例、最新价、成交量以及每种图表类型的颜色。这里关闭了竖向网格，横向网格为点线，十字光标为实线，MACD 的信号线在拥有自己分隔线的面板中显示为虚线。',
       tryThis: [
@@ -436,6 +436,17 @@ const zh: SiteMessages = {
         '在图表上方切换 Canvas 2D 与 WebGL：每次切换都会测一次短暂平移',
         '寻找明亮的横行：长时间停在同一价位的挂单墙',
         '放大某一堵挂单墙后来回平移：格子与K线同步移动',
+      ],
+    },
+    orderflow: {
+      title: '订单流',
+      stat: '足迹图 + 逐笔成交',
+      blurb:
+        '数据源的每一笔成交，以及是哪一方主动成交。足迹图在每根K线旁写出其内部每个价位上卖方在买价成交的数量和买方在卖价成交的数量，标记一方明显压过另一方的行，并在每根K线下方给出合计：买入减卖出，以及两者之和。旁边的逐笔成交按发生顺序列出成交，最新的在最上面，颜色表示主动成交的一方。',
+      tryThis: [
+        '看最新的K线随着成交到来逐行填满，下方的合计随之变化',
+        '打开逐笔成交标题栏里的菜单：只列出买入或卖出，或把同时发生的成交合并为一行',
+        '在逐笔成交里输入最小数量只保留大单，然后缩小图表：各行变成条形，合计仍在',
       ],
     },
     switching: {
@@ -494,6 +505,23 @@ const zh: SiteMessages = {
     counterClock: '逆时钟曲线：价格对成交量，25 日均值',
     avgVolume: '成交量，均值',
     avgPrice: '价格，均值',
+    payoff: '铁鹰式期权：到期损益',
+    smile: '各行权价的隐含波动率',
+    weekdayReturns: '按星期划分的日收益',
+    scorecard: '策略与基准对比',
+    strategy: '策略',
+    benchmark: '基准',
+    allocationRings: '按资产类别与行业的配置',
+    allocationOverTime: '全年配置变化',
+    volSurface: '各行权价与到期日的隐含波动率',
+    strike: '行权价',
+    expiry: '到期日',
+    depthOverTime: '订单簿深度随时间的变化',
+    quarterReturns: '各季度、各资产类别的收益',
+    turnHint: '拖动图表即可旋转，双击恢复原来的视角。',
+    exportLabel: '保存组合图表',
+    print: '打印',
+    reportPdf: '全部图表合成一个 PDF',
     waterfall: {
       start: '期初',
       btcLong: 'BTC 多单',
@@ -705,7 +733,7 @@ const zh: SiteMessages = {
         { name: '无第三方运行时依赖', detail: '无需额外安装或审计任何东西' },
       ],
       indicators: [
-        { name: '134 个内置指标', detail: '六种枢轴点、MA Cross、与另一品种的相关性' },
+        { name: '138 个内置指标', detail: '六种枢轴点、MA Cross、与另一品种的相关性' },
         { name: '价格来源', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: '基于指标的指标', detail: '例如 RSI 的移动平均，每个 tick 都会更新' },
         { name: '一个副图中放多个指标，并可在副图间移动', detail: 'moveIndicatorToPane' },
@@ -776,7 +804,7 @@ const zh: SiteMessages = {
       ],
       customization: [
         { name: '组件的三种外观', detail: 'Studio、Terminal、Capsule；ui 与 setUI；--tcw-* CSS 变量' },
-        { name: '按键定制图表外观', detail: 'applyOverrides 覆盖 107 个带类型的键，分为宿主层和用户层' },
+        { name: '按键定制图表外观', detail: 'applyOverrides 覆盖 122 个带类型的键，分为宿主层和用户层' },
         { name: '覆盖每个键的设置', detail: '当前图表类型的样式选项卡，以及交易选项卡' },
         { name: '114 个功能开关', detail: 'features、setFeatures、isFeatureOn；运行时可更改' },
         { name: '在组件中加入你自己的部件', detail: '工具栏按钮和下拉菜单、侧边栏按钮、状态栏项、插槽、菜单项' },
@@ -928,6 +956,7 @@ const zh: SiteMessages = {
       frameworks: '框架',
       embed: '可嵌入组件',
       migration: '迁移到 2.0',
+      'migration-3': '迁移到 3.0',
       'from-tradingview': '从 TradingView 迁移',
       'how-it-works': '工作原理',
       api: 'API 参考',

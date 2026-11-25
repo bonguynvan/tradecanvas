@@ -15,6 +15,7 @@ export * from './signal.js';
 export * from './realtime.js';
 export * from './feed.js';
 export * from './finance.js';
+export * from './export.js';
 export * from './symbol.js';
 export * from './quote.js';
 export * from './news.js';

@@ -174,11 +174,13 @@ chart.addIndicator('vwap', { anchor: 'all' })   // todas las barras cargadas, co
 </table>
 
 <p>
-  <code>voldelta</code> (Volume Delta) aproxima la presión compradora/vendedora a
-  partir de OHLCV: las barras que cierran al alza suman volumen positivo y las
-  bajistas, negativo. <code>mode: 0</code> es el histograma por barra y
-  <code>mode: 1</code> el delta acumulado. (Un delta real por tick necesita datos
-  de compra/venta de cada operación, que una serie OHLCV no incluye).
+  <code>voldelta</code> (Volume Delta) es lo que tomaron los compradores de cada barra menos lo que
+  tomaron los vendedores. Una barra que dice quién tomó sus operaciones (su <code>buyVolume</code>) da
+  su delta real. Una que no lo dice se lee por cómo cerró: todo su volumen al alza si cerró en su
+  apertura o por encima, a la baja en otro caso, que es lo más cerca que llega una barra OHLCV.
+  <code>mode: 0</code> es el histograma por barra y <code>mode: 1</code> el delta acumulado, que empieza
+  de nuevo con cada periodo de <code>anchor</code> (<code>'session'</code>, <code>'week'</code> o
+  <code>'month'</code>; nunca con <code>'all'</code>, el valor por defecto).
 </p>
 
 <h2>Indicadores de las pantallas de cotización asiáticas</h2>
@@ -209,6 +211,58 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   <code>@tradecanvas/core</code> a las dependencias de la app para importarlo.
 </p>
 <pre><code>{`import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core/patterns'`}</code></pre>
+
+<h2 id="fair-value-gaps">Fair value gaps</h2>
+<p>
+  Tres barras dejan un fair value gap cuando el mínimo de la tercera queda por encima del máximo de la primera (o, a la baja, su máximo por debajo del mínimo de la primera): entre ambos solo negoció la barra central. El gráfico dibuja una caja sobre esos precios, desde la barra central hasta el borde derecho mientras el gap sigue abierto, en verde azulado para un gap al alza y en rosa para uno a la baja (los colores de las marcas de los patrones de velas, distintos del verde y el rojo de las velas; el estilo del indicador los cambia). Un gap lo llena la primera barra posterior que lo recorre entero, y entonces deja de dibujarse salvo que <code>showFilled</code> sea 1. <code>detectFairValueGaps</code> los devuelve todos sin gráfico, con la barra que llenó cada uno.
+</p>
+<pre><code>{`chart.addIndicator('fvg')                              // una caja sobre cada gap aún abierto
+chart.addIndicator('fvg', { minPercent: 0.1 })         // omite los gaps menores del 0,1% del precio
+chart.addIndicator('fvg', { showFilled: 1 })           // conserva los llenados, más tenues, hasta la barra que los llenó
+
+import { detectFairValueGaps } from '@tradecanvas/chart'
+
+detectFairValueGaps(bars, { minPercent: 0.1 })
+// [{ index, formed, direction: 'up' | 'down', top, bottom, filledAt }]`}</code></pre>
+
+<h2 id="divergences">Divergencias</h2>
+<p>
+  Una divergencia es el precio y un oscilador girando dos veces, y no en el mismo sentido. Alcista, en dos mínimos: el precio marca un mínimo más bajo y el oscilador uno más alto. Bajista, en dos máximos: el precio marca un máximo más alto y el oscilador uno más bajo. <code>rsidiv</code> es el RSI con una línea entre sus dos giros en cada divergencia y una marca en el segundo; <code>hidden: 1</code> añade las ocultas (el precio aguanta, el RSI no), en discontinua. Un giro destaca sobre las <code>left</code> barras anteriores y las <code>right</code> posteriores, así que una divergencia se conoce con <code>right</code> barras de retraso y, una vez cerrada la barra que la confirma, no cambia (mientras esa barra se forma puede aparecer y desaparecer); los dos giros están separados entre <code>minBars</code> y <code>maxBars</code>. <code>detectDivergences(bars, line, options)</code> lee cualquier línea con un valor por barra (null donde no lo hay) y no necesita gráfico.
+</p>
+<pre><code>{`chart.addIndicator('rsidiv', {}, 'bottom')                    // el RSI, con sus divergencias marcadas
+chart.addIndicator('rsidiv', { hidden: 1 }, 'bottom')         // también las ocultas, en discontinua
+chart.addIndicator('rsidiv', { left: 3, right: 3 }, 'bottom') // giros más cercanos: se conocen con 3 barras de retraso, y hay más
+
+import { detectDivergences } from '@tradecanvas/chart'
+
+detectDivergences(bars, macdHistogram, { left: 5, right: 5, minBars: 5, maxBars: 60, hidden: true })
+// [{ kind: 'bullish' | 'bearish', hidden, from, to, confirmed, valueFrom, valueTo, priceFrom, priceTo }]`}</code></pre>
+
+<h2 id="session-volume-profile">Perfil de volumen por sesión</h2>
+<p>
+  <code>svp</code> dibuja el volumen por precio de cada día de negociación: el rango del día dividido en <code>rows</code> filas, el volumen de cada barra repartido entre las filas que cubre su rango, dibujadas como filas que crecen hacia la derecha desde la primera barra del día. Encima, el punto de control del día (la fila con más volumen) y su área de valor (las filas a su alrededor que reúnen el <code>valueArea</code> por ciento del volumen del día, 70 por defecto, sumadas de dos en dos por el lado más pesado, como lo cuenta el Market Profile) son líneas a lo largo del día. Un día empieza a medianoche en el reloj de la bolsa (<code>setExchangeTimeZone</code>), como el de Session VWAP. El <code>poc</code>, <code>vah</code> y <code>val</code> de cada barra son los de su día entero, incluidas las barras posteriores: en un día pasado, una barra de la mañana lleva el perfil del cierre del día, y en el día que aún cotiza se mueven con él. Sirven para leer un día, no como señal ni para un backtest en esa barra. <code>volumeProfile</code> es un perfil de todas las barras cargadas; <code>sessionVolumeProfiles</code> da las filas de cada día sin gráfico.
+</p>
+<pre><code>{`chart.addIndicator('svp')                           // un perfil por día, con su POC y su área de valor
+chart.addIndicator('svp', { rows: 40, valueArea: 68 }) // filas más finas, un área de valor más estrecha
+
+import { sessionVolumeProfiles } from '@tradecanvas/chart'
+
+sessionVolumeProfiles(bars, { rows: 24, valueArea: 70, timeZone: 'America/New_York' })
+// [{ start, end, time, low, high, rowHeight, volumes, total, poc, valueAreaLow, valueAreaHigh, valueAreaRows }]`}</code></pre>
+
+<h2 id="order-blocks">Order blocks</h2>
+<p>
+  Un máximo de swing es una barra más alta que las <code>length</code> anteriores y no más baja que las <code>length</code> siguientes (5), así que se conoce con <code>length</code> barras de retraso; un mínimo de swing igual hacia abajo. Cuando un cierre supera el último máximo de swing aún no roto, la barra más baja entre el swing y ese cierre es un order block alcista, de su máximo a su mínimo; un cierre bajo el último mínimo de swing hace de la barra más alta entre ambos uno bajista. Cada swing da un solo bloque. <code>orderblocks</code> dibuja cada uno como una caja, en los colores de los fair value gaps, hasta el borde derecho mientras sigue en pie; un cierre que lo atraviesa (bajo un bloque alcista, sobre uno bajista) lo rompe y lo quita, salvo que <code>showBroken</code> sea 1. Solo se dibujan los <code>count</code> bloques en pie más recientes de cada lado (5; 0 para todos): los antiguos y lejanos solo estorban. <code>detectOrderBlocks</code> los da todos sin gráfico, con la barra que rompió cada uno.
+</p>
+<pre><code>{`chart.addIndicator('orderblocks')                    // los bloques en pie
+chart.addIndicator('orderblocks', { count: 3 })        // los tres últimos de cada lado
+chart.addIndicator('orderblocks', { length: 3 })       // swings más cortos: más bloques, conocidos antes
+chart.addIndicator('orderblocks', { showBroken: 1 })   // también los rotos, más tenues, hasta la barra que los rompió
+
+import { detectOrderBlocks } from '@tradecanvas/chart'
+
+detectOrderBlocks(bars, { length: 5 })
+// [{ kind: 'bullish' | 'bearish', index, formed, top, bottom, swing, brokenAt }]`}</code></pre>
 
 <h2>Tu propio indicador</h2>
 <p>

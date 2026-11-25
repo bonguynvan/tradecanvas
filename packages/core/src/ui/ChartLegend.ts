@@ -264,6 +264,42 @@ export class ChartLegend {
     return this.drawnWidth;
   }
 
+  /**
+   * Runs `draw` (a frame for a picture, at another size or in another font)
+   * and puts back the size the legend had on the page, and the bar it read
+   * there. What stacks under it hears nothing meanwhile: it is not told of
+   * a height the page never showed.
+   */
+  keepSize<T>(draw: () => T): T {
+    const { drawnHeight, drawnWidth, reportedHeight, resizeListener, hoverBar, hoverPrev } = this;
+    this.resizeListener = null;
+    try {
+      return draw();
+    } finally {
+      this.drawnHeight = drawnHeight;
+      this.drawnWidth = drawnWidth;
+      this.reportedHeight = reportedHeight;
+      this.resizeListener = resizeListener;
+      this.hoverBar = hoverBar;
+      this.hoverPrev = hoverPrev;
+    }
+  }
+
+  /**
+   * Works out how tall and wide the legend is for `data` without drawing
+   * it, on the context it will be drawn on. A chart on a page knows them
+   * from the frame before; a frame with none before it (a chart drawn with
+   * no page) asks first, so its drawings' labels keep clear of the legend.
+   */
+  measure(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, data: DataSeries): void {
+    ctx.save();
+    try {
+      this.render(measuringOnly(ctx), viewport, theme, data);
+    } finally {
+      ctx.restore();
+    }
+  }
+
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, data: DataSeries): void {
     // Hidden, it takes no height: a host stacking rows under it hears so, as when it is drawn shorter.
     if (!this.config.visible) return this.reportResize();
@@ -370,6 +406,21 @@ export class ChartLegend {
     ctx.fillRect(left - GROUND_PAD_X, y - GROUND_PAD_Y, width + 2 * GROUND_PAD_X, fontSize + this.lineGap);
     ctx.restore();
   }
+}
+
+/** What a context still does when it only measures: it keeps its state, and says how wide a text is. */
+const MEASURING_CALLS: ReadonlySet<string | symbol> = new Set(['save', 'restore', 'measureText']);
+
+/** `ctx` for measuring only: text is as wide on it as on `ctx`, in the font set, and nothing is painted. */
+function measuringOnly(ctx: CanvasRenderingContext2D): CanvasRenderingContext2D {
+  return new Proxy(ctx, {
+    get: (target, prop) => {
+      const value: unknown = Reflect.get(target, prop, target);
+      if (typeof value !== 'function') return value;
+      return MEASURING_CALLS.has(prop) ? value.bind(target) : () => undefined;
+    },
+    set: (target, prop, value) => Reflect.set(target, prop, value, target),
+  });
 }
 
 /** One item on the legend's top line: a label (O, H…) and its value, with their widths. */
