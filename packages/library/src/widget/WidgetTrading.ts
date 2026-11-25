@@ -192,7 +192,7 @@ export class WidgetTrading {
 
   /** Redraw the account panel once a frame at most (ticks, fills and order changes come in bursts). */
   refreshAccountSoon(): void {
-    if (this.accountFrame || (!this.accountPanel && !this.quoteButtons)) return;
+    if (this.accountFrame || (!this.accountPanel && !this.quoteButtons && !this.orderTicket?.isOpen())) return;
     this.accountFrame = requestAnimationFrame(() => {
       this.accountFrame = 0;
       if (!this.host.destroyed) this.refreshAccount();
@@ -201,6 +201,8 @@ export class WidgetTrading {
 
   refreshAccount(): void {
     this.refreshQuote();
+    // An account that moved with the price where it was (a fill, a cancel) is still news to the ticket.
+    this.orderTicket?.refreshAccount();
     if (!this.accountPanel) return;
     const data = this.host.chart.getData();
     const price = data.length > 0 ? data[data.length - 1].close : null;

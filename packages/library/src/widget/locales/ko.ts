@@ -598,6 +598,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'ticket.tif.fok': 'FOK',
   'account.oco': 'OCO',
   'ticket.value': '금액',
+  'ticket.available': '주문 가능',
   'ticket.risk': '위험',
   'ticket.reward': '보상',
   'ticket.rewardRisk': '보상 대비 위험',

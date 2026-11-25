@@ -604,6 +604,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'ticket.tif.fok': 'FOK',
   'account.oco': 'OCO',
   'ticket.value': 'Verdi',
+  'ticket.available': 'Tilgjengelig',
   'ticket.risk': 'Risiko',
   'ticket.reward': 'Gevinst',
   'ticket.rewardRisk': 'Gevinst mot risiko',

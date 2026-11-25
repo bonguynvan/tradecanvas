@@ -598,6 +598,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'ticket.tif.fok': 'FOK',
   'account.oco': 'OCO',
   'ticket.value': 'Érték',
+  'ticket.available': 'Elérhető',
   'ticket.risk': 'Kockázat',
   'ticket.reward': 'Nyereség',
   'ticket.rewardRisk': 'Nyereség és kockázat aránya',

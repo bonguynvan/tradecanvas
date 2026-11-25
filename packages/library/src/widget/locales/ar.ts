@@ -604,6 +604,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'ticket.tif.fok': 'FOK',
   'account.oco': 'OCO',
   'ticket.value': 'القيمة',
+  'ticket.available': 'المتاح',
   'ticket.risk': 'المخاطرة',
   'ticket.reward': 'العائد',
   'ticket.rewardRisk': 'العائد إلى المخاطرة',

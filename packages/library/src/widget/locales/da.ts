@@ -604,6 +604,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'ticket.tif.fok': 'FOK',
   'account.oco': 'OCO',
   'ticket.value': 'Værdi',
+  'ticket.available': 'Til rådighed',
   'ticket.risk': 'Risiko',
   'ticket.reward': 'Gevinst',
   'ticket.rewardRisk': 'Gevinst mod risiko',

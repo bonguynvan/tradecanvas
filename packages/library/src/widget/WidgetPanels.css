@@ -608,6 +608,32 @@
  * line, its field the column's width under them, as the other fields are. Beside the field, the name's
  * column was a few characters wide, and the money at risk broke in the middle of its figure.
  */
+/* The day's limits share the row in three equal parts, a name over its price: side by side they wrapped at this width. */
+.tcw-ticket-docked .tcw-ticket-limits {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tcw-root .tcw-ticket-docked .tcw-ticket-limit {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  height: auto;
+  min-height: var(--tcw-control-h);
+  padding-block: var(--tcw-space-1);
+  padding-inline: var(--tcw-space-2);
+  min-width: 0;
+}
+
+/* A long name (Obergrenze) is cut with an ellipsis: it does not run over the next limit. */
+.tcw-ticket-docked .tcw-ticket-limit > span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .tcw-ticket-docked .tcw-ticket-optional {
   grid-template-columns: auto minmax(0, 1fr);
 }

@@ -669,6 +669,19 @@ describe('ChartWidget: the ticket says what its button does', () => {
     const rows = [...host.querySelectorAll<HTMLElement>('.tcw-ticket-summary-row')].map((row) => row.dataset.row);
     expect(rows.at(-1)).toBe('value');
   });
+
+  it('says what the account has free, and again when the account moves with the price where it was', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true });
+    let free = 500;
+    (FakeChart.last as unknown as { getAccount: () => unknown }).getAccount = () => ({ balance: 500, equity: 500, unrealisedPnl: 0, freeMargin: free, currency: 'USD' });
+    trading().openOrderTicket();
+    const available = () => host.querySelector('.tcw-ticket-summary-row[data-row="available"] .tcw-ticket-figure')?.textContent;
+    expect(available()).toMatch(/^500(\.00)? USD$/);
+    // A fill took margin; the last price did not move.
+    free = 120;
+    (trading() as unknown as { refreshAccount(): void }).refreshAccount();
+    expect(available()).toMatch(/^120(\.00)? USD$/);
+  });
 });
 
 describe('ChartWidget: the quantity on the ticket’s button', () => {

@@ -205,6 +205,7 @@ The `3.0` branch. These move under the version's own heading when it is released
 
 ### Trading
 
+- **The order ticket says what the account has free, and in what currency** (`@tradecanvas/chart`): over the order's value the ticket's receipt has a line, Available, with the account's free margin (`AccountSummary.freeMargin`), read again each time the order or the account changes, and followed by the account's `currency` where the execution adapter names one (the order's value is in the market's money, and has none). An account that counts no free margin, and a chart with no account, show neither. In the 30 languages. In the dock, the day's ceiling, reference and floor share their row in three equal parts, a name over its price: side by side they wrapped at the dock's width, the floor alone on a second line.
 - **The order ticket beside the chart.** The widget's ticket is a page of the dock (`ticketPlace: 'dock'`, the
   default; `openPanel('orderTicket')`, its button on the rail): it hides no price, traps no key, is not lost to a
   press on the chart, and stays for the next order once one is sent, on the same side, kind, quantity and

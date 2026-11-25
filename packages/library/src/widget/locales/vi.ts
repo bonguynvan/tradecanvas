@@ -604,6 +604,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'ticket.tif.fok': 'FOK',
   'account.oco': 'OCO',
   'ticket.value': 'Giá trị',
+  'ticket.available': 'Khả dụng',
   'ticket.risk': 'Rủi ro',
   'ticket.reward': 'Lời',
   'ticket.rewardRisk': 'Tỷ lệ lời/rủi ro',

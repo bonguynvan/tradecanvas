@@ -604,6 +604,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'ticket.tif.fok': 'FOK',
   'account.oco': 'OCO',
   'ticket.value': 'Nilai',
+  'ticket.available': 'Tersedia',
   'ticket.risk': 'Risiko',
   'ticket.reward': 'Pulangan',
   'ticket.rewardRisk': 'Pulangan kepada risiko',

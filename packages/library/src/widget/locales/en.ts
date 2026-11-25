@@ -605,6 +605,7 @@ export const EN_MESSAGES = {
   'ticket.tif.fok': 'FOK',
   'account.oco': 'OCO',
   'ticket.value': 'Value',
+  'ticket.available': 'Available',
   'ticket.risk': 'Risk',
   'ticket.reward': 'Reward',
   'ticket.rewardRisk': 'Reward to risk',
