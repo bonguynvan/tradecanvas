@@ -2,11 +2,11 @@
 
 # Built-in indicators
 
-137 indicators. Add one with `chart.addIndicator(id, params)`; params you leave out take the defaults below.
+138 indicators. Add one with `chart.addIndicator(id, params)`; params you leave out take the defaults below.
 An indicator's values at bar `i` are `chart.getIndicatorOutput(instanceId).series[i]`, an object keyed by the line keys listed here.
 "Source ✓" means it has a `source` input: a price (`close`, `open`, `high`, `low`, `hl2`, `hlc3`, `ohlc4`, `hlcc4`) or another indicator's line (`indicatorSource(instanceId, key)`).
 
-## On the price pane (50)
+## On the price pane (51)
 
 Drawn over the candles, on the price scale.
 
@@ -62,6 +62,7 @@ Drawn over the candles, on the price scale.
 | `candlepatterns` | Candlestick Patterns | trendPeriod: 10, reversal: 1, continuation: 1, indecision: 0 | bull: Bullish, bear: Bearish, neutral: Indecision | — | |
 | `fvg` | Fair Value Gaps | minPercent: 0, showFilled: 0 | bull: Bullish top, bullLow: Bullish bottom, bear: Bearish top, bearLow: Bearish bottom | — | |
 | `svp` | Session Volume Profile | rows: 24, valueArea: 70 | poc: POC, vah: VAH, val: VAL | — | |
+| `orderblocks` | Order Blocks | length: 5, showBroken: 0 | bull: Bullish top, bullLow: Bullish bottom, bear: Bearish top, bearLow: Bearish bottom | — | |
 
 ## In a pane of their own (87)
 

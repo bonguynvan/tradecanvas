@@ -172,6 +172,8 @@ export { detectDivergences } from '@tradecanvas/core';
 export type { Divergence, DivergenceOptions } from '@tradecanvas/core';
 export { sessionVolumeProfiles } from '@tradecanvas/core';
 export type { SessionVolumeProfile, SessionVolumeProfileOptions } from '@tradecanvas/core';
+export { detectOrderBlocks } from '@tradecanvas/core';
+export type { OrderBlock, OrderBlockOptions } from '@tradecanvas/core';
 
 // Re-export themes and defaults
 export {

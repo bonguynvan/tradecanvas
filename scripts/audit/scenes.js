@@ -1184,6 +1184,18 @@ const SCENES = {
     return s;
   },
 
+  /** Order blocks, the broken ones kept: a box from each block's bar, the standing ones to the right edge. */
+  async orderBlocks() {
+    const s = await widget();
+    const id = s.chart.addIndicator('orderblocks', { showBroken: 1 });
+    const checks = () => {
+      const blocks = s.chart.getIndicatorOutput(id)?.meta?.blocks ?? [];
+      const kinds = new Set(blocks.map((b) => b.kind));
+      return kinds.size === 2 ? [] : ['the scene has not both kinds of block to draw'];
+    };
+    return { ...s, checks };
+  },
+
   /** A volume profile a day: each day's rows from its first bar, its POC and value area across it. */
   async sessionProfile() {
     const s = await widget({ timeframe: '15m' });

@@ -4,7 +4,7 @@ const ko: SiteMessages = {
   meta: {
     title: 'TradeCanvas · 웹을 위한 캔버스 트레이딩 차트',
     description:
-      'TradeCanvas는 Canvas 2D 또는 WebGL로 그리는 웹용 트레이딩 차트 라이브러리입니다. 18가지 차트 유형, 137개 지표, 76개 그리기 도구, 실시간 거래소 피드, 차트 위 주문, 리플레이와 백테스트를 30개 언어로 제공합니다. 의존성 없음, MIT.',
+      'TradeCanvas는 Canvas 2D 또는 WebGL로 그리는 웹용 트레이딩 차트 라이브러리입니다. 18가지 차트 유형, 138개 지표, 76개 그리기 도구, 실시간 거래소 피드, 차트 위 주문, 리플레이와 백테스트를 30개 언어로 제공합니다. 의존성 없음, MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const ko: SiteMessages = {
     release: 'WebGL 렌더러, 30개 언어',
     title: '트레이딩 앱을 위한 차트 엔진.',
     ledeHtml:
-      '캔들스틱부터 렌코까지, 137개 지표, 76개 그리기 도구, 실시간 거래소 피드와 차트 위 주문. 의존성 없이 Canvas 2D 또는 WebGL로 그립니다. 완성된 <code>ChartWidget</code>을 바로 넣거나, 헤드리스 <code>Chart</code> 위에 나만의 UI를 만드세요.',
+      '캔들스틱부터 렌코까지, 138개 지표, 76개 그리기 도구, 실시간 거래소 피드와 차트 위 주문. 의존성 없이 Canvas 2D 또는 WebGL로 그립니다. 완성된 <code>ChartWidget</code>을 바로 넣거나, 헤드리스 <code>Chart</code> 위에 나만의 UI를 만드세요.',
     getStarted: '시작하기',
     browseExamples: '예제 둘러보기',
     specsLabel: '주요 수치',
@@ -71,7 +71,7 @@ const ko: SiteMessages = {
           title: '시장 읽기',
           text: '봉 위에 밴드, 이동평균, 오실레이터를, 그 위에 피보나치 레벨과 추세선을 올립니다. 각각 고유한 설정과 알림이 있습니다.',
           points: [
-            '137개 지표, 지표 위에 지표를 얹을 수 있음 (예: RSI의 이동평균)',
+            '138개 지표, 지표 위에 지표를 얹을 수 있음 (예: RSI의 이동평균)',
             '자석, 그룹, 실행 취소를 갖춘 76개 그리기 도구',
             '가격, 선, 지표 교차에 대한 알림',
           ],
@@ -218,11 +218,11 @@ const ko: SiteMessages = {
     },
     indicators: {
       title: '지표',
-      stat: '내장 137개',
+      stat: '내장 138개',
       blurb:
         '오버레이와 보조 차트 지표를 자체 계산하며, 수학 라이브러리 의존성이 없습니다. 실시간 틱에서는 형성 중인 봉만 다시 계산합니다 — 10만 봉, 지표 4개에서 틱당 0.001 ms.',
       tryThis: [
-        '지표 버튼(또는 Ctrl+K)을 누르고 137개 중 원하는 지표를 검색하세요',
+        '지표 버튼(또는 Ctrl+K)을 누르고 138개 중 원하는 지표를 검색하세요',
         '범례에서 지표 이름을 클릭하세요: 입력값, 색상, 레벨',
         '이동평균의 소스를 다른 지표의 선으로 설정하세요',
         '패널 사이의 선을 드래그해 크기를 조절하세요. 패널 오른쪽 위 버튼으로 이동, 접기, 최대화를 할 수 있습니다',
@@ -732,7 +732,7 @@ const ko: SiteMessages = {
         { name: '서드파티 런타임 의존성 없음', detail: '따로 설치하거나 점검할 것이 없음' },
       ],
       indicators: [
-        { name: '내장 지표 137개', detail: '여섯 종류의 피벗 포인트, MA Cross, 다른 종목과의 상관관계' },
+        { name: '내장 지표 138개', detail: '여섯 종류의 피벗 포인트, MA Cross, 다른 종목과의 상관관계' },
         { name: '가격 소스', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: '지표 위의 지표', detail: '예: RSI의 이동평균, 틱마다 갱신' },
         { name: '한 패널에 여러 지표, 패널 간 이동', detail: 'moveIndicatorToPane' },

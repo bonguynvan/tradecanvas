@@ -2,7 +2,7 @@
 import type { NumberParam } from './indicator.js';
 
 /**
- * The 137 built-in indicators, by id: the inputs
+ * The 138 built-in indicators, by id: the inputs
  * `chart.addIndicator(id, params)` takes, each optional (its default in its
  * note), and the keys of the lines it draws, as
  * `chart.getIndicatorOutput(instanceId)` and `indicatorSource(instanceId, key)`
@@ -1367,5 +1367,15 @@ export interface BuiltInIndicators {
       valueArea?: NumberParam;
     };
     lines: 'poc' | 'vah' | 'val';
+  };
+  /** Order Blocks, on the price pane. Lines: `bull` (Bullish top), `bullLow` (Bullish bottom), `bear` (Bearish top), `bearLow` (Bearish bottom). */
+  orderblocks: {
+    params: {
+      /** A whole number, at least 1, at most 50. Default 5. */
+      length?: NumberParam;
+      /** A whole number, at least 0, at most 1. Default 0. */
+      showBroken?: NumberParam;
+    };
+    lines: 'bull' | 'bullLow' | 'bear' | 'bearLow';
   };
 }

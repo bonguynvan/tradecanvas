@@ -228,6 +228,19 @@ import { sessionVolumeProfiles } from '@tradecanvas/chart'
 sessionVolumeProfiles(bars, { rows: 24, valueArea: 70, timeZone: 'America/New_York' })
 // [{ start, end, time, low, high, rowHeight, volumes, total, poc, valueAreaLow, valueAreaHigh, valueAreaRows }]`}</code></pre>
 
+<h2 id="order-blocks">订单块</h2>
+<p>
+  摆动高点是指比之前 <code>length</code> 根K线都高、且不低于之后 <code>length</code> 根K线的K线（默认 5），因此要晚 <code>length</code> 根K线才能确认；摆动低点同理向下。当收盘价突破最近一个尚未被突破的摆动高点时，摆动点与该收盘之间最低的K线即为看涨订单块，范围为其最高价到最低价；收盘跌破最近的摆动低点时，其间最高的K线即为看跌订单块。每个摆动点只生成一个订单块。<code>orderblocks</code> 以与公允价值缺口相同的颜色把每个订单块画成方框，订单块有效时延伸到右边缘；收盘价穿过它（看涨块下方、看跌块上方）即为突破并移除，除非 <code>showBroken</code> 为 1。<code>detectOrderBlocks</code> 无需图表即可给出全部订单块以及突破每个订单块的K线。
+</p>
+<pre><code>{`chart.addIndicator('orderblocks')                    // 仍有效的订单块
+chart.addIndicator('orderblocks', { length: 3 })       // 更短的摆动：更多订单块，更早确认
+chart.addIndicator('orderblocks', { showBroken: 1 })   // 已突破的也显示，更淡，画到突破它的K线
+
+import { detectOrderBlocks } from '@tradecanvas/chart'
+
+detectOrderBlocks(bars, { length: 5 })
+// [{ kind: 'bullish' | 'bearish', index, formed, top, bottom, swing, brokenAt }]`}</code></pre>
+
 <h2>自定义指标</h2>
 <p>
   简便的方式是 <code>defineIndicator</code>：给出它的输入，以及一个根据K线返回其线条的函数，

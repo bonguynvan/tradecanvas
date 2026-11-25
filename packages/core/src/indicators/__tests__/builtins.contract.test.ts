@@ -33,7 +33,7 @@ const NOT_DRAWN: Record<string, readonly string[]> = {
 };
 
 /** Parameters that give these a value within 400 hourly bars. */
-const PARAMS: Record<string, Record<string, number>> = { mtfma: { period: 3 }, fvg: { showFilled: 1 } };
+const PARAMS: Record<string, Record<string, number>> = { mtfma: { period: 3 }, fvg: { showFilled: 1 }, orderblocks: { length: 2, showBroken: 1 } };
 
 /** Not drawn bar by bar: a profile over price. */
 const NOT_PER_BAR = new Set(['volumeProfile']);

@@ -234,6 +234,19 @@ import { sessionVolumeProfiles } from '@tradecanvas/chart'
 sessionVolumeProfiles(bars, { rows: 24, valueArea: 70, timeZone: 'America/New_York' })
 // [{ start, end, time, low, high, rowHeight, volumes, total, poc, valueAreaLow, valueAreaHigh, valueAreaRows }]`}</code></pre>
 
+<h2 id="order-blocks">오더 블록</h2>
+<p>
+  스윙 고점은 앞의 <code>length</code>개 봉보다 높고 뒤의 <code>length</code>개 봉보다 낮지 않은 봉입니다(기본 5). 그래서 <code>length</code>개 봉 늦게 확정됩니다. 스윙 저점은 아래쪽으로 같습니다. 종가가 아직 돌파되지 않은 최근 스윙 고점을 넘으면, 스윙과 그 종가 사이에서 가장 낮은 봉이 강세 오더 블록이 되며 범위는 그 봉의 고가에서 저가입니다. 종가가 최근 스윙 저점 아래로 내려가면 그 사이에서 가장 높은 봉이 약세 오더 블록이 됩니다. 스윙 하나에서 블록은 하나만 만들어집니다. <code>orderblocks</code>는 블록마다 페어 밸류 갭과 같은 색의 상자를 그리고, 블록이 유효한 동안 오른쪽 끝까지 늘입니다. 종가가 블록을 뚫으면(강세 블록은 아래로, 약세 블록은 위로) 무너진 것으로 보고 지우며, <code>showBroken</code>이 1이면 남겨 둡니다. <code>detectOrderBlocks</code>는 차트 없이 전부를, 각각을 무너뜨린 봉과 함께 돌려줍니다.
+</p>
+<pre><code>{`chart.addIndicator('orderblocks')                    // 유효한 블록
+chart.addIndicator('orderblocks', { length: 3 })       // 짧은 스윙: 블록이 더 많고 더 빨리 확정
+chart.addIndicator('orderblocks', { showBroken: 1 })   // 무너진 블록도, 흐리게, 무너뜨린 봉까지
+
+import { detectOrderBlocks } from '@tradecanvas/chart'
+
+detectOrderBlocks(bars, { length: 5 })
+// [{ kind: 'bullish' | 'bearish', index, formed, top, bottom, swing, brokenAt }]`}</code></pre>
+
 <h2>나만의 지표</h2>
 <p>
   짧은 방법은 <code>defineIndicator</code>입니다: 입력값, 그리고 봉에서 지표의 선을 돌려주는 함수 하나이며,

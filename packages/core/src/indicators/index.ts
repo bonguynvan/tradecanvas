@@ -148,3 +148,5 @@ export { detectDivergences } from './panel/detectDivergences.js';
 export type { Divergence, DivergenceOptions } from './panel/detectDivergences.js';
 export { sessionVolumeProfiles } from './overlay/sessionVolumeProfiles.js';
 export type { SessionVolumeProfile, SessionVolumeProfileOptions } from './overlay/sessionVolumeProfiles.js';
+export { detectOrderBlocks } from './overlay/detectOrderBlocks.js';
+export type { OrderBlock, OrderBlockOptions } from './overlay/detectOrderBlocks.js';

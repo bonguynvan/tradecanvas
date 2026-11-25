@@ -28,7 +28,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <b>Español</b>
 </p>
 
-**TradeCanvas es la librería de gráficos de código abierto para apps de trading** ([tradecanvas.dev](https://tradecanvas.dev/es/)), con licencia MIT. De velas japonesas a Renko, 137 indicadores, 76 herramientas de dibujo, datos en vivo de exchanges y órdenes sobre el gráfico, dibujado con Canvas 2D o WebGL y sin dependencias de terceros. Usa el `ChartWidget` completo o construye tu propia interfaz sobre el `Chart` headless, en TypeScript, React, Vue o Svelte.
+**TradeCanvas es la librería de gráficos de código abierto para apps de trading** ([tradecanvas.dev](https://tradecanvas.dev/es/)), con licencia MIT. De velas japonesas a Renko, 138 indicadores, 76 herramientas de dibujo, datos en vivo de exchanges y órdenes sobre el gráfico, dibujado con Canvas 2D o WebGL y sin dependencias de terceros. Usa el `ChartWidget` completo o construye tu propia interfaz sobre el `Chart` headless, en TypeScript, React, Vue o Svelte.
 
 Es un motor de gráficos que es tuyo: licencia MIT, se instala desde npm y se sirve con tu app, con tus propios datos y bajo tu propia marca. Sin logo en el gráfico, sin nada que solicitar, sin una plataforma entre tú y tus usuarios. ¿Vienes de la charting library de TradingView o de Lightweight Charts? Conserva tu datafeed: [pasar desde TradingView](https://tradecanvas.dev/es/docs/from-tradingview/).
 
@@ -38,7 +38,7 @@ Es un motor de gráficos que es tuyo: licencia MIT, se instala desde npm y se si
 
 ## Lo más destacado
 
-- **25 tipos de gráfico, 137 indicadores, 76 herramientas de dibujo**, indicadores sobre indicadores, alertas en líneas, deshacer y rehacer.
+- **25 tipos de gráfico, 138 indicadores, 76 herramientas de dibujo**, indicadores sobre indicadores, alertas en líneas, deshacer y rehacer.
 - **Trading en el gráfico**: posiciones con P&L en vivo, órdenes y stops que arrastras, un bróker simulado o el tuyo.
 - **Datos en vivo** de Binance, Bybit, Coinbase y Kraken, o tu propio feed en unas veinte líneas.
 - **Rápido**: un millón de barras desplazadas a 60 fps con WebGL; un tick en vivo en un microsegundo, más o menos; diez minutos de 30.000 operaciones por segundo sobre un millón de barras sin que crezca la memoria ([prueba](benchmarks/2026-11-03.md)).

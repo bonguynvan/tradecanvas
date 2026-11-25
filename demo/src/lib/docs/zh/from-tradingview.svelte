@@ -124,7 +124,7 @@ new ChartWidget(el, { feed, symbol: 'AAPL', timeframe: '1d' })`}</code></pre>
   </li>
   <li>
     为 <code>custom_indicators_getter</code> 编写的<strong>自定义指标</strong>需要改写为
-    <a href={href('/docs/plugins')}>指标插件</a>，除非 137 个内置指标中已有功能相同的。
+    <a href={href('/docs/plugins')}>指标插件</a>，除非 138 个内置指标中已有功能相同的。
   </li>
   <li>
     <strong>部分画线工具和 featureset</strong> 没有对应项。<code>migration_lookup</code> 会说明是哪些，并给出最接近的工具。
