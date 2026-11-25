@@ -45,7 +45,7 @@ import type {
   ExecutionConfig,
   CrosshairCursor,
 } from '@tradecanvas/commons';
-import { isValidTimeZone, sessionMinute, symbolTimeZone, LayerType, setLocale as setGlobalLocale, computePriceLimits, createMarketTheme, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
+import { isValidTimeZone, sessionMinute, symbolTimeZone, tradingDayStart, LayerType, setLocale as setGlobalLocale, computePriceLimits, createMarketTheme, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import { CHART_SPACING } from '@tradecanvas/commons';
 import type { BarLayout, ChartDensity, ChartImageOptions, ChartPdfOptions, ChartPrintOptions, ChartSpacing, ChartTypeOptions, DataUpdatePayload, FontConfig, IndicatorId, IndicatorParamsFor, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ResolvedLayout, ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorIntervals, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
@@ -5160,23 +5160,29 @@ export class Chart {
 
   /**
    * The zone the indicators, the prior-day lines, the market profile and the
-   * bars built from trades count their days in. Held through a switch, the
+   * bars built from trades count their days in, and the minute the trading
+   * day starts at for the first three (`tradingDayStart` of the symbol's
+   * sessions; the bars built from trades keep the zone's midnight). Held through a switch, the
    * next symbol's trades go on building the day its history ends on when it
    * trades on the same exchange, rather than starting UTC's day beside it.
    */
   private applyStudyZone(zone: string | null): void {
     this.studyZone = zone;
     this.streamManager?.setTimeZone(zone);
+    // A session that runs past midnight (CME's 17:00 to 16:00) starts the trading day at its open.
+    const dayStart = tradingDayStart(this.symbolInfo?.sessions);
     this.periodLevels.setExchangeTimeZone(zone);
+    this.periodLevels.setDayStart(dayStart);
     this.marketProfile.setExchangeTimeZone(zone);
+    this.marketProfile.setDayStart(dayStart);
     const bars = this.series.bars();
     // With no bars yet, the data that comes computes them. Otherwise only
     // the indicators that count days in the zone, before the next read, not
     // now: the bars the symbol's hours filter again follow in setSymbolInfo,
     // and computing them computes everything once.
-    if (this.indicatorEngine.setExchangeTimeZone(zone, bars.length > 0 ? bars : undefined) && bars.length > 0) {
-      this.announceIndicatorUpdate(0);
-    }
+    const zoneMoved = this.indicatorEngine.setExchangeTimeZone(zone, bars.length > 0 ? bars : undefined);
+    const startMoved = this.indicatorEngine.setSessionStart(dayStart, bars.length > 0 ? bars : undefined);
+    if ((zoneMoved || startMoved) && bars.length > 0) this.announceIndicatorUpdate(0);
   }
 
   /**

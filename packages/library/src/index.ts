@@ -186,6 +186,7 @@ export {
 
 // Re-export data utilities
 export { normalizeBarTime, normalizeBar, barsAreDaily, barTimeUnit, MS_TIME_THRESHOLD, barDelta, buyVolumeOf } from '@tradecanvas/commons';
+export { tradingDayStart } from '@tradecanvas/commons';
 export type { BarTimeUnit } from '@tradecanvas/commons';
 
 // The footprint chart's data: rows from trades, a bar's sums, and where one side outdid the other

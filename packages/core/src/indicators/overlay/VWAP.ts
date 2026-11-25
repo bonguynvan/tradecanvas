@@ -36,7 +36,7 @@ export function readAnchor(config: IndicatorConfig): VWAPAnchor {
 /** The key of each bar's period for `config`'s anchor, or null for `'all'`. */
 function keyerFor(data: DataSeries, config: IndicatorConfig): PeriodKeyer | null {
   const anchor = readAnchor(config);
-  return anchor === 'all' ? null : periodKeyer(data, anchor, config.exchangeTimeZone);
+  return anchor === 'all' ? null : periodKeyer(data, anchor, config.exchangeTimeZone, config.sessionStart);
 }
 
 /**

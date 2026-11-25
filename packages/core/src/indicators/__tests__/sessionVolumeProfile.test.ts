@@ -107,3 +107,15 @@ describe('the Session Volume Profile indicator', () => {
     expect((out.meta!.profiles as unknown[])[0]).toBe(before);
   });
 });
+
+describe('a session volume profile whose trading day starts in the evening', () => {
+  it('cuts the days at the session’s open', () => {
+    // 15:00 and 17:00 in Chicago (UTC-6 in January), then 02:00 the next morning.
+    const t = (day: number, hour: number) => Date.UTC(2026, 0, day, hour + 6);
+    const data: OHLCBar[] = [t(5, 15), t(5, 17), t(6, 2)].map((time) => ({ time, open: 1, high: 2, low: 1, close: 2, volume: 1 }));
+    expect(sessionVolumeProfiles(data, { timeZone: 'America/Chicago' }).map((p) => [p.start, p.end])).toEqual([[0, 1], [2, 2]]);
+    expect(sessionVolumeProfiles(data, { timeZone: 'America/Chicago', sessionStart: 17 * 60 }).map((p) => [p.start, p.end])).toEqual([[0, 0], [1, 2]]);
+    const out = new SessionVolumeProfileIndicator().calculate(data, { id: 'svp', params: {}, exchangeTimeZone: 'America/Chicago', sessionStart: 17 * 60 } as never);
+    expect((out.meta!.profiles as { start: number }[]).map((p) => p.start)).toEqual([0, 1]);
+  });
+});

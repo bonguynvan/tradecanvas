@@ -26,6 +26,9 @@ import type { IndicatorWorkerOptions } from './worker/IndicatorWorkerBridge.js';
 import type { ActiveIndicatorInfo, IndicatorInstance } from './indicatorInstance.js';
 
 export type { ActiveIndicatorInfo } from './indicatorInstance.js';
+
+/** Minutes in a day: a trading day's start is a minute after midnight and before the next. */
+const MINUTES_A_DAY = 1440;
 export type { IndicatorWorkerOptions } from './worker/IndicatorWorkerBridge.js';
 
 let nextId = 1;
@@ -60,6 +63,8 @@ export class IndicatorEngine {
   private timeframe: string | null = null;
   /** The exchange's zone, given to every instance as `config.exchangeTimeZone` (null: UTC's days). */
   private exchangeTimeZone: string | null = null;
+  /** When the trading day starts, given to every instance as `config.sessionStart` (null: midnight). */
+  private sessionStart: number | null = null;
   /** Whether the bars drawn carry times of their own: not Renko bricks, Kagi lines and the like. */
   private barsTimed = true;
   /** The full recomputes sent to the indicator worker (`useWorker`), and their replies. */
@@ -113,6 +118,7 @@ export class IndicatorEngine {
     if (options.pane && this.canHost(options.pane)) config.pane = options.pane;
     if (options.scale === 'left' && plugin.descriptor.placement === 'overlay' && !config.pane) config.scale = 'left';
     if (this.exchangeTimeZone) config.exchangeTimeZone = this.exchangeTimeZone;
+    if (this.sessionStart !== null) config.sessionStart = this.sessionStart;
 
     // What the config sets, over the kind's defaults (setStyleDefaults), over the descriptor's look for the theme.
     const defaults = this.styleDefaults.get(id);
@@ -587,11 +593,36 @@ export class IndicatorEngine {
     return true;
   }
 
+  /**
+   * When the trading day starts, in minutes after the exchange's midnight
+   * (`config.sessionStart`): a session that runs past midnight starts it at
+   * its open. Null, 0, or no minute of a day, for midnight (the config then
+   * has none). True when it changed. With `data`, the indicators that count
+   * days (`readsExchangeTimeZone`) and those reading their lines are
+   * computed again before the next read; without, the caller recomputes.
+   */
+  setSessionStart(minute: number | null, data?: DataSeries): boolean {
+    const next = minute !== null && Number.isFinite(minute) && minute > 0 && minute < MINUTES_A_DAY ? Math.round(minute) : null;
+    if (next === this.sessionStart) return false;
+    this.sessionStart = next;
+    for (const { config } of this.instances.values()) {
+      if (next !== null) config.sessionStart = next;
+      else delete config.sessionStart;
+    }
+    if (data) {
+      const full = this.waitingOn(data).full;
+      for (const id of this.zoneDependents()) full.add(id);
+    }
+    return true;
+  }
+
   /** The instances a change of the exchange's zone moves: those that read it, and those that read their lines. */
   private zoneDependents(): Set<string> {
     const out = new Set<string>();
     for (const instance of this.instances.values()) {
-      if (!readsZone(instance.plugin)) continue;
+      // An indicator that starts again each period it is asked for (Volume Delta's `anchor`) reads the day too.
+      const anchored = typeof instance.config.params.anchor === 'string' && instance.config.params.anchor !== 'all';
+      if (!readsZone(instance.plugin) && !anchored) continue;
       out.add(instance.config.instanceId);
       for (const id of this.getDependents(instance.config.instanceId)) out.add(id);
     }

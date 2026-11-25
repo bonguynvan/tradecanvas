@@ -18,6 +18,7 @@ export class PeriodLevelsRenderer {
   private period: LevelPeriod = 'day';
   /** The zone whose midnight starts each day and week (null: UTC's). */
   private exchangeZone: string | null = null;
+  private dayStart: number | null = null;
 
   setVisible(v: boolean): void {
     this.visible = v;
@@ -35,10 +36,14 @@ export class PeriodLevelsRenderer {
   setExchangeTimeZone(zone: string | null): void {
     this.exchangeZone = zone;
   }
+  /** When the trading day starts, minutes after the exchange's midnight; null for midnight. */
+  setDayStart(minute: number | null): void {
+    this.dayStart = minute;
+  }
 
   render(ctx: CanvasRenderingContext2D, data: DataSeries, viewport: ViewportState, theme: Theme): void {
     if (!this.visible || data.length === 0) return;
-    const levels = computePeriodLevels(data, this.period, this.exchangeZone);
+    const levels = computePeriodLevels(data, this.period, this.exchangeZone, this.dayStart);
     if (levels.length === 0) return;
 
     const { chartRect } = viewport;
