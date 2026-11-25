@@ -1,5 +1,11 @@
 # @tradecanvas/mcp
 
+## 3.0.0-beta.1
+
+### Patch Changes
+
+- @tradecanvas/commons@3.0.0-beta.1
+
 ## 3.0.0-beta.0
 
 ### Minor Changes

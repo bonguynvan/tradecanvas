@@ -1,5 +1,23 @@
 # @tradecanvas/chart
 
+## 3.0.0-beta.1
+
+### Minor Changes
+
+- 8591bff: Divergences: `addIndicator('rsidiv')` is the RSI with a line between its two turns wherever the price went on and the RSI did not, and a mark at the second; `hidden: 1` adds the hidden ones. `detectDivergences(bars, line, options)` reads any line with one value a bar.
+- b92ecc2: Order blocks: `addIndicator('orderblocks')` draws the bar the market last turned from before a close broke a swing, as a box to the right edge until a close goes through it; `showBroken: 1` keeps the broken ones, and `count` (5) is how many standing blocks of each side are drawn. `detectOrderBlocks(bars, { length })` gives them with no chart.
+- c192eaa: A volume profile a day: `addIndicator('svp')` draws each trading day's volume by price from the day's first bar, with its point of control and value area as lines. `sessionVolumeProfiles(bars, options)` gives the rows with no chart.
+- b339b84: The order ticket's receipt says what the account has free to pay for the order (Available, the account's `freeMargin`) followed by the account's `currency` where the adapter names one. In the dock, the day's ceiling, reference and floor no longer wrap onto a second line.
+
+### Patch Changes
+
+- 9470add: The tape writes its sizes to the decimals the rows it lists need: a fine print kept and not listed (older than the rows, or under the least size) no longer writes every whole size as "16.00".
+- Updated dependencies [8591bff]
+- Updated dependencies [b92ecc2]
+- Updated dependencies [c192eaa]
+  - @tradecanvas/core@3.0.0-beta.1
+  - @tradecanvas/commons@3.0.0-beta.1
+
 ## 3.0.0-beta.0
 
 ### Major Changes

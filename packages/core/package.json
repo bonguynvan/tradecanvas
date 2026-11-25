@@ -1,6 +1,6 @@
 {
   "name": "@tradecanvas/core",
-  "version": "3.0.0-beta.0",
+  "version": "3.0.0-beta.1",
   "type": "module",
   "description": "The rendering engine of TradeCanvas (@tradecanvas/chart), the open-source chart library for trading apps: viewport, Canvas 2D and WebGL renderers, indicators, drawing tools.",
   "license": "MIT",

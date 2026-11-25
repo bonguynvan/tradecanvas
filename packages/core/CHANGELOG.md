@@ -1,5 +1,17 @@
 # @tradecanvas/core
 
+## 3.0.0-beta.1
+
+### Minor Changes
+
+- 8591bff: Divergences: `addIndicator('rsidiv')` is the RSI with a line between its two turns wherever the price went on and the RSI did not, and a mark at the second; `hidden: 1` adds the hidden ones. `detectDivergences(bars, line, options)` reads any line with one value a bar.
+- b92ecc2: Order blocks: `addIndicator('orderblocks')` draws the bar the market last turned from before a close broke a swing, as a box to the right edge until a close goes through it; `showBroken: 1` keeps the broken ones, and `count` (5) is how many standing blocks of each side are drawn. `detectOrderBlocks(bars, { length })` gives them with no chart.
+- c192eaa: A volume profile a day: `addIndicator('svp')` draws each trading day's volume by price from the day's first bar, with its point of control and value area as lines. `sessionVolumeProfiles(bars, options)` gives the rows with no chart.
+
+### Patch Changes
+
+- @tradecanvas/commons@3.0.0-beta.1
+
 ## 3.0.0-beta.0
 
 ### Major Changes
