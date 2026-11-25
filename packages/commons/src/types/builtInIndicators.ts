@@ -1375,6 +1375,8 @@ export interface BuiltInIndicators {
       length?: NumberParam;
       /** A whole number, at least 0, at most 1. Default 0. */
       showBroken?: NumberParam;
+      /** A whole number, at least 0, at most 100. Default 5. */
+      count?: NumberParam;
     };
     lines: 'bull' | 'bullLow' | 'bear' | 'bearLow';
   };

@@ -243,9 +243,10 @@ sessionVolumeProfiles(bars, { rows: 24, valueArea: 70, timeZone: 'America/New_Yo
 
 <h2 id="order-blocks">Order block</h2>
 <p>
-  Swing high là bar cao hơn <code>length</code> bar trước nó và không thấp hơn <code>length</code> bar sau nó (5), nên được biết trễ <code>length</code> bar; swing low tương tự theo chiều xuống. Khi một giá đóng cửa vượt lên trên swing high gần nhất chưa bị phá, bar thấp nhất nằm giữa swing đó và cây nến đóng cửa ấy là một bullish order block, từ đỉnh đến đáy của nó; giá đóng cửa xuống dưới swing low gần nhất thì bar cao nhất ở giữa là một bearish order block. Mỗi swing tạo một block. <code>orderblocks</code> vẽ mỗi block thành một hộp, cùng màu với fair value gap, kéo tới mép phải khi block còn đứng; một giá đóng cửa xuyên qua nó (dưới bullish block, trên bearish block) phá block và bỏ nó đi, trừ khi <code>showBroken</code> là 1. <code>detectOrderBlocks</code> trả về tất cả mà không cần biểu đồ, kèm bar đã phá từng block.
+  Swing high là bar cao hơn <code>length</code> bar trước nó và không thấp hơn <code>length</code> bar sau nó (5), nên được biết trễ <code>length</code> bar; swing low tương tự theo chiều xuống. Khi một giá đóng cửa vượt lên trên swing high gần nhất chưa bị phá, bar thấp nhất nằm giữa swing đó và cây nến đóng cửa ấy là một bullish order block, từ đỉnh đến đáy của nó; giá đóng cửa xuống dưới swing low gần nhất thì bar cao nhất ở giữa là một bearish order block. Mỗi swing tạo một block. <code>orderblocks</code> vẽ mỗi block thành một hộp, cùng màu với fair value gap, kéo tới mép phải khi block còn đứng; một giá đóng cửa xuyên qua nó (dưới bullish block, trên bearish block) phá block và bỏ nó đi, trừ khi <code>showBroken</code> là 1. Chỉ <code>count</code> block còn đứng gần nhất của mỗi phía được vẽ (5; 0 là tất cả): block cũ ở xa chỉ làm rối. <code>detectOrderBlocks</code> trả về tất cả mà không cần biểu đồ, kèm bar đã phá từng block.
 </p>
 <pre><code>{`chart.addIndicator('orderblocks')                    // các block còn đứng
+chart.addIndicator('orderblocks', { count: 3 })        // ba block gần nhất mỗi phía
 chart.addIndicator('orderblocks', { length: 3 })       // swing ngắn hơn: nhiều block hơn, biết sớm hơn
 chart.addIndicator('orderblocks', { showBroken: 1 })   // cả block đã bị phá, mờ hơn, đến bar đã phá
 

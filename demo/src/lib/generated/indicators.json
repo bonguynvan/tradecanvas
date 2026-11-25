@@ -4893,7 +4893,8 @@
     "category": "patterns",
     "params": {
       "length": 5,
-      "showBroken": 0
+      "showBroken": 0,
+      "count": 5
     },
     "inputs": {
       "length": {
@@ -4906,6 +4907,12 @@
         "kind": "int",
         "min": 0,
         "max": 1,
+        "step": 1
+      },
+      "count": {
+        "kind": "int",
+        "min": 0,
+        "max": 100,
         "step": 1
       }
     },

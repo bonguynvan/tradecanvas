@@ -243,9 +243,10 @@ sessionVolumeProfiles(bars, { rows: 24, valueArea: 70, timeZone: 'America/New_Yo
 
 <h2 id="order-blocks">Order blocks</h2>
 <p>
-  A swing high is a bar higher than the <code>length</code> bars before it and no lower than the <code>length</code> after (5), so it is known <code>length</code> bars late; a swing low the same way down. When a close goes over the latest swing high not yet broken, the lowest bar between the swing and that close is a bullish order block, its high to its low; a close under the latest swing low makes the highest bar between a bearish one. A swing makes one block. <code>orderblocks</code> draws each as a box, in the colours of fair value gaps, to the right edge while it stands; a close through it (under a bullish block, over a bearish one) breaks it and takes it off, unless <code>showBroken</code> is 1. <code>detectOrderBlocks</code> gives them all with no chart, with the bar that broke each.
+  A swing high is a bar higher than the <code>length</code> bars before it and no lower than the <code>length</code> after (5), so it is known <code>length</code> bars late; a swing low the same way down. When a close goes over the latest swing high not yet broken, the lowest bar between the swing and that close is a bullish order block, its high to its low; a close under the latest swing low makes the highest bar between a bearish one. A swing makes one block. <code>orderblocks</code> draws each as a box, in the colours of fair value gaps, to the right edge while it stands; a close through it (under a bullish block, over a bearish one) breaks it and takes it off, unless <code>showBroken</code> is 1. Only the latest <code>count</code> standing blocks of each side are drawn (5; 0 for all): older far ones only clutter. <code>detectOrderBlocks</code> gives them all with no chart, with the bar that broke each.
 </p>
 <pre><code>{`chart.addIndicator('orderblocks')                    // the blocks standing
+chart.addIndicator('orderblocks', { count: 3 })        // the latest three a side
 chart.addIndicator('orderblocks', { length: 3 })       // shorter swings: more blocks, known sooner
 chart.addIndicator('orderblocks', { showBroken: 1 })   // the broken ones too, fainter, to the bar that broke them
 

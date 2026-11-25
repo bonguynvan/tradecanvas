@@ -57,7 +57,7 @@ describe('the Order Blocks indicator', () => {
 
   it('gives each block at the bar that formed it, its top and bottom by its kind, and all of them for drawing', () => {
     const indicator = new OrderBlocksIndicator();
-    expect(indicator.descriptor).toMatchObject({ id: 'orderblocks', placement: 'overlay', defaultConfig: { length: 5, showBroken: 0 } });
+    expect(indicator.descriptor).toMatchObject({ id: 'orderblocks', placement: 'overlay', defaultConfig: { length: 5, showBroken: 0, count: 5 } });
     expect(indicator.descriptor.plots!.map((p) => p.key)).toEqual(['bull', 'bullLow', 'bear', 'bearLow']);
     const out = indicator.calculate(bars(STORY), config());
     expect(out.series![6]).toEqual({ bull: 12, bullLow: 7 });
@@ -92,6 +92,48 @@ describe('the Order Blocks indicator', () => {
     expect(all).toHaveLength(2);
     expect(Math.max(...all.map((r) => r[0] + r[2]))).toBe(400);
     expect(Math.min(...all.map((r) => r[0] + r[2]))).toBeLessThan(400);
+  });
+
+  it('draws the latest standing blocks of each side up to `count`, every one at 0, and the broken ones as before', () => {
+    let seed = 9;
+    const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    let close = 100;
+    const data: OHLCBar[] = Array.from({ length: 300 }, (_, i) => {
+      const open = close;
+      close = open + (rand() - 0.5) * 4;
+      return { time: BASE + i * MINUTE, open, high: Math.max(open, close) + rand(), low: Math.min(open, close) - rand(), close, volume: 1 };
+    });
+    const lows = data.map((b) => b.low);
+    const highs = data.map((b) => b.high);
+    // Every bar in view: 300 bars of 10 px on a plot 4,000 px wide, the whole range on its scale.
+    const viewport = {
+      visibleRange: { from: 0, to: 299 }, priceRange: { min: Math.min(...lows) - 1, max: Math.max(...highs) + 1 }, barWidth: 8, barSpacing: 2, offset: 0,
+      chartRect: { x: 0, y: 0, width: 4000, height: 400 },
+    } as never;
+    const style = { colors: ['#000', '#111', '#222', '#0a0', '#a00'], lineWidths: [1], opacity: 1, plots: {} } as never;
+    const indicator = new OrderBlocksIndicator();
+    const drawn = (params: Record<string, number>) => {
+      const fills: string[] = [];
+      let fill = '';
+      const ctx = new Proxy({} as Record<string, unknown>, {
+        get: (target, key: string) => (key === 'fillRect' ? () => fills.push(fill) : key in target ? target[key] : () => {}),
+        set: (target, key: string, value) => { if (key === 'fillStyle') fill = value; target[key] = value; return true; },
+      }) as unknown as CanvasRenderingContext2D;
+      const out = indicator.calculate(data, config({ length: 2, ...params }));
+      indicator.render(ctx, out, viewport, style);
+      return { fills, blocks: out.meta!.blocks as { kind: string; brokenAt: number | null }[] };
+    };
+    const all = drawn({ count: 0 });
+    const standing = (kind: string) => all.blocks.filter((b) => b.kind === kind && b.brokenAt === null).length;
+    expect(standing('bullish')).toBeGreaterThan(1);
+    expect(standing('bearish')).toBeGreaterThan(1);
+    expect(all.fills).toHaveLength(standing('bullish') + standing('bearish'));
+    const one = drawn({ count: 1 });
+    expect(one.fills.filter((c) => c === '#0a0')).toHaveLength(1);
+    expect(one.fills.filter((c) => c === '#a00')).toHaveLength(1);
+    // The broken ones are not counted against it.
+    const broken = all.blocks.filter((b) => b.brokenAt !== null).length;
+    expect(drawn({ count: 1, showBroken: 1 }).fills).toHaveLength(2 + broken);
   });
 
   it('goes on from a tick to what a whole reckoning gives', () => {
