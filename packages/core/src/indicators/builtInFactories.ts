@@ -115,6 +115,7 @@ import { MARainbowIndicator } from './overlay/MARainbow.js';
 import { CandlePatternsIndicator } from './overlay/CandlePatterns.js';
 import { FairValueGapsIndicator } from './overlay/FairValueGaps.js';
 import { RSIDivergenceIndicator } from './panel/RSIDivergence.js';
+import { SessionVolumeProfileIndicator } from './overlay/SessionVolumeProfile.js';
 import { MAChannelIndicator } from './overlay/MAChannel.js';
 import { HammingMAIndicator } from './overlay/HammingMA.js';
 import { MADoubleIndicator, MATripleIndicator } from './overlay/MovingAverageSets.js';
@@ -269,4 +270,5 @@ export const BUILT_IN_FACTORIES: readonly (() => IndicatorPlugin)[] = [
   () => new CandlePatternsIndicator(),
   () => new FairValueGapsIndicator(),
   () => new RSIDivergenceIndicator(),
+  () => new SessionVolumeProfileIndicator(),
 ];

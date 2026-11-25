@@ -28,7 +28,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <b>한국어</b> · <a href="README.es.md">Español</a>
 </p>
 
-**TradeCanvas는 트레이딩 앱을 위한 오픈 소스 차트 라이브러리입니다**([tradecanvas.dev](https://tradecanvas.dev/ko/), MIT 라이선스). 캔들스틱부터 렌코까지, 136개 지표, 76개 그리기 도구, 거래소 실시간 피드와 차트 위 주문을 서드파티 의존성 없이 Canvas 2D 또는 WebGL로 그립니다. 완전한 `ChartWidget`을 그대로 넣거나 헤드리스 `Chart` 위에 직접 UI를 만들 수 있으며, TypeScript, React, Vue, Svelte를 지원합니다.
+**TradeCanvas는 트레이딩 앱을 위한 오픈 소스 차트 라이브러리입니다**([tradecanvas.dev](https://tradecanvas.dev/ko/), MIT 라이선스). 캔들스틱부터 렌코까지, 137개 지표, 76개 그리기 도구, 거래소 실시간 피드와 차트 위 주문을 서드파티 의존성 없이 Canvas 2D 또는 WebGL로 그립니다. 완전한 `ChartWidget`을 그대로 넣거나 헤드리스 `Chart` 위에 직접 UI를 만들 수 있으며, TypeScript, React, Vue, Svelte를 지원합니다.
 
 직접 소유하는 차트 엔진입니다. MIT 라이선스로, npm에서 설치해 앱과 함께 배포하고, 자신의 데이터를 넣고, 자신의 브랜드로 보여 줍니다. 차트에 다른 회사의 로고가 없고, 신청할 것도 없으며, 당신과 사용자 사이에 플랫폼이 끼지 않습니다. TradingView의 charting library나 Lightweight Charts를 쓰고 있나요? 데이터피드는 그대로 둡니다: [TradingView에서 옮겨오기](https://tradecanvas.dev/ko/docs/from-tradingview/).
 
@@ -38,7 +38,7 @@
 
 ## 주요 특징
 
-- **25가지 차트, 136개 지표, 76가지 드로잉 도구**, 지표 위의 지표, 선에 거는 알림, 실행 취소와 다시 실행.
+- **25가지 차트, 137개 지표, 76가지 드로잉 도구**, 지표 위의 지표, 선에 거는 알림, 실행 취소와 다시 실행.
 - **차트 위 거래**: 손익이 실시간으로 바뀌는 포지션, 끌어서 옮기는 주문과 손절, 모의 브로커 또는 직접 연결.
 - **실시간 데이터**: Binance, Bybit, Coinbase, Kraken 내장, 직접 만든 피드는 스무 줄 남짓.
 - **빠름**: WebGL로 봉 100만 개를 60 fps로 이동, 실시간 틱 하나에 약 1마이크로초, 봉 100만 개 위에서 초당 30,000건 체결을 10분 동안 받아도 메모리가 늘지 않음([측정](benchmarks/2026-11-03.md)).

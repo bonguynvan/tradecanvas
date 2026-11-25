@@ -1,6 +1,6 @@
 # TradeCanvas
 
-> Trading chart library for the web, drawn with Canvas 2D or WebGL (TypeScript, no runtime dependencies): candlestick, Heikin-Ashi, Renko and other chart types, 136 indicators, drawing tools, live exchange feeds, orders and positions on the chart, alerts, replay and backtesting. npm: @tradecanvas/chart (Chart and the ChartWidget UI), @tradecanvas/react, @tradecanvas/vue, @tradecanvas/svelte, @tradecanvas/analytics.
+> Trading chart library for the web, drawn with Canvas 2D or WebGL (TypeScript, no runtime dependencies): candlestick, Heikin-Ashi, Renko and other chart types, 137 indicators, drawing tools, live exchange feeds, orders and positions on the chart, alerts, replay and backtesting. npm: @tradecanvas/chart (Chart and the ChartWidget UI), @tradecanvas/react, @tradecanvas/vue, @tradecanvas/svelte, @tradecanvas/analytics.
 
 Use `ChartWidget` (`@tradecanvas/chart/widget`) for a complete trading UI, or `Chart` (`@tradecanvas/chart`) to build your own around it. Both need a sized DOM element and run in the browser only.
 
@@ -47,7 +47,7 @@ skills/tradecanvas/SKILL.md
 
 ---
 name: tradecanvas
-description: Build trading and financial charts with TradeCanvas (@tradecanvas/chart) — candlesticks and 24 other chart types, 136 indicators, drawing tools, live exchange data, orders and positions on the chart, signals and trade zones, alerts, replay, a full trading widget. Use when a project imports @tradecanvas/*, or when asked to add a price, candlestick or trading chart to a web app (vanilla TS/JS, React, Vue, Svelte).
+description: Build trading and financial charts with TradeCanvas (@tradecanvas/chart) — candlesticks and 24 other chart types, 137 indicators, drawing tools, live exchange data, orders and positions on the chart, signals and trade zones, alerts, replay, a full trading widget. Use when a project imports @tradecanvas/*, or when asked to add a price, candlestick or trading chart to a web app (vanilla TS/JS, React, Vue, Svelte).
 ---
 
 # TradeCanvas
@@ -2266,11 +2266,11 @@ skills/tradecanvas/references/indicators.md
 
 # Built-in indicators
 
-136 indicators. Add one with `chart.addIndicator(id, params)`; params you leave out take the defaults below.
+137 indicators. Add one with `chart.addIndicator(id, params)`; params you leave out take the defaults below.
 An indicator's values at bar `i` are `chart.getIndicatorOutput(instanceId).series[i]`, an object keyed by the line keys listed here.
 "Source ✓" means it has a `source` input: a price (`close`, `open`, `high`, `low`, `hl2`, `hlc3`, `ohlc4`, `hlcc4`) or another indicator's line (`indicatorSource(instanceId, key)`).
 
-## On the price pane (49)
+## On the price pane (50)
 
 Drawn over the candles, on the price scale.
 
@@ -2325,6 +2325,7 @@ Drawn over the candles, on the price scale.
 | `rainbow` | Moving Average Rainbow | first: 10, step: 10, count: 10, exponential: 0 | ma1: MA 1, ma2: MA 2, ma3: MA 3, ma4: MA 4, ma5: MA 5, ma6: MA 6, ma7: MA 7, ma8: MA 8, ma9: MA 9, ma10: MA 10, ma11: MA 11, ma12: MA 12, ma13: MA 13, ma14: MA 14, ma15: MA 15, ma16: MA 16, ma17: MA 17, ma18: MA 18, ma19: MA 19, ma20: MA 20 | — | |
 | `candlepatterns` | Candlestick Patterns | trendPeriod: 10, reversal: 1, continuation: 1, indecision: 0 | bull: Bullish, bear: Bearish, neutral: Indecision | — | |
 | `fvg` | Fair Value Gaps | minPercent: 0, showFilled: 0 | bull: Bullish top, bullLow: Bullish bottom, bear: Bearish top, bearLow: Bearish bottom | — | |
+| `svp` | Session Volume Profile | rows: 24, valueArea: 70 | poc: POC, vah: VAH, val: VAL | — | |
 
 ## In a pane of their own (87)
 
@@ -2454,7 +2455,7 @@ packages/library/README.md
   <b>English</b> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.vi.md">Tiếng Việt</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.zh-CN.md">简体中文</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.ja.md">日本語</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.ko.md">한국어</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.es.md">Español</a>
 </p>
 
-**TradeCanvas is the open-source chart library for trading apps** ([tradecanvas.dev](https://tradecanvas.dev/)), under the MIT licence. Candlesticks to Renko, 136 indicators, 76 drawing tools, live feeds and orders on the chart, on Canvas 2D or WebGL, with no third-party dependencies. Use the full `ChartWidget`, or build your own interface on the headless `Chart`, in TypeScript, React, Vue or Svelte.
+**TradeCanvas is the open-source chart library for trading apps** ([tradecanvas.dev](https://tradecanvas.dev/)), under the MIT licence. Candlesticks to Renko, 137 indicators, 76 drawing tools, live feeds and orders on the chart, on Canvas 2D or WebGL, with no third-party dependencies. Use the full `ChartWidget`, or build your own interface on the headless `Chart`, in TypeScript, React, Vue or Svelte.
 
 It is a charting engine you own: MIT-licensed, installed from npm and served with your app, fed by your own data, shown under your own brand. No logo on the chart, nothing to apply for, no platform between you and your users. Coming from TradingView's charting library or Lightweight Charts? Keep your datafeed: [moving from TradingView](https://tradecanvas.dev/docs/from-tradingview/).
 
@@ -2464,7 +2465,7 @@ It is a charting engine you own: MIT-licensed, installed from npm and served wit
 
 ## Highlights
 
-- **25 chart types, 136 indicators, 76 drawing tools**, indicators on indicators, alerts on lines, undo and redo.
+- **25 chart types, 137 indicators, 76 drawing tools**, indicators on indicators, alerts on lines, undo and redo.
 - **Trading on the chart**: positions with live P&L, orders and stops you drag, a paper broker or your own.
 - **Live data** from Binance, Bybit, Coinbase, Kraken and Upbit, or your own feed in about twenty lines.
 - **Fast**: a million bars panned at 60 fps with WebGL; a live tick in about a microsecond; ten minutes of 30,000 trades a second on a million bars with no memory growth ([soak](https://github.com/bonguynvan/tradecanvas/blob/main/benchmarks/2026-11-03.md)).

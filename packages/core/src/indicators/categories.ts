@@ -26,7 +26,7 @@ const BUILT_IN: Record<Exclude<IndicatorCategory, 'other'>, readonly string[]> =
     'sigma', 'tr', 'massindex',
   ],
   volume: [
-    'vwap', 'avwap', 'svwap', 'volumeProfile', 'obv', 'mfi', 'cmf', 'ad', 'vroc', 'chaikinOsc', 'voldelta',
+    'vwap', 'avwap', 'svwap', 'volumeProfile', 'svp', 'obv', 'mfi', 'cmf', 'ad', 'vroc', 'chaikinOsc', 'voldelta',
     'fi', 'kvo', 'emv', 'pvt', 'wad', 'vo', 'netvolume', 'vr', 'nvi', 'pvi', 'iii', 'volpct', 'volchange',
     'tradevalue',
   ],

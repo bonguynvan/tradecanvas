@@ -1184,6 +1184,17 @@ const SCENES = {
     return s;
   },
 
+  /** A volume profile a day: each day's rows from its first bar, its POC and value area across it. */
+  async sessionProfile() {
+    const s = await widget({ timeframe: '15m' });
+    const id = s.chart.addIndicator('svp');
+    const checks = () => {
+      const days = s.chart.getIndicatorOutput(id)?.meta?.profiles;
+      return Array.isArray(days) && days.length > 1 ? [] : ['the scene has fewer than two days to draw'];
+    };
+    return { ...s, checks };
+  },
+
   /** The RSI with its divergences, the hidden ones too: a line between the two turns of each, a mark at the second. */
   async divergences() {
     const s = await widget();

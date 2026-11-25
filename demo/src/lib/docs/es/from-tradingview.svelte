@@ -129,7 +129,7 @@ new ChartWidget(el, { feed, symbol: 'AAPL', timeframe: '1d' })`}</code></pre>
   </li>
   <li>
     <strong>Los indicadores personalizados</strong> escritos para <code>custom_indicators_getter</code> se reescriben
-    como un <a href={href('/docs/plugins')}>plugin de indicador</a>, salvo que uno de los 136 integrados haga lo mismo.
+    como un <a href={href('/docs/plugins')}>plugin de indicador</a>, salvo que uno de los 137 integrados haga lo mismo.
   </li>
   <li>
     <strong>Algunas herramientas de dibujo y featuresets</strong> no tienen equivalente. <code>migration_lookup</code>

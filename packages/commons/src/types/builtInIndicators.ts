@@ -2,7 +2,7 @@
 import type { NumberParam } from './indicator.js';
 
 /**
- * The 136 built-in indicators, by id: the inputs
+ * The 137 built-in indicators, by id: the inputs
  * `chart.addIndicator(id, params)` takes, each optional (its default in its
  * note), and the keys of the lines it draws, as
  * `chart.getIndicatorOutput(instanceId)` and `indicatorSource(instanceId, key)`
@@ -1357,5 +1357,15 @@ export interface BuiltInIndicators {
       hidden?: NumberParam;
     };
     lines: 'value' | 'bull' | 'bear';
+  };
+  /** Session Volume Profile, on the price pane. Lines: `poc` (POC), `vah` (VAH), `val` (VAL). */
+  svp: {
+    params: {
+      /** A whole number, at least 1, at most 200. Default 24. */
+      rows?: NumberParam;
+      /** At least 1, at most 100, in steps of 1. Default 70. */
+      valueArea?: NumberParam;
+    };
+    lines: 'poc' | 'vah' | 'val';
   };
 }

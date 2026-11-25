@@ -15,6 +15,7 @@ const DRAWS_ITSELF: Record<string, string> = {
   candlepatterns: 'marks with labels above and below the bars',
   fvg: 'a box from the bar that left the gap to the one that filled it',
   rsidiv: 'a line between the two turns of each divergence, over its plots',
+  svp: 'each day’s rows of volume by price, under its lines',
   chopzone: 'each bar is coloured by the band its angle falls in',
   elderray: 'two histograms side by side in each bar',
 };
