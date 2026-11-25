@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>迁移到 3.0 — TradeCanvas 文档</title>
-  <meta name="description" content="从 TradeCanvas 2.x 到 3.0，你的代码需要注意的变化：每一处发生变化的行为，以及保留旧行为的选项。3.0 正在独立分支上开发。" />
+  <meta name="description" content="从 TradeCanvas 2.x 到 3.0，你的代码需要注意的变化：每一处发生变化的行为，以及保留旧行为的选项。3.0 目前是 npm 上的 beta 版。" />
 </svelte:head>
 
 <h1>迁移到 3.0</h1>
 <p>
-  3.0 正在 <code>3.0</code> 分支上开发：尚未发布到 npm，本页会随开发进度不断补充。这里列出每一处可能破坏 2.x 代码的变化，
+  3.0 目前是 beta 版：已以 <code>beta</code> 标签发布到 npm（<code>npm i @tradecanvas/chart@beta</code>），在 <code>3.0</code> 分支上开发，本页会随开发进度不断补充。这里列出每一处可能破坏 2.x 代码的变化，
   以及相应的处理方法。从 1.x 升级到 2.0，请见 <a href={href('/docs/migration')}>迁移到 2.0</a>。
 </p>
 
@@ -101,6 +101,7 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 在止损处亏损 50 �
   一起回来。<code>setMarkPrice</code> 接受品种作为第三个参数，图表在回放时会传入它：提供的价格写明了品种时，
   模拟账户按各品种自己的价格撮合和估值；提供的价格没有写明品种时，它和以前一样是一个市场。另外，K 线由手动设置时，
   图表在被告知之前不知道品种：<code>chart.setSymbol(symbol)</code>，<code>ChartWidget</code> 会自己调用它。
+</p>
 <h3 id="hold-tooltip">在图表上按住鼠标显示价格弹窗</h3>
 <p>
   在 <code>ChartWidget</code> 中，在绘图区按住鼠标不动半秒，会显示鼠标所在K线的浮动 OHLCV 提示，直到松开按钮：

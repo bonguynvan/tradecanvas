@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>Migrar a la 3.0 — Documentación de TradeCanvas</title>
-  <meta name="description" content="Lo que cambia para tu código entre TradeCanvas 2.x y 3.0: cada comportamiento que ha cambiado y la opción que conserva el anterior. La 3.0 está en desarrollo en su propia rama." />
+  <meta name="description" content="Lo que cambia para tu código entre TradeCanvas 2.x y 3.0: cada comportamiento que ha cambiado y la opción que conserva el anterior. La 3.0 es una beta en npm." />
 </svelte:head>
 
 <h1>Migrar a la 3.0</h1>
 <p>
-  La 3.0 está en desarrollo en la rama <code>3.0</code>: todavía no está en npm, y esta página crece con ella. Recoge
+  La 3.0 es una beta: está en npm con la etiqueta <code>beta</code> (<code>npm i @tradecanvas/chart@beta</code>), se desarrolla en la rama <code>3.0</code>, y esta página crece con ella. Recoge
   cada cambio que puede romper código escrito para la 2.x y qué hacer al respecto. Para pasar de la 1.x a la 2.0,
   consulta <a href={href('/docs/migration')}>Migrar a la 2.0</a>.
 </p>
@@ -119,6 +119,7 @@ chart.startBracket('buy', undefined, { risk: 50 })   // la cantidad que pierde 5
   que no nombran ninguno, es un solo mercado, como era. Y con barras puestas a mano el gráfico no conoce ningún
   símbolo hasta que se le dice: <code>chart.setSymbol(symbol)</code>, que <code>ChartWidget</code> llama por sí
   mismo.
+</p>
 <h3 id="hold-tooltip">Mantener pulsado sobre el gráfico muestra la ventana de precio</h3>
 <p>
   En <code>ChartWidget</code>, mantener el botón del ratón quieto sobre el área del gráfico durante medio segundo muestra
