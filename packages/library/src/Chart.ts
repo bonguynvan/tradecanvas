@@ -5155,6 +5155,8 @@ export class Chart {
     this.crosshairHandler.setExchangeTimeZone(zone);
     this.crosshairTooltip.setExchangeTimeZone(zone);
     this.pinnedTooltip.setExchangeTimeZone(zone);
+    // The day lines follow the clock shown and the symbol's sessions, also while the indicators hold the last zone.
+    this.applyDayBreaks();
     if (!this.studyZoneHeld) this.applyStudyZone(zone);
   }
 
@@ -5175,6 +5177,7 @@ export class Chart {
     this.periodLevels.setDayStart(dayStart);
     this.marketProfile.setExchangeTimeZone(zone);
     this.marketProfile.setDayStart(dayStart);
+    this.applyDayBreaks();
     const bars = this.series.bars();
     // With no bars yet, the data that comes computes them. Otherwise only
     // the indicators that count days in the zone, before the next read, not
@@ -5250,7 +5253,19 @@ export class Chart {
     this.crosshairTooltip.setTimezoneOffset(tz);
     this.pinnedTooltip.setTimezone(tz);
     this.sessionBreaks.setTimezone(tz);
+    this.applyDayBreaks();
     this.engine.requestRender();
+  }
+
+  /**
+   * The day lines start the trading day where the indicators do (a session
+   * that runs past midnight, `tradingDayStart`), while the chart shows the
+   * exchange's time; on any other clock a day there runs midnight to midnight.
+   */
+  private applyDayBreaks(): void {
+    const exchange = this.getExchangeTimeZone();
+    const onExchangeClock = exchange !== null && this.displayTz === exchange;
+    this.sessionBreaks.setDayStart(onExchangeClock ? tradingDayStart(this.symbolInfo?.sessions) : null);
   }
 
   // --- Symbol info ---

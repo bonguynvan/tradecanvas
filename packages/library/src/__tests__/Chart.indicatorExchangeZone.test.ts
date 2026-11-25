@@ -420,3 +420,23 @@ describe('Chart starts the trading day at the open of a session that runs past m
   });
 
 });
+
+describe('Chart’s day lines on a trading day that starts in the evening', () => {
+  const dayStartOfBreaks = (c: Chart) => (c as unknown as { sessionBreaks: { dayStart: number | null } }).sessionBreaks.dayStart;
+
+  it('fall at the session’s open when the chart shows the exchange’s time, and at midnight on any other clock', () => {
+    chart.setData(hourlyDays(D1, 2));
+    chart.setSymbolInfo({ symbol: 'ES', timeZone: 'America/Chicago', sessions: [{ start: '17:00', end: '16:00' }] });
+    chart.setTimeZone('exchange');
+    expect(dayStartOfBreaks(chart)).toBe(17 * 60);
+    // Shown in another zone, a day there is midnight to midnight.
+    chart.setTimeZone('Asia/Ho_Chi_Minh');
+    expect(dayStartOfBreaks(chart)).toBeNull();
+    // The exchange's zone named outright is the exchange's clock too.
+    chart.setTimeZone('America/Chicago');
+    expect(dayStartOfBreaks(chart)).toBe(17 * 60);
+    // A symbol with no such session: midnight.
+    chart.setSymbolInfo({ symbol: 'AAPL', timeZone: 'America/Chicago' });
+    expect(dayStartOfBreaks(chart)).toBeNull();
+  });
+});

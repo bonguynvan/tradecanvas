@@ -511,7 +511,7 @@ chart.setSessionShadingConfig({
 chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
 chart.isExtendedHoursVisible()`}</code></pre>
 <p>
-  <strong>取引日。</strong>午前 0 時をまたぐセッション（CME のシカゴ時間 17:00〜16:00）は、その開始時刻から取引日を始めます。日・週・月ごとにリセットされるインジケーター（Session VWAP、VWAP と累積デルタの anchor、セッション出来高プロファイル、MTF 平均の日）、前日ラインとマーケットプロファイルの日は 17:00 から 17:00 までとなり、終わる日の日付で呼ばれます。1 日の中に収まるセッションは午前 0 時のままです。日足と約定から作る日は、タイムゾーンの午前 0 時のままです。
+  <strong>取引日。</strong>午前 0 時をまたぐセッション（CME のシカゴ時間 17:00〜16:00）は、その開始時刻から取引日を始めます。日・週・月ごとにリセットされるインジケーター（Session VWAP、VWAP と累積デルタの anchor、セッション出来高プロファイル、MTF 平均の日）、前日ラインとマーケットプロファイルの日は 17:00 から 17:00 までとなり、終わる日の日付で呼ばれます。1 日の中に収まるセッションは午前 0 時のままです。日足と約定から作る日は、タイムゾーンの午前 0 時のままです。チャートが取引所の時刻を表示している間（<code>setTimeZone('exchange')</code>、または取引所のタイムゾーンを名前で指定）、日区切り線もそこから始まります。ほかの時刻では、1 日は午前 0 時から午前 0 時までです。
 </p>
 <pre><code>{`chart.setSymbolInfo({ symbol: 'ES', timeZone: 'America/Chicago', sessions: [{ start: '17:00', end: '16:00' }] })
 // Session VWAP、svp、前日ライン: 17:00 から 17:00

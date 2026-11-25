@@ -488,7 +488,7 @@ chart.setSessionShadingConfig({
 chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
 chart.isExtendedHoursVisible()`}</code></pre>
 <p>
-  <strong>交易日。</strong>跨越午夜的交易时段（CME 芝加哥时间 17:00 至 16:00）从开盘时刻开始交易日。此时，每天、每周或每月重新开始的指标（Session VWAP、VWAP 和累计成交量差的 anchor、分时段成交量分布、MTF 均线的日）、前一日价位线以及 market profile 的日都从 17:00 到 17:00，并以结束那天的日期命名。处于一天之内的交易时段仍从午夜开始。日K线和由成交构建的日仍按时区的午夜计算。
+  <strong>交易日。</strong>跨越午夜的交易时段（CME 芝加哥时间 17:00 至 16:00）从开盘时刻开始交易日。此时，每天、每周或每月重新开始的指标（Session VWAP、VWAP 和累计成交量差的 anchor、分时段成交量分布、MTF 均线的日）、前一日价位线以及 market profile 的日都从 17:00 到 17:00，并以结束那天的日期命名。处于一天之内的交易时段仍从午夜开始。日K线和由成交构建的日仍按时区的午夜计算。图表显示交易所时间时（<code>setTimeZone('exchange')</code>，或直接写交易所的时区），图表的日分隔线也从那里开始；在其他时区下，一天从午夜到午夜。
 </p>
 <pre><code>{`chart.setSymbolInfo({ symbol: 'ES', timeZone: 'America/Chicago', sessions: [{ start: '17:00', end: '16:00' }] })
 // Session VWAP、svp、前一日价位线：从 17:00 到 17:00

@@ -529,7 +529,7 @@ chart.setSessionShadingConfig({
 chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
 chart.isExtendedHoursVisible()`}</code></pre>
 <p>
-  <strong>Ngày giao dịch.</strong> Một phiên kéo qua nửa đêm (phiên 17:00 đến 16:00 giờ Chicago của CME) bắt đầu ngày giao dịch từ giờ mở phiên. Khi đó các chỉ báo bắt đầu lại mỗi ngày, tuần hoặc tháng (Session VWAP, anchor của VWAP và của cumulative delta, volume profile theo phiên, các ngày của MTF average), các đường ngày trước và các ngày của market profile chạy từ 17:00 đến 17:00, mỗi ngày mang tên ngày nó kết thúc. Các phiên nằm trong một ngày vẫn tính từ nửa đêm. Nến ngày và các ngày dựng từ giao dịch vẫn theo nửa đêm của múi giờ.
+  <strong>Ngày giao dịch.</strong> Một phiên kéo qua nửa đêm (phiên 17:00 đến 16:00 giờ Chicago của CME) bắt đầu ngày giao dịch từ giờ mở phiên. Khi đó các chỉ báo bắt đầu lại mỗi ngày, tuần hoặc tháng (Session VWAP, anchor của VWAP và của cumulative delta, volume profile theo phiên, các ngày của MTF average), các đường ngày trước và các ngày của market profile chạy từ 17:00 đến 17:00, mỗi ngày mang tên ngày nó kết thúc. Các phiên nằm trong một ngày vẫn tính từ nửa đêm. Nến ngày và các ngày dựng từ giao dịch vẫn theo nửa đêm của múi giờ. Các đường kẻ ngăn ngày của biểu đồ cũng bắt đầu ở đó khi biểu đồ hiện giờ của sàn (<code>setTimeZone('exchange')</code>, hoặc ghi thẳng múi giờ của sàn); theo múi giờ khác, một ngày chạy từ nửa đêm đến nửa đêm.
 </p>
 <pre><code>{`chart.setSymbolInfo({ symbol: 'ES', timeZone: 'America/Chicago', sessions: [{ start: '17:00', end: '16:00' }] })
 // Session VWAP, svp, các đường ngày trước: từ 17:00 đến 17:00

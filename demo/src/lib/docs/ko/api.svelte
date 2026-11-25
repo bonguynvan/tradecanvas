@@ -507,7 +507,7 @@ chart.setSessionShadingConfig({
 chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
 chart.isExtendedHoursVisible()`}</code></pre>
 <p>
-  <strong>거래일.</strong> 자정을 넘기는 세션(CME 시카고 시간 17:00~16:00)은 개장 시각에 거래일을 시작합니다. 그러면 하루, 한 주, 한 달마다 다시 시작하는 지표(Session VWAP, VWAP과 누적 델타의 anchor, 세션 거래량 프로파일, MTF 평균의 하루), 전일 레벨선, 마켓 프로파일의 하루가 17:00부터 17:00까지이며, 끝나는 날의 날짜로 부릅니다. 하루 안에 있는 세션은 자정 그대로입니다. 일봉과 체결로 만드는 하루는 시간대의 자정 그대로입니다.
+  <strong>거래일.</strong> 자정을 넘기는 세션(CME 시카고 시간 17:00~16:00)은 개장 시각에 거래일을 시작합니다. 그러면 하루, 한 주, 한 달마다 다시 시작하는 지표(Session VWAP, VWAP과 누적 델타의 anchor, 세션 거래량 프로파일, MTF 평균의 하루), 전일 레벨선, 마켓 프로파일의 하루가 17:00부터 17:00까지이며, 끝나는 날의 날짜로 부릅니다. 하루 안에 있는 세션은 자정 그대로입니다. 일봉과 체결로 만드는 하루는 시간대의 자정 그대로입니다. 차트가 거래소 시간을 보여 주는 동안(<code>setTimeZone('exchange')</code> 또는 거래소 시간대를 이름으로 지정) 차트의 날짜 구분선도 거기서 시작합니다. 다른 시간대에서는 하루가 자정부터 자정까지입니다.
 </p>
 <pre><code>{`chart.setSymbolInfo({ symbol: 'ES', timeZone: 'America/Chicago', sessions: [{ start: '17:00', end: '16:00' }] })
 // Session VWAP, svp, 전일 레벨선: 17:00부터 17:00까지
