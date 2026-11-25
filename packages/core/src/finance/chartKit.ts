@@ -62,11 +62,18 @@ const clean = (value: number, decimals: number) => {
   return v === 0 ? 0 : v;
 };
 
+/** More steps than a scale of a few ticks ever has: past it the range was too narrow for its values. */
+const MAX_STEPS = 64;
+/** The room given either side of values too near each other to scale, of the larger of them. */
+const NO_RANGE_ROOM = 0.05;
+
 /**
  * A scale over `min`–`max` in whole steps of 1, 2, 2.5 or 5 times a power
- * of ten, about `maxTicks` of them; a range of one value is opened up around it.
+ * of ten, about `maxTicks` of them; a range of one value, or of values too
+ * near each other to be told apart, is opened up around them. `widened` is
+ * its own: the range was opened once already.
  */
-export function niceScale(min: number, max: number, maxTicks = 5): NiceScale {
+export function niceScale(min: number, max: number, maxTicks = 5, widened = false): NiceScale {
   let lo = Math.min(min, max);
   let hi = Math.max(min, max);
   if (!Number.isFinite(lo) || !Number.isFinite(hi)) {
@@ -89,6 +96,14 @@ export function niceScale(min: number, max: number, maxTicks = 5): NiceScale {
   const decimals = stepDecimals(step);
   const first = Math.floor(lo / step + 1e-9);
   const last = Math.ceil(hi / step - 1e-9);
+  // A range narrower than its values can be told apart in (100,000 and the next number after it): a step that
+  // adds nothing to them, or a count of steps past what a number counts exactly, and the loop below never ends.
+  // Such a range is no range: the values are drawn as one, with room either side.
+  if (!widened && (lo + step === lo || hi - step === hi || !Number.isSafeInteger(first) || !Number.isSafeInteger(last) || last - first > MAX_STEPS)) {
+    const room = (Math.abs(lo) > Math.abs(hi) ? Math.abs(lo) : Math.abs(hi)) * NO_RANGE_ROOM || 1;
+    return niceScale(lo - room, hi + room, maxTicks, true);
+  }
+  if (last - first > MAX_STEPS) return UNIT_SCALE;
   const ticks: number[] = [];
   for (let k = first; k <= last; k++) ticks.push(clean(k * step, decimals));
   if (ticks.length < 2 || !ticks.every(Number.isFinite)) return UNIT_SCALE;

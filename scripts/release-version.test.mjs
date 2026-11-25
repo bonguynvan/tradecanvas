@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { pendingChangesets, dateChangelog, newVersions } from './release-version.mjs';
+import { pendingChangesets, dateChangelog, newVersions, releaseBranch, branchProblem } from './release-version.mjs';
 
 test('the changesets to version are the files in .changeset, the README and the config aside', () => {
   assert.deepEqual(pendingChangesets(['config.json', 'README.md', 'wide-panes.md', 'axis-tags.md'], null), ['axis-tags', 'wide-panes']);
@@ -45,4 +45,20 @@ test('the versions a release set are the ones that differ from before', () => {
   const before = [{ name: 'a', version: '1.0.0' }, { name: 'b', version: '1.0.0' }];
   const after = [{ name: 'a', version: '1.0.1' }, { name: 'b', version: '1.0.0' }, { name: 'c', version: '0.1.0' }];
   assert.deepEqual(newVersions(before, after), [{ name: 'a', version: '1.0.1' }, { name: 'c', version: '0.1.0' }]);
+});
+
+test('the branch released is main unless the run names another', () => {
+  assert.equal(releaseBranch({}), 'main');
+  assert.equal(releaseBranch({ RELEASE_BRANCH: '' }), 'main');
+  assert.equal(releaseBranch({ RELEASE_BRANCH: '3.0' }), '3.0');
+});
+
+test('a branch other than main releases prereleases only', () => {
+  const pre = { mode: 'pre', tag: 'beta', changesets: [] };
+  assert.equal(branchProblem('main', null), null);
+  assert.equal(branchProblem('main', pre), null);
+  assert.equal(branchProblem('3.0', pre), null);
+  assert.match(branchProblem('3.0', null), /pre mode/);
+  // Leaving pre mode versions full releases: those are main's.
+  assert.match(branchProblem('3.0', { ...pre, mode: 'exit' }), /pre mode/);
 });

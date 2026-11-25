@@ -10,6 +10,10 @@
 // A push that lands on main while this runs makes the push here fail: it then
 // starts again from the new main, a few times, since that push's own run waits
 // behind this one and would find the same changesets.
+//
+// A run from another branch (`RELEASE_BRANCH`, set by the workflow to the
+// branch it was started on) versions that branch and pushes there. It
+// releases prereleases only: the branch must be in pre mode.
 import { execFileSync, execSync } from 'node:child_process';
 import { appendFileSync, existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -49,6 +53,21 @@ export function dateChangelog(markdown, version, date) {
   if (at === -1 || lines.some((line) => line === `## ${version}` || line.startsWith(`## ${version} `))) return markdown;
   lines[at] = `## ${version} (${date})`;
   return lines.join(nl);
+}
+
+/** The branch this run versions and pushes to: the one the workflow names, else main. */
+export function releaseBranch(env) {
+  return env.RELEASE_BRANCH || 'main';
+}
+
+/**
+ * Why `branch` may not be released as it is, or null. Full releases are
+ * main's: another branch releases only while `.changeset/pre.json` is in pre
+ * mode, so what it publishes takes the mode's dist-tag and never `latest`.
+ */
+export function branchProblem(branch, pre) {
+  if (branch === 'main' || pre?.mode === 'pre') return null;
+  return `${branch} is not in pre mode: only main makes full releases`;
 }
 
 /** The versions that changed between two readings of the workspace, as `name@version`. */
@@ -114,6 +133,9 @@ function output(name, value) {
 }
 
 function main() {
+  const branch = releaseBranch(process.env);
+  const problem = branchProblem(branch, readPre());
+  if (problem) throw new Error(`release: ${problem}`);
   const waiting = pending();
   if (waiting.length === 0) {
     console.log('release: no changesets waiting');
@@ -127,14 +149,14 @@ function main() {
     run('git', ['add', '-A']);
     run('git', [...BOT, 'commit', '-m', 'chore: version packages']);
     try {
-      run('git', ['push', 'origin', 'HEAD:main']);
+      run('git', ['push', 'origin', `HEAD:${branch}`]);
       console.log(`release: ${changed.map((p) => `${p.name}@${p.version}`).join(', ')}`);
       break;
     } catch (err) {
       if (attempt >= PUSH_ATTEMPTS) throw err;
-      console.log('release: main moved; versioning again on it');
-      run('git', ['fetch', 'origin', 'main']);
-      run('git', ['reset', '--hard', 'origin/main']);
+      console.log(`release: ${branch} moved; versioning again on it`);
+      run('git', ['fetch', 'origin', branch]);
+      run('git', ['reset', '--hard', `origin/${branch}`]);
       if (pending().length === 0) break;
     }
   }
