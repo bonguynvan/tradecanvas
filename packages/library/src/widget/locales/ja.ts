@@ -83,7 +83,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'indicatorSettings.noInputs': 'このインジケーターには調整できるパラメーターがありません。',
   'indicatorInput.anchor': '起点',
   'indicatorSwitch.showBroken': 'ブレイク済み',
-  'indicatorSwitch.showFilled': '埋まった',
+  'indicatorSwitch.showFilled': '埋め済み',
   'indicatorSwitch.hidden': 'ヒドゥン',
   'indicatorSwitch.mode': '累積',
   'indicatorSwitch.exponential': '指数',

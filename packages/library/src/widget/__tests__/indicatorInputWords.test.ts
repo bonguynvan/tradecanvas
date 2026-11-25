@@ -48,6 +48,6 @@ describe('a switch in the widget’s language', () => {
     expect(widgetIndicatorLabel(patterns({}), EN_TRANSLATOR)).toBe('Patterns 10');
     expect(widgetIndicatorLabel(patterns({ reversal: 0, indecision: 1 }), EN_TRANSLATOR)).toBe('Patterns 10 Reversal off Indecision');
     const vi = createTranslator(VI_MESSAGES);
-    expect(widgetIndicatorLabel(patterns({ reversal: 0, indecision: 1 }), vi)).toBe('Patterns 10 Tắt Đảo chiều Lưỡng lự');
+    expect(widgetIndicatorLabel(patterns({ reversal: 0, indecision: 1 }), vi)).toBe('Patterns 10 Đảo chiều tắt Lưỡng lự');
   });
 });

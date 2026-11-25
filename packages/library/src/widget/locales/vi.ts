@@ -91,7 +91,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'indicatorSwitch.reversal': 'Đảo chiều',
   'indicatorSwitch.continuation': 'Tiếp diễn',
   'indicatorSwitch.indecision': 'Lưỡng lự',
-  'indicatorSwitch.off': 'Tắt {name}',
+  'indicatorSwitch.off': '{name} tắt',
   'indicatorInput.anchor.session': 'Phiên',
   'indicatorInput.anchor.week': 'Tuần',
   'indicatorInput.anchor.month': 'Tháng',

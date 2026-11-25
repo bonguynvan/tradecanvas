@@ -82,7 +82,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'indicatorSettings.offInterval': 'In dieser Zeiteinheit nicht angezeigt',
   'indicatorSettings.noInputs': 'Dieser Indikator hat keine einstellbaren Parameter.',
   'indicatorInput.anchor': 'Anker',
-  'indicatorSwitch.showBroken': 'Gebrochen',
+  'indicatorSwitch.showBroken': 'Durchbrochen',
   'indicatorSwitch.showFilled': 'Gefüllt',
   'indicatorSwitch.hidden': 'Versteckt',
   'indicatorSwitch.mode': 'Kumuliert',
