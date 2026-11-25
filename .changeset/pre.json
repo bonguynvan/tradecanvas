@@ -1,0 +1,16 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "@tradecanvas/demo": "0.0.0",
+    "@tradecanvas/analytics": "2.17.1",
+    "@tradecanvas/commons": "2.17.1",
+    "@tradecanvas/core": "2.17.1",
+    "@tradecanvas/chart": "2.17.1",
+    "@tradecanvas/mcp": "2.17.1",
+    "@tradecanvas/react": "2.0.32",
+    "@tradecanvas/svelte": "2.0.32",
+    "@tradecanvas/vue": "2.0.32"
+  },
+  "changesets": []
+}
