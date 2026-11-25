@@ -1,5 +1,48 @@
 # @tradecanvas/analytics
 
+## 3.0.0
+
+### Patch Changes
+
+- Updated dependencies [911facf]
+- Updated dependencies [2c9573d]
+- Updated dependencies [c2ca355]
+- Updated dependencies [97b23f2]
+- Updated dependencies [aa3d83e]
+- Updated dependencies [0255b1c]
+- Updated dependencies [ff55699]
+- Updated dependencies [a02e56c]
+- Updated dependencies [155c3c2]
+- Updated dependencies [a20d034]
+- Updated dependencies [bc8c0ad]
+- Updated dependencies [7794c09]
+- Updated dependencies [3424cac]
+- Updated dependencies [4b0db09]
+- Updated dependencies [c831304]
+- Updated dependencies [17e2036]
+- Updated dependencies [15f357d]
+- Updated dependencies [64ee76c]
+- Updated dependencies [421cf22]
+- Updated dependencies [4577047]
+- Updated dependencies [a710c22]
+- Updated dependencies [6b21eed]
+- Updated dependencies [8f4964c]
+- Updated dependencies [f8890a4]
+- Updated dependencies [99ce483]
+- Updated dependencies [6d0d6c8]
+- Updated dependencies [4ea3014]
+- Updated dependencies [63f07fd]
+- Updated dependencies [093d887]
+- Updated dependencies [8c7206e]
+- Updated dependencies [db1febf]
+- Updated dependencies [ce79cad]
+- Updated dependencies [6dbd99c]
+- Updated dependencies [4a7c3e0]
+- Updated dependencies [d6dbb34]
+- Updated dependencies [a3ba736]
+- Updated dependencies [7d320ac]
+  - @tradecanvas/commons@3.0.0
+
 ## 3.0.0-beta.2
 
 ### Patch Changes
