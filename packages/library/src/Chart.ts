@@ -3071,7 +3071,7 @@ export class Chart {
     for (const ind of this.indicatorEngine.getActiveIndicators()) {
       const series = this.indicatorEngine.getOutput(ind.instanceId)?.series;
       if (!series) continue;
-      const name = indicatorChipLabel(ind.id, ind.params, ind.descriptor.defaultConfig, ind.descriptor.shortName);
+      const name = indicatorChipLabel(ind.id, ind.params, ind.descriptor.defaultConfig, ind.descriptor.shortName, ind.descriptor.inputs);
       // Marks on some bars (`kind: 'markers'`) are no column: they are not values.
       const plots = ind.descriptor.plots ? valuePlots(ind.descriptor.plots) : Object.keys(series.find((p) => p) ?? {}).map((key) => ({ key, title: key }));
       for (const plot of plots) {
