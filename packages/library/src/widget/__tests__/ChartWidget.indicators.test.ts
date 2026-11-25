@@ -616,6 +616,21 @@ describe('indicatorChipLabel', () => {
     expect(indicatorChipLabel('compareSymbol', { symbol: 'ETHUSDT' }, undefined, 'Compare')).toBe('Compare ETHUSDT');
   });
 
+  // 'OB 5 1 5' and 'FVG 0 1': a switch read as a number said nothing.
+  it('leaves out a switch (0 or 1) at its default, and names one turned on', () => {
+    const inputs = { length: { kind: 'int' as const, min: 1 }, showBroken: { kind: 'int' as const, min: 0, max: 1 }, count: { kind: 'int' as const, min: 0 } };
+    const defaults = { length: 5, showBroken: 0, count: 5 };
+    expect(indicatorChipLabel('orderblocks', { length: 5, showBroken: 0, count: 5 }, defaults, 'OB', inputs)).toBe('OB 5 5');
+    expect(indicatorChipLabel('orderblocks', { length: 3, showBroken: 1, count: 5 }, defaults, 'OB', inputs)).toBe('OB 3 5 Broken');
+    // Its own label where it has one; a switch turned off from on is left out too.
+    const delta = { mode: { kind: 'int' as const, min: 0, max: 1, label: 'Cumulative' } };
+    expect(indicatorChipLabel('voldelta', { mode: 1 }, { mode: 0 }, 'Vol Δ', delta)).toBe('Vol Δ Cumulative');
+    const patterns = { reversal: { kind: 'int' as const, min: 0, max: 1 } };
+    expect(indicatorChipLabel('candlepatterns', { reversal: 0 }, { reversal: 1 }, 'Patterns', patterns)).toBe('Patterns');
+    // Without the inputs, as before.
+    expect(indicatorChipLabel('fvg', { minPercent: 0, showFilled: 1 }, { minPercent: 0, showFilled: 0 }, 'FVG')).toBe('FVG 0 1');
+  });
+
   it('lists up to three numeric parameters in the indicator’s own order', () => {
     expect(indicatorChipLabel('macd', { signal: 9, slow: 26, fast: 12 }, { fast: 12, slow: 26, signal: 9 }))
       .toBe('MACD 12 26 9');

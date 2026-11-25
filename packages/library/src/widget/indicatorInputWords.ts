@@ -47,5 +47,5 @@ export function widgetIndicatorLabel(ind: NamedIndicator, t: Translator): string
     const own = spec.options.find((option) => option !== null && typeof option === 'object' && String(option.value) === String(value));
     return (typeof own === 'object' ? own.label : undefined) ?? choiceLabel(name, value, t) ?? [];
   });
-  return [indicatorChipLabel(ind.id, ind.params, defaultConfig, shortName), ...words].join(' ');
+  return [indicatorChipLabel(ind.id, ind.params, defaultConfig, shortName, inputs), ...words].join(' ');
 }
