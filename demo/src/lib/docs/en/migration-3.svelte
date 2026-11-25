@@ -197,6 +197,15 @@ chart.startBracket('buy', undefined, { risk: 50 })   // the quantity that loses 
   out to have the chart's latest price as before. A <code>markPrice</code> of 0 is taken for none.
 </p>
 
+<h3 id="ticket-dock">The order ticket opens in the dock, beside the chart</h3>
+<p>
+  The widget's order ticket was a dialog over the chart, on the price it was filled in for. It is now a page of the dock, beside the chart: it hides no price, a press on the chart does not shut it, and it stays for the next order once one is sent, on the same side, kind and quantity. Its button is on the dock's rail, and <code>widget.openPanel('orderTicket')</code> opens it with a ticket at the market.
+</p>
+<p>
+  <code>'orderTicket'</code> is one more <code>WidgetPanel</code>: <code>getOpenPanel()</code> and <code>onPanelChange</code> report it, and a page of your own cannot take that id. On a phone, or with the dock off (<code>features: {'{'} dock: false {'}'}</code>), the ticket is the dialog it was. A host that wants the dialog at every width says so:
+</p>
+<pre><code>{`new ChartWidget(el, { ticketPlace: 'dialog' });`}</code></pre>
+
 <h2 id="types">Types that grew</h2>
 <p>
   <code>TimeInForce</code> is now <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. Code that handles every

@@ -51,7 +51,12 @@ export interface OrderTicketCallbacks {
   fromWallTime?: (date: string, time: string) => number | null;
   /** The moment now, ms: what an order good till a date has to end after. Unset, the clock's. */
   now?: () => number;
+  /** The ticket, a page of the dock, was shut by its own Cancel, cross or Escape: the dock shuts the page. */
+  onDockClose?: () => void;
 }
+
+/** Where the ticket is: a dialog over the chart, or a page of the dock beside it. */
+export type OrderTicketPlace = 'dialog' | 'dock';
 
 /** Where a ticket starts: a side and a price (a click on the chart), and the market. */
 export interface OrderTicketStart {
@@ -120,10 +125,18 @@ let ticketSeq = 0;
  * An order ticket: side, type, quantity, price, stop-loss, take-profit and
  * time in force, checked as it is filled in and summed up as a receipt; Place
  * sends an `orderPlace` intent. Escape, Cancel or the cross close it; a press outside does not.
+ *
+ * It is a dialog over the chart, or a page of the dock beside it (`open(start, 'dock')`, its
+ * `dockElement` put in the dock by the widget). Beside the chart it hides no price, traps no key,
+ * and stays for the next order once one is sent.
  */
 export class WidgetOrderTicket {
   private backdrop: HTMLDivElement;
   private modal: HTMLDivElement;
+  /** The dock's page: the ticket is moved into it while it is docked. */
+  readonly dockElement: HTMLDivElement;
+  private place_: OrderTicketPlace = 'dialog';
+  private opened = false;
   private symbolEl: HTMLSpanElement;
   private body: HTMLDivElement;
   private summaryEl: HTMLDivElement;
@@ -163,9 +176,9 @@ export class WidgetOrderTicket {
 
     this.modal = document.createElement('div');
     this.modal.className = 'tcw-modal tcw-order-ticket';
-    this.modal.setAttribute('role', 'dialog');
-    this.modal.setAttribute('aria-modal', 'true');
     this.modal.setAttribute('aria-labelledby', `tcw-ticket-title-${this.uid}`);
+    this.dockElement = document.createElement('div');
+    this.dockElement.className = 'tcw-ticket-dock';
     this.modal.addEventListener('keydown', (e) => {
       // An input method's Escape ends what it composes; the ticket stays.
       if (e.key === 'Escape' && !e.isComposing && e.keyCode !== IME_KEY_CODE) {
@@ -173,7 +186,8 @@ export class WidgetOrderTicket {
         this.close();
         return;
       }
-      keepTabInside(e, this.modal);
+      // A dialog keeps the keyboard; a page of the dock is one stop among the widget's others.
+      if (this.place_ === 'dialog') keepTabInside(e, this.modal);
     });
 
     const header = document.createElement('div');
@@ -221,13 +235,14 @@ export class WidgetOrderTicket {
     footer.append(end);
 
     this.modal.append(header, this.body, this.summaryEl, this.problemsEl, footer);
-    this.backdrop.appendChild(this.modal);
     host.appendChild(this.backdrop);
+    this.setPlace('dialog');
   }
 
-  open(start: OrderTicketStart): void {
+  open(start: OrderTicketStart, place: OrderTicketPlace = 'dialog'): void {
     this.returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.release();
+    this.setPlace(place);
     this.refusal = null;
     this.lastPrice = start.lastPrice;
     this.quote = soundQuote(start.quote);
@@ -261,28 +276,107 @@ export class WidgetOrderTicket {
     };
     this.problemsEl.replaceChildren();
     this.render();
-    this.backdrop.hidden = false;
-    // The quantity is what is typed first; a side is picked already. Under a finger a focused field
-    // brings the keyboard up over the ticket, so there the side's button takes the focus, as it does
-    // where there is no quantity to set.
+    this.opened = true;
+    this.backdrop.hidden = this.place_ !== 'dialog';
+    // A page of the dock is hidden until the dock opens it: the one who opens it gives it the keyboard then.
+    if (this.place_ === 'dialog') this.focusStart();
+  }
+
+  /**
+   * The keyboard where an order starts. The quantity is what is typed first; a side is picked
+   * already. Under a finger a focused field brings the keyboard up over the ticket, so there the
+   * side's button takes the focus, as it does where there is no quantity to set.
+   */
+  focusStart(): void {
+    if (!this.opened) return;
     const sideButton = this.body.querySelector<HTMLElement>('button[aria-pressed="true"]');
     const quantityField = underFinger() ? null : this.body.querySelector<HTMLElement>('[data-ticket-field="quantity"]');
     (quantityField ?? sideButton)?.focus();
   }
 
+  /** An order of this ticket is on its way to the broker, not yet answered. */
+  isWaiting(): boolean {
+    return this.waiting !== null;
+  }
+
+  /**
+   * Its page of the dock is going (the widget made too narrow for a dock, another panel over an
+   * order on its way): the ticket goes on as a dialog, with what was typed and what it waits for.
+   */
+  undock(): void {
+    if (!this.opened || this.place_ !== 'dock') return;
+    const hadFocus = this.modal.contains(document.activeElement);
+    this.setPlace('dialog');
+    this.backdrop.hidden = false;
+    if (hadFocus) (this.waiting !== null ? this.cancel : this.submit).focus();
+  }
+
   close(): void {
-    if (this.backdrop.hidden) return;
+    if (!this.opened) return;
+    const docked = this.place_ === 'dock';
+    this.dismiss();
+    // Its page of the dock shuts with it: the dock gives the keyboard back itself.
+    if (docked) this.callbacks.onDockClose?.();
+    else if (this.returnFocus?.isConnected) this.returnFocus.focus();
+    this.returnFocus = null;
+  }
+
+  /** Shut with nothing asked of the dock and the keyboard left where it is: the dock shut the page itself. */
+  dismiss(): void {
+    if (!this.opened) return;
+    this.opened = false;
     this.backdrop.hidden = true;
     // An order on its way goes on: its outcome is no longer the ticket's to show.
     this.release();
     this.refusal = null;
     this.draft = null;
-    if (this.returnFocus?.isConnected) this.returnFocus.focus();
-    this.returnFocus = null;
   }
 
   isOpen(): boolean {
-    return !this.backdrop.hidden;
+    return this.opened;
+  }
+
+  /** Whether it is a page of the dock now, not a dialog. */
+  isDocked(): boolean {
+    return this.place_ === 'dock';
+  }
+
+  /** A dialog over the chart, or a page of the dock: the same form, moved, and named for what it is. */
+  private setPlace(place: OrderTicketPlace): void {
+    this.place_ = place;
+    const docked = place === 'dock';
+    this.modal.classList.toggle('tcw-ticket-docked', docked);
+    this.modal.setAttribute('role', docked ? 'region' : 'dialog');
+    if (docked) this.modal.removeAttribute('aria-modal');
+    else this.modal.setAttribute('aria-modal', 'true');
+    const home = docked ? this.dockElement : this.backdrop;
+    if (this.modal.parentElement !== home) home.appendChild(this.modal);
+  }
+
+  /**
+   * An order is sent and done with. A dialog shuts. A page of the dock stays for the next one, on
+   * the same side, kind, quantity and price: shut, the chart would be resized at each order.
+   */
+  private done(): void {
+    if (this.place_ !== 'dock' || !this.draft) {
+      this.close();
+      return;
+    }
+    const sent = this.draft;
+    const hadFocus = this.modal.contains(document.activeElement);
+    this.release();
+    this.refusal = null;
+    this.typed.clear();
+    const market = this.market(sent.side);
+    // The next order starts as the one sent: its side, kind and quantity, and the price it waited at (a market
+    // order's is the market's again). What was that order's alone is not carried: its stop-loss and take-profit,
+    // their targets and trail, and a date it was good till, which may be past by the next one.
+    const { trailing: _trailing, targets: _targets, expireTime: _expireTime, ...kept } = sent;
+    const next: OrderTicketDraft = { ...kept, price: sent.type === 'market' ? this.round(market ?? sent.price) : sent.price, stopLoss: null, takeProfit: null };
+    this.draft = { ...next, timeInForce: sent.timeInForce === 'gtd' ? ticketTimeInForce({ type: next.type, kind: next.kind, timeInForce: 'gtc' }, this.rules) : sent.timeInForce };
+    this.problemsEl.replaceChildren();
+    this.render();
+    if (hadFocus) (this.body.querySelector<HTMLElement>('[data-ticket-field="quantity"]') ?? this.submit).focus();
   }
 
   /** The latest price and the best bid and ask, while the ticket is open (a market order's price, the checks). */
@@ -302,7 +396,7 @@ export class WidgetOrderTicket {
    */
   accepted(id: string): boolean {
     if (this.waiting !== id) return false;
-    this.close();
+    this.done();
     return true;
   }
 
@@ -366,7 +460,9 @@ export class WidgetOrderTicket {
   }
 
   destroy(): void {
-    this.close();
+    this.dismiss();
+    this.modal.remove();
+    this.dockElement.remove();
     this.backdrop.remove();
   }
 
@@ -412,7 +508,7 @@ export class WidgetOrderTicket {
     this.refusal = null;
     const waitOn = this.callbacks.onSubmit(orderTicketIntent(draft, this.market(), this.rules));
     if (typeof waitOn === 'string' && waitOn !== '') this.hold(waitOn);
-    else this.close();
+    else this.done();
   }
 
   private now(): number {

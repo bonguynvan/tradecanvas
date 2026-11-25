@@ -6,6 +6,9 @@ The `3.0` branch. These move under the version's own heading when it is released
 
 ### Breaking
 
+- **The widget's order ticket opens in the dock, beside the chart** (`@tradecanvas/chart`): it was a dialog over the
+  chart. `ticketPlace: 'dialog'` keeps the dialog; a phone, and a widget with the dock off, have it as before.
+  `'orderTicket'` is one more `WidgetPanel`, which a page of your own cannot take as its id.
 - **A confirmed bracket goes to the execution adapter** (`@tradecanvas/chart`): with an adapter connected, `brackets` is now `'place'` when left out, where it was `'event'` with a warning in the console. An app that places the `bracketPlace` event's bracket itself connects with `{ brackets: 'event' }`. The docs' *Moving to 3.0* page has each case.
 - **The paper account fills a stop-limit within its limit** (`@tradecanvas/core`): `PaperExecutionAdapter` made a `stopLimit` order a position at its stop. It now becomes a limit order at its `price` once the stop is reached, and fills only within it.
 - **A price set by hand is on the market's grid** (`@tradecanvas/core`, `@tradecanvas/chart`): `orderModify`, `positionModify`, `bracketPlace`, the `orderPlace` of a draft order or of the right-click menu, `priceAxisAdd`, `chartContextMenu` and an alert dragged carried the price under the pointer as a pixel gives it (`62549.71592675613`). They carry it on the market's price step, else to the decimals the price axis shows (`chart.roundPrice`). Code that rounded them itself can stop. On a market with a ceiling and a floor for the day, an order's own price is also kept inside them: dragged past one, it is reported at it.
@@ -201,6 +204,13 @@ The `3.0` branch. These move under the version's own heading when it is released
 
 ### Trading
 
+- **The order ticket beside the chart.** The widget's ticket is a page of the dock (`ticketPlace: 'dock'`, the
+  default; `openPanel('orderTicket')`, its button on the rail): it hides no price, traps no key, is not lost to a
+  press on the chart, and stays for the next order once one is sent, on the same side, kind, quantity and
+  price (a market order's is the market's again), without the last one's stop-loss and take-profit. Shut by its
+  own Cancel, cross or Escape, its page shuts; another panel in its place, it goes with its page and what was
+  typed in it. An order on its way, and an order half typed when the widget is made too narrow for a dock, go on
+  as the dialog. Under 641 px, or with no dock, it is the dialog it was.
 - **Profit taken in parts** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`): `takeProfits` on an order's intent, an order and a position is a list of levels, each a price and the quantity that closes there; `modifyPositionIntent({ positionId, takeProfits })` sets them and `null` takes them off. The paper account closes a level's part when the price reaches it (a fill each) and `takeProfit` closes what they leave. The chart draws a line and a tag for each level, the account panel writes the nearest and how many more, and the widget's order ticket reaches a take-profit in one, two or three targets.
 - **A log of what happened to the orders** (`@tradecanvas/chart`): `chart.getActivityLog()` gives each order placed, moved, cancelled or filled, and what was refused with its reason, the latest 200, read from the orders, fills and errors the chart is told. The widget's account panel shows it in a Log tab, in 30 languages. `chart.clearActivityLog()` empties it.
 - **Sell and Buy on the chart** (`@tradecanvas/chart`, `@tradecanvas/commons`): while an execution adapter is connected, the widget shows Sell and Buy under the chart's legend, each with its price (the bid and the ask with their spread, else the last price); a press opens the order ticket on that side. The `tradeButtons` switch turns them off. Two new events: `executionChange` says when an adapter is connected or taken away, and `bidAskChange` when the bid and the ask marked on the chart change.

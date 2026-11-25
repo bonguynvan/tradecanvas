@@ -167,6 +167,15 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 在止损处亏损 50 �
   <code>markPrice</code> 为 0 时视为没有。
 </p>
 
+<h3 id="ticket-dock">下单面板在停靠栏中打开，位于图表旁边</h3>
+<p>
+  组件的下单面板原先是覆盖在图表上的对话框，正好挡住要填写的价格。现在它是停靠栏中的一页，位于图表旁边：不遮挡价格，点击图表不会关闭它，发送一笔订单后它会留下等待下一笔，方向、类型和数量保持不变。它的按钮在停靠栏的侧条上，<code>widget.openPanel('orderTicket')</code> 以市价打开一张新单。
+</p>
+<p>
+  <code>'orderTicket'</code> 是新增的一个 <code>WidgetPanel</code>：<code>getOpenPanel()</code> 和 <code>onPanelChange</code> 会报告它，你自己的页面不能使用这个 id。在手机上，或关闭停靠栏（<code>features: {'{'} dock: false {'}'}</code>）时，下单面板仍是原来的对话框。希望在任何宽度都使用对话框的宿主可以这样声明：
+</p>
+<pre><code>{`new ChartWidget(el, { ticketPlace: 'dialog' });`}</code></pre>
+
 <h2 id="types">扩充的类型</h2>
 <p>
   <code>TimeInForce</code> 现在是 <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>。处理全部成员的代码

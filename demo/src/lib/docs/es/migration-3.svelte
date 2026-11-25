@@ -203,6 +203,15 @@ chart.startBracket('buy', undefined, { risk: 50 })   // la cantidad que pierde 5
   <code>markPrice</code> de 0 se toma como ninguno.
 </p>
 
+<h3 id="ticket-dock">El ticket de orden se abre en el dock, junto al gráfico</h3>
+<p>
+  El ticket de orden del widget era un diálogo sobre el gráfico, justo encima del precio para el que se rellenaba. Ahora es una página del dock, junto al gráfico: no tapa ningún precio, una pulsación en el gráfico no lo cierra, y tras enviar una orden se queda para la siguiente, con el mismo lado, tipo y cantidad. Su botón está en el carril del dock, y <code>widget.openPanel('orderTicket')</code> lo abre con un ticket a mercado.
+</p>
+<p>
+  <code>'orderTicket'</code> es un <code>WidgetPanel</code> más: <code>getOpenPanel()</code> y <code>onPanelChange</code> lo comunican, y una página propia no puede usar ese id. En un teléfono, o con el dock desactivado (<code>features: {'{'} dock: false {'}'}</code>), el ticket es el diálogo de antes. Un host que quiera el diálogo en cualquier ancho lo indica:
+</p>
+<pre><code>{`new ChartWidget(el, { ticketPlace: 'dialog' });`}</code></pre>
+
 <h2 id="types">Tipos que han crecido</h2>
 <p>
   <code>TimeInForce</code> es ahora <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. El código que trata todos

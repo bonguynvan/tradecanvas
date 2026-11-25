@@ -185,6 +185,15 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 손절가에서 50을 �
   <code>markPrice</code>가 0이면 없는 것으로 봅니다.
 </p>
 
+<h3 id="ticket-dock">주문 티켓이 차트 옆 도크에서 열립니다</h3>
+<p>
+  위젯의 주문 티켓은 이전에는 차트 위에 뜨는 대화상자여서, 입력하려는 바로 그 가격을 가렸습니다. 이제는 차트 옆 도크의 한 페이지입니다: 가격을 가리지 않고, 차트를 눌러도 닫히지 않으며, 주문을 하나 보낸 뒤에도 다음 주문을 위해 남아 방향, 종류, 수량을 유지합니다. 버튼은 도크의 레일에 있고, <code>widget.openPanel('orderTicket')</code>은 시장가 티켓으로 엽니다.
+</p>
+<p>
+  <code>'orderTicket'</code>은 새로 추가된 <code>WidgetPanel</code>입니다: <code>getOpenPanel()</code>과 <code>onPanelChange</code>가 이를 알려 주며, 직접 만든 페이지는 이 id를 쓸 수 없습니다. 휴대폰에서는, 또는 도크를 끈 경우(<code>features: {'{'} dock: false {'}'}</code>) 티켓은 이전과 같은 대화상자입니다. 모든 너비에서 대화상자를 원하는 호스트는 이렇게 지정합니다:
+</p>
+<pre><code>{`new ChartWidget(el, { ticketPlace: 'dialog' });`}</code></pre>
+
 <h2 id="types">넓어진 타입</h2>
 <p>
   <code>TimeInForce</code>는 이제 <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>입니다. 모든 멤버를 처리하는 코드(default가

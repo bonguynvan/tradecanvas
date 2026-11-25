@@ -18,6 +18,7 @@ const PANEL_FEATURES = {
   objectTree: 'objectTree',
   dataWindow: 'dataWindow',
   symbolInfo: 'symbolInfo',
+  orderTicket: 'orderTicket',
   depthLadder: 'depthLadder',
   tape: 'tape',
 } as const satisfies Record<Exclude<WidgetPanel, 'watchlist'>, WidgetFeature>;
@@ -111,6 +112,9 @@ export class WidgetDockArea {
     if (!BUILT_IN_PANELS.has(panel)) return false;
     if (panel === 'watchlist') return this.host.watching.watchlist !== null;
     if (panel === 'depthLadder' && this.host.trading.depthLadder === null) return false;
+    // The ticket is a page of the dock only where the widget was made to put it there.
+    // And only while the dock shows: on a phone, or with the dock off, it is a dialog, not a panel to open.
+    if (panel === 'orderTicket' && !(this.dock?.has('orderTicket') && this.railShown())) return false;
     if (panel === 'tape' && this.host.tape === null) return false;
     return this.host.featureState[PANEL_FEATURES[panel as Exclude<WidgetPanel, 'watchlist'>]];
   }
@@ -313,6 +317,23 @@ export class WidgetDockArea {
         id: 'symbolInfo', label: this.host.t('symbolInfo.title'), icon: 'info', element: info.element, parts: ['dock.symbolInfo', 'symbolInfo'],
         onShow: () => info.open(),
         onHide: () => info.close(),
+      });
+    }
+    const ticket = this.host.trading.orderTicket;
+    if (ticket && this.host.trading.ticketInDock) {
+      dock.addPage({
+        id: 'orderTicket', label: this.host.t('ticket.title'), icon: 'receipt', element: ticket.dockElement, parts: ['orderTicket'],
+        // Its rail button pressed, or `openPanel`: a ticket at the market. Opened by the ticket itself, it is there already.
+        onShow: () => {
+          if (!ticket.isOpen()) this.host.trading.openOrderTicket();
+        },
+        // Another panel in its place, or the dock shut: the ticket goes with its page, asking nothing back.
+        // Not what must not be lost that way: an order on its way, and an order half typed when the widget
+        // is made too narrow for a dock. Those go on as the dialog.
+        onHide: () => {
+          if (ticket.isWaiting() || this.dockNarrow === true) ticket.undock();
+          else ticket.dismiss();
+        },
       });
     }
     const ladder = this.host.trading.depthLadder;
