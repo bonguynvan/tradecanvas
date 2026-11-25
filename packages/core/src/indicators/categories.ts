@@ -31,7 +31,7 @@ const BUILT_IN: Record<Exclude<IndicatorCategory, 'other'>, readonly string[]> =
     'tradevalue',
   ],
   bands: ['bb', 'keltner', 'donchian', 'envelope', 'lrc', 'seb', 'machannel'],
-  patterns: ['pivots', 'zigzag', 'fractals', 'candlepatterns', 'demark', 'avgprice', 'medprice', 'typprice', 'wclose'],
+  patterns: ['pivots', 'zigzag', 'fractals', 'candlepatterns', 'fvg', 'demark', 'avgprice', 'medprice', 'typprice', 'wclose'],
 };
 
 const KINDS = new Set<IndicatorCategory>(INDICATOR_CATEGORIES);

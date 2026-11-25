@@ -6,14 +6,14 @@
 
 <svelte:head>
   <title>Getting Started — TradeCanvas docs</title>
-  <meta name="description" content="Install TradeCanvas, the MIT trading chart with 134 indicators, 76 drawing tools and no logo on the chart, and render a chart in a minute." />
+  <meta name="description" content="Install TradeCanvas, the MIT trading chart with 135 indicators, 76 drawing tools and no logo on the chart, and render a chart in a minute." />
 </svelte:head>
 
 <h1>Getting started</h1>
 <p>Install TradeCanvas and render a chart in under a minute.</p>
 <p>
   TradeCanvas is MIT licensed and draws no logo on the chart. It has
-  25 chart types, 134 indicators and 76 drawing tools built in.
+  25 chart types, 135 indicators and 76 drawing tools built in.
 </p>
 
 <h2>Installation</h2>
@@ -106,7 +106,7 @@ args = ["-y", "@tradecanvas/mcp"]`}</code></pre>
 <ul>
   <li><a href={href('/docs/api')}>API reference</a> — full surface of <code>Chart</code> and <code>ChartWidget</code></li>
   <li><a href={href('/docs/chart-types')}>Chart types</a> — 25 built-in chart types</li>
-  <li><a href={href('/docs/indicators')}>Indicators</a> — catalog of 134 indicators</li>
+  <li><a href={href('/docs/indicators')}>Indicators</a> — catalog of 135 indicators</li>
   <li><a href={href('/docs/realtime')}>Realtime &amp; replay</a> — streaming adapters and replay mode</li>
   <li><a href={href('/docs/analytics')}>Analytics</a> — strategy backtester and risk metrics</li>
 </ul>

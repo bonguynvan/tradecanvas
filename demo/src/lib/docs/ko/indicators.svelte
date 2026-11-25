@@ -196,6 +196,19 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 </p>
 <pre><code>{`import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core/patterns'`}</code></pre>
 
+<h2 id="fair-value-gaps">페어 밸류 갭</h2>
+<p>
+  세 개의 봉에서 세 번째 봉의 저가가 첫 번째 봉의 고가보다 위에 있으면(하락에서는 세 번째 봉의 고가가 첫 번째 봉의 저가보다 아래에 있으면) 페어 밸류 갭이 남습니다. 그 사이 가격에서는 가운데 봉만 거래되었습니다. 차트는 그 가격대에 상자를 그립니다. 갭이 열려 있는 동안에는 가운데 봉에서 오른쪽 끝까지, 상승 갭은 청록색, 하락 갭은 분홍색입니다(캔들 패턴 표시와 같은 색으로, 캔들의 초록과 빨강과 구분됩니다. 지표 스타일에서 바꿀 수 있습니다). 이후 처음으로 전체를 지나간 봉이 갭을 메우며, <code>showFilled</code>가 1이 아니면 차트에서 사라집니다. <code>detectFairValueGaps</code>는 차트 없이 전부를, 각각을 메운 봉과 함께 돌려줍니다.
+</p>
+<pre><code>{`chart.addIndicator('fvg')                              // 아직 열려 있는 갭마다 상자 하나
+chart.addIndicator('fvg', { minPercent: 0.1 })         // 가격의 0.1% 미만인 갭은 제외
+chart.addIndicator('fvg', { showFilled: 1 })           // 메워진 갭도 흐리게, 메운 봉까지 남김
+
+import { detectFairValueGaps } from '@tradecanvas/chart'
+
+detectFairValueGaps(bars, { minPercent: 0.1 })
+// [{ index, formed, direction: 'up' | 'down', top, bottom, filledAt }]`}</code></pre>
+
 <h2>나만의 지표</h2>
 <p>
   짧은 방법은 <code>defineIndicator</code>입니다: 입력값, 그리고 봉에서 지표의 선을 돌려주는 함수 하나이며,

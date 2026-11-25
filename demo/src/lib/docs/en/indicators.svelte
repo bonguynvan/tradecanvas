@@ -203,6 +203,19 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 </p>
 <pre><code>{`import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core/patterns'`}</code></pre>
 
+<h2 id="fair-value-gaps">Fair value gaps</h2>
+<p>
+  Three bars leave a fair value gap where the third bar's low is over the first bar's high (or, going down, its high under the first bar's low): between the two, only the middle bar traded. The chart draws a box over those prices, from the middle bar to the right edge while the gap is open, teal for a gap going up and pink for a gap going down (the colours of the candlestick patterns' marks, kept apart from the candles' green and red; the indicator's style changes them). A gap is filled by the first later bar that trades through all of it, and is then taken off the chart unless <code>showFilled</code> is 1. <code>detectFairValueGaps</code> gives them all with no chart, with the bar that filled each.
+</p>
+<pre><code>{`chart.addIndicator('fvg')                              // a box over each gap still open
+chart.addIndicator('fvg', { minPercent: 0.1 })         // leave out gaps under 0.1% of the price
+chart.addIndicator('fvg', { showFilled: 1 })           // keep the filled ones, fainter, to the bar that filled them
+
+import { detectFairValueGaps } from '@tradecanvas/chart'
+
+detectFairValueGaps(bars, { minPercent: 0.1 })
+// [{ index, formed, direction: 'up' | 'down', top, bottom, filledAt }]`}</code></pre>
+
 <h2>Your own indicator</h2>
 <p>
   The short way is <code>defineIndicator</code>: its inputs, and one function that returns its lines from the

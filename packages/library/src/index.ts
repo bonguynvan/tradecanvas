@@ -166,6 +166,8 @@ export type {
   CandlePatternKind,
 } from '@tradecanvas/commons';
 export { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core';
+export { detectFairValueGaps } from '@tradecanvas/core';
+export type { FairValueGap, FairValueGapOptions } from '@tradecanvas/core';
 
 // Re-export themes and defaults
 export {

@@ -6,13 +6,13 @@
 
 <svelte:head>
   <title>快速开始 — TradeCanvas 文档</title>
-  <meta name="description" content="安装 TradeCanvas（MIT 许可的交易图表库，内置 134 个指标、76 种画线工具，图表上没有标志），一分钟内渲染出你的第一个交易图表。" />
+  <meta name="description" content="安装 TradeCanvas（MIT 许可的交易图表库，内置 135 个指标、76 种画线工具，图表上没有标志），一分钟内渲染出你的第一个交易图表。" />
 </svelte:head>
 
 <h1>快速开始</h1>
 <p>安装 TradeCanvas，一分钟内即可渲染出图表。</p>
 <p>
-  TradeCanvas 采用 MIT 许可证，图表上不显示任何标志。内置 25 种图表、134 个指标和
+  TradeCanvas 采用 MIT 许可证，图表上不显示任何标志。内置 25 种图表、135 个指标和
   76 种画线工具。
 </p>
 
@@ -105,7 +105,7 @@ args = ["-y", "@tradecanvas/mcp"]`}</code></pre>
 <ul>
   <li><a href={href('/docs/api')}>API 参考</a> — <code>Chart</code> 与 <code>ChartWidget</code> 的完整接口</li>
   <li><a href={href('/docs/chart-types')}>图表类型</a> — 25 种内置图表类型</li>
-  <li><a href={href('/docs/indicators')}>指标</a> — 134 个指标的目录</li>
+  <li><a href={href('/docs/indicators')}>指标</a> — 135 个指标的目录</li>
   <li><a href={href('/docs/realtime')}>实时数据与回放</a> — 流式数据适配器与回放模式</li>
   <li><a href={href('/docs/analytics')}>分析</a> — 策略回测与风险指标</li>
 </ul>

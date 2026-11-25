@@ -190,6 +190,19 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 </p>
 <pre><code>{`import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core/patterns'`}</code></pre>
 
+<h2 id="fair-value-gaps">公允价值缺口</h2>
+<p>
+  三根K线中，第三根的最低价高于第一根的最高价（向下时，第三根的最高价低于第一根的最低价），就留下一个公允价值缺口：两者之间只有中间那根K线成交过。图表在这段价格上画一个方框，缺口未回补时从中间那根K线画到右边缘，向上的缺口用青色，向下的用粉色（与K线形态标记同色，以区别于K线的红绿；可在指标样式中更改）。之后第一根完全穿过它的K线即回补该缺口，此后不再绘制，除非 <code>showFilled</code> 为 1。<code>detectFairValueGaps</code> 不需要图表就能给出全部缺口，以及回补每个缺口的K线。
+</p>
+<pre><code>{`chart.addIndicator('fvg')                              // 每个未回补的缺口一个方框
+chart.addIndicator('fvg', { minPercent: 0.1 })         // 略去小于价格 0.1% 的缺口
+chart.addIndicator('fvg', { showFilled: 1 })           // 保留已回补的缺口，颜色更淡，画到回补它的K线
+
+import { detectFairValueGaps } from '@tradecanvas/chart'
+
+detectFairValueGaps(bars, { minPercent: 0.1 })
+// [{ index, formed, direction: 'up' | 'down', top, bottom, filledAt }]`}</code></pre>
+
 <h2>自定义指标</h2>
 <p>
   简便的方式是 <code>defineIndicator</code>：给出它的输入，以及一个根据K线返回其线条的函数，

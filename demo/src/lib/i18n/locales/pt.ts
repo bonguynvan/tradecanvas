@@ -4,7 +4,7 @@ const pt: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Gráficos de trading em Canvas para a web',
     description:
-      'TradeCanvas é uma biblioteca de gráficos de trading para a web, desenhada com Canvas 2D ou WebGL: 18 tipos de gráfico, 134 indicadores, 76 ferramentas de desenho, dados ao vivo de exchanges, ordens no gráfico, replay e backtesting, em 30 idiomas. Sem dependências, MIT.',
+      'TradeCanvas é uma biblioteca de gráficos de trading para a web, desenhada com Canvas 2D ou WebGL: 18 tipos de gráfico, 135 indicadores, 76 ferramentas de desenho, dados ao vivo de exchanges, ordens no gráfico, replay e backtesting, em 30 idiomas. Sem dependências, MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const pt: SiteMessages = {
     release: 'renderizador WebGL, 30 idiomas',
     title: 'O motor de gráficos para apps de trading.',
     ledeHtml:
-      'De candles a Renko, 134 indicadores, 76 ferramentas de desenho, dados ao vivo de exchanges e ordens no gráfico. Desenhado com Canvas 2D ou WebGL, sem nenhuma dependência. Use o <code>ChartWidget</code> completo ou construa sua própria interface sobre o <code>Chart</code> headless.',
+      'De candles a Renko, 135 indicadores, 76 ferramentas de desenho, dados ao vivo de exchanges e ordens no gráfico. Desenhado com Canvas 2D ou WebGL, sem nenhuma dependência. Use o <code>ChartWidget</code> completo ou construa sua própria interface sobre o <code>Chart</code> headless.',
     getStarted: 'Começar',
     browseExamples: 'Ver exemplos',
     specsLabel: 'Números principais',
@@ -71,7 +71,7 @@ const pt: SiteMessages = {
           title: 'Ler o mercado',
           text: 'Bandas, médias e osciladores sobre os candles, níveis de Fibonacci e linhas de tendência por cima, cada um com suas configurações e alertas.',
           points: [
-            '134 indicadores, um sobre o outro, como uma média do RSI',
+            '135 indicadores, um sobre o outro, como uma média do RSI',
             '76 ferramentas de desenho com ímã, grupos e desfazer',
             'Alertas de preço, de linhas e de cruzamentos de indicadores',
           ],
@@ -218,11 +218,11 @@ const pt: SiteMessages = {
     },
     indicators: {
       title: 'Indicadores',
-      stat: '134 integrados',
+      stat: '135 integrados',
       blurb:
         'Sobrepostos e em painéis, calculados internamente, sem dependências matemáticas. Ticks ao vivo recalculam só a barra em formação — 0,001 ms por tick com quatro indicadores em 100k barras.',
       tryThis: [
-        'Clique no botão Indicadores (ou Ctrl+K) e busque qualquer um dos 134',
+        'Clique no botão Indicadores (ou Ctrl+K) e busque qualquer um dos 135',
         'Clique no nome de um indicador na legenda: parâmetros, cores e níveis',
         'Defina o campo “Source” de uma média móvel como a linha de outro indicador',
         'Arraste a linha entre os painéis para redimensioná-los; os botões no canto superior direito de um painel o movem, recolhem ou maximizam',
@@ -732,7 +732,7 @@ const pt: SiteMessages = {
         { name: 'Sem dependências de terceiros em runtime', detail: 'Nada mais para instalar ou auditar' },
       ],
       indicators: [
-        { name: '134 indicadores integrados', detail: 'Pivot points de seis tipos, MA Cross, correlação com outro ativo' },
+        { name: '135 indicadores integrados', detail: 'Pivot points de seis tipos, MA Cross, correlação com outro ativo' },
         { name: 'Fonte de preço', detail: 'open, high, low, hl2, hlc3, ohlc4, hlcc4' },
         { name: 'Um indicador sobre outro indicador', detail: 'Como uma média móvel do RSI, atualizada a cada tick' },
         { name: 'Vários indicadores em um painel, movidos entre painéis', detail: 'moveIndicatorToPane' },

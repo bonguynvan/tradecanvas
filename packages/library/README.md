@@ -28,7 +28,7 @@
   <b>English</b> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.vi.md">Tiếng Việt</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.zh-CN.md">简体中文</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.ja.md">日本語</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.ko.md">한국어</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.es.md">Español</a>
 </p>
 
-**TradeCanvas is the open-source chart library for trading apps** ([tradecanvas.dev](https://tradecanvas.dev/)), under the MIT licence. Candlesticks to Renko, 134 indicators, 76 drawing tools, live feeds and orders on the chart, on Canvas 2D or WebGL, with no third-party dependencies. Use the full `ChartWidget`, or build your own interface on the headless `Chart`, in TypeScript, React, Vue or Svelte.
+**TradeCanvas is the open-source chart library for trading apps** ([tradecanvas.dev](https://tradecanvas.dev/)), under the MIT licence. Candlesticks to Renko, 135 indicators, 76 drawing tools, live feeds and orders on the chart, on Canvas 2D or WebGL, with no third-party dependencies. Use the full `ChartWidget`, or build your own interface on the headless `Chart`, in TypeScript, React, Vue or Svelte.
 
 It is a charting engine you own: MIT-licensed, installed from npm and served with your app, fed by your own data, shown under your own brand. No logo on the chart, nothing to apply for, no platform between you and your users. Coming from TradingView's charting library or Lightweight Charts? Keep your datafeed: [moving from TradingView](https://tradecanvas.dev/docs/from-tradingview/).
 
@@ -38,7 +38,7 @@ It is a charting engine you own: MIT-licensed, installed from npm and served wit
 
 ## Highlights
 
-- **25 chart types, 134 indicators, 76 drawing tools**, indicators on indicators, alerts on lines, undo and redo.
+- **25 chart types, 135 indicators, 76 drawing tools**, indicators on indicators, alerts on lines, undo and redo.
 - **Trading on the chart**: positions with live P&L, orders and stops you drag, a paper broker or your own.
 - **Live data** from Binance, Bybit, Coinbase, Kraken and Upbit, or your own feed in about twenty lines.
 - **Fast**: a million bars panned at 60 fps with WebGL; a live tick in about a microsecond; ten minutes of 30,000 trades a second on a million bars with no memory growth ([soak](https://github.com/bonguynvan/tradecanvas/blob/main/benchmarks/2026-11-03.md)).

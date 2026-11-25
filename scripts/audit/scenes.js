@@ -3,7 +3,7 @@
 // quote on, a linked grid under the pointer, a replay, compares, Renko, the
 // day's limits. Picked by `?scene=` and `?theme=`; the market is made up from
 // a fixed seed and stops once loaded, so every run draws the same bars.
-import { Chart, MockAdapter, PaperExecutionAdapter, MARKET_HOSE, MARKET_KRX, renderPriceChart } from '@tradecanvas/chart';
+import { Chart, MockAdapter, PaperExecutionAdapter, MARKET_HOSE, MARKET_KRX, renderPriceChart, detectFairValueGaps } from '@tradecanvas/chart';
 import { ChartWidget, ChartWidgetGrid } from '@tradecanvas/chart/widget';
 
 /** A small seeded generator in place of Math.random: the same bars every time. */
@@ -1182,6 +1182,15 @@ const SCENES = {
     const s = await widget();
     for (const id of ['rsi', 'macd', 'atr', 'cci', 'stochastic', 'obv', 'mfi', 'adx']) s.chart.addIndicator(id);
     return s;
+  },
+
+  /** Fair value gaps, the filled ones kept: a box for each, the open ones to the right edge. */
+  async fairValueGaps() {
+    const s = await widget();
+    s.chart.addIndicator('fvg', { showFilled: 1 });
+    const gaps = detectFairValueGaps(s.chart.getData());
+    const checks = () => (gaps.length > 0 ? [] : ['the scene has no fair value gap to draw']);
+    return { ...s, checks };
   },
 };
 

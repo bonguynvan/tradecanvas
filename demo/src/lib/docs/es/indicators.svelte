@@ -212,6 +212,19 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 </p>
 <pre><code>{`import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core/patterns'`}</code></pre>
 
+<h2 id="fair-value-gaps">Fair value gaps</h2>
+<p>
+  Tres barras dejan un fair value gap cuando el mínimo de la tercera queda por encima del máximo de la primera (o, a la baja, su máximo por debajo del mínimo de la primera): entre ambos solo negoció la barra central. El gráfico dibuja una caja sobre esos precios, desde la barra central hasta el borde derecho mientras el gap sigue abierto, en verde azulado para un gap al alza y en rosa para uno a la baja (los colores de las marcas de los patrones de velas, distintos del verde y el rojo de las velas; el estilo del indicador los cambia). Un gap lo llena la primera barra posterior que lo recorre entero, y entonces deja de dibujarse salvo que <code>showFilled</code> sea 1. <code>detectFairValueGaps</code> los devuelve todos sin gráfico, con la barra que llenó cada uno.
+</p>
+<pre><code>{`chart.addIndicator('fvg')                              // una caja sobre cada gap aún abierto
+chart.addIndicator('fvg', { minPercent: 0.1 })         // omite los gaps menores del 0,1% del precio
+chart.addIndicator('fvg', { showFilled: 1 })           // conserva los llenados, más tenues, hasta la barra que los llenó
+
+import { detectFairValueGaps } from '@tradecanvas/chart'
+
+detectFairValueGaps(bars, { minPercent: 0.1 })
+// [{ index, formed, direction: 'up' | 'down', top, bottom, filledAt }]`}</code></pre>
+
 <h2>Tu propio indicador</h2>
 <p>
   El camino corto es <code>defineIndicator</code>: sus entradas, y una sola función que devuelve sus líneas a partir de
