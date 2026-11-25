@@ -617,7 +617,7 @@ describe('indicatorChipLabel', () => {
   });
 
   // 'OB 5 1 5' and 'FVG 0 1': a switch read as a number said nothing.
-  it('leaves out a switch (0 or 1) at its default, and names one turned on', () => {
+  it('leaves out a switch (0 or 1) at its default, and names one turned on or off from it', () => {
     const inputs = { length: { kind: 'int' as const, min: 1 }, showBroken: { kind: 'int' as const, min: 0, max: 1 }, count: { kind: 'int' as const, min: 0 } };
     const defaults = { length: 5, showBroken: 0, count: 5 };
     expect(indicatorChipLabel('orderblocks', { length: 5, showBroken: 0, count: 5 }, defaults, 'OB', inputs)).toBe('OB 5 5');
@@ -625,8 +625,12 @@ describe('indicatorChipLabel', () => {
     // Its own label where it has one; a switch turned off from on is left out too.
     const delta = { mode: { kind: 'int' as const, min: 0, max: 1, label: 'Cumulative' } };
     expect(indicatorChipLabel('voldelta', { mode: 1 }, { mode: 0 }, 'Vol Δ', delta)).toBe('Vol Δ Cumulative');
-    const patterns = { reversal: { kind: 'int' as const, min: 0, max: 1 } };
-    expect(indicatorChipLabel('candlepatterns', { reversal: 0 }, { reversal: 1 }, 'Patterns', patterns)).toBe('Patterns');
+    // Turned off from an on default it is named as off, so instances still read apart.
+    const patterns = { trendPeriod: { kind: 'int' as const, min: 2 }, reversal: { kind: 'int' as const, min: 0, max: 1 }, continuation: { kind: 'int' as const, min: 0, max: 1 } };
+    const patternDefaults = { trendPeriod: 10, reversal: 1, continuation: 1 };
+    expect(indicatorChipLabel('candlepatterns', patternDefaults, patternDefaults, 'Patterns', patterns)).toBe('Patterns 10');
+    expect(indicatorChipLabel('candlepatterns', { ...patternDefaults, reversal: 0 }, patternDefaults, 'Patterns', patterns)).toBe('Patterns 10 Reversal off');
+    expect(indicatorChipLabel('candlepatterns', { ...patternDefaults, continuation: 0 }, patternDefaults, 'Patterns', patterns)).toBe('Patterns 10 Continuation off');
     // Without the inputs, as before.
     expect(indicatorChipLabel('fvg', { minPercent: 0, showFilled: 1 }, { minPercent: 0, showFilled: 0 }, 'FVG')).toBe('FVG 0 1');
   });

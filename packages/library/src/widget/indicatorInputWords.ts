@@ -1,6 +1,6 @@
 import type { IndicatorDescriptor } from '@tradecanvas/commons';
-import { indicatorChipLabel } from '../indicatorLabel.js';
-import { EN_MESSAGES, type MessageKey, type Translator } from './i18n.js';
+import { englishSwitchWords, indicatorChipLabel, type SwitchWords } from '../indicatorLabel.js';
+import { EN_MESSAGES, fill, type MessageKey, type Translator } from './i18n.js';
 
 /**
  * Words for an indicator's inputs in the widget's language: an input named
@@ -34,6 +34,19 @@ export interface NamedIndicator {
 }
 
 /**
+ * A switch away from its default in the widget's language: its word
+ * (`indicatorSwitch.<name>`, else the English one) when on, and that word
+ * in `indicatorSwitch.off` when off.
+ */
+export function switchWordsIn(t: Translator): SwitchWords {
+  return (name, spec, on) => {
+    const key = `indicatorSwitch.${name}`;
+    const word = isMessageKey(key) ? t(key) : englishSwitchWords(name, spec, true);
+    return on ? word : fill(t('indicatorSwitch.off'), { name: word });
+  };
+}
+
+/**
  * The indicator's name in the legend, the chips and the Objects panel: its
  * chip label ('EMA 21'), then the word for each choice off its default (the
  * indicator's own label for it, else the widget's), so two read apart
@@ -47,5 +60,5 @@ export function widgetIndicatorLabel(ind: NamedIndicator, t: Translator): string
     const own = spec.options.find((option) => option !== null && typeof option === 'object' && String(option.value) === String(value));
     return (typeof own === 'object' ? own.label : undefined) ?? choiceLabel(name, value, t) ?? [];
   });
-  return [indicatorChipLabel(ind.id, ind.params, defaultConfig, shortName, inputs), ...words].join(' ');
+  return [indicatorChipLabel(ind.id, ind.params, defaultConfig, shortName, inputs, switchWordsIn(t)), ...words].join(' ');
 }
