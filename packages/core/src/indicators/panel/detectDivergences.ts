@@ -151,7 +151,8 @@ export function resumeDivergences(
  * the price makes a lower low and the line a higher one. Bearish at two
  * highs: the price a higher high, the line a lower one. `hidden` adds the
  * ones where the price holds and the line does not. A turn, and so a
- * divergence, is known `right` bars after it (`confirmed`).
+ * divergence, is known `right` bars after it (`confirmed`), and settled
+ * once that bar has closed: a bar still forming can make or unmake it.
  */
 export function detectDivergences(data: DataSeries, line: ArrayLike<number | null | undefined>, options: DivergenceOptions = {}): Divergence[] {
   const found: Divergence[] = [];

@@ -211,7 +211,7 @@ detectFairValueGaps(bars, { minPercent: 0.1 })
 
 <h2 id="divergences">다이버전스</h2>
 <p>
-  다이버전스는 가격과 오실레이터가 각각 두 번 방향을 바꾸되 같은 방향으로 움직이지 않는 것입니다. 강세는 두 저점에서 나타납니다. 가격은 더 낮은 저점을, 오실레이터는 더 높은 저점을 만듭니다. 약세는 두 고점에서 나타납니다. 가격은 더 높은 고점을, 오실레이터는 더 낮은 고점을 만듭니다. <code>rsidiv</code>는 RSI에 각 다이버전스의 두 전환점을 잇는 선과 두 번째 전환점의 표시를 더한 지표입니다. <code>hidden: 1</code>이면 히든 다이버전스(가격은 지키고 RSI는 지키지 못함)도 점선으로 추가됩니다. 전환점은 앞의 <code>left</code>개 봉과 뒤의 <code>right</code>개 봉보다 두드러져야 하므로, 다이버전스는 <code>right</code>개 봉 늦게 확정되고 그 뒤로는 바뀌지 않습니다. 두 전환점의 간격은 <code>minBars</code>에서 <code>maxBars</code>개 봉입니다. <code>detectDivergences(bars, line, options)</code>는 봉마다 값이 하나인 어떤 선이든(값이 없는 곳은 null) 읽으며 차트가 필요 없습니다.
+  다이버전스는 가격과 오실레이터가 각각 두 번 방향을 바꾸되 같은 방향으로 움직이지 않는 것입니다. 강세는 두 저점에서 나타납니다. 가격은 더 낮은 저점을, 오실레이터는 더 높은 저점을 만듭니다. 약세는 두 고점에서 나타납니다. 가격은 더 높은 고점을, 오실레이터는 더 낮은 고점을 만듭니다. <code>rsidiv</code>는 RSI에 각 다이버전스의 두 전환점을 잇는 선과 두 번째 전환점의 표시를 더한 지표입니다. <code>hidden: 1</code>이면 히든 다이버전스(가격은 지키고 RSI는 지키지 못함)도 점선으로 추가됩니다. 전환점은 앞의 <code>left</code>개 봉과 뒤의 <code>right</code>개 봉보다 두드러져야 하므로, 다이버전스는 <code>right</code>개 봉 늦게 확정되고 확정하는 봉이 마감된 뒤로는 바뀌지 않습니다(그 봉이 아직 진행 중일 때는 나타났다 사라질 수 있습니다). 두 전환점의 간격은 <code>minBars</code>에서 <code>maxBars</code>개 봉입니다. <code>detectDivergences(bars, line, options)</code>는 봉마다 값이 하나인 어떤 선이든(값이 없는 곳은 null) 읽으며 차트가 필요 없습니다.
 </p>
 <pre><code>{`chart.addIndicator('rsidiv', {}, 'bottom')                    // RSI와 그 다이버전스 표시
 chart.addIndicator('rsidiv', { hidden: 1 }, 'bottom')         // 히든 다이버전스도, 점선으로

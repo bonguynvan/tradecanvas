@@ -213,7 +213,7 @@ detectFairValueGaps(bars, { minPercent: 0.1 })
 
 <h2 id="divergences">ダイバージェンス</h2>
 <p>
-  ダイバージェンスとは、価格とオシレーターが 2 回ずつ転換しながら、同じ方向には動かないことです。強気は 2 つの安値で起こります。価格は安値を切り下げ、オシレーターは安値を切り上げます。弱気は 2 つの高値で起こります。価格は高値を切り上げ、オシレーターは高値を切り下げます。<code>rsidiv</code> は RSI に、各ダイバージェンスの 2 つの転換点を結ぶ線と 2 つ目の点のマークを加えたものです。<code>hidden: 1</code> で隠れたダイバージェンス（価格は保ち、RSI は保たない）も破線で加わります。転換点は前の <code>left</code> 本と後の <code>right</code> 本より突出している必要があるため、ダイバージェンスは <code>right</code> 本遅れて確定し、その後は変わりません。2 つの転換点の間隔は <code>minBars</code> から <code>maxBars</code> 本です。<code>detectDivergences(bars, line, options)</code> はバーごとに 1 つの値を持つ任意の系列（値がない所は null）を読み、チャートは不要です。
+  ダイバージェンスとは、価格とオシレーターが 2 回ずつ転換しながら、同じ方向には動かないことです。強気は 2 つの安値で起こります。価格は安値を切り下げ、オシレーターは安値を切り上げます。弱気は 2 つの高値で起こります。価格は高値を切り上げ、オシレーターは高値を切り下げます。<code>rsidiv</code> は RSI に、各ダイバージェンスの 2 つの転換点を結ぶ線と 2 つ目の点のマークを加えたものです。<code>hidden: 1</code> で隠れたダイバージェンス（価格は保ち、RSI は保たない）も破線で加わります。転換点は前の <code>left</code> 本と後の <code>right</code> 本より突出している必要があるため、ダイバージェンスは <code>right</code> 本遅れて確定し、確定させるバーが確定した後は変わりません（そのバーが形成中のうちは、現れたり消えたりすることがあります）。2 つの転換点の間隔は <code>minBars</code> から <code>maxBars</code> 本です。<code>detectDivergences(bars, line, options)</code> はバーごとに 1 つの値を持つ任意の系列（値がない所は null）を読み、チャートは不要です。
 </p>
 <pre><code>{`chart.addIndicator('rsidiv', {}, 'bottom')                    // RSI とそのダイバージェンス
 chart.addIndicator('rsidiv', { hidden: 1 }, 'bottom')         // 隠れたダイバージェンスも、破線で

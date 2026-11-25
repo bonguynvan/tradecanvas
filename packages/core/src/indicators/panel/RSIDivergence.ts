@@ -6,8 +6,10 @@ import { divergenceRules, resumeDivergences, type Divergence, type DivergenceRul
 
 /** A hidden divergence's line is dashed: it says the trend goes on, not that it may turn. */
 const HIDDEN_DASH = [4, 3];
-/** The divergence's line when the RSI's own width is not set. */
+/** The RSI's width when none is set. */
 const LINE_WIDTH = 1.5;
+/** A divergence's line is this much wider than the RSI's: lying along it on a flat run, it still reads as a line of its own. */
+const WIDER = 1;
 
 /** What the indicator keeps beside its RSI: the divergences, the turns they were read from, and the rules they were found by. */
 interface Found {
@@ -24,7 +26,8 @@ const sameRules = (a: DivergenceRules, b: DivergenceRules): boolean =>
  * turns where the price went on and the RSI did not (bullish at two lows,
  * bearish at two highs), and a mark at the second. `left` and `right` are
  * the bars a turn stands out from, `right` also how many bars late a
- * divergence is known; `minBars` and `maxBars` how far apart the two turns
+ * divergence is known (it is settled when the bar confirming it closes:
+ * while that bar forms, it can come and go); `minBars` and `maxBars` how far apart the two turns
  * may be; `hidden` (1 or 0) adds the hidden ones, dashed. `bull` and `bear`
  * give the RSI at the second turn. `detectDivergences` reads any line.
  */
@@ -128,8 +131,8 @@ export class RSIDivergenceIndicator extends RSIIndicator {
     const first = Math.floor(viewport.visibleRange.from);
     const last = Math.ceil(viewport.visibleRange.to);
     ctx.save();
-    // As wide as the RSI's line, so a width set for the indicator is the divergences' too.
-    ctx.lineWidth = style.lineWidths[0] ?? LINE_WIDTH;
+    // Wider than the RSI's line, and following a width set for the indicator.
+    ctx.lineWidth = (style.lineWidths[0] ?? LINE_WIDTH) + WIDER;
     // On top of any fading the context already has, as the plots are.
     ctx.globalAlpha *= style.opacity;
     // In the order of their second turns: from the newest back to the first that ends before the bars in view.
