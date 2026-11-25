@@ -531,7 +531,7 @@ chart.setSessionShadingConfig({
 chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
 chart.isExtendedHoursVisible()`}</code></pre>
 <p>
-  <strong>The trading day.</strong> A session that runs past midnight (CME's 17:00 to 16:00 in Chicago) starts the trading day at its open. The indicators that start again each day, week or month (Session VWAP, VWAP's and the cumulative delta's anchor, the session volume profile, the MTF average's days), the prior-day lines and the market profile's days then run from 17:00 to 17:00, each named by the date it ends on. Sessions inside a day keep midnight. Daily bars and the days built from trades keep the zone's midnight.
+  <strong>The trading day.</strong> A session that runs past midnight (CME's 17:00 to 16:00 in Chicago) starts the trading day at its open. The indicators that start again each day, week or month (Session VWAP, VWAP's and the cumulative delta's anchor, the session volume profile, the MTF average's days), the prior-day lines and the market profile's days then run from 17:00 to 17:00, each named by the date it ends on. Sessions inside a day keep midnight. Daily bars and the days built from trades keep the zone's midnight. The chart's day lines start there too while it shows the exchange's time (<code>setTimeZone('exchange')</code>, or the exchange's zone by name); on another clock a day there runs midnight to midnight.
 </p>
 <pre><code>{`chart.setSymbolInfo({ symbol: 'ES', timeZone: 'America/Chicago', sessions: [{ start: '17:00', end: '16:00' }] })
 // Session VWAP, svp, the prior-day lines: from 17:00 to 17:00

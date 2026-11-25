@@ -1,5 +1,5 @@
 import type { ViewportState, Theme, DataSeries, TimeZoneSetting } from '@tradecanvas/commons';
-import { barTimeUnit, timeParts } from '@tradecanvas/commons';
+import { barTimeUnit, timeParts, zoneOffsetMinutes } from '@tradecanvas/commons';
 import { barIndexToX } from '../viewport/ScaleMapping.js';
 import type { GpuRect } from '../engine/gpu.js';
 
@@ -31,6 +31,9 @@ interface BreakMark {
   /** How significant: a year 3, a month 2, a week 1, a day 0. Zoomed out, the lesser give way. */
   rank: number;
 }
+
+const MINUTES_A_DAY = 1440;
+const MINUTE_MS = 60_000;
 
 /** Break lines at least this far apart (px): zoomed out, the lesser ones are left out. */
 const MIN_LINE_GAP_PX = 6;
@@ -82,6 +85,8 @@ export class SessionBreaks {
   private firstTime = NaN;
   private lastTime = NaN;
   private tz: TimeZoneSetting = null;
+  /** When the trading day starts on the clock shown, minutes after its midnight; null for midnight. */
+  private dayStart: number | null = null;
 
   setConfig(config: Partial<SessionBreakConfig>): void {
     Object.assign(this.config, config);
@@ -92,6 +97,32 @@ export class SessionBreaks {
     if (tz === this.tz) return;
     this.tz = tz;
     this.invalidateCache();
+  }
+
+  /**
+   * A day starts this many minutes after midnight on the clock shown (1020
+   * for a session opening at 17:00), named by the date it ends on; null for
+   * midnight. The chart gives it only while it shows the exchange's time.
+   */
+  setDayStart(minute: number | null): void {
+    const next = minute !== null && Number.isFinite(minute) && minute > 0 && minute < MINUTES_A_DAY ? Math.round(minute) : null;
+    if (next === this.dayStart) return;
+    this.dayStart = next;
+    this.invalidateCache();
+  }
+
+  /**
+   * A bar time's date on the clock shown. A day that starts at 17:00 is read
+   * 7 hours on, on the wall clock (the zone's offset at the bar itself), so
+   * its bars fall in the date it ends on and its start keeps its hour on a
+   * night the clocks change.
+   */
+  private partsReader(): (ms: number) => ReturnType<typeof timeParts> {
+    const { tz, dayStart } = this;
+    if (dayStart === null) return (ms) => timeParts(ms, tz);
+    const shift = (MINUTES_A_DAY - dayStart) * MINUTE_MS;
+    if (typeof tz !== 'string') return (ms) => timeParts(ms + shift, tz);
+    return (ms) => timeParts(ms + zoneOffsetMinutes(tz, ms) * MINUTE_MS + shift, 0);
   }
 
   isVisible(): boolean {
@@ -121,10 +152,11 @@ export class SessionBreaks {
     const out: SessionBreak[] = grown ? this.cachedBreaksTyped.slice() : [];
     const unit = barTimeUnit(data);
     const start = grown ? kept : 1;
-    let prev = timeParts(data[start - 1].time * unit, this.tz);
+    const partsOf = this.partsReader();
+    let prev = partsOf(data[start - 1].time * unit);
 
     for (let i = start; i < data.length; i++) {
-      const d = timeParts(data[i].time * unit, this.tz);
+      const d = partsOf(data[i].time * unit);
       if (d.year !== prev.year) {
         out.push({ idx: i, kind: 'year' });
       } else if (d.month !== prev.month) {
