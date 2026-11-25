@@ -25,17 +25,21 @@ describe('sessionVolumeProfiles', () => {
     expect(second.volumes.reduce((a, b) => a + b, 0)).toBe(10);
   });
 
-  it('holds 70% of the day’s volume in its value area, grown from the busiest row toward the heavier side', () => {
+  it('holds 70% of the day’s volume in its value area, grown from the busiest row two rows at a time toward the heavier pair', () => {
     // Rows of 10, 20, 50, 15, 5 from the bottom: the POC is the middle one.
     const data = bars([[0, 0.99, 10], [1, 1.99, 20], [2, 2.99, 50], [3, 3.99, 15], [4, 5, 5]]);
     const [p] = sessionVolumeProfiles(data, { rows: 5 });
     expect(p.volumes).toEqual([10, 20, 50, 15, 5]);
     expect(p.poc).toBe(2.5);
-    // 50, then 20 below (heavier than 15 above): 70 of 100.
-    expect([p.valueAreaLow, p.valueAreaHigh]).toEqual([1, 3]);
-    expect(p.valueAreaRows).toEqual([1, 2]);
+    // 50, then the two rows below, 20 and 10 (30, heavier than 15 and 5 above): 80 of 100, past 70.
+    expect([p.valueAreaLow, p.valueAreaHigh]).toEqual([0, 3]);
+    expect(p.valueAreaRows).toEqual([0, 2]);
+    // For 90, the two above as well.
     const wide = sessionVolumeProfiles(data, { rows: 5, valueArea: 90 })[0];
-    expect([wide.valueAreaLow, wide.valueAreaHigh]).toEqual([0, 4]);
+    expect([wide.valueAreaLow, wide.valueAreaHigh]).toEqual([0, 5]);
+    // One row at the edge counts alone, and a tie goes up: rows 30, 40, 30, with 70 needing one more row.
+    const even = sessionVolumeProfiles(bars([[0, 0.99, 30], [1, 1.99, 40], [2, 3, 30]]), { rows: 3 })[0];
+    expect(even.valueAreaRows).toEqual([1, 2]);
   });
 
   it('starts a day at midnight on the exchange’s clock when given one', () => {

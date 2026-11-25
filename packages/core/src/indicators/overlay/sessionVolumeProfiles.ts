@@ -46,6 +46,8 @@ export interface SessionVolumeRules {
 const EDGE = 1e-9;
 const DEFAULT_ROWS = 24;
 const DEFAULT_VALUE_AREA = 70;
+/** Rows the value area takes on at a time, on the heavier side. */
+const VALUE_AREA_STEP = 2;
 
 export function sessionVolumeRules(options: SessionVolumeProfileOptions = {}): SessionVolumeRules {
   const rows = Number.isFinite(options.rows) ? Math.max(1, Math.floor(options.rows as number)) : DEFAULT_ROWS;
@@ -87,16 +89,20 @@ function profileOf(data: DataSeries, start: number, end: number, time: number, r
   }
   let busiest = 0;
   for (let r = 1; r < rows; r++) if (volumes[r] > volumes[busiest]) busiest = r;
-  // From the busiest row, the heavier of the next rows below and above joins, until the area holds its share.
+  // From the busiest row, the heavier of the two rows below and the two above joins, a pair at a time (one where
+  // only one is left), until the area holds its share: the value area as Market Profile counts it. A tie goes up.
   const target = (total * rules.valueArea) / 100;
   let lo = busiest;
   let hi = busiest;
   let held = volumes[busiest];
   while (held < target && (lo > 0 || hi < rows - 1)) {
-    const below = lo > 0 ? volumes[lo - 1] : -1;
-    const above = hi < rows - 1 ? volumes[hi + 1] : -1;
-    if (below > above) held += volumes[--lo];
-    else held += volumes[++hi];
+    const below = lo > 0 ? volumes[lo - 1] + (lo > 1 ? volumes[lo - 2] : 0) : -1;
+    const above = hi < rows - 1 ? volumes[hi + 1] + (hi < rows - 2 ? volumes[hi + 2] : 0) : -1;
+    const step = below > above ? -1 : 1;
+    for (let n = 0; n < VALUE_AREA_STEP; n++) {
+      if (step < 0 && lo > 0) held += volumes[--lo];
+      else if (step > 0 && hi < rows - 1) held += volumes[++hi];
+    }
   }
   return {
     start, end, time, low, high, rowHeight, volumes, total,
@@ -148,8 +154,8 @@ export function resumeSessionProfiles(data: DataSeries, profiles: SessionVolumeP
  * The volume profile of each trading day of `data`: the day's range split
  * into `rows` rows, each bar's volume shared evenly by the rows its range
  * covers, the busiest row's middle (the POC), and the value area around it
- * that holds `valueArea` percent of the day's volume, grown a row at a time
- * toward the heavier side. A day starts at midnight on `timeZone`'s clock.
+ * that holds `valueArea` percent of the day's volume, grown two rows at a
+ * time toward the heavier pair, as Market Profile counts it. A day starts at midnight on `timeZone`'s clock.
  * Bars with no volume, or a range that is no number, are left out, and a
  * day with none left has no profile.
  */

@@ -226,7 +226,7 @@ detectDivergences(bars, macdHistogram, { left: 5, right: 5, minBars: 5, maxBars:
 
 <h2 id="session-volume-profile">セッション出来高プロファイル</h2>
 <p>
-  <code>svp</code> は取引日ごとの価格別出来高を描きます。その日の値幅を <code>rows</code> 行に分け、各バーの出来高をその値幅がかかる行に均等に配り、その日の最初のバーから右へ伸びる行として描きます。その上に、その日のポイント・オブ・コントロール（出来高が最も多い行）とバリューエリア（その周りで、その日の出来高の <code>valueArea</code> パーセント、既定 70 を占める行）を、その日を横切る線で示します。1 日は取引所の時計の午前 0 時に始まります（<code>setExchangeTimeZone</code>）。Session VWAP と同じです。各バーの <code>poc</code>、<code>vah</code>、<code>val</code> はそのバーの 1 日全体の値なので、そのバーより後のバーも含みます。過去の日では朝のバーがその日の引け時点のプロファイルを持ち、取引中の日では取引とともに動きます。1 日を読むためのもので、そのバーでのシグナルやバックテストには向きません。<code>volumeProfile</code> は読み込んだ全バーで 1 つのプロファイルです。<code>sessionVolumeProfiles</code> はチャートなしで各日の行を返します。
+  <code>svp</code> は取引日ごとの価格別出来高を描きます。その日の値幅を <code>rows</code> 行に分け、各バーの出来高をその値幅がかかる行に均等に配り、その日の最初のバーから右へ伸びる行として描きます。その上に、その日のポイント・オブ・コントロール（出来高が最も多い行）とバリューエリア（その周りで、その日の出来高の <code>valueArea</code> パーセント、既定 70 を占める行。Market Profile と同じく、重い側から 2 行ずつ加えます）を、その日を横切る線で示します。1 日は取引所の時計の午前 0 時に始まります（<code>setExchangeTimeZone</code>）。Session VWAP と同じです。各バーの <code>poc</code>、<code>vah</code>、<code>val</code> はそのバーの 1 日全体の値なので、そのバーより後のバーも含みます。過去の日では朝のバーがその日の引け時点のプロファイルを持ち、取引中の日では取引とともに動きます。1 日を読むためのもので、そのバーでのシグナルやバックテストには向きません。<code>volumeProfile</code> は読み込んだ全バーで 1 つのプロファイルです。<code>sessionVolumeProfiles</code> はチャートなしで各日の行を返します。
 </p>
 <pre><code>{`chart.addIndicator('svp')                           // 1 日に 1 つのプロファイル、POC とバリューエリア付き
 chart.addIndicator('svp', { rows: 40, valueArea: 68 }) // 細かい行、狭いバリューエリア

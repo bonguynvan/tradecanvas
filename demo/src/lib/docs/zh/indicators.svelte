@@ -218,7 +218,7 @@ detectDivergences(bars, macdHistogram, { left: 5, right: 5, minBars: 5, maxBars:
 
 <h2 id="session-volume-profile">分时段成交量分布</h2>
 <p>
-  <code>svp</code> 绘制每个交易日按价格的成交量：当天的价格区间分成 <code>rows</code> 行，每根K线的成交量平均分给其区间覆盖的各行，从当天第一根K线向右画出。其上，当天的控制点（成交量最大的一行）和价值区（围绕它、占当天成交量 <code>valueArea</code> 百分比的各行，默认 70）以横贯当天的线表示。一天从交易所时钟的午夜开始（<code>setExchangeTimeZone</code>），与 Session VWAP 相同。每根K线的 <code>poc</code>、<code>vah</code> 和 <code>val</code> 是它所在整天的值，包括它之后的K线：在过去的某天，早盘的K线带有当天收盘时的分布；在仍在交易的当天，它们会随交易移动。它们用于解读一天，不适合在该K线上作信号或回测。<code>volumeProfile</code> 是所有已加载K线的一个分布；<code>sessionVolumeProfiles</code> 无需图表即可给出每天的各行。
+  <code>svp</code> 绘制每个交易日按价格的成交量：当天的价格区间分成 <code>rows</code> 行，每根K线的成交量平均分给其区间覆盖的各行，从当天第一根K线向右画出。其上，当天的控制点（成交量最大的一行）和价值区（围绕它、占当天成交量 <code>valueArea</code> 百分比的各行，默认 70，按 Market Profile 的算法每次从较重一侧加入两行）以横贯当天的线表示。一天从交易所时钟的午夜开始（<code>setExchangeTimeZone</code>），与 Session VWAP 相同。每根K线的 <code>poc</code>、<code>vah</code> 和 <code>val</code> 是它所在整天的值，包括它之后的K线：在过去的某天，早盘的K线带有当天收盘时的分布；在仍在交易的当天，它们会随交易移动。它们用于解读一天，不适合在该K线上作信号或回测。<code>volumeProfile</code> 是所有已加载K线的一个分布；<code>sessionVolumeProfiles</code> 无需图表即可给出每天的各行。
 </p>
 <pre><code>{`chart.addIndicator('svp')                           // 每天一个分布，带控制点和价值区
 chart.addIndicator('svp', { rows: 40, valueArea: 68 }) // 更细的行，更窄的价值区
