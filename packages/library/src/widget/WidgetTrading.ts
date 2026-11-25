@@ -35,6 +35,10 @@ export interface TradingHost {
   say: ChartWidget['say'];
   /** The order the ticket shows the day's ceiling, reference and floor in (`priceLimitOrder`). */
   readonly priceLimitOrder: readonly PriceLimitName[] | undefined;
+  /** Where the ticket opens (`ticketPlace`): a page of the dock unless the widget says a dialog. */
+  readonly ticketPlace: 'dock' | 'dialog';
+  /** Whether the dock's rail shows now: its switch on, and the widget wide enough for it. */
+  dockShown: () => boolean;
   /** Ask before something that cannot be taken back; with confirmations off (`confirmOrders: false`) it is done at once. */
   confirm: ChartWidget['confirmTrade'];
   readonly state: ChartWidget['state'];
@@ -51,6 +55,11 @@ export class WidgetTrading {
   accountPanel: WidgetAccountPanel | null = null;
 
   orderTicket: WidgetOrderTicket | null = null;
+
+  /** Whether the ticket is a page of the dock in this widget (`ticketPlace`), where the dock can show it. */
+  get ticketInDock(): boolean {
+    return this.host.ticketPlace === 'dock';
+  }
   private feed: FeedHealth = 'live';
 
   accountFrame = 0;
@@ -119,7 +128,13 @@ export class WidgetTrading {
   openOrderTicket(price?: number, start: Partial<OrderTicketStart> = {}): void {
     if (!this.host.featureState.orderTicket) return;
     const data = this.host.chart.getData();
-    this.orderTicket?.open({
+    const ticket = this.orderTicket;
+    if (!ticket) return;
+    // Beside the chart where the dock has the page and shows; else (no dock, a phone) the dialog.
+    const docked = this.ticketInDock && this.host.dock?.has('orderTicket') === true && this.host.dockShown();
+    // Open as a dialog while its page is the dock's: the page shuts, the ticket with it, before it opens again.
+    if (!docked) this.host.dock?.closePage('orderTicket');
+    ticket.open({
       ...start,
       price: price ?? start.price,
       lastPrice: data.length > 0 ? data[data.length - 1].close : null,
@@ -129,8 +144,14 @@ export class WidgetTrading {
       // − and + move a price by the market's step; a click on the chart lands between steps.
       step: (p) => this.host.chart.getPriceStep(p),
       round: (p) => this.host.chart.roundPrice(p),
-    });
-    this.orderTicket?.setPriceLive(this.feed === 'live');
+    }, docked ? 'dock' : 'dialog');
+    ticket.setPriceLive(this.feed === 'live');
+    // After the ticket has its order: the page's `onShow` finds it open and starts no other. Then the
+    // keyboard, which a page still hidden could not take.
+    if (docked) {
+      this.host.dock?.open('orderTicket');
+      ticket.focusStart();
+    }
   }
 
   /** A market's rules for the order ticket (`setMarket`): its step, the day's limits, its lot. */

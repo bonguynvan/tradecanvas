@@ -4,6 +4,10 @@ name: Publish
 # hand for a fix that cannot wait, or to finish a release that stopped part
 # way: either way it versions the changesets waiting, publishes every version
 # not on npm, and tags and releases every one without its tag or release.
+#
+# Run by hand on the 3.0 branch it releases that branch's prereleases (the
+# branch is in pre mode, so they go out under its dist-tag, never `latest`).
+# The weekly run is main's only: a schedule runs on the default branch.
 on:
   schedule:
     # Mondays at 01:00 UTC (08:00 in Vietnam).
@@ -22,18 +26,18 @@ jobs:
   # Its commit starts no run of its own (a push by this token never does): the
   # jobs below go on from it, at the commit it gives them.
   version:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/3.0'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     outputs:
       sha: ${{ steps.version.outputs.sha }}
     steps:
-      # Main as it is now, not as it was when this run started: a run that
-      # waited behind another finds the versions that one set.
+      # The branch as it is now, not as it was when this run started: a run
+      # that waited behind another finds the versions that one set.
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.ref_name }}
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -42,13 +46,15 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - id: version
         run: node scripts/release-version.mjs
+        env:
+          RELEASE_BRANCH: ${{ github.ref_name }}
 
   # Builds and packs every version not on npm. Installing and building run the
   # dependencies' own code, so this job holds no right to publish or push.
   pack:
     needs: version
-    # A run by hand from another branch would publish, tag and release from it.
-    if: github.ref == 'refs/heads/main'
+    # A run by hand from any other branch would publish, tag and release from it.
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/3.0'
     runs-on: ubuntu-latest
     permissions:
       contents: read

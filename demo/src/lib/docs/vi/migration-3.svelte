@@ -195,6 +195,15 @@ chart.startBracket('buy', undefined, { risk: 50 })   // khối lượng sẽ l�
   mới nhất của chart như trước. <code>markPrice</code> bằng 0 được coi là không có.
 </p>
 
+<h3 id="ticket-dock">Order ticket mở trong dock, cạnh biểu đồ</h3>
+<p>
+  Order ticket của widget trước là một dialog nằm đè lên biểu đồ, che chính mức giá đang nhập. Giờ nó là một trang của dock, cạnh biểu đồ: không che giá, bấm vào biểu đồ không làm nó đóng, và sau khi gửi một lệnh nó ở lại cho lệnh kế tiếp, giữ nguyên chiều, loại lệnh và khối lượng. Nút của nó nằm trên rail của dock, và <code>widget.openPanel('orderTicket')</code> mở nó với một ticket ở giá thị trường.
+</p>
+<p>
+  <code>'orderTicket'</code> là một <code>WidgetPanel</code> mới: <code>getOpenPanel()</code> và <code>onPanelChange</code> báo nó, và một trang của riêng bạn không dùng được id đó. Trên điện thoại, hoặc khi tắt dock (<code>features: {'{'} dock: false {'}'}</code>), ticket vẫn là dialog như trước. Host muốn dùng dialog ở mọi bề rộng thì khai báo:
+</p>
+<pre><code>{`new ChartWidget(el, { ticketPlace: 'dialog' });`}</code></pre>
+
 <h2 id="types">Các type được mở rộng</h2>
 <p>
   <code>TimeInForce</code> nay là <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. Code xử lý mọi giá trị

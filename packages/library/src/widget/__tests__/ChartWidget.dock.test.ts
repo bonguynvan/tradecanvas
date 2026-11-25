@@ -134,7 +134,7 @@ describe('ChartWidget dock', () => {
     const body = host.querySelector('.tcw-body')!;
     const order = [...body.children].map((el) => el.className.split(' ')[0]);
     expect(order.indexOf('tcw-chart-container')).toBeLessThan(order.indexOf('tcw-dock'));
-    expect(railPages()).toEqual(['watchlist', 'alerts', 'objectTree', 'dataWindow', 'symbolInfo']);
+    expect(railPages()).toEqual(['watchlist', 'alerts', 'objectTree', 'dataWindow', 'symbolInfo', 'orderTicket']);
     expect(panel().hidden).toBe(true);
     expect(railButton('watchlist').getAttribute('aria-pressed')).toBe('false');
     widget.openPanel('watchlist');
@@ -144,7 +144,7 @@ describe('ChartWidget dock', () => {
 
   it('holds the depth ladder as a page of its own when the widget has one, its rail button under a switch', () => {
     make({ watchlist: true, depthLadder: true });
-    expect(railPages()).toEqual(['watchlist', 'alerts', 'objectTree', 'dataWindow', 'symbolInfo', 'depthLadder']);
+    expect(railPages()).toEqual(['watchlist', 'alerts', 'objectTree', 'dataWindow', 'symbolInfo', 'orderTicket', 'depthLadder']);
     expect(widget.openPanel('depthLadder')).toBe(true);
     expect(visible(inPanel('.tcw-ladder'))).toBe(true);
     widget.closePanel();
@@ -156,7 +156,7 @@ describe('ChartWidget dock', () => {
 
   it('holds the tape as a page of its own when the widget has one, and follows the feed’s trades while it is open', () => {
     make({ tape: true });
-    expect(railPages()).toEqual(['alerts', 'objectTree', 'dataWindow', 'symbolInfo', 'tape']);
+    expect(railPages()).toEqual(['alerts', 'objectTree', 'dataWindow', 'symbolInfo', 'orderTicket', 'tape']);
     expect(FakeChart.last.follows).toBe(0);
     expect(widget.openPanel('tape')).toBe(true);
     expect(visible(inPanel('.tcw-tape'))).toBe(true);
@@ -409,7 +409,7 @@ describe('ChartWidget dock', () => {
 
   it('starts shut without a watchlist', () => {
     make();
-    expect(railPages()).toEqual(['alerts', 'objectTree', 'dataWindow', 'symbolInfo']);
+    expect(railPages()).toEqual(['alerts', 'objectTree', 'dataWindow', 'symbolInfo', 'orderTicket']);
     expect(panel().hidden).toBe(true);
   });
 
@@ -555,7 +555,7 @@ describe('ChartWidget dock, pages of the host’s own', () => {
     const { spec, element, shown } = page();
     const handle = widget.addDockPage(spec);
     expect(handle).not.toBeNull();
-    expect(railPages()).toEqual(['watchlist', 'alerts', 'objectTree', 'dataWindow', 'symbolInfo', 'fundamentals']);
+    expect(railPages()).toEqual(['watchlist', 'alerts', 'objectTree', 'dataWindow', 'symbolInfo', 'orderTicket', 'fundamentals']);
     expect(railButton('fundamentals').getAttribute('aria-label')).toBe('Key figures');
     expect(railButton('fundamentals').querySelector('svg')).not.toBeNull();
     const shownPage = () => visible(element.closest('.tcw-dock-page')) && !panel().hidden;
@@ -652,5 +652,102 @@ describe('ChartWidget dock, pages of the host’s own', () => {
     widget.openPanel('fundamentals');
     widget.closePanel();
     expect(changes).toEqual(['fundamentals', 'watchlist', null, 'fundamentals', null]);
+  });
+});
+
+// The ticket was a dialog over the chart: it hid the price it was filled in for, and a press outside lost it.
+describe('ChartWidget: the order ticket in the dock', () => {
+  const ticketForm = () => host.querySelector<HTMLElement>('.tcw-order-ticket');
+  const backdropShown = () => [...host.querySelectorAll<HTMLElement>('.tcw-modal-backdrop')].some((b) => !b.hidden && b.contains(ticketForm()));
+
+  it('is a page of the dock, its button on the rail, where the widget trades', () => {
+    make();
+    expect(railPages()).toContain('orderTicket');
+    widget.trading.openOrderTicket();
+    expect(widget.getOpenPanel()).toBe('orderTicket');
+    expect(panel().contains(ticketForm())).toBe(true);
+    expect(backdropShown()).toBe(false);
+    expect(widget.trading.orderTicket!.isOpen()).toBe(true);
+    expect(railButton('orderTicket').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('opens from its rail button and from openPanel with a ticket at the market, and shuts with its page', () => {
+    make();
+    railButton('orderTicket').click();
+    expect(widget.trading.orderTicket!.isOpen()).toBe(true);
+    railButton('orderTicket').click();
+    expect(widget.getOpenPanel()).toBeNull();
+    expect(widget.trading.orderTicket!.isOpen()).toBe(false);
+    expect(widget.openPanel('orderTicket')).toBe(true);
+    expect(widget.trading.orderTicket!.isOpen()).toBe(true);
+    // Another panel in its place: the ticket goes with its page.
+    widget.openPanel('alerts');
+    expect(widget.trading.orderTicket!.isOpen()).toBe(false);
+  });
+
+  it('shuts its page when it is shut by its own Cancel', () => {
+    make();
+    widget.trading.openOrderTicket();
+    host.querySelector<HTMLButtonElement>('.tcw-order-ticket .tcw-footer-cancel')!.click();
+    expect(widget.getOpenPanel()).toBeNull();
+    expect(widget.trading.orderTicket!.isOpen()).toBe(false);
+  });
+
+  it('is the dialog where the widget asks for it, has no dock, or is a phone', () => {
+    make({ ticketPlace: 'dialog' });
+    expect(railPages()).not.toContain('orderTicket');
+    expect(widget.openPanel('orderTicket')).toBe(false);
+    widget.trading.openOrderTicket();
+    expect(backdropShown()).toBe(true);
+    expect(widget.getOpenPanel()).toBeNull();
+    widget.destroy();
+    host.replaceChildren();
+
+    make({ features: { dock: false } });
+    widget.trading.openOrderTicket();
+    expect(backdropShown()).toBe(true);
+    widget.destroy();
+    host.replaceChildren();
+
+    width = 390;
+    make();
+    resize(390);
+    widget.trading.openOrderTicket();
+    expect(backdropShown()).toBe(true);
+    expect(widget.getOpenPanel()).toBeNull();
+  });
+
+  it('keeps an order half typed when the widget is made too narrow for a dock: the ticket goes on as the dialog', () => {
+    make();
+    widget.trading.openOrderTicket();
+    const quantity = host.querySelector<HTMLInputElement>('.tcw-order-ticket input[type=number]')!;
+    quantity.value = '7';
+    quantity.dispatchEvent(new Event('input'));
+    resize(390);
+    expect(widget.getOpenPanel()).toBeNull();
+    expect(widget.trading.orderTicket!.isOpen()).toBe(true);
+    expect(backdropShown()).toBe(true);
+    expect(host.querySelector<HTMLInputElement>('.tcw-order-ticket input[type=number]')!.value).toBe('7');
+  });
+
+  it('is no panel to open while the dock does not show: openPanel says so, and opens nothing', () => {
+    width = 390;
+    const changes: (string | null)[] = [];
+    make({ onPanelChange: (panel) => changes.push(panel) });
+    resize(390);
+    changes.length = 0;
+    expect(widget.openPanel('orderTicket')).toBe(false);
+    expect(widget.trading.orderTicket!.isOpen()).toBe(false);
+    expect(changes).toEqual([]);
+  });
+
+  it('has no page where the widget does not trade, or the ticket is switched off', () => {
+    make({ trading: false });
+    expect(railPages()).not.toContain('orderTicket');
+    widget.destroy();
+    host.replaceChildren();
+    make({ features: { orderTicket: false } });
+    expect(visible(railButton('orderTicket'))).toBe(false);
+    expect(widget.openPanel('orderTicket')).toBe(false);
   });
 });
