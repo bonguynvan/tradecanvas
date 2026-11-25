@@ -120,10 +120,11 @@ describe('WidgetTape', () => {
     expect(least.min).toBe('0');
     least.value = '2';
     least.dispatchEvent(new Event('input'));
-    expect(rows().map((row) => row.children[2].textContent)).toEqual(['2.0', '5.0']);
+    // The half lot is hidden: the sizes listed are whole, and written so.
+    expect(rows().map((row) => row.children[2].textContent)).toEqual(['2', '5']);
     least.value = '';
     least.dispatchEvent(new Event('input'));
-    expect(rows()).toHaveLength(3);
+    expect(rows().map((row) => row.children[2].textContent)).toEqual(['2.0', '5.0', '0.5']);
     // A size under nothing is no least size, and says so.
     least.value = '-3';
     least.dispatchEvent(new Event('input'));

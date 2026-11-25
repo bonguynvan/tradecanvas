@@ -97,6 +97,23 @@ describe('TapeModel', () => {
     expect(tape.push([trade(6, 100, 2, 'sell')])).not.toBeNull();
   });
 
+  it('takes the sizes’ decimals from the rows it lists: a fine trade kept and not listed does not write every size anew', () => {
+    // Two rows listed of four kept: an old print of 4.25 is kept, under the rows.
+    const tape = new TapeModel(2, 4);
+    tape.push([trade(1, 100, 4.25, 'buy'), trade(2, 100, 16, 'buy'), trade(3, 100, 4, 'sell')]);
+    expect(tape.rows().map((r) => r.volume)).toEqual([4, 16]);
+    expect(tape.sizeDecimals()).toBe(0);
+    // A fine trade under the least size is not listed either.
+    tape.setMinSize(1);
+    tape.push([trade(4, 100, 0.5, 'buy')]);
+    expect(tape.sizeDecimals()).toBe(0);
+    // Listed, it is what the column is written to; and one side listed alone, the split still counts the other's.
+    tape.setMinSize(0);
+    expect(tape.sizeDecimals()).toBe(1);
+    tape.setSide('sell');
+    expect(tape.sizeDecimals()).toBe(1);
+  });
+
   it('writes sizes to the decimals the finest of the trades it keeps needs', () => {
     const tape = new TapeModel(2, 3);
     tape.push([trade(1, 100, 3, 'buy')]);

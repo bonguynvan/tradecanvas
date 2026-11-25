@@ -72,8 +72,6 @@ export class TapeModel {
   private grouped = false;
   /** What the trades kept add up to: their mean is the usual size. */
   private volume = 0;
-  /** How many of the trades kept need each number of decimals for their size. */
-  private readonly needing: number[] = new Array<number>(MOST_SIZE_DECIMALS + 1).fill(0);
   private readonly capacity: number;
   private readonly keep: number;
 
@@ -108,14 +106,12 @@ export class TapeModel {
         inOrder = false;
       }
       this.volume += volume;
-      this.needing[sizeDecimals(volume)]++;
       if (this.lists(row, this.side)) added.push(row);
     }
     const over = this.trades.length - this.keep;
     if (over > 0) {
       for (const gone of this.trades.splice(0, over)) {
         this.volume -= gone.volume;
-        this.needing[sizeDecimals(gone.volume)]--;
       }
     }
     return inOrder && !joined ? added.reverse().slice(0, this.capacity) : null;
@@ -141,12 +137,19 @@ export class TapeModel {
     return { buy: tidy(buy), sell: tidy(sell) };
   }
 
-  /** The decimals every size is written to: as many as the finest of the trades kept needs. */
+  /**
+   * The decimals every size is written to: as many as the finest of the
+   * rows listed needs, of both sides (the split under one side's rows counts
+   * the other's). A trade kept and not listed, older than the rows or under
+   * the least size, does not write the column anew.
+   */
   sizeDecimals(): number {
-    for (let decimals = MOST_SIZE_DECIMALS; decimals > 0; decimals--) {
-      if (this.needing[decimals] > 0) return decimals;
+    let most = 0;
+    for (const row of this.rowsOf('all')) {
+      most = Math.max(most, sizeDecimals(row.volume));
+      if (most === MOST_SIZE_DECIMALS) break;
     }
-    return 0;
+    return most;
   }
 
   /** Show only trades of `size` and over; 0, or what is no size, shows all. */
@@ -189,7 +192,6 @@ export class TapeModel {
   clear(): void {
     this.trades = [];
     this.volume = 0;
-    this.needing.fill(0);
   }
 
   /** Whether a row is one the tape lists: of the least size and over, and of `side`. */
