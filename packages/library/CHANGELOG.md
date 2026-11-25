@@ -1,5 +1,23 @@
 # @tradecanvas/chart
 
+## 3.0.0-beta.2
+
+### Minor Changes
+
+- e2b7b78: While the chart shows the exchange's time, its day lines fall at the open of a session that runs past midnight (17:00 for CME's), where Session VWAP and the session volume profile start again, not at midnight.
+- 1cf861e: An indicator's name in the legend, the chips, the Objects panel and the CSV no longer shows an on/off input as a bare 0 or 1: it is left out at its default and named away from it, on ("OB 5 5 Broken", "Vol Δ Cumulative") or off ("Patterns 10 Reversal off"), in the widget's language. `indicatorChipLabel` takes the indicator's `inputs` as a fifth argument.
+- 093d887: A symbol whose session runs past midnight (`sessions: [{ start: '17:00', end: '16:00' }]`) starts its trading day at the session's open: Session VWAP, VWAP's and Volume Delta's anchors, the session volume profile, the MTF average's days, the prior-day lines and the market profile's days no longer cut the session in two. `tradingDayStart(sessions)` gives the minute.
+- 77da99c: The chart's market profile and the range volume profile drawing grow their value area two rows at a time toward the heavier pair, as Market Profile counts it and as the session volume profile does: on some ranges its edges move.
+
+### Patch Changes
+
+- Updated dependencies [e2b7b78]
+- Updated dependencies [1cf861e]
+- Updated dependencies [093d887]
+- Updated dependencies [77da99c]
+  - @tradecanvas/core@3.0.0-beta.2
+  - @tradecanvas/commons@3.0.0-beta.2
+
 ## 3.0.0-beta.1
 
 ### Minor Changes

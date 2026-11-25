@@ -22,6 +22,7 @@
     "v3-chart-reading",
     "v3-chart-types",
     "v3-crosshair-reading",
+    "v3-day-breaks",
     "v3-design-rules",
     "v3-divergence",
     "v3-fair-value-gaps",
@@ -40,6 +41,7 @@
     "v3-hit-areas",
     "v3-hold-tooltip",
     "v3-image-export",
+    "v3-label-switches",
     "v3-layer-colours",
     "v3-limit-tag-once",
     "v3-limit-tags",
@@ -60,6 +62,7 @@
     "v3-prices-on-the-grid",
     "v3-row-mark",
     "v3-selection-bar",
+    "v3-session-start",
     "v3-session-volume-profile",
     "v3-static-chart",
     "v3-stop-limit",
@@ -72,6 +75,7 @@
     "v3-ticket-dock",
     "v3-trading-open-ends",
     "v3-trading-workspace",
+    "v3-value-area-pairs",
     "v3-vn-money"
   ]
 }

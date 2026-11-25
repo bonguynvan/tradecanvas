@@ -1,5 +1,12 @@
 # @tradecanvas/analytics
 
+## 3.0.0-beta.2
+
+### Patch Changes
+
+- Updated dependencies [093d887]
+  - @tradecanvas/commons@3.0.0-beta.2
+
 ## 3.0.0-beta.1
 
 ### Patch Changes
