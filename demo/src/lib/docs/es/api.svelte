@@ -562,7 +562,7 @@ const levels = computePeriodLevels(bars, 'day', 'Australia/Sydney')  // [{ id, l
 <p>
   Un histograma de tiempo por precio: cada barra aporta un TPO a cada tramo de
   precio que tocó su rango, lo que revela el punto de control (el precio más
-  concurrido) y el área de valor (≈70% de los TPO). Es distinto del perfil de
+  concurrido) y el área de valor (≈70% de los TPO, ampliada desde el POC de dos en dos por el lado más pesado, como lo cuenta el Market Profile). Es distinto del perfil de
   volumen —pondera por tiempo, no por volumen— y se ancla a la izquierda para que
   ambos puedan mostrarse a la vez. Desactivado por defecto; actívalo desde la
   hoja de configuración o directamente:

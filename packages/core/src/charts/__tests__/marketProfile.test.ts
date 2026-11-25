@@ -187,3 +187,15 @@ describe('MarketProfileRenderer stats', () => {
     expect(values[0]).toMatch(/^\d{2,3},\d{3}\.\d{2}$/);
   });
 });
+
+describe('computeMarketProfile’s value area', () => {
+  it('grows two buckets at a time toward the heavier pair, as Market Profile counts it, as the session volume profile does', () => {
+    // TPOs of 2, 4, 10, 3 and 1 in five buckets of 0 to 5: the POC is the middle one.
+    const at = (lo: number, hi: number, n: number): OHLCBar[] => Array.from({ length: n }, (_, i) => ({ time: i, open: lo, high: hi, low: lo, close: hi, volume: 1 }));
+    const bars = [...at(0.1, 0.9, 2), ...at(1.1, 1.9, 4), ...at(2.1, 2.9, 10), ...at(3.1, 3.9, 3), ...at(4.1, 4.9, 1)];
+    const mp = computeMarketProfile(bars, 0, 5, { buckets: 5, valueAreaPct: 0.7 })!;
+    expect(mp.pocIndex).toBe(2);
+    // 10, then the two below (4 and 2, heavier than 3 and 1): 16 of 20, past 14. A bucket at a time took 4 alone.
+    expect([mp.valueAreaLow, mp.valueAreaHigh]).toEqual([0, 3]);
+  });
+});

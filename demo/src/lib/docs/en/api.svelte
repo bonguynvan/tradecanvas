@@ -548,7 +548,7 @@ const levels = computePeriodLevels(bars, 'day', 'Australia/Sydney')  // [{ id, l
 <p>
   A time-at-price histogram: each bar contributes one TPO to every price bucket
   its range touched, surfacing the Point of Control (busiest price) and the
-  value area (≈70% of TPOs). Distinct from Volume Profile — it weights by time,
+  value area (≈70% of TPOs, grown from the POC two buckets at a time toward the heavier pair, as Market Profile counts it). Distinct from Volume Profile — it weights by time,
   not volume — and is left-pinned so both can show together. Off by default;
   toggle from the settings sheet or directly:
 </p>
