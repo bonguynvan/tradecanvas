@@ -55,7 +55,7 @@ export interface OrderTicketCallbacks {
   onDockClose?: () => void;
   /**
    * The account the order is paid from, read each time the receipt is written: its free margin is
-   * shown over the order's value, and its currency after both. Unset, or null: neither.
+   * shown over the order's value, followed by its currency. Unset, or null: neither.
    */
   account?: () => AccountSummary | null;
 }
@@ -765,6 +765,8 @@ export class WidgetOrderTicket {
       const label = document.createElement('span');
       label.className = 'tcw-ticket-limit-name';
       label.textContent = this.t(`ticket.${name}` as MessageKey);
+      // A name cut short in a narrow dock is whole under the pointer.
+      cell.title = label.textContent;
       const figure = document.createElement('span');
       figure.className = 'tcw-ticket-limit-price';
       figure.textContent = this.callbacks.formatPrice(price);
@@ -974,14 +976,14 @@ export class WidgetOrderTicket {
     const reward = sum.reward === null ? null : this.amount(sum.reward);
     const account = this.callbacks.account?.() ?? null;
     const free = account?.freeMargin;
-    // The account's currency, written after its money: the order's value and what is free to pay for it.
+    // The account's currency, after the account's money alone: the order's value is in the market's, which may be another.
     const unit = account?.currency?.trim() || null;
     const rows: [string, MessageKey, string | null, 'up' | 'down' | null, string | null][] = [
       ['risk', 'ticket.risk', risk, risk === null ? null : toneOf(risk), null],
       ['reward', 'ticket.reward', reward, reward === null ? null : toneOf(reward), null],
       ['ratio', 'ticket.rewardRisk', sum.ratio === null ? null : this.number(sum.ratio, 2), null, null],
       ['available', 'ticket.available', free !== undefined && Number.isFinite(free) ? this.money(free) : null, null, unit],
-      ['value', 'ticket.value', sum.value === null ? null : this.money(sum.value), null, unit],
+      ['value', 'ticket.value', sum.value === null ? null : this.money(sum.value), null, null],
     ];
     this.summaryEl.replaceChildren(...rows.filter(([, , figure]) => figure !== null).map(([id, key, figure, mood, unitText]) => {
       const row = document.createElement('div');

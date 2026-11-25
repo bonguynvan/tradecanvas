@@ -38,13 +38,15 @@ describe('the order ticket and the account', () => {
     expect(rows().slice(-2)).toEqual(['available', 'value']);
   });
 
-  it('writes the account’s currency after its money: the value and what is free', () => {
+  it('writes the account’s currency after the account’s money, and not after the order’s value, which is the market’s', () => {
     build(() => ({ ...ACCOUNT, freeMargin: 8_200.5, currency: 'USD' }));
     ticket.open({ lastPrice: 100 });
-    expect(figure('value')).toBe('100.00 USD');
     expect(figure('available')).toBe('8200.50 USD');
     // The currency is a unit beside the figure, said apart from it.
-    expect(row('value')!.querySelector('.tcw-ticket-unit')!.textContent).toBe('USD');
+    expect(row('available')!.querySelector('.tcw-ticket-unit')!.textContent).toBe('USD');
+    // A HOSE order in dong paid from an account in dollars: its value is no amount of dollars.
+    expect(figure('value')).toBe('100.00');
+    expect(row('value')!.querySelector('.tcw-ticket-unit')).toBeNull();
   });
 
   it('says nothing of the account where there is none, or where it does not count its free margin', () => {
