@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>Chuyển sang 3.0 — Tài liệu TradeCanvas</title>
-  <meta name="description" content="Những gì thay đổi với code của bạn giữa TradeCanvas 2.x và 3.0: từng hành vi đã thay đổi và tuỳ chọn giữ lại hành vi cũ. 3.0 đang là bản beta trên npm." />
+  <meta name="description" content="Những gì thay đổi với code của bạn giữa TradeCanvas 2.x và 3.0: từng hành vi đã thay đổi và tuỳ chọn giữ lại hành vi cũ. 3.0 đã có trên npm." />
 </svelte:head>
 
 <h1>Chuyển sang 3.0</h1>
 <p>
-  3.0 đang là bản beta: có trên npm dưới tag <code>beta</code> (<code>npm i @tradecanvas/chart@beta</code>), được phát triển trên branch <code>3.0</code>, và trang này sẽ dài thêm theo nó. Trang
+  3.0 đã có trên npm (<code>npm i @tradecanvas/chart</code>). Trang
   liệt kê từng thay đổi có thể làm hỏng code viết cho 2.x và việc cần làm. Từ 1.x lên 2.0, xem
   <a href={href('/docs/migration')}>Chuyển sang 2.0</a>.
 </p>

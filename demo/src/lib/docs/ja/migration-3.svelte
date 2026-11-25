@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>3.0 への移行 — TradeCanvas ドキュメント</title>
-  <meta name="description" content="TradeCanvas 2.x から 3.0 でコードに影響する変更点：変わった動作のそれぞれと、以前の動作を保つオプション。3.0 は npm でベータ版として公開中です。" />
+  <meta name="description" content="TradeCanvas 2.x から 3.0 でコードに影響する変更点：変わった動作のそれぞれと、以前の動作を保つオプション。3.0 は npm で公開されています。" />
 </svelte:head>
 
 <h1>3.0 への移行</h1>
 <p>
-  3.0 はベータ版です。npm の <code>beta</code> タグで公開されており（<code>npm i @tradecanvas/chart@beta</code>）、<code>3.0</code> ブランチで開発中で、このページは開発とともに増えていきます。2.x
+  3.0 は npm で公開されています（<code>npm i @tradecanvas/chart</code>）。2.x
   向けに書かれたコードを壊しうる変更と、その対処を一つずつ挙げます。1.x から 2.0 への移行は
   <a href={href('/docs/migration')}>2.0 への移行</a> を参照してください。
 </p>
