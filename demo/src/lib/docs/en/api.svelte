@@ -530,6 +530,15 @@ chart.setSessionShadingConfig({
 <pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
 chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
 chart.isExtendedHoursVisible()`}</code></pre>
+<p>
+  <strong>The trading day.</strong> A session that runs past midnight (CME's 17:00 to 16:00 in Chicago) starts the trading day at its open. The indicators that start again each day, week or month (Session VWAP, VWAP's and the cumulative delta's anchor, the session volume profile, the MTF average's days), the prior-day lines and the market profile's days then run from 17:00 to 17:00, each named by the date it ends on. Sessions inside a day keep midnight. Daily bars and the days built from trades keep the zone's midnight.
+</p>
+<pre><code>{`chart.setSymbolInfo({ symbol: 'ES', timeZone: 'America/Chicago', sessions: [{ start: '17:00', end: '16:00' }] })
+// Session VWAP, svp, the prior-day lines: from 17:00 to 17:00
+
+import { tradingDayStart } from '@tradecanvas/chart'
+tradingDayStart([{ start: '17:00', end: '16:00' }])   // 1020: minutes after midnight
+tradingDayStart([{ start: '09:30', end: '16:00' }])   // null: midnight`}</code></pre>
 
 <h3>Prior-period levels (PDH / PDL / PDC)</h3>
 <p>

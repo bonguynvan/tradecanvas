@@ -38,7 +38,7 @@ export class VolumeDeltaIndicator extends IndicatorBase {
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const cumulative = getNumberParam(config, 'mode', 0) >= 1;
     const anchor = readAnchor(config);
-    const keyOf = cumulative && anchor !== 'all' ? periodKeyer(data, anchor, config.exchangeTimeZone) : null;
+    const keyOf = cumulative && anchor !== 'all' ? periodKeyer(data, anchor, config.exchangeTimeZone, config.sessionStart) : null;
     const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
 

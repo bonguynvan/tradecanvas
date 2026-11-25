@@ -117,3 +117,17 @@ describe('SessionVWAPIndicator', () => {
     expect(segments(data)).toBe(3 * 2 * 2);
   });
 });
+
+describe('SessionVWAPIndicator on a trading day that starts in the evening', () => {
+  it('starts again at the session’s open, not at midnight', () => {
+    const ind = new SessionVWAPIndicator();
+    // 15:00 and 16:00 in Chicago, then the 17:00 open, then midnight: UTC-6 in January.
+    const t = (day: number, hour: number) => Date.UTC(2023, 0, day, hour + 6);
+    const data: DataSeries = [bar(t(2, 15), 10, 100), bar(t(2, 17), 30, 100), bar(t(3, 0), 50, 100)];
+    const config = { ...cfg, exchangeTimeZone: 'America/Chicago', sessionStart: 17 * 60 } as IndicatorConfig;
+    const s = ind.calculate(data, config).series!;
+    expect(s[1]?.value).toBe(30);
+    // Midnight is inside the 17:00 session: blended, (30 + 50) / 2.
+    expect(s[2]?.value).toBeCloseTo(40, 6);
+  });
+});

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { IndicatorValue, OHLCBar, TimeFrame } from '@tradecanvas/commons';
 import { barsAreDaily, timeframeBucketStart, timeframeFollowsDays, zoneOffsetMinutes } from '@tradecanvas/commons';
 import { periodKeyer, breaksBetween } from '../periods.js';
+import { tradingDayStart } from '@tradecanvas/commons';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -153,5 +154,67 @@ describe('breaksBetween', () => {
 
   it('never breaks a line with no periods', () => {
     expect(breaksBetween([{ value: 1 }, { value: 2 }], 0, 1)).toBe(false);
+  });
+});
+
+describe('a trading day that starts in the evening', () => {
+  // CME's Globex: 17:00 to 16:00 in Chicago (UTC-6 in January), the day named by the date it ends on.
+  const GLOBEX = 17 * 60;
+  const chicago = (day: number, hour: number) => Date.UTC(2026, 0, day, hour + 6);
+
+  it('keys a bar by the trading day it is in: from 17:00 to 17:00, named by the date it ends on', () => {
+    const data = series([chicago(5, 16), chicago(5, 17), chicago(6, 9), chicago(6, 15), chicago(6, 17)]);
+    const key = periodKeyer(data, 'session', 'America/Chicago', GLOBEX);
+    expect(data.map((b) => key(b.time))).toEqual([Date.UTC(2026, 0, 5), Date.UTC(2026, 0, 6), Date.UTC(2026, 0, 6), Date.UTC(2026, 0, 6), Date.UTC(2026, 0, 7)]);
+    // Midnight as before when no start is given, or 0.
+    const midnight = periodKeyer(data, 'session', 'America/Chicago');
+    expect(midnight(chicago(5, 17))).toBe(Date.UTC(2026, 0, 5));
+    expect(periodKeyer(data, 'session', 'America/Chicago', 0)(chicago(5, 17))).toBe(Date.UTC(2026, 0, 5));
+  });
+
+  it('starts the week with Sunday evening’s session, and keeps hour frames and the bars’ own dates as they were', () => {
+    // Sunday 4 January 2026, 17:00 in Chicago, opens Monday's trading day: the week of Monday the 5th.
+    const data = series([chicago(2, 15), chicago(4, 17), chicago(9, 15)]);
+    const week = periodKeyer(data, 'week', 'America/Chicago', GLOBEX);
+    expect(week(chicago(4, 17))).toBe(week(chicago(9, 15)));
+    expect(week(chicago(2, 15))).not.toBe(week(chicago(4, 17)));
+    // A 4-hour frame is not a trading day: it keeps the exchange's midnight.
+    const fourHours = periodKeyer(hours(chicago(5, 16), 3), '4h', 'America/Chicago', GLOBEX);
+    expect(fourHours(chicago(5, 17))).toBe(periodKeyer(hours(chicago(5, 16), 3), '4h', 'America/Chicago')(chicago(5, 17)));
+    // A daily bar stamped at 00:00 UTC is the date it names, whatever the day's start.
+    const daily = series([Date.UTC(2026, 0, 5), Date.UTC(2026, 0, 6)]);
+    expect(periodKeyer(daily, 'session', 'America/Chicago', GLOBEX)(Date.UTC(2026, 0, 6))).toBe(Date.UTC(2026, 0, 6));
+  });
+});
+
+describe('tradingDayStart', () => {
+  it('is the start of a session that runs past midnight, and none for sessions inside a day', () => {
+    expect(tradingDayStart([{ start: '17:00', end: '16:00' }])).toBe(17 * 60);
+    expect(tradingDayStart([{ start: '09:30', end: '16:00' }])).toBeNull();
+    expect(tradingDayStart([{ start: '04:00', end: '09:30' }, { start: '09:30', end: '16:00' }, { start: '16:00', end: '20:00' }])).toBeNull();
+    expect(tradingDayStart([{ start: '09:00', end: '15:30' }, { start: '18:00', end: '05:00' }])).toBe(18 * 60);
+    expect(tradingDayStart(undefined)).toBeNull();
+    expect(tradingDayStart([{ start: 'soon', end: '16:00' }])).toBeNull();
+    // The same day as a feed may list it: cut at midnight, or open around the clock from 17:00.
+    expect(tradingDayStart([{ start: '00:00', end: '16:00' }, { start: '17:00', end: '24:00' }])).toBe(17 * 60);
+    expect(tradingDayStart([{ start: '17:00', end: '17:00' }])).toBe(17 * 60);
+    expect(tradingDayStart([{ start: '00:00', end: '24:00' }])).toBeNull();
+  });
+});
+
+describe('the engine and a trading day that starts in the evening', () => {
+  it('computes again an anchored cumulative delta when the day’s start changes, as it does the indicators that read the zone', async () => {
+    const { IndicatorEngine } = await import('../IndicatorEngine.js');
+    const { registerBuiltInIndicators } = await import('../registry.js');
+    const engine = new IndicatorEngine();
+    registerBuiltInIndicators(engine);
+    // 15:00 and 17:00 in Chicago (UTC-6 in January): one day from midnight, two from 17:00.
+    const t = (hour: number) => Date.UTC(2026, 0, 5, hour + 6);
+    const bars: OHLCBar[] = [{ time: t(15), open: 1, high: 2, low: 1, close: 2, volume: 10 }, { time: t(17), open: 2, high: 3, low: 2, close: 3, volume: 5 }];
+    engine.setExchangeTimeZone('America/Chicago');
+    const id = engine.addIndicator('voldelta', { mode: 1, anchor: 'session' }, bars);
+    expect(engine.getOutput(id)!.series![1]!.value).toBe(15);
+    expect(engine.setSessionStart(17 * 60, bars)).toBe(true);
+    expect(engine.getOutput(id)!.series![1]!.value).toBe(5);
   });
 });

@@ -543,6 +543,15 @@ chart.setSessionShadingConfig({
 <pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
 chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
 chart.isExtendedHoursVisible()`}</code></pre>
+<p>
+  <strong>El día de negociación.</strong> Una sesión que pasa la medianoche (la de CME, de 17:00 a 16:00 en Chicago) empieza el día de negociación en su apertura. Los indicadores que se reinician cada día, semana o mes (Session VWAP, el anchor de VWAP y del delta acumulado, el perfil de volumen por sesión, los días de la media MTF), las líneas del día anterior y los días del market profile van entonces de 17:00 a 17:00, cada uno con la fecha en que termina. Las sesiones dentro de un día siguen en la medianoche. Las barras diarias y los días construidos con operaciones siguen en la medianoche de la zona.
+</p>
+<pre><code>{`chart.setSymbolInfo({ symbol: 'ES', timeZone: 'America/Chicago', sessions: [{ start: '17:00', end: '16:00' }] })
+// Session VWAP, svp, las líneas del día anterior: de 17:00 a 17:00
+
+import { tradingDayStart } from '@tradecanvas/chart'
+tradingDayStart([{ start: '17:00', end: '16:00' }])   // 1020: minutes after midnight
+tradingDayStart([{ start: '09:30', end: '16:00' }])   // null: midnight`}</code></pre>
 
 <h3>Niveles del periodo anterior (PDH / PDL / PDC)</h3>
 <p>

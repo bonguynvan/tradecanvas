@@ -34,6 +34,8 @@ export interface SessionVolumeProfileOptions {
   valueArea?: number;
   /** The exchange's IANA time zone: a day starts at its midnight. UTC when left out. */
   timeZone?: string | null;
+  /** When the trading day starts, minutes after that midnight (1020 for 17:00, `tradingDayStart`); midnight when left out. */
+  sessionStart?: number | null;
 }
 
 /** The options as a scan uses them. */
@@ -41,6 +43,7 @@ export interface SessionVolumeRules {
   rows: number;
   valueArea: number;
   timeZone: string | null;
+  sessionStart: number | null;
 }
 
 /** A price a hair over a row's floor is still in the row under it: a bar's high at 101 is not in the row 101–102. */
@@ -51,7 +54,7 @@ const DEFAULT_VALUE_AREA = 70;
 export function sessionVolumeRules(options: SessionVolumeProfileOptions = {}): SessionVolumeRules {
   const rows = Number.isFinite(options.rows) ? Math.max(1, Math.floor(options.rows as number)) : DEFAULT_ROWS;
   const area = Number.isFinite(options.valueArea) ? Math.min(100, Math.max(1, options.valueArea as number)) : DEFAULT_VALUE_AREA;
-  return { rows, valueArea: area, timeZone: options.timeZone ?? null };
+  return { rows, valueArea: area, timeZone: options.timeZone ?? null, sessionStart: options.sessionStart ?? null };
 }
 
 const counts = (low: number, high: number, volume: number): boolean =>
@@ -99,8 +102,8 @@ function profileOf(data: DataSeries, start: number, end: number, time: number, r
 }
 
 /** The first bar of the day bar `at` is in. */
-export function sessionStartOf(data: DataSeries, at: number, timeZone: string | null): number {
-  const keyOf = periodKeyer(data, 'session', timeZone);
+export function sessionStartOf(data: DataSeries, at: number, timeZone: string | null, dayStart: number | null = null): number {
+  const keyOf = periodKeyer(data, 'session', timeZone, dayStart);
   const key = keyOf(data[at].time);
   let start = at;
   while (start > 0 && keyOf(data[start - 1].time) === key) start--;
@@ -119,9 +122,9 @@ export function resumeSessionProfiles(data: DataSeries, profiles: SessionVolumeP
     profiles.length = 0;
     return 0;
   }
-  const restart = from <= 0 ? 0 : sessionStartOf(data, Math.min(from, data.length - 1), rules.timeZone);
+  const restart = from <= 0 ? 0 : sessionStartOf(data, Math.min(from, data.length - 1), rules.timeZone, rules.sessionStart);
   while (profiles.length > 0 && profiles[profiles.length - 1].start >= restart) profiles.pop();
-  const keyOf = periodKeyer(data, 'session', rules.timeZone);
+  const keyOf = periodKeyer(data, 'session', rules.timeZone, rules.sessionStart);
   let start = restart;
   let key = keyOf(data[restart].time);
   for (let i = restart + 1; i <= data.length; i++) {
@@ -140,7 +143,8 @@ export function resumeSessionProfiles(data: DataSeries, profiles: SessionVolumeP
  * into `rows` rows, each bar's volume shared evenly by the rows its range
  * covers, the busiest row's middle (the POC), and the value area around it
  * that holds `valueArea` percent of the day's volume, grown two rows at a
- * time toward the heavier pair, as Market Profile counts it. A day starts at midnight on `timeZone`'s clock.
+ * time toward the heavier pair, as Market Profile counts it. A day
+ * starts at midnight on `timeZone`'s clock, or at `sessionStart` minutes after it.
  * Bars with no volume, or a range that is no number, are left out, and a
  * day with none left has no profile.
  */

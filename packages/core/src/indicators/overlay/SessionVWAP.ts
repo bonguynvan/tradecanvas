@@ -43,7 +43,7 @@ export class SessionVWAPIndicator extends IndicatorBase {
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     if (data.length === 0) return { values, series };
 
-    const keyOf = periodKeyer(data, 'session', config.exchangeTimeZone);
+    const keyOf = periodKeyer(data, 'session', config.exchangeTimeZone, config.sessionStart);
     let sessionKey = keyOf(data[0].time);
     let cumPV = 0;
     let cumPV2 = 0;

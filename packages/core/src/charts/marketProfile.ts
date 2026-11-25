@@ -162,11 +162,13 @@ export function computeSessionProfiles(
   priceMax: number,
   opts: MarketProfileOptions = {},
   exchangeTimeZone?: string | null,
+  /** When the trading day starts, minutes after the exchange's midnight (`tradingDayStart`); midnight when left out. */
+  dayStart?: number | null,
 ): SessionProfile[] {
   if (bars.length === 0 || priceMax - priceMin <= 0) return [];
 
   const out: SessionProfile[] = [];
-  const keyOf = periodKeyer(bars, 'session', exchangeTimeZone);
+  const keyOf = periodKeyer(bars, 'session', exchangeTimeZone, dayStart);
   let groupStart = 0;
   let groupKey = keyOf(bars[0].time);
 
