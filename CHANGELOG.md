@@ -36,6 +36,7 @@ The `3.0` branch. These move under the version's own heading when it is released
 
 ### Chart
 
+- **A chart of values too near each other to scale no longer takes the page with it** (`@tradecanvas/core`, `@tradecanvas/chart`): an `EquityCurveChart` whose curve and benchmark were flat at nearly the same value (a run with no trade beside a market that never moved, the benchmark rescaled to the curve's start, so 100,000 beside 100,000.00000000001) threw "RangeError: Invalid array length" while it drew, after holding the page's thread. The step of its value axis was smaller than such values can be told apart by, and the loop that makes the ticks never ended. A range that narrow is now drawn as one value, with room above and below, in every finance chart that scales its values (`niceScale`).
 - **In Graphite the accent fills no button and marks nothing picked, and the last price is the one block on the price
   axis.** The button that sends in a dialog or a panel (OK, Go to, Add alert, Save), a tick box, a radio, a slider's
   thumb and a replay's play button are the text's colour with the ground's for their ink, where they were the
@@ -211,6 +212,13 @@ The `3.0` branch. These move under the version's own heading when it is released
 - **One net position on the paper account** (`@tradecanvas/core`): `new PaperExecutionAdapter({ positions: 'net' })` keeps one position, as a futures account does: fills the same way average in, fills the other way take from it and realise that part, and a larger one turns it round.
 - **A bracket has a size** (`@tradecanvas/chart`, `@tradecanvas/core`): `chart.startBracket(side, entry, size)` takes `{ quantity }`, or `{ risk, quantityStep, multiplier }` for the quantity that loses `risk` at the stop, which follows the lines as they are dragged. The quantity is written on the entry's tag and sent with `bracketPlace`, so the bracket reaches a connected adapter as an order; one with no quantity is not confirmed then, and stays to be given one (`executionError`, `reason: 'noQuantity'`). `chart.setBracketSize(size)` sizes it anew while it is placed, `chart.getBracket()` reads it, and `bracketQuantity(bracket, size)` is the sum on its own.
 - **The widget's bracket bar has a quantity field** (`@tradecanvas/chart`): it starts at the quantity last typed, else at the market's lot, steps by the lot, and Place is off while it holds no quantity. `widget.startBracket(side, size)` takes a size; a bracket sized by its risk has no field.
+
+## 2.17.1 (2026-11-23)
+
+### Chart
+
+- **A grid's bar in a language written right to left** (`@tradecanvas/chart`): with a right-to-left language (or `widget.dir: 'rtl'`), each chart of a `ChartWidgetGrid` was written right to left and the grid's own bar was not: its arrangement, sync and layouts stayed left to right. The bar and its menus are written the way the charts are. The charts keep the places their arrangement names ("one large on the left").
+- **A menu under a toolbar button gives the keyboard back to that button** (`@tradecanvas/chart`): shut with Escape in Safari, which focuses no pressed button, a menu left the keyboard nowhere.
 
 ## 2.17.0 (2026-11-22)
 
