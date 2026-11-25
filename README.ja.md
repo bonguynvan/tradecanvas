@@ -28,7 +28,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <b>日本語</b> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
-**TradeCanvas はトレーディングアプリ向けのオープンソースのチャートライブラリです**（[tradecanvas.dev](https://tradecanvas.dev/ja/)、MIT ライセンス）。ローソク足から練行足（Renko）まで、137 種類のインジケーター、76 種類の描画ツール、取引所のライブフィード、チャート上での注文を Canvas 2D または WebGL で描画し、サードパーティの依存関係はありません。完全な `ChartWidget` をそのまま組み込むことも、ヘッドレスな `Chart` の上に独自の UI を作ることもでき、TypeScript、React、Vue、Svelte に対応しています。
+**TradeCanvas はトレーディングアプリ向けのオープンソースのチャートライブラリです**（[tradecanvas.dev](https://tradecanvas.dev/ja/)、MIT ライセンス）。ローソク足から練行足（Renko）まで、138 種類のインジケーター、76 種類の描画ツール、取引所のライブフィード、チャート上での注文を Canvas 2D または WebGL で描画し、サードパーティの依存関係はありません。完全な `ChartWidget` をそのまま組み込むことも、ヘッドレスな `Chart` の上に独自の UI を作ることもでき、TypeScript、React、Vue、Svelte に対応しています。
 
 自分で所有できるチャートエンジンです。MIT ライセンスで、npm からインストールしてアプリと一緒に配信し、自分のデータを流し、自分のブランドで見せられます。チャートに他社のロゴはなく、申請も不要で、あなたとユーザーの間にプラットフォームは入りません。TradingView の charting library や Lightweight Charts をお使いですか？データフィードはそのまま使えます：[TradingView からの移行](https://tradecanvas.dev/ja/docs/from-tradingview/)。
 
@@ -38,7 +38,7 @@
 
 ## 特長
 
-- **25 種類のチャート、137 のインジケーター、76 の描画ツール**。インジケーターの重ね掛け、ラインへのアラート、元に戻す・やり直し。
+- **25 種類のチャート、138 のインジケーター、76 の描画ツール**。インジケーターの重ね掛け、ラインへのアラート、元に戻す・やり直し。
 - **チャート上で取引**：損益がリアルタイムに動くポジション、ドラッグできる注文と損切り、ペーパーブローカーまたは自前の接続。
 - **ライブデータ**：Binance、Bybit、Coinbase、Kraken を内蔵。独自のフィードも約 20 行で。
 - **速い**：WebGL で 100 万本のバーを 60 fps でパン。ライブのティックは約 1 マイクロ秒。100 万本の足で毎秒 30,000 件の約定を 10 分間受けてもメモリは増えません（[計測](benchmarks/2026-11-03.md)）。

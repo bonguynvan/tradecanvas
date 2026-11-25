@@ -236,6 +236,20 @@ import { sessionVolumeProfiles } from '@tradecanvas/chart'
 sessionVolumeProfiles(bars, { rows: 24, valueArea: 70, timeZone: 'America/New_York' })
 // [{ start, end, time, low, high, rowHeight, volumes, total, poc, valueAreaLow, valueAreaHigh, valueAreaRows }]`}</code></pre>
 
+<h2 id="order-blocks">オーダーブロック</h2>
+<p>
+  スイングハイは、前の <code>length</code> 本より高く、後の <code>length</code> 本より低くないバーです（既定 5）。そのため <code>length</code> 本遅れて確定します。スイングローは下向きに同様です。まだ抜かれていない直近のスイングハイを終値が上抜けると、スイングとその終値の間で最も安いバーが強気のオーダーブロックになり、範囲はその高値から安値です。直近のスイングローを終値が下抜けると、その間で最も高いバーが弱気のオーダーブロックになります。1 つのスイングから作られるブロックは 1 つです。<code>orderblocks</code> は各ブロックをフェアバリューギャップと同じ色のボックスで描き、有効な間は右端まで伸ばします。終値がブロックを抜けると（強気は下へ、弱気は上へ）ブレイクとなり、<code>showBroken</code> が 1 でない限り消えます。有効なブロックは各側の直近 <code>count</code> 個だけを描きます（既定 5、0 ですべて）。古く遠いものは画面を散らかすだけです。<code>detectOrderBlocks</code> はチャートなしですべてを返し、それぞれを抜いたバーも分かります。
+</p>
+<pre><code>{`chart.addIndicator('orderblocks')                    // 有効なブロック
+chart.addIndicator('orderblocks', { count: 3 })        // 各側の直近 3 個
+chart.addIndicator('orderblocks', { length: 3 })       // 短いスイング: ブロックが増え、早く確定
+chart.addIndicator('orderblocks', { showBroken: 1 })   // ブレイクされたものも薄く、ブレイクしたバーまで
+
+import { detectOrderBlocks } from '@tradecanvas/chart'
+
+detectOrderBlocks(bars, { length: 5 })
+// [{ kind: 'bullish' | 'bearish', index, formed, top, bottom, swing, brokenAt }]`}</code></pre>
+
 <h2>独自のインジケーター</h2>
 <p>
   手短な方法は <code>defineIndicator</code> です：入力と、バーから線を返す 1 つの関数を渡し、

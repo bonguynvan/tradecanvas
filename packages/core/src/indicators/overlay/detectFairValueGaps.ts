@@ -1,4 +1,5 @@
 import type { DataSeries } from '@tradecanvas/commons';
+import { FirstQueue } from './firstQueue.js';
 
 /** A fair value gap: prices three bars left traded by the middle one alone. */
 export interface FairValueGap {
@@ -19,51 +20,6 @@ export interface FairValueGapOptions {
   minPercent?: number;
 }
 
-/**
- * The open gaps of one direction, the one a bar would fill first on top: a
- * binary heap, so a bar pays for the gaps it fills and not for every open
- * one. `before(a, b)` says that `a` is filled before `b`.
- */
-class OpenGaps {
-  private readonly heap: FairValueGap[] = [];
-
-  constructor(private readonly before: (a: FairValueGap, b: FairValueGap) => boolean) {}
-
-  get first(): FairValueGap | undefined {
-    return this.heap[0];
-  }
-
-  add(gap: FairValueGap): void {
-    const heap = this.heap;
-    let i = heap.length;
-    heap.push(gap);
-    while (i > 0) {
-      const parent = (i - 1) >> 1;
-      if (!this.before(heap[i], heap[parent])) break;
-      [heap[i], heap[parent]] = [heap[parent], heap[i]];
-      i = parent;
-    }
-  }
-
-  removeFirst(): void {
-    const heap = this.heap;
-    const last = heap.pop();
-    if (heap.length === 0 || last === undefined) return;
-    heap[0] = last;
-    let i = 0;
-    for (;;) {
-      const left = 2 * i + 1;
-      const right = left + 1;
-      let top = i;
-      if (left < heap.length && this.before(heap[left], heap[top])) top = left;
-      if (right < heap.length && this.before(heap[right], heap[top])) top = right;
-      if (top === i) return;
-      [heap[i], heap[top]] = [heap[top], heap[i]];
-      i = top;
-    }
-  }
-}
-
 /** The smallest gap kept, from what was asked for: no number and less than nothing are 0. */
 export function fairValueGapFloor(minPercent: number | undefined): number {
   return Number.isFinite(minPercent) ? Math.max(0, minPercent as number) : 0;
@@ -80,8 +36,8 @@ export function resumeFairValueGaps(data: DataSeries, gaps: FairValueGap[], from
   const start = Math.max(0, from);
   while (gaps.length > 0 && gaps[gaps.length - 1].formed >= start) gaps.pop();
   // A gap going up is filled by a low at its bottom: the highest bottom goes first. Going down, the lowest top.
-  const up = new OpenGaps((a, b) => a.bottom > b.bottom);
-  const down = new OpenGaps((a, b) => a.top < b.top);
+  const up = new FirstQueue<FairValueGap>((a, b) => a.bottom > b.bottom);
+  const down = new FirstQueue<FairValueGap>((a, b) => a.top < b.top);
   for (const gap of gaps) {
     if (gap.filledAt !== null && gap.filledAt >= start) gap.filledAt = null;
     if (gap.filledAt === null) (gap.direction === 'up' ? up : down).add(gap);

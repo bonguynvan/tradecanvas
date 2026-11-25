@@ -126,7 +126,7 @@ new ChartWidget(el, { feed, symbol: 'AAPL', timeframe: '1d' })`}</code></pre>
   </li>
   <li>
     <code>custom_indicators_getter</code>용으로 작성한 <strong>사용자 지표</strong>는
-    <a href={href('/docs/plugins')}>지표 플러그인</a>으로 다시 작성합니다. 내장 지표 137개 중에 같은 일을 하는 것이
+    <a href={href('/docs/plugins')}>지표 플러그인</a>으로 다시 작성합니다. 내장 지표 138개 중에 같은 일을 하는 것이
     있으면 그것을 씁니다.
   </li>
   <li>
