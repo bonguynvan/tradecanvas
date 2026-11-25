@@ -1,5 +1,6 @@
 import type { OHLCBar } from '@tradecanvas/commons';
 import { periodKeyer } from '../indicators/periods.js';
+import { growValueArea } from '../indicators/valueArea.js';
 
 export interface MarketProfileBucket {
   /** Lower price bound of the bucket. */
@@ -42,8 +43,9 @@ function clampIndex(i: number, max: number): number {
  * Time-Price-Opportunity (Market Profile) over a set of bars within a price
  * window. Each bar is one TPO bracket; a bucket's count is the number of bars
  * whose [low, high] range overlapped it. Returns the Point of Control (busiest
- * price) and a value area (the smallest price range, grown out from the POC by
- * the heavier adjacent bucket, that holds `valueAreaPct` of all TPOs).
+ * price) and a value area (grown out from the POC two buckets at a time toward
+ * the heavier pair, as Market Profile counts it, until it holds `valueAreaPct`
+ * of all TPOs).
  *
  * Returns null when there's nothing to profile (empty input or non-positive
  * price span).
@@ -82,22 +84,8 @@ export function computeMarketProfile(
   }
   if (totalCount === 0) return null;
 
-  // Grow the value area out from the POC, always taking the heavier neighbour.
-  const target = totalCount * (opts.valueAreaPct ?? 0.7);
-  let lowI = pocIndex;
-  let highI = pocIndex;
-  let acc = counts[pocIndex];
-  while (acc < target && (lowI > 0 || highI < n - 1)) {
-    const below = lowI > 0 ? counts[lowI - 1] : -1;
-    const above = highI < n - 1 ? counts[highI + 1] : -1;
-    if (above >= below) {
-      highI += 1;
-      acc += counts[highI];
-    } else {
-      lowI -= 1;
-      acc += counts[lowI];
-    }
-  }
+  // Grown from the POC two buckets at a time toward the heavier pair, as Market Profile counts it.
+  const [lowI, highI] = growValueArea(counts, pocIndex, totalCount * (opts.valueAreaPct ?? 0.7));
 
   const buckets: MarketProfileBucket[] = [];
   for (let b = 0; b < n; b++) {

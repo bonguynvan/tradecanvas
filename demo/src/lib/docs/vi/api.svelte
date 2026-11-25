@@ -555,7 +555,7 @@ const levels = computePeriodLevels(bars, 'day', 'Australia/Sydney')  // [{ id, l
 <p>
   Histogram thời gian tại mức giá: mỗi nến đóng góp một TPO cho mỗi vùng giá
   mà biên độ của nến chạm tới, từ đó cho ra Point of Control (mức giá giao dịch nhiều nhất) và
-  value area (≈70% số TPO). Khác với Volume Profile — tính trọng số theo thời gian,
+  value area (≈70% số TPO, mở rộng từ POC mỗi lần hai ô về phía cặp nặng hơn, theo cách của Market Profile). Khác với Volume Profile — tính trọng số theo thời gian,
   không theo khối lượng — và được ghim bên trái để hiển thị được cùng lúc với Volume Profile. Mặc định tắt;
   bật/tắt trong phần cài đặt hoặc gọi trực tiếp:
 </p>
