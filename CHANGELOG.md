@@ -1,8 +1,6 @@
 # Changelog
 
-## 3.0 (in development)
-
-The `3.0` branch. These move under the version's own heading when it is released.
+## Unreleased
 
 ### Breaking
 

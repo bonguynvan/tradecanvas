@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>Migrar a la 3.0 — Documentación de TradeCanvas</title>
-  <meta name="description" content="Lo que cambia para tu código entre TradeCanvas 2.x y 3.0: cada comportamiento que ha cambiado y la opción que conserva el anterior. La 3.0 es una beta en npm." />
+  <meta name="description" content="Lo que cambia para tu código entre TradeCanvas 2.x y 3.0: cada comportamiento que ha cambiado y la opción que conserva el anterior. La 3.0 está en npm." />
 </svelte:head>
 
 <h1>Migrar a la 3.0</h1>
 <p>
-  La 3.0 es una beta: está en npm con la etiqueta <code>beta</code> (<code>npm i @tradecanvas/chart@beta</code>), se desarrolla en la rama <code>3.0</code>, y esta página crece con ella. Recoge
+  La 3.0 está en npm (<code>npm i @tradecanvas/chart</code>). Recoge
   cada cambio que puede romper código escrito para la 2.x y qué hacer al respecto. Para pasar de la 1.x a la 2.0,
   consulta <a href={href('/docs/migration')}>Migrar a la 2.0</a>.
 </p>

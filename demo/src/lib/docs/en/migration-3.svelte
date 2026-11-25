@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>Moving to 3.0 — TradeCanvas docs</title>
-  <meta name="description" content="What changes for your code between TradeCanvas 2.x and 3.0: each behaviour that changed and the option that keeps the old one. 3.0 is a beta on npm." />
+  <meta name="description" content="What changes for your code between TradeCanvas 2.x and 3.0: each behaviour that changed and the option that keeps the old one. 3.0 is on npm." />
 </svelte:head>
 
 <h1>Moving to 3.0</h1>
 <p>
-  3.0 is a beta: it is on npm under the <code>beta</code> tag (<code>npm i @tradecanvas/chart@beta</code>), developed on the <code>3.0</code> branch, and this page grows with it. It lists
+  3.0 is on npm (<code>npm i @tradecanvas/chart</code>). It lists
   each change that can break code written for 2.x and what to do about it. For 1.x to 2.0, see
   <a href={href('/docs/migration')}>Moving to 2.0</a>.
 </p>

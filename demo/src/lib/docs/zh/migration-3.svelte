@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>迁移到 3.0 — TradeCanvas 文档</title>
-  <meta name="description" content="从 TradeCanvas 2.x 到 3.0，你的代码需要注意的变化：每一处发生变化的行为，以及保留旧行为的选项。3.0 目前是 npm 上的 beta 版。" />
+  <meta name="description" content="从 TradeCanvas 2.x 到 3.0，你的代码需要注意的变化：每一处发生变化的行为，以及保留旧行为的选项。3.0 已发布到 npm。" />
 </svelte:head>
 
 <h1>迁移到 3.0</h1>
 <p>
-  3.0 目前是 beta 版：已以 <code>beta</code> 标签发布到 npm（<code>npm i @tradecanvas/chart@beta</code>），在 <code>3.0</code> 分支上开发，本页会随开发进度不断补充。这里列出每一处可能破坏 2.x 代码的变化，
+  3.0 已发布到 npm（<code>npm i @tradecanvas/chart</code>）。这里列出每一处可能破坏 2.x 代码的变化，
   以及相应的处理方法。从 1.x 升级到 2.0，请见 <a href={href('/docs/migration')}>迁移到 2.0</a>。
 </p>
 
