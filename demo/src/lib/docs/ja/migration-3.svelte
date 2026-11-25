@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>3.0 への移行 — TradeCanvas ドキュメント</title>
-  <meta name="description" content="TradeCanvas 2.x から 3.0 でコードに影響する変更点：変わった動作のそれぞれと、以前の動作を保つオプション。3.0 は専用ブランチで開発中です。" />
+  <meta name="description" content="TradeCanvas 2.x から 3.0 でコードに影響する変更点：変わった動作のそれぞれと、以前の動作を保つオプション。3.0 は npm でベータ版として公開中です。" />
 </svelte:head>
 
 <h1>3.0 への移行</h1>
 <p>
-  3.0 は <code>3.0</code> ブランチで開発中です。まだ npm にはなく、このページは開発とともに増えていきます。2.x
+  3.0 はベータ版です。npm の <code>beta</code> タグで公開されており（<code>npm i @tradecanvas/chart@beta</code>）、<code>3.0</code> ブランチで開発中で、このページは開発とともに増えていきます。2.x
   向けに書かれたコードを壊しうる変更と、その対処を一つずつ挙げます。1.x から 2.0 への移行は
   <a href={href('/docs/migration')}>2.0 への移行</a> を参照してください。
 </p>
@@ -112,6 +112,7 @@ chart.startBracket('buy', undefined, { risk: 50 })   // ストップで 50 を�
   価格を渡されると、ペーパー口座は銘柄ごとにその銘柄の価格で処理と評価を行い、銘柄を付けない価格を渡されると、
   これまでどおり 1 つの市場として扱います。また、バーを手動で設定している場合、チャートは伝えられるまで銘柄を
   知りません。<code>chart.setSymbol(symbol)</code> で伝えます。<code>ChartWidget</code> は自分で呼び出します。
+</p>
 <h3 id="hold-tooltip">チャート上の長押しで価格ポップアップを表示します</h3>
 <p>
   <code>ChartWidget</code> では、プロット上でマウスボタンを動かさずに 0.5 秒押し続けると、カーソル位置のバーの

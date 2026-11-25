@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>3.0으로 마이그레이션 — TradeCanvas 문서</title>
-  <meta name="description" content="TradeCanvas 2.x에서 3.0으로 넘어갈 때 코드에 영향을 주는 변경 사항: 달라진 동작 하나하나와 이전 동작을 유지하는 옵션. 3.0은 별도 브랜치에서 개발 중입니다." />
+  <meta name="description" content="TradeCanvas 2.x에서 3.0으로 넘어갈 때 코드에 영향을 주는 변경 사항: 달라진 동작 하나하나와 이전 동작을 유지하는 옵션. 3.0은 npm의 베타 버전입니다." />
 </svelte:head>
 
 <h1>3.0으로 마이그레이션</h1>
 <p>
-  3.0은 <code>3.0</code> 브랜치에서 개발 중입니다. 아직 npm에 없으며, 이 페이지는 개발과 함께 늘어납니다. 2.x용으로 작성한
+  3.0은 베타 버전입니다. npm에 <code>beta</code> 태그로 올라와 있고(<code>npm i @tradecanvas/chart@beta</code>), <code>3.0</code> 브랜치에서 개발 중이며, 이 페이지는 개발과 함께 늘어납니다. 2.x용으로 작성한
   코드를 깨뜨릴 수 있는 변경 사항과 그 대처 방법을 하나씩 정리합니다. 1.x에서 2.0으로의 이동은
   <a href={href('/docs/migration')}>2.0으로 마이그레이션</a>을 참고하세요.
 </p>
@@ -110,6 +110,7 @@ chart.startBracket('buy', undefined, { risk: 50 })   // 손절가에서 50을 �
   가격을 받으면 모의 계좌는 종목마다 그 종목의 가격으로 처리하고 평가하며, 종목을 밝히지 않은 가격을 받으면
   이전처럼 하나의 시장입니다. 그리고 봉을 직접 설정한 경우 차트는 알려 주기 전까지 종목을 모릅니다.
   <code>chart.setSymbol(symbol)</code>로 알리며, <code>ChartWidget</code>은 스스로 호출합니다.
+</p>
 <h3 id="hold-tooltip">차트를 길게 누르면 가격 팝업이 표시됩니다</h3>
 <p>
   <code>ChartWidget</code>에서 플롯 위에 마우스 버튼을 움직이지 않고 0.5초 누르고 있으면, 버튼을 놓을 때까지 포인터 아래

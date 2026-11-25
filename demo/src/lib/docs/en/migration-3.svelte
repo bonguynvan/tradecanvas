@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>Moving to 3.0 — TradeCanvas docs</title>
-  <meta name="description" content="What changes for your code between TradeCanvas 2.x and 3.0: each behaviour that changed and the option that keeps the old one. 3.0 is in development on its own branch." />
+  <meta name="description" content="What changes for your code between TradeCanvas 2.x and 3.0: each behaviour that changed and the option that keeps the old one. 3.0 is a beta on npm." />
 </svelte:head>
 
 <h1>Moving to 3.0</h1>
 <p>
-  3.0 is in development on the <code>3.0</code> branch: it is not on npm yet, and this page grows with it. It lists
+  3.0 is a beta: it is on npm under the <code>beta</code> tag (<code>npm i @tradecanvas/chart@beta</code>), developed on the <code>3.0</code> branch, and this page grows with it. It lists
   each change that can break code written for 2.x and what to do about it. For 1.x to 2.0, see
   <a href={href('/docs/migration')}>Moving to 2.0</a>.
 </p>
@@ -117,6 +117,7 @@ chart.startBracket('buy', undefined, { risk: 50 })   // the quantity that loses 
   prices that name their symbol, the paper account works and values each symbol by its own; fed prices that name
   none, it is one market, as it was. And with bars set by hand the chart knows no symbol until it is told:
   <code>chart.setSymbol(symbol)</code>, which <code>ChartWidget</code> calls itself.
+</p>
 <h3 id="hold-tooltip">A press held on the chart shows the price popup</h3>
 <p>
   In <code>ChartWidget</code>, a mouse press held still on the plot for half a second shows the floating OHLCV tooltip

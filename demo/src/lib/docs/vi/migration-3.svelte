@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>Chuyển sang 3.0 — Tài liệu TradeCanvas</title>
-  <meta name="description" content="Những gì thay đổi với code của bạn giữa TradeCanvas 2.x và 3.0: từng hành vi đã thay đổi và tuỳ chọn giữ lại hành vi cũ. 3.0 đang được phát triển trên branch riêng." />
+  <meta name="description" content="Những gì thay đổi với code của bạn giữa TradeCanvas 2.x và 3.0: từng hành vi đã thay đổi và tuỳ chọn giữ lại hành vi cũ. 3.0 đang là bản beta trên npm." />
 </svelte:head>
 
 <h1>Chuyển sang 3.0</h1>
 <p>
-  3.0 đang được phát triển trên branch <code>3.0</code>: chưa có trên npm, và trang này sẽ dài thêm theo nó. Trang
+  3.0 đang là bản beta: có trên npm dưới tag <code>beta</code> (<code>npm i @tradecanvas/chart@beta</code>), được phát triển trên branch <code>3.0</code>, và trang này sẽ dài thêm theo nó. Trang
   liệt kê từng thay đổi có thể làm hỏng code viết cho 2.x và việc cần làm. Từ 1.x lên 2.0, xem
   <a href={href('/docs/migration')}>Chuyển sang 2.0</a>.
 </p>
@@ -117,6 +117,7 @@ chart.startBracket('buy', undefined, { risk: 50 })   // khối lượng sẽ l�
   symbol, tài khoản paper khớp và định giá từng symbol theo giá của riêng nó; được đưa giá không ghi symbol, nó
   là một thị trường, như trước. Và với các bar đặt bằng tay, chart không biết symbol cho tới khi được báo:
   <code>chart.setSymbol(symbol)</code>, việc mà <code>ChartWidget</code> tự gọi.
+</p>
 <h3 id="hold-tooltip">Click giữ trên chart thì hiện popup giá</h3>
 <p>
   Trong <code>ChartWidget</code>, giữ nút chuột yên trên vùng plot nửa giây sẽ hiện tooltip OHLCV nổi cho nến dưới con
