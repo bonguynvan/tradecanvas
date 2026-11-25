@@ -419,7 +419,7 @@ export interface BuiltInIndicators {
   /** Volume Delta, in a pane of its own. Lines: `value` (Delta). */
   voldelta: {
     params: {
-      /** A whole number, at least 0, at most 1. Default 0. */
+      /** Cumulative. A whole number, at least 0, at most 1. Default 0. */
       mode?: NumberParam;
       /** Default `'all'`. */
       anchor?: 'all' | 'session' | 'week' | 'month' | (string & {});

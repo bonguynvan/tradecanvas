@@ -30,7 +30,7 @@ export class VolumeDeltaIndicator extends IndicatorBase {
     name: 'Volume Delta',
     placement: 'panel' as const,
     defaultConfig: { mode: 0, anchor: 'all' },
-    inputs: { mode: { kind: 'int', min: 0, max: 1 }, anchor: { options: VOLUME_DELTA_ANCHORS } },
+    inputs: { mode: { kind: 'int', min: 0, max: 1, label: 'Cumulative' }, anchor: { options: VOLUME_DELTA_ANCHORS } },
     shortName: 'Vol Δ',
     plots: [{ key: 'value', title: 'Delta', color: 0, kind: 'histogram', tone: { field: 'up' }, downColor: 1 }],
   };
