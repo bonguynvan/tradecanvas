@@ -64,7 +64,7 @@
       <br><b>Grid</b>: tối đa sáu biểu đồ, liên kết theo mã, khung thời gian, crosshair hoặc thời gian.
     </td>
     <td width="50%" valign="top">
-      <img src=".github/assets/clips/looks.webp" alt="Một biểu đồ chuyển giữa các look Print, Terminal, Capsule và Studio, theme tối và sáng">
+      <img src=".github/assets/clips/looks.webp" alt="Một biểu đồ chuyển giữa các look Graphite, Terminal, Capsule và Studio, theme tối và sáng">
       <br><b>Look của bạn</b>: Print (giấy và mực, theo tỉ lệ vàng), Studio, Terminal, Capsule, Desk (cửa sổ giao dịch kiểu desktop), sáng hoặc tối, hoặc token của riêng bạn.
     </td>
   </tr>

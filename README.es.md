@@ -64,7 +64,7 @@ Es un motor de gráficos que es tuyo: licencia MIT, se instala desde npm y se si
       <br><b>Cuadrículas</b>: hasta seis gráficos, enlazados por símbolo, intervalo, cruz o tiempo.
     </td>
     <td width="50%" valign="top">
-      <img src=".github/assets/clips/looks.webp" alt="Un gráfico que cambia entre los aspectos Print, Terminal, Capsule y Studio, oscuro y claro">
+      <img src=".github/assets/clips/looks.webp" alt="Un gráfico que cambia entre los aspectos Graphite, Terminal, Capsule y Studio, oscuro y claro">
       <br><b>Tu aspecto</b>: Print (papel y tinta, en la proporción áurea), Studio, Terminal, Capsule, Desk (una ventana de plataforma de escritorio), claro u oscuro, o tus propios tokens.
     </td>
   </tr>
