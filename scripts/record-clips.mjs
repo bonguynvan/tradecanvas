@@ -146,8 +146,8 @@ const SCENES = {
     await wait(800);
   },
   async looks(page) {
-    // It opens on Print, the default, dark; Print by day, the other three looks, and back, so the loop closes.
-    const steps = [['print', 'light'], ['terminal', 'dark'], ['capsule', 'light'], ['studio', 'dark'], ['print', 'dark']];
+    // It opens on Graphite, the default, dark; Graphite by day, three other looks, and back, so the loop closes.
+    const steps = [['graphite', 'light'], ['terminal', 'dark'], ['capsule', 'light'], ['studio', 'dark'], ['graphite', 'dark']];
     await wait(900);
     for (const [ui, theme] of steps) {
       await page.evaluate(([u, t]) => { window.stage.widget.setUI(u); window.stage.widget.setTheme(t); }, [ui, theme]);
