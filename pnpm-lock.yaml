@@ -152,6 +152,19 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(jsdom@25.0.1)(lightningcss@1.32.0)
 
+  packages/script:
+    dependencies:
+      '@tradecanvas/commons':
+        specifier: workspace:*
+        version: link:../commons
+      '@tradecanvas/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(jsdom@25.0.1)(lightningcss@1.32.0)
+
   packages/svelte:
     dependencies:
       '@tradecanvas/chart':

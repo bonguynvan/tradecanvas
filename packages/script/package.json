@@ -1,0 +1,43 @@
+{
+  "name": "@tradecanvas/script",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Indicators written bar by bar for TradeCanvas: state kept across bars, history read back, ta sums that run one bar at a time, and a live bar run again on each tick.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bonguynvan/tradecanvas.git",
+    "directory": "packages/script"
+  },
+  "sideEffects": false,
+  "homepage": "https://tradecanvas.dev/",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@tradecanvas/commons": "workspace:*",
+    "@tradecanvas/core": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.8"
+  }
+}
