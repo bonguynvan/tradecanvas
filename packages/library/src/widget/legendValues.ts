@@ -34,6 +34,8 @@ export function legendValues(
   colors: readonly string[],
   /** Each plot's own style: a hidden plot shows no value. */
   plotStyles?: Record<string, IndicatorPlotStyle>,
+  /** The colours the output names by itself (`IndicatorOutput.palette`), which a plot's `paletteBy` picks from. */
+  palette?: readonly string[],
 ): LegendValue[] {
   if (!point) return [];
   const plots = descriptor.plots;
@@ -53,7 +55,7 @@ export function legendValues(
     if (!plotShown(plot, { plots: plotStyles })) continue;
     const v = point[plot.key];
     if (typeof v !== 'number' || !Number.isFinite(v)) continue;
-    out.push({ value: v, color: colors.length ? plotColor(plot, style, point) : null });
+    out.push({ value: v, color: colors.length ? plotColor(plot, style, point, palette) : null });
   }
   return out;
 }

@@ -3,7 +3,7 @@
 // quote on, a linked grid under the pointer, a replay, compares, Renko, the
 // day's limits. Picked by `?scene=` and `?theme=`; the market is made up from
 // a fixed seed and stops once loaded, so every run draws the same bars.
-import { Chart, MockAdapter, PaperExecutionAdapter, MARKET_HOSE, MARKET_KRX, renderPriceChart, detectFairValueGaps } from '@tradecanvas/chart';
+import { Chart, MockAdapter, PaperExecutionAdapter, MARKET_HOSE, MARKET_KRX, renderPriceChart, detectFairValueGaps, defineIndicator } from '@tradecanvas/chart';
 import { ChartWidget, ChartWidgetGrid } from '@tradecanvas/chart/widget';
 
 /** A small seeded generator in place of Math.random: the same bars every time. */
@@ -1215,6 +1215,68 @@ const SCENES = {
     const checks = () => {
       const list = found();
       return list === null || list.length > 0 ? [] : ['the scene has no divergence to draw'];
+    };
+    return { ...s, checks };
+  },
+
+  /**
+   * Indicators coloured bar by bar: over the prices, a trend background behind
+   * the candles and a line in the trend's colour; in a pane, a band filled in
+   * a colour a bar, a background behind its levels, marks at its top and bottom.
+   */
+  async barColors() {
+    const s = await widget();
+    const trendOf = (close, i) => (close[i] >= close[Math.max(0, i - 20)] ? 1 : 2);
+    s.chart.registerIndicator(defineIndicator({
+      id: 'trendShade',
+      name: 'Trend shade',
+      placement: 'overlay',
+      plots: [
+        { key: 'bg', title: 'Trend', color: 0, kind: 'background', colorBy: 'bgc' },
+        { key: 'avg', title: 'Average', color: 0, colorBy: 'avgc' },
+      ],
+      calculate: ({ bars, ta }) => {
+        const avg = ta.ema(bars.close, 20);
+        const trend = bars.close.map((_, i) => trendOf(bars.close, i));
+        return { avg, avgc: trend, bg: trend.map(() => 1), bgc: trend.map((t) => t + 2) };
+      },
+    }));
+    s.chart.registerIndicator(defineIndicator({
+      id: 'zones',
+      name: 'Zones',
+      plots: [
+        { key: 'zone', title: 'Hot', color: 0, kind: 'background', colorBy: 'zc' },
+        { key: 'rsi', title: 'RSI', color: 1, colorBy: 'rc' },
+        { key: 'hi', title: 'High', color: 2 },
+        { key: 'lo', title: 'Low', color: 2 },
+        { key: 'over', title: 'Over', color: 4, kind: 'markers', shape: 'triangleDown', position: 'top' },
+        { key: 'under', title: 'Under', color: 3, kind: 'markers', shape: 'triangleUp', position: 'bottom' },
+      ],
+      fills: [{ between: ['hi', 'lo'], color: 1, colorBy: 'fc', opacity: 0.15 }],
+      calculate: ({ bars, ta }) => {
+        const rsi = ta.rsi(bars.close, 14);
+        const pick = (v, high, low) => (v === undefined ? undefined : v > 60 ? high : v < 40 ? low : undefined);
+        return {
+          rsi,
+          rc: rsi.map((v) => pick(v, 3, 4)),
+          hi: rsi.map(() => 70),
+          lo: rsi.map(() => 30),
+          fc: rsi.map((v) => pick(v, 3, 4)),
+          zone: rsi.map((v) => (v !== undefined && (v > 65 || v < 35) ? 1 : undefined)),
+          zc: rsi.map((v) => (v !== undefined && v > 65 ? 5 : 6)),
+          over: rsi.map((v) => v !== undefined && v > 68),
+          under: rsi.map((v) => v !== undefined && v < 32),
+        };
+      },
+    }));
+    // Colours of their own, see-through ones for the backgrounds: defineIndicator takes none.
+    const trend = s.chart.addIndicator('trendShade');
+    s.chart.updateIndicatorStyle(trend, { colors: ['#787b86', '#22c55e', '#ef4444', '#22c55e1f', '#ef44441f'] });
+    const zones = s.chart.addIndicator('zones');
+    s.chart.updateIndicatorStyle(zones, { colors: ['#00000000', '#a855f7', '#64748b', '#22c55e', '#ef4444', '#f9731633', '#3b82f633'] });
+    const checks = () => {
+      const series = s.chart.getIndicatorOutput(zones)?.series ?? [];
+      return series.some((p) => p?.zone !== undefined) ? [] : ['the scene has no background in its pane to draw'];
     };
     return { ...s, checks };
   },

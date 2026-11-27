@@ -125,6 +125,8 @@ export class ScriptRun {
       prices: this.priceSeries(),
       plot: (title, options) => this.outputs.plot(title, options),
       shape: (title, options) => this.outputs.shape(title, options),
+      fill: (a, b, options) => this.outputs.fill(a, b, options),
+      bgcolor: (options) => this.outputs.bgcolor(options),
       hline: (price, options) => this.outputs.hline(price, options),
       state: { var: keep, array: arrayOf, series: seriesOf },
     }));

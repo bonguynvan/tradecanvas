@@ -43,6 +43,13 @@ chart.addIndicator('emaCross');
 - `ta.macd`'s averages start as simple ones, like every EMA here; the chart's built-in MACD starts its own at the first close, so their first hundred bars or so differ by a hair.
 - A bar that throws stops the script there; `output.errors` (`meta.errors` of the indicator's output) says which bar and why. A tick on the live bar runs it again; once that bar closes, the script stays stopped until the bars are loaded again.
 
+## Colours, fills, backgrounds
+
+- `plot.set(value, color)` gives a bar its own colour; the line's stretch to that bar takes it.
+- `fill(plotA, plotB, { color })` shades between two plots; `.set(color)` gives a bar its own colour. A colour with an alpha of its own (`'#22c55e33'`) keeps it.
+- `bgcolor()` returns a background: `.set(color)` shades the pane behind that bar, behind the candles and the levels.
+- `shape(title, { position: 'top' })` marks the top or the bottom of the pane; in a pane of its own, `'aboveBar'` and `'belowBar'` are the top and the bottom.
+
 ## Not drawn yet
 
-The chart does not draw yet: a plot's colour per bar (`plot.set(value, color)` keeps it in `output.colors`), marks in a pane of their own, and an `hline`'s colour and title (its price is drawn as a level).
+An `hline`'s colour and title (its price is drawn as a level), and a colour for the candles themselves.

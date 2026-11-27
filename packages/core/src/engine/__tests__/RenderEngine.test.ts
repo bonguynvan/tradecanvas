@@ -116,7 +116,8 @@ afterEach(() => {
 /** An indicator engine drawing `overlays` in the plot and `panes` (id → draw) in panes. */
 function fakeIndicators(overlays: ((c: CanvasRenderingContext2D) => void)[], panes: Record<string, (c: CanvasRenderingContext2D) => void> = {}) {
   return {
-    overlayDraws: () => overlays,
+    // The backgrounds' pass draws nothing here: these overlays have none.
+    overlayDraws: (_viewport: unknown, _left: unknown, layer?: string) => (layer === 'background' ? [] : overlays),
     getLatestOverlayValues: () => [],
     getLatestValues: () => [],
     getPanelIndicators: () => Object.keys(panes).map((instanceId) => ({ instanceId, descriptor: { name: instanceId.toUpperCase() } })),
@@ -124,7 +125,7 @@ function fakeIndicators(overlays: ((c: CanvasRenderingContext2D) => void)[], pan
     isShown: () => true,
     getLevels: () => [30, 70],
     peekOutput: () => null,
-    renderPanel: (c: CanvasRenderingContext2D, id: string) => panes[id]?.(c),
+    renderPanel: (c: CanvasRenderingContext2D, id: string, _viewport: unknown, layer?: string) => (layer === 'background' ? undefined : panes[id]?.(c)),
   } as unknown as RenderContext['indicatorEngine'];
 }
 
@@ -245,6 +246,20 @@ describe('RenderEngine — two canvases', () => {
     engine.start();
     runFrame();
     expect(order).toEqual(['lines', 'series', 'compare', 'overlay']);
+  });
+
+  it('draws the backgrounds of indicators behind the series, and their lines over it', () => {
+    const { ctx, scene } = makeContext();
+    const order: string[] = [];
+    scene.mockImplementation(() => order.push('series'));
+    ctx.indicatorEngine = {
+      ...fakeIndicators([() => order.push('overlay')]),
+      overlayDraws: (_viewport: unknown, _left: unknown, layer?: string) => [() => order.push(layer === 'background' ? 'background' : 'overlay')],
+    } as unknown as RenderContext['indicatorEngine'];
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    expect(order).toEqual(['background', 'series', 'overlay']);
   });
 
   it('draws the last price, bid, ask, high and low lines under the order and position labels, and their axis tags over them', () => {
@@ -673,6 +688,25 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     expect(isBack(heat.mock.calls.at(-1)![0] as CanvasRenderingContext2D, gpu)).toBe(true);
     // The grid once, by the GPU.
     expect(grid.mock.calls.some(([c]) => isBack(c as CanvasRenderingContext2D, gpu))).toBe(false);
+  });
+
+  it('records the backgrounds of indicators under the bars, behind a depth heatmap', async () => {
+    const { ctx } = await candleContext();
+    const order: [string, unknown][] = [];
+    ctx.depthHeatmap = { render: (c: unknown) => order.push(['heatmap', c]), isVisible: () => true } as unknown as RenderContext['depthHeatmap'];
+    ctx.indicatorEngine = {
+      ...fakeIndicators([(c) => order.push(['overlay', c])]),
+      overlayDraws: (_viewport: unknown, _left: unknown, layer?: string) =>
+        [(c: unknown) => order.push([layer === 'background' ? 'background' : 'overlay', c])],
+    } as unknown as RenderContext['indicatorEngine'];
+    const { gpu, rec } = fakeGpu();
+    engine.attachGpu(gpu);
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    const under = order.filter(([, c]) => c === rec.recording).map(([name]) => name);
+    expect(under.slice(0, 2)).toEqual(['background', 'heatmap']);
+    expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ under: rec.recorder }));
   });
 
   it('records volume under a volume profile, in the order Canvas 2D draws them', async () => {

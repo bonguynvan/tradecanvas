@@ -272,7 +272,8 @@ export class FrameRenderer {
     c.rect(viewport.chartRect.x, viewport.chartRect.y, viewport.chartRect.width, viewport.chartRect.height);
     c.clip();
     if (!gpu) {
-      // Liquidity heatmap (backmost, behind volume + candles)
+      // Indicators' backgrounds, then the liquidity heatmap: behind volume and candles.
+      for (const step of this.backgroundSteps(ctx)) step(c);
       ctx.depthHeatmap?.render(c, viewport, theme);
     }
     // Volume bars (drawn first, behind candles)
@@ -341,10 +342,15 @@ export class FrameRenderer {
     }
   }
 
-  /** What goes under the bars, in Canvas 2D's order: the depth heatmap, then with a profile, volume and the profiles. */
+  /** The backgrounds of the indicators over the prices: the backmost of what is drawn on the plot. */
+  private backgroundSteps(ctx: RenderContext): DrawStep[] {
+    return ctx.indicatorEngine?.overlayDraws(ctx.viewport, ctx.leftViewport ?? undefined, 'background') ?? [];
+  }
+
+  /** What goes under the bars, in Canvas 2D's order: indicators' backgrounds, the depth heatmap, then with a profile, volume and the profiles. */
   protected underSteps(ctx: RenderContext): DrawStep[] {
     const { viewport, theme, data } = ctx;
-    const steps: DrawStep[] = [];
+    const steps: DrawStep[] = [...this.backgroundSteps(ctx)];
     if (ctx.depthHeatmap?.isVisible()) steps.push((c) => ctx.depthHeatmap!.render(c, viewport, theme));
     if (ctx.volumeProfile?.isVisible() || ctx.marketProfile?.isVisible()) {
       if (ctx.volumeRenderer?.isVisible()) steps.push((c) => ctx.volumeRenderer!.render(c, data, viewport, theme));
@@ -439,7 +445,8 @@ export class FrameRenderer {
       const { rect, viewport } = panel;
       if (rect.width <= 0 || rect.height <= 0) continue;
       const ids = panel.members?.length ? [panel.instanceId, ...panel.members] : [panel.instanceId];
-      const steps: DrawStep[] = [];
+      // Backgrounds behind the levels and the lines.
+      const steps: DrawStep[] = ids.map((id) => (c: CanvasRenderingContext2D) => indicatorEngine.renderPanel(c, id, viewport, 'background'));
       for (const id of ids) {
         // Not drawn (switched off, or not on this interval): its levels go with it.
         const levels = indicatorEngine.isShown(id) ? indicatorEngine.getLevels(id) : [];

@@ -72,4 +72,10 @@ describe('formatIndicatorValue', () => {
     expect(formatIndicatorValue(2.25, 'fr-FR')).toBe('2,25');
     expect(built).not.toHaveBeenCalled();
   });
+
+  it('shows a value in the colour its bar names, from its own colours or the style', () => {
+    const coloured = { plots: [{ key: 'v', title: 'V', color: 0, colorBy: 'vc', paletteBy: 'vp' }] };
+    expect(legendValues(coloured, { v: 1, vp: 1 }, COLORS, undefined, ['#111111', '#222222'])).toEqual([{ value: 1, color: '#222222' }]);
+    expect(legendValues(coloured, { v: 1, vc: 1 }, COLORS)).toEqual([{ value: 1, color: COLORS[1] }]);
+  });
 });

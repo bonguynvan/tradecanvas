@@ -1,5 +1,9 @@
 export { defineScript } from './defineScript.js';
 export type {
+  BackgroundHandle,
+  BackgroundOptions,
+  FillHandle,
+  FillOptions,
   HlineOptions,
   InputValues,
   OnBar,
@@ -17,10 +21,16 @@ export type {
   ScriptSetup,
   ShapeHandle,
   ShapeOptions,
+  ShapePosition,
 } from './defineScript.js';
 export { ScriptRun } from './ScriptRun.js';
 export type { UpdateKind } from './ScriptRun.js';
 export type {
+  BackgroundDeclaration,
+  BackgroundOutput,
+  BarColors,
+  FillDeclaration,
+  FillOutput,
   LevelDeclaration,
   PlotDeclaration,
   PlotOutput,

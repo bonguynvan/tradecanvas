@@ -1,4 +1,6 @@
 import type {
+  IndicatorLayer,
+  IndicatorRenderContext,
   IndicatorPlugin,
   IndicatorConfig,
   IndicatorOutput,
@@ -18,6 +20,7 @@ import { alignOutput, emptyOutput, inputSource, lineSourceBars, priceSourceBars,
 import { cleanIntervals, shownOnInterval } from './intervals.js';
 import { copyIntervals, copyPlots, isSeriesPalette, paletteFrom } from './palette.js';
 import { BUILT_IN_PLUGINS } from './builtIns.js';
+import { hasBackground } from './plots.js';
 import { applyThemeLook, descriptorLook, followLook, ownStyle, type ThemeLook, type ThemeLookKey } from './themeStyle.js';
 import { SYMBOL_INDICATOR_IDS } from './symbols/symbolIndicators.js';
 import type { IndicatorWorkerClient } from './worker/IndicatorWorkerPool.js';
@@ -313,6 +316,8 @@ export class IndicatorEngine {
           for (let i = rewritten; i < data.length; i++) series[i] = next.series[i - start] ?? null;
           cached.aligned.values = next.values;
           cached.aligned.meta = next.meta;
+          // A colour a bar first gave grows the palette its bars index.
+          cached.aligned.palette = next.palette;
         }
         instance.output = cached.aligned;
         instance.changedFrom = rewritten;
@@ -469,23 +474,45 @@ export class IndicatorEngine {
     this.worker.stop();
   }
 
-  /** Price-pane overlays; those on the left scale draw with `leftViewport` (its range). */
+  /** Price-pane overlays, their backgrounds first; those on the left scale draw with `leftViewport` (its range). */
   renderOverlays(ctx: CanvasRenderingContext2D, viewport: ViewportState, leftViewport?: ViewportState): void {
+    for (const draw of this.overlayDraws(viewport, leftViewport, 'background')) draw(ctx);
     for (const draw of this.overlayDraws(viewport, leftViewport)) draw(ctx);
   }
 
-  /** The visible overlays as one drawing each, in order, for any 2D context (the chart's, or one recording for the GPU). */
-  overlayDraws(viewport: ViewportState, leftViewport?: ViewportState): ((ctx: CanvasRenderingContext2D) => void)[] {
+  /**
+   * The visible overlays as one drawing each, in order, for any 2D context
+   * (the chart's, or one recording for the GPU). `'background'`: only the
+   * backgrounds of those that have them, drawn before the bars; else all
+   * the rest.
+   */
+  overlayDraws(viewport: ViewportState, leftViewport?: ViewportState, layer: IndicatorLayer = 'front'): ((ctx: CanvasRenderingContext2D) => void)[] {
     this.runPending();
     const draws: ((ctx: CanvasRenderingContext2D) => void)[] = [];
     for (const instance of this.instances.values()) {
       const output = instance.output;
       if (!output || !isShown(instance)) continue;
       if (instance.plugin.descriptor.placement !== 'overlay' || instance.config.pane) continue;
+      const part = this.layerOf(instance, layer);
+      if (part === null) continue;
       const vp = instance.config.scale === 'left' ? leftViewport ?? viewport : viewport;
-      draws.push((ctx) => instance.plugin.render(ctx, output, vp, instance.style, { theme: this.theme }));
+      draws.push((ctx) => instance.plugin.render(ctx, output, vp, instance.style, this.renderContext(part)));
     }
     return draws;
+  }
+
+  /**
+   * What of an instance a pass draws: for one without backgrounds, all of it
+   * in front and nothing behind (its render is asked for no part, as before
+   * there were parts); else the part asked for.
+   */
+  private layerOf(instance: IndicatorInstance, layer: IndicatorLayer): IndicatorLayer | undefined | null {
+    if (hasBackground(instance.plugin.descriptor)) return layer;
+    return layer === 'background' ? null : undefined;
+  }
+
+  private renderContext(layer: IndicatorLayer | undefined): IndicatorRenderContext {
+    return layer === undefined ? { theme: this.theme } : { theme: this.theme, layer };
   }
 
   /** Whether any visible overlay is drawn on the left scale. */
@@ -505,15 +532,19 @@ export class IndicatorEngine {
     return true;
   }
 
+  /** An instance drawn in its pane: `'background'` its backgrounds only, drawn before the pane's levels; else the rest. */
   renderPanel(
     ctx: CanvasRenderingContext2D,
     instanceId: string,
     viewport: ViewportState,
+    layer: IndicatorLayer = 'front',
   ): void {
     this.runPending();
     const instance = this.instances.get(instanceId);
     if (!instance?.output || !isShown(instance)) return;
-    instance.plugin.render(ctx, instance.output, viewport, instance.style, { theme: this.theme });
+    const part = this.layerOf(instance, layer);
+    if (part === null) return;
+    instance.plugin.render(ctx, instance.output, viewport, instance.style, this.renderContext(part));
   }
 
   /**

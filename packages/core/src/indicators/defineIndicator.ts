@@ -169,8 +169,11 @@ class DefinedIndicator<D extends Record<string, DefinedIndicatorInput>> extends 
   /** Where a mark given as `true` under `key` goes. */
   private markAt(key: string): MarkAt {
     const plot = this.descriptor.plots?.find((p) => p.key === key);
+    const position = plot?.kind === 'markers' ? plot.position : undefined;
+    // At the top or the bottom of a pane, any pane, a mark needs no price.
+    if (position === 'top' || position === 'bottom') return 'bar';
     if (this.descriptor.placement !== 'overlay') return 'nowhere';
-    return plot?.kind === 'markers' && (plot.position === 'aboveBar' || plot.position === 'belowBar') ? 'bar' : 'close';
+    return position === 'aboveBar' || position === 'belowBar' ? 'bar' : 'close';
   }
 
   /** The console was told that marks given as `true` have no place in a pane of its own. */

@@ -117,3 +117,68 @@ describe('scriptIndicator: a script as an indicator the chart draws', () => {
     expect(plugin.update!(BARS.slice(0, 100), configOf({ fast: 5 }), prev, 99)).toBeNull();
   });
 });
+
+const painted = defineScript({
+  id: 'painted',
+  name: 'Painted',
+  setup({ plot, shape, fill, bgcolor }) {
+    const rsi = ta.rsi(14);
+    const line = plot('RSI', { color: '#a855f7' });
+    const high = plot('High', { color: '#64748b' });
+    const low = plot('Low', { color: '#64748b' });
+    const zone = fill(high, low, { color: '#3b82f633' });
+    const hot = bgcolor({ title: 'Hot' });
+    const over = shape('Over', { shape: 'triangleDown', position: 'aboveBar', color: '#ef4444' });
+    return (bar) => {
+      const r = line.set(rsi(bar.close), bar.close > bar.open ? '#22c55e' : '#ef4444');
+      high.set(70);
+      low.set(30);
+      zone.set(r > 60 ? '#22c55e33' : undefined);
+      hot.set(r > 65 ? '#f9731622' : undefined);
+      over.set(r > 70);
+    };
+  },
+});
+
+describe('scriptIndicator: colours a bar at a time, fills, backgrounds, marks in a pane', () => {
+  const config = { id: 'painted', instanceId: 'p', params: {} };
+
+  it('declares its plots coloured from the output, its fill, its background and its marks at the pane top', () => {
+    const { plots, fills } = scriptIndicator(painted).descriptor;
+    expect(plots).toEqual(expect.arrayContaining([
+      expect.objectContaining({ key: 'p0', paletteBy: 'p0c' }),
+      expect.objectContaining({ key: 'bg0', title: 'Hot', kind: 'background', paletteBy: 'bg0c' }),
+      expect.objectContaining({ key: 's0', kind: 'markers', position: 'top' }),
+    ]));
+    expect(fills).toEqual([expect.objectContaining({ between: ['p1', 'p2'], paletteBy: 'f0c', opacity: 1 })]);
+  });
+
+  it('names each bar colour by its place in the palette of the output', () => {
+    const output = scriptIndicator(painted).calculate(BARS, config);
+    const palette = output.palette ?? [];
+    const series = output.series ?? [];
+    const bar = BARS.findIndex((b, i) => i > 20 && b.close > b.open);
+    expect(palette[series[bar]!.p0c!]).toBe('#22c55e');
+    const hot = series.findIndex((point) => point?.bg0 !== undefined);
+    expect(hot).toBeGreaterThan(0);
+    expect(palette[series[hot]!.bg0c!]).toBe('#f9731622');
+    // No background where none was given: nothing to draw there.
+    expect(series.filter((point) => point && point.bg0 === undefined && point.bg0c !== undefined)).toEqual([]);
+    const zoned = series.find((point) => point?.f0c !== undefined);
+    expect(palette[zoned!.f0c!]).toBe('#22c55e33');
+    expect(series.some((point) => point?.s0 === 1)).toBe(true);
+  });
+
+  it('keeps the palette as a tick brings a colour', () => {
+    const plugin = scriptIndicator(painted);
+    const data = BARS.slice(0, 100);
+    const prev = plugin.calculate(data, config);
+    const last = data[99];
+    const ticked = [...data.slice(0, -1), { ...last, close: last.open + 5, high: last.open + 5 }];
+    const after = plugin.update!(ticked, config, prev, 99)!;
+    const fresh = plugin.calculate(ticked, config);
+    expect(after.series).toEqual(fresh.series);
+    expect(after.palette).toEqual(fresh.palette);
+  });
+});
+
