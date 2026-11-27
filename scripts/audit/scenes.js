@@ -697,6 +697,35 @@ const SCENES = {
   },
 
   /**
+   * The ticket open in the dock and the toolbar's Trade menu open over it
+   * (issue #510): the menu is on top, every item of it reachable.
+   */
+  async ticketDockMenu() {
+    const s = await widget({ symbol: 'BTCUSDT', trading: true });
+    s.chart.connectExecution(new PaperExecutionAdapter({ markPrice: lastClose(s.chart) }));
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    host.querySelector('.tcw-quote-buy')?.click();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    host.querySelector('.tcw-toolbar [data-role="trade"]')?.click();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const checks = () => {
+      // On a phone the ticket is a dialog whose backdrop keeps the toolbar out of reach: the dock is what's checked.
+      if (!host.querySelector('.tcw-ticket-docked')) return [];
+      // The menu shown: the others the widget keeps are empty and hidden.
+      const menu = [...host.querySelectorAll('.tcw-context-menu')].find((m) => m.getBoundingClientRect().width > 0);
+      if (!menu) return ['the Trade menu did not open'];
+      const covered = [...menu.querySelectorAll('[role^="menuitem"]')].filter((item) => {
+        const box = item.getBoundingClientRect();
+        if (box.width === 0) return false;
+        const top = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+        return !menu.contains(top);
+      });
+      return covered.length > 0 ? [`${covered.length} item(s) of the Trade menu are under something else`] : [];
+    };
+    return { ...s, checks };
+  },
+
+  /**
    * The order ticket as a page of the dock: beside the chart on a laptop and wider, hiding none of
    * it, and a dialog on a phone, where the dock has no room. It was a dialog over the chart at
    * every width, on the price it was filled in for.

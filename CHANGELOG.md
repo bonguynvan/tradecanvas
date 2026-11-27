@@ -13,6 +13,10 @@
 
 - A fill in a colour see-through of its own (`#rrggbbaa`) keeps that alpha, times the fill's `opacity`; it was set to the `opacity` alone.
 
+### Fixed
+
+- **The toolbar's menus open over the order ticket in the dock** (`@tradecanvas/chart`): the ticket kept a dialog's place in the stack there, so the Trade menu, opened with the ticket shown, went under it (#510).
+
 ## 3.0.0 (2026-11-25)
 
 ### Breaking

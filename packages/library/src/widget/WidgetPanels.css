@@ -558,9 +558,15 @@
 
 /* === The order ticket as a page of the dock === */
 
-/* The ticket's form, a dialog elsewhere, fills its page: no card, no shadow, no size of its own. */
+/*
+ * The ticket's form, a dialog elsewhere, fills its page: no card, no shadow, no size of its own,
+ * and none of a dialog's place above the menus: a flex item keeps its z-index even when static,
+ * and the dialog's 101 put the toolbar's menus (70) under it (issue #510). It stays over the
+ * dock's resize strip (3), whose inner half would take the press of a control at its edge.
+ */
 .tcw-dock-page.tcw-ticket-dock > .tcw-order-ticket.tcw-ticket-docked {
   position: static;
+  z-index: 4;
   inset: auto;
   display: flex;
   flex-direction: column;
