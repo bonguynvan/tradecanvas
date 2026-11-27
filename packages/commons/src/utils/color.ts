@@ -52,6 +52,20 @@ function parseColor(color: string): Rgba | null {
 }
 
 /**
+ * `color` at `strength` (0 to 1) of its own alpha: a colour see-through of
+ * its own (`#rrggbbaa`, `rgba()`) stays as see-through as it was, times the
+ * strength, where `withAlpha` would set the alpha outright. A colour it can't
+ * read (a name, hsl()) is set to `strength` as `withAlpha` sets it.
+ */
+export function fadeBy(color: string, strength: number): string {
+  // Kept within 0 to 1 for the colours it can't read, as for the ones it can.
+  const rgba = parseColor(color);
+  if (!rgba) return withAlpha(color, Math.min(1, Math.max(0, strength)));
+  const alpha = Number((rgba.a * Math.min(1, Math.max(0, strength))).toFixed(ALPHA_DECIMALS));
+  return `rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, ${alpha})`;
+}
+
+/**
  * The colour `t` of the way from `colorA` to `colorB` (0 to 1), each hex or
  * rgb()/rgba(): `rgb(r,g,b)`, or `rgba(…)` when either is see-through. The
  * alpha is mixed as `color-mix` mixes it, weighting each colour by its own,

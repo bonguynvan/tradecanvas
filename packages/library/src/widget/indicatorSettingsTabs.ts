@@ -54,8 +54,8 @@ export function renderStyleTab(body: HTMLElement, state: StyleTabState, actions:
   const lines = section();
   // In the order of their colours: a two-tone plot's up and down sit together.
   for (const plot of [...state.plots].sort((a, b) => a.color - b.color)) lines.appendChild(plotRow(plot, state, actions, t));
-  // Marks have no width: an indicator drawn in marks alone gets none to pick.
-  if (!state.plots.length || state.plots.some((p) => p.kind !== 'markers')) {
+  // Marks and backgrounds have no width: an indicator drawn in those alone gets none to pick.
+  if (!state.plots.length || state.plots.some((p) => p.kind !== 'markers' && p.kind !== 'background')) {
     const width = selectInput(LINE_WIDTHS.map((w) => ({ value: String(w), label: `${w} px` })), String(state.lineWidth), (v) => actions.lineWidth(Number(v)));
     width.dataset.role = 'line-width';
     lines.appendChild(settingsRow(t('indicatorSettings.lineWidth'), width));

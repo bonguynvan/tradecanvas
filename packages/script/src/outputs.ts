@@ -1,6 +1,18 @@
 import type { IndicatorMarkerShape } from '@tradecanvas/commons';
 import { colorColumn, flagColumn, floatColumn, type Column } from './Column.js';
-import type { HlineOptions, PlotHandle, PlotOptions, ScriptPlotKind, ShapeHandle, ShapeOptions } from './defineScript.js';
+import type {
+  BackgroundHandle,
+  BackgroundOptions,
+  FillHandle,
+  FillOptions,
+  HlineOptions,
+  PlotHandle,
+  PlotOptions,
+  ScriptPlotKind,
+  ShapeHandle,
+  ShapeOptions,
+  ShapePosition,
+} from './defineScript.js';
 import type { Scope } from './scope.js';
 
 export interface PlotDeclaration {
@@ -13,7 +25,7 @@ export interface PlotDeclaration {
 export interface ShapeDeclaration {
   readonly title: string;
   readonly shape: IndicatorMarkerShape;
-  readonly position: 'aboveBar' | 'belowBar';
+  readonly position: ShapePosition;
   readonly color?: string;
 }
 
@@ -23,24 +35,49 @@ export interface LevelDeclaration {
   readonly title?: string;
 }
 
+export interface FillDeclaration {
+  /** The two plots it shades between, by their place among the plots. */
+  readonly between: readonly [number, number];
+  readonly color?: string;
+}
+
+export interface BackgroundDeclaration {
+  readonly title: string;
+}
+
 /** What a script draws, known once its setup has run. */
 export interface ScriptDeclarations {
   readonly overlay: boolean;
   readonly plots: readonly PlotDeclaration[];
   readonly shapes: readonly ShapeDeclaration[];
   readonly levels: readonly LevelDeclaration[];
+  readonly fills: readonly FillDeclaration[];
+  readonly backgrounds: readonly BackgroundDeclaration[];
 }
+
+/** A colour a bar, by its place in the output's `palette` plus one: 0 for none. */
+export type BarColors = Uint16Array;
 
 /** A plot's values, a bar each, and the colour each bar was given. */
 export interface PlotOutput extends PlotDeclaration {
   readonly values: Float64Array;
-  /** Each bar's colour: 0 for the plot's own, else 1 + its place in `palette`. */
-  readonly colors: Uint16Array;
+  /** Each bar's colour: 0 for the plot's own. */
+  readonly colors: BarColors;
 }
 
 export interface ShapeOutput extends ShapeDeclaration {
   /** 1 on the bars it marks. */
   readonly on: Uint8Array;
+}
+
+export interface FillOutput extends FillDeclaration {
+  /** Each bar's colour: 0 for the fill's own. */
+  readonly colors: BarColors;
+}
+
+export interface BackgroundOutput extends BackgroundDeclaration {
+  /** Each bar's colour: 0 for no background there. */
+  readonly colors: BarColors;
 }
 
 export interface ScriptError {
@@ -55,6 +92,8 @@ export interface ScriptOutput {
   readonly plots: readonly PlotOutput[];
   readonly shapes: readonly ShapeOutput[];
   readonly levels: readonly LevelDeclaration[];
+  readonly fills: readonly FillOutput[];
+  readonly backgrounds: readonly BackgroundOutput[];
   /** The colours bars were given, each once. */
   readonly palette: readonly string[];
   readonly errors: readonly ScriptError[];
@@ -74,10 +113,18 @@ interface ShapeSlot {
   on: Column<Uint8Array>;
 }
 
-/** The plots, marks and levels a script declares, and what its bars set in them. */
+interface ColorSlot<D> {
+  declaration: D;
+  colors: Column<Uint16Array>;
+}
+
+/** The plots, marks, fills, backgrounds and levels a script declares, and what its bars set in them. */
 export class Outputs {
   private readonly plots: PlotSlot[] = [];
+  private readonly handles = new Map<PlotHandle, number>();
   private readonly shapes: ShapeSlot[] = [];
+  private readonly fills: ColorSlot<FillDeclaration>[] = [];
+  private readonly backgrounds: ColorSlot<BackgroundDeclaration>[] = [];
   private readonly levels: LevelDeclaration[] = [];
   private readonly palette: string[] = [];
   private readonly paletteIndex = new Map<string, number>();
@@ -90,6 +137,8 @@ export class Outputs {
         plot.colors.set(bar, 0);
       }
       for (const shape of this.shapes) shape.on.set(bar, 0);
+      for (const fill of this.fills) fill.colors.set(bar, 0);
+      for (const background of this.backgrounds) background.colors.set(bar, 0);
     });
   }
 
@@ -102,6 +151,7 @@ export class Outputs {
     if (!this.open) throw new Error(`${what} is declared in the script's setup, not on a bar`);
   }
 
+  /** A colour's place in the palette plus one. */
   private colorIndex(color: string): number {
     let index = this.paletteIndex.get(color);
     if (index === undefined) {
@@ -121,13 +171,15 @@ export class Outputs {
       colors: colorColumn(),
     };
     this.plots.push(slot);
-    return {
+    const handle: PlotHandle = {
       set: (value, color) => {
         slot.values.set(this.scope.bar, Number.isFinite(value) ? value : Number.NaN);
         if (color !== undefined) slot.colors.set(this.scope.bar, this.colorIndex(color));
         return value;
       },
     };
+    this.handles.set(handle, this.plots.length - 1);
+    return handle;
   }
 
   shape(title: string, options: ShapeOptions = {}): ShapeHandle {
@@ -145,6 +197,34 @@ export class Outputs {
     };
   }
 
+  fill(a: PlotHandle, b: PlotHandle, options: FillOptions = {}): FillHandle {
+    this.declaring('fill');
+    const first = this.handles.get(a);
+    const second = this.handles.get(b);
+    if (first === undefined || second === undefined) throw new Error('fill is between two plots of the same script');
+    const slot: ColorSlot<FillDeclaration> = {
+      declaration: { between: [first, second], ...(options.color ? { color: options.color } : {}) },
+      colors: colorColumn(),
+    };
+    this.fills.push(slot);
+    return {
+      set: (color) => {
+        slot.colors.set(this.scope.bar, color === undefined ? 0 : this.colorIndex(color));
+      },
+    };
+  }
+
+  bgcolor(options: BackgroundOptions = {}): BackgroundHandle {
+    this.declaring('bgcolor');
+    const slot: ColorSlot<BackgroundDeclaration> = { declaration: { title: options.title ?? 'Background' }, colors: colorColumn() };
+    this.backgrounds.push(slot);
+    return {
+      set: (color) => {
+        slot.colors.set(this.scope.bar, color === undefined ? 0 : this.colorIndex(color));
+      },
+    };
+  }
+
   hline(price: number, options: HlineOptions = {}): void {
     this.declaring('hline');
     this.levels.push({ price, ...options });
@@ -156,6 +236,8 @@ export class Outputs {
       plots: this.plots.map((p) => p.declaration),
       shapes: this.shapes.map((s) => s.declaration),
       levels: [...this.levels],
+      fills: this.fills.map((f) => f.declaration),
+      backgrounds: this.backgrounds.map((b) => b.declaration),
     };
   }
 
@@ -165,6 +247,8 @@ export class Outputs {
       plots: this.plots.map((p) => ({ ...p.declaration, values: p.values.view(length), colors: p.colors.view(length) })),
       shapes: this.shapes.map((s) => ({ ...s.declaration, on: s.on.view(length) })),
       levels: [...this.levels],
+      fills: this.fills.map((f) => ({ ...f.declaration, colors: f.colors.view(length) })),
+      backgrounds: this.backgrounds.map((b) => ({ ...b.declaration, colors: b.colors.view(length) })),
       palette: [...this.palette],
       errors: [...errors],
     };

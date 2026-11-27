@@ -29,21 +29,26 @@ export type IndicatorParamsFor<Id extends string> = Id extends BuiltInIndicatorI
 
 /**
  * How a plot is drawn. `'markers'` marks the bars that have a value (a turn,
- * a signal): a shape at the value, or above or below the bar (`position`).
- * It is not a line: it gets no value in the legend, no tag on the axis and
- * no column in an export.
+ * a signal): a shape at the value, above or below the bar, or at the top or
+ * the bottom of the pane (`position`). `'background'` shades the whole
+ * height of the pane behind each bar that has a value (a session, a state),
+ * usually coloured bar by bar (`colorBy`), at the plot's `opacity` (default
+ * 0.1, so a plain colour is a faint shade; a colour see-through of its own
+ * keeps its alpha, times the opacity; `opacity: 1` paints it as it is). Neither is a line: they get no
+ * value in the legend, no tag on the axis and no column in an export.
  */
-export type IndicatorPlotKind = 'line' | 'histogram' | 'dots' | 'step' | 'markers';
+export type IndicatorPlotKind = 'line' | 'histogram' | 'dots' | 'step' | 'markers' | 'background';
 
 /** The shape of a markers plot's marks. */
 export type IndicatorMarkerShape = 'dot' | 'triangleUp' | 'triangleDown' | 'arrowUp' | 'arrowDown' | 'square' | 'diamond';
 
 /**
  * Where a markers plot puts its mark on a bar: at its value, above the
- * bar's high or below its low. Above and below are read on the price pane;
- * in a pane of its own a mark is at its value.
+ * bar's high or below its low, or at the top or the bottom of the pane.
+ * Above and below are read on the price pane; in a pane of its own such a
+ * mark is at its value. The top and the bottom are read on any pane.
  */
-export type IndicatorMarkerPosition = 'value' | 'aboveBar' | 'belowBar';
+export type IndicatorMarkerPosition = 'value' | 'aboveBar' | 'belowBar' | 'top' | 'bottom';
 
 /**
  * One series an indicator draws from a field of its output: a line, a
@@ -72,6 +77,23 @@ export interface IndicatorPlot {
   /** Index into `style.colors` of the down colour of a two-tone plot. */
   downColor?: number;
   /**
+   * Coloured bar by bar: an output field that holds, at each bar, the index
+   * into `style.colors` the plot is drawn in there. A bar without it, or
+   * with no colour at that index, is drawn in `color`. A line's stretch
+   * between two bars takes the colour of the bar it ends on. Over `tone`
+   * when both are set.
+   */
+  colorBy?: string;
+  /**
+   * Coloured bar by bar in colours of its own: an output field that holds,
+   * at each bar, the index into the output's `palette` the plot is drawn in
+   * there (a script's colours, known only once it runs). Over `colorBy`
+   * where both name a colour. Each colour in view is drawn as a pass over
+   * the bars in view: a few dozen cost little, a gradient of hundreds that
+   * many passes a frame.
+   */
+  paletteBy?: string;
+  /**
    * Its own line width, whatever the indicator's (`lineWidths[0]`): a thin
    * guide such as a channel's middle line. A width the style gives for its
    * own place in `lineWidths`, after the first, still wins.
@@ -95,8 +117,17 @@ export interface IndicatorFill {
   between: readonly [string, string];
   /** Index into `style.colors` it is shaded in. */
   color: number;
-  /** Its strength, 0 to 1; default 0.1. */
+  /** Its strength, 0 to 1; default 0.1. A colour see-through of its own (`#rrggbbaa`) is shaded at its own alpha times this. */
   opacity?: number;
+  /**
+   * Coloured bar by bar: an output field that holds, at each bar, the index
+   * into `style.colors` it is shaded in there; the stretch between two bars
+   * takes the colour of the bar it ends on. A bar without it is shaded in
+   * `color`.
+   */
+  colorBy?: string;
+  /** As a plot's `paletteBy`: an index into the output's `palette` at each bar, over `colorBy`. */
+  paletteBy?: string;
 }
 
 /** The value scale of an indicator's pane. */
@@ -310,6 +341,11 @@ export interface IndicatorOutput {
   values: Map<number, IndicatorValue>;
   /** Its value at bar `i` of the chart's bars, null before it has one. */
   series?: (IndicatorValue | null)[];
+  /**
+   * Colours its bars name by themselves, which no style lists: a plot's or a
+   * fill's `paletteBy` field holds an index into these.
+   */
+  palette?: readonly string[];
   meta?: Record<string, unknown>;
 }
 
@@ -366,4 +402,14 @@ export interface IndicatorPlugin {
 /** What an indicator's `render` is given besides its values: the chart's theme. */
 export interface IndicatorRenderContext {
   theme: Theme;
+  /**
+   * The part to draw, for an indicator with `kind: 'background'` plots:
+   * `'background'` its backgrounds only, drawn behind the bars and the
+   * pane's levels; `'front'` the rest. Unset: all of it. A plugin that draws
+   * its own `render` and has background plots passes it on to `super.render`.
+   */
+  layer?: IndicatorLayer;
 }
+
+/** A part of an indicator drawn on its own: its backgrounds behind the bars, or the rest in front. */
+export type IndicatorLayer = 'background' | 'front';

@@ -198,12 +198,17 @@ class TurningMacd extends IndicatorBase {
 <h3 id="descriptor">The descriptor</h3>
 <ul>
   <li><strong>Plots</strong> draw a field each: <code>'line'</code> (the default), <code>'step'</code>,
-    <code>'histogram'</code>, <code>'dots'</code> (a line drawn as dots), or <code>'markers'</code>, a shape
+    <code>'histogram'</code>, <code>'dots'</code> (a line drawn as dots), <code>'markers'</code>, a shape
     (<code>shape</code>: <code>'dot'</code>, <code>'triangleUp'</code>, <code>'triangleDown'</code>) on the bars where the field
-    has a value, at it or, on the price pane, above or below the bar (<code>position</code>). <code>color</code> is an
-    index into the style's colours; <code>tone</code> and <code>downColor</code> draw a plot in two colours;
+    has a value, at it, at the top or the bottom of the pane, or, on the price pane, above or below the bar
+    (<code>position</code>), or <code>'background'</code>, the pane's whole height behind each bar with a value, drawn
+    behind the bars and the levels, at the plot's <code>opacity</code> (0.1 unless set). <code>color</code> is an index into the style's colours; <code>tone</code> and
+    <code>downColor</code> draw a plot in two colours; <code>colorBy</code> names a field that holds, bar by bar,
+    the index of the colour to draw in there, and <code>paletteBy</code> one that indexes the output's own
+    <code>palette</code> (colours known only as it runs). A line's stretch takes the colour of the bar it ends on.
     <code>width</code>, <code>lineStyle</code>, <code>opacity</code> and <code>breakOn</code> set a line's look.
-    <code>fills</code> shade between two plots.</li>
+    <code>fills</code> shade between two plots, coloured bar by bar the same way; a colour see-through of its own
+    (<code>#rrggbbaa</code>) keeps its alpha, times the fill's <code>opacity</code>.</li>
   <li><strong>Inputs</strong> say how each input in <code>defaultConfig</code> is edited: <code>kind</code>,
     <code>label</code>, <code>min</code>, <code>max</code>, <code>step</code>, and a choice's <code>options</code>, plain or
     with a label for each (<code>{'{ value, label }'}</code>). <code>{'{ source: true }'}</code> lets it run on another

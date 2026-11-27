@@ -59,16 +59,43 @@ export interface PlotHandle {
   set(value: number, color?: string): number;
 }
 
+/**
+ * Where a mark goes: over or under its bar, or at the top or the bottom of
+ * the pane. In a pane of its own, over the bar is the top and under it the
+ * bottom.
+ */
+export type ShapePosition = 'aboveBar' | 'belowBar' | 'top' | 'bottom';
+
 export interface ShapeOptions {
   shape?: IndicatorMarkerShape;
-  /** Over or under the bar; default under. */
-  position?: 'aboveBar' | 'belowBar';
+  /** Default under the bar. */
+  position?: ShapePosition;
   color?: string;
 }
 
 export interface ShapeHandle {
   /** Whether this bar is marked; returns it. */
   set(on: boolean): boolean;
+}
+
+export interface FillOptions {
+  /** Its colour, for the bars given none; a colour with an alpha of its own (`'#3b82f633'`) is shaded at that alpha. Unset: the first plot's, faint. */
+  color?: string;
+}
+
+export interface FillHandle {
+  /** This bar's colour (from the bar before to this one); unset: the fill's own. */
+  set(color?: string): void;
+}
+
+export interface BackgroundOptions {
+  /** Its name, for the settings. */
+  title?: string;
+}
+
+export interface BackgroundHandle {
+  /** The colour behind this bar, the pane's whole height; unset: none. */
+  set(color?: string): void;
 }
 
 export interface HlineOptions {
@@ -83,8 +110,12 @@ export interface ScriptSetup<V> {
   readonly prices: ScriptPrices;
   /** A value a bar drawn as a line, histogram, dots or steps. */
   plot(title: string, options?: PlotOptions): PlotHandle;
-  /** A mark over or under the bars it is set on. */
+  /** A mark over or under the bars it is set on, or at the top or the bottom of the pane. */
   shape(title: string, options?: ShapeOptions): ShapeHandle;
+  /** The area between two plots, in a colour a bar if need be. */
+  fill(a: PlotHandle, b: PlotHandle, options?: FillOptions): FillHandle;
+  /** A colour behind the bars it is set on, the pane's whole height. */
+  bgcolor(options?: BackgroundOptions): BackgroundHandle;
   /** A level drawn across the pane. */
   hline(price: number, options?: HlineOptions): void;
   readonly state: {

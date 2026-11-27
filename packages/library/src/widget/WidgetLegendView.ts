@@ -185,12 +185,13 @@ export class WidgetLegendView {
     const indicators: IndicatorLegendRow[] = this.host.chart.getActiveIndicators().map((ind) => {
       const pane = panes.get(ind.instanceId) ?? null;
       // The values drawn: a recompute in the indicator worker is not finished here on each move.
-      const point = indicatorPointAt(this.host.chart.getIndicatorOutput(ind.instanceId, { drawn: true })?.series, hover);
+      const drawn = this.host.chart.getIndicatorOutput(ind.instanceId, { drawn: true });
+      const point = indicatorPointAt(drawn?.series, hover);
       const style = this.host.chart.getIndicatorStyle(ind.instanceId);
       // Not drawn on this chart type (another symbol read by time, on bricks) or interval: no values to read off it.
       const offChartType = ind.visible && ind.offChartType === true;
       const offInterval = ind.visible && ind.shown === false && !offChartType;
-      const values = offInterval || offChartType ? [] : legendValues(ind.descriptor, point, style?.colors ?? [], style?.plots);
+      const values = offInterval || offChartType ? [] : legendValues(ind.descriptor, point, style?.colors ?? [], style?.plots, drawn?.palette);
       return {
         instanceId: ind.instanceId,
         label: widgetIndicatorLabel(ind, this.host.t),

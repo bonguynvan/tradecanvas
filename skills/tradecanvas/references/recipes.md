@@ -1010,8 +1010,13 @@ cross.addIndicator('emaCross', { fast: 12 });
 
 A line is a value a bar (`undefined`, `null` or `NaN` where there is none).
 `true` marks a bar for a `'markers'` plot of an overlay: above or below the
-bar by its `position`, else at the bar's close; in a pane of its own a mark
-is the number it is drawn at. `calculate` gets each number input within its
+bar by its `position`, else at the bar's close; at `position: 'top'` or
+`'bottom'` it marks the pane's edge in any pane; elsewhere in a pane of its
+own a mark is the number it is drawn at. A plot of `kind: 'background'`
+shades the pane behind each bar that has a value. To colour bar by bar,
+return a line of colour indexes and name it in the plot's `colorBy`
+(`{ key: 'avg', title: 'Avg', color: 0, colorBy: 'avgColor' }`): bar `i` is
+drawn in `style.colors[avgColor[i]]`, a bar without one in `color`. `calculate` gets each number input within its
 `min` and `max` (whole for `kind: 'int'`). Leave `plots` out and every line
 returned is drawn as a line (declare them when `calculate` returns nothing
 for too few bars). `fills`, `scale`,

@@ -143,6 +143,36 @@ describe('indicators on indicators', () => {
     }
   });
 
+  it('keeps the colours a reader names by itself as it grows on an update', () => {
+    // A reader that gives each bar a colour of its own, one more each bar: its palette grows.
+    const colours = (n: number) => Array.from({ length: n }, (_, i) => `#0000${(i % 256).toString(16).padStart(2, '0')}`);
+    const painted: IndicatorPlugin = {
+      descriptor: { id: 'painted', name: 'Painted', placement: 'overlay', defaultConfig: { source: 'close' }, inputs: { source: { source: true } } },
+      calculate: (data) => {
+        const series = data.map((b, i) => ({ value: b.close, vp: i }));
+        return { values: new Map(data.map((b, i) => [b.time, series[i]])), series, palette: colours(data.length) };
+      },
+      update: (data, _config, prev, from) => {
+        for (let i = from; i < data.length; i++) {
+          const point = { value: data[i].close, vp: i };
+          prev.series![i] = point;
+          prev.values.set(data[i].time, point);
+        }
+        return { ...prev, palette: colours(data.length) };
+      },
+      render: () => {},
+    };
+    const e = engine();
+    e.register(painted);
+    let data = bars(40);
+    const rsi = e.addIndicator('rsi', { period: 14 }, data);
+    const reader = e.addIndicator('painted', { source: indicatorSource(rsi, 'value') }, data);
+    const before = e.getOutput(reader)!.palette!.length;
+    data = [...data, { ...data[39], time: data[39].time + 60_000 }];
+    e.recalculateFrom(data, data.length - 1);
+    expect(e.getOutput(reader)!.palette!.length).toBeGreaterThan(before);
+  });
+
   it('handles a reader whose plugin publishes no series', () => {
     const plain: IndicatorPlugin = {
       descriptor: { id: 'plain', name: 'Plain', placement: 'overlay', defaultConfig: { source: 'close' }, inputs: { source: { source: true } } },

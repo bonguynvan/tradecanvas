@@ -40,7 +40,7 @@ export function latestValues(instance: IndicatorInstance): AxisValue[] {
   for (const plot of valuePlots(plots)) {
     if (!plotShown(plot, instance.style)) continue;
     const v = point[plot.key];
-    if (v !== undefined && Number.isFinite(v)) out.push({ value: v, color: plotColor(plot, instance.style, point) });
+    if (v !== undefined && Number.isFinite(v)) out.push({ value: v, color: plotColor(plot, instance.style, point, instance.output?.palette) });
   }
   return out;
 }

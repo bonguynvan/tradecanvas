@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **An indicator's plots and fills coloured bar by bar** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`): a plot's or a fill's `colorBy` names an output field that holds, at each bar, the index into the style's colours to draw in there; `paletteBy` names one that indexes the output's own `palette`, for colours known only as it runs. A line's stretch between two bars takes the colour of the bar it ends on; the legend and the axis tag show the colour of their bar.
+- **Background plots** (`kind: 'background'`): the pane's whole height behind each bar with a value, drawn behind the candles on the price pane and behind the levels in a pane of its own. Its colour is shaded at the plot's `opacity`, 0.1 by default (a colour see-through of its own keeps its alpha, times that). A plugin with background plots that draws its own `render` passes the render context's `layer` on to `super.render`.
+- **Marks at the top or the bottom of a pane** (`position: 'top'`, `'bottom'`), in any pane; `defineIndicator` takes `true` for them in a pane of its own too.
+- `fadeBy(color, strength)`: a colour see-through of its own keeps its alpha, times the strength.
+
+### Changed
+
+- A fill in a colour see-through of its own (`#rrggbbaa`) keeps that alpha, times the fill's `opacity`; it was set to the `opacity` alone.
+
 ## 3.0.0 (2026-11-25)
 
 ### Breaking

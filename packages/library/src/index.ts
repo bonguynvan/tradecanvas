@@ -35,6 +35,7 @@ export type {
   ChartEventMap,
   IndicatorPlugin,
   IndicatorRenderContext,
+  IndicatorLayer,
   IndicatorDescriptor,
   IndicatorConfig,
   IndicatorOutput,

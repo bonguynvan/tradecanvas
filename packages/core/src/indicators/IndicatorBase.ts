@@ -49,10 +49,11 @@ export abstract class IndicatorBase implements IndicatorPlugin {
     output: IndicatorOutput,
     viewport: ViewportState,
     style: ResolvedIndicatorStyle,
-    // Not read here: an override that draws more is given it, and passes it on.
-    _context?: IndicatorRenderContext,
+    // Its theme is not read here: an override that draws more is given it, and passes it on.
+    context?: IndicatorRenderContext,
   ): void {
-    if (this.descriptor.plots) renderPlots(ctx, output, viewport, style, this.descriptor.plots, this.descriptor.fills, this.descriptor.placement === 'overlay');
+    if (!this.descriptor.plots) return;
+    renderPlots(ctx, output, viewport, style, this.descriptor.plots, this.descriptor.fills, this.descriptor.placement === 'overlay', context?.layer);
   }
 
   protected drawLine(
