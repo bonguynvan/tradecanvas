@@ -105,6 +105,8 @@ function drawingOf(declared: ScriptDeclarations): Pick<IndicatorDescriptor, 'plo
     color: colorIndex(undefined),
     kind: 'background',
     paletteBy: colorKey(backgroundKey(i)),
+    // Its colours carry their own strength, as a script gives them.
+    opacity: 1,
   }));
   const fills: IndicatorFill[] = declared.fills.map((fill, i) => {
     const first = colors[lines[fill.between[0]].color];

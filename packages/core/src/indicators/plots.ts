@@ -304,14 +304,16 @@ export function renderPlots(
     const field = plot.breakOn;
     const breaks = field === undefined ? null : (a: number, b: number) => breaksBetween(series, a, b, field);
     const alpha = ctx.globalAlpha;
-    if (plot.opacity !== undefined) ctx.globalAlpha = alpha * plot.opacity;
+    const background = kind === 'background';
+    // A background's strength is in its colour (below), not on top of it.
+    if (plot.opacity !== undefined && !background) ctx.globalAlpha = alpha * plot.opacity;
     try {
       for (const { color, take } of plotPasses(plot, style, output.palette, series, from, to)) {
         const every = take ?? EVERY;
         if (kind === 'histogram') drawHistogram(ctx, series, plot.key, from, to, viewport, toY, color, every);
         else if (kind === 'dots') drawDots(ctx, series, plot.key, from, to, viewport, toY, color, every);
         else if (kind === 'markers') drawMarkers(ctx, output, series, plot, style.plots?.[plot.key], from, to, viewport, toY, color, every, pricePane);
-        else if (kind === 'background') drawBackground(ctx, series, plot.key, from, to, viewport, color, every);
+        else if (background) drawBackground(ctx, series, plot.key, from, to, viewport, fadeBy(color, plot.opacity ?? BACKGROUND_OPACITY), every);
         else drawPath(ctx, series, plot.key, from, to, viewport, toY, color, width, kind === 'step', take, dash, breaks);
       }
     } finally {
@@ -323,6 +325,8 @@ export function renderPlots(
 
 /** A fill's strength when its descriptor gives none. */
 const FILL_OPACITY = 0.1;
+/** A background's strength when its plot gives none: a plain colour is a shade, not a wall over the grid. */
+const BACKGROUND_OPACITY = 0.1;
 
 type Series = readonly (IndicatorValue | null)[];
 type Take = (val: IndicatorValue) => boolean;

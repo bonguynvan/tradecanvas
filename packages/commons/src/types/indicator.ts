@@ -32,7 +32,9 @@ export type IndicatorParamsFor<Id extends string> = Id extends BuiltInIndicatorI
  * a signal): a shape at the value, above or below the bar, or at the top or
  * the bottom of the pane (`position`). `'background'` shades the whole
  * height of the pane behind each bar that has a value (a session, a state),
- * usually coloured bar by bar (`colorBy`). Neither is a line: they get no
+ * usually coloured bar by bar (`colorBy`), at the plot's `opacity` (default
+ * 0.1, so a plain colour is a faint shade; a colour see-through of its own
+ * keeps its alpha, times the opacity; `opacity: 1` paints it as it is). Neither is a line: they get no
  * value in the legend, no tag on the axis and no column in an export.
  */
 export type IndicatorPlotKind = 'line' | 'histogram' | 'dots' | 'step' | 'markers' | 'background';
@@ -86,7 +88,9 @@ export interface IndicatorPlot {
    * Coloured bar by bar in colours of its own: an output field that holds,
    * at each bar, the index into the output's `palette` the plot is drawn in
    * there (a script's colours, known only once it runs). Over `colorBy`
-   * where both name a colour.
+   * where both name a colour. Each colour in view is drawn as a pass over
+   * the bars in view: a few dozen cost little, a gradient of hundreds that
+   * many passes a frame.
    */
   paletteBy?: string;
   /**

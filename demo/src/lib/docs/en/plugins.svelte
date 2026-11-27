@@ -202,7 +202,7 @@ class TurningMacd extends IndicatorBase {
     (<code>shape</code>: <code>'dot'</code>, <code>'triangleUp'</code>, <code>'triangleDown'</code>) on the bars where the field
     has a value, at it, at the top or the bottom of the pane, or, on the price pane, above or below the bar
     (<code>position</code>), or <code>'background'</code>, the pane's whole height behind each bar with a value, drawn
-    behind the bars and the levels. <code>color</code> is an index into the style's colours; <code>tone</code> and
+    behind the bars and the levels, at the plot's <code>opacity</code> (0.1 unless set). <code>color</code> is an index into the style's colours; <code>tone</code> and
     <code>downColor</code> draw a plot in two colours; <code>colorBy</code> names a field that holds, bar by bar,
     the index of the colour to draw in there, and <code>paletteBy</code> one that indexes the output's own
     <code>palette</code> (colours known only as it runs). A line's stretch takes the colour of the bar it ends on.

@@ -97,6 +97,22 @@ describe('a fill coloured bar by bar', () => {
   });
 });
 
+describe('the strength of a background plot', () => {
+  const shade = (plot: IndicatorPlot, colors: string[]) => {
+    const { ctx, shapes } = recorder();
+    renderPlots(ctx, out([{ bg: 1 }, null, null, null]), viewport, { ...style, colors }, [plot]);
+    return shapes.find((s) => s.rects.length > 0)?.color;
+  };
+  const plot: IndicatorPlot = { key: 'bg', title: 'Background', color: 0, kind: 'background' };
+
+  it('is faint for a plain colour, its own for a see-through one, times its opacity', () => {
+    expect(shade(plot, ['#22c55e'])).toBe('rgba(34, 197, 94, 0.1)');
+    expect(shade({ ...plot, opacity: 1 }, ['#22c55e1f'])).toBe('rgba(34, 197, 94, 0.122)');
+    expect(shade(plot, ['#22c55e80'])).toBe('rgba(34, 197, 94, 0.05)');
+    expect(shade({ ...plot, opacity: 1 }, ['#22c55e'])).toBe('rgba(34, 197, 94, 1)');
+  });
+});
+
 describe('a background plot', () => {
   const plot: IndicatorPlot = { key: 'bg', title: 'Background', color: 0, kind: 'background', colorBy: 'bgc' };
 

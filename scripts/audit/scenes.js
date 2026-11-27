@@ -1269,11 +1269,11 @@ const SCENES = {
         };
       },
     }));
-    // Colours of their own, see-through ones for the backgrounds: defineIndicator takes none.
+    // Colours of their own (defineIndicator takes none): plain ones, which a background shades faintly.
     const trend = s.chart.addIndicator('trendShade');
-    s.chart.updateIndicatorStyle(trend, { colors: ['#787b86', '#22c55e', '#ef4444', '#22c55e1f', '#ef44441f'] });
+    s.chart.updateIndicatorStyle(trend, { colors: ['#787b86', '#22c55e', '#ef4444', '#22c55e', '#ef4444'] });
     const zones = s.chart.addIndicator('zones');
-    s.chart.updateIndicatorStyle(zones, { colors: ['#00000000', '#a855f7', '#64748b', '#22c55e', '#ef4444', '#f9731633', '#3b82f633'] });
+    s.chart.updateIndicatorStyle(zones, { colors: ['#00000000', '#a855f7', '#64748b', '#22c55e', '#ef4444', '#f97316', '#3b82f6'] });
     const checks = () => {
       const series = s.chart.getIndicatorOutput(zones)?.series ?? [];
       return series.some((p) => p?.zone !== undefined) ? [] : ['the scene has no background in its pane to draw'];
