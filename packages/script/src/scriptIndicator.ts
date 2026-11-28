@@ -174,6 +174,8 @@ class ScriptIndicator extends IndicatorBase {
     const output = run.output;
     // The colours its bars named, which no style lists; they only grow.
     out.palette = output.palette;
+    // Its labels, lines and boxes, drawn by the chart over its plots.
+    out.drawings = output.drawings;
     // Where it stopped and why: its lines end there, and an app can show it.
     out.meta = { ...out.meta, errors: output.errors };
     for (let i = from; i < data.length; i++) this.writePoint(out, data, i, pointAt(output, i));

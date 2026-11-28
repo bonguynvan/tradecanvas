@@ -41,6 +41,7 @@ export type {
   ShapeOutput,
 } from './outputs.js';
 export type { ScriptArray, ScriptSeries, Var } from './state.js';
+export type { BoxProps, DrawingHandle, DrawingLimits, LabelProps, LineProps, ScriptDrawings } from './drawings.js';
 export { ta } from './ta/index.js';
 export type { BandsValue, BarPrices, MacdValue, ScriptTa, Step, SupertrendValue } from './ta/index.js';
 export { scriptIndicator } from './scriptIndicator.js';

@@ -6,8 +6,12 @@ export interface Var<T> {
   value: T;
 }
 
-/** A value kept from bar to bar, put back to the bar before's when the live bar runs again. */
-export function keep<T extends number | string | boolean>(init: T): Var<T> {
+/**
+ * A value kept from bar to bar, put back to the bar before's when the live
+ * bar runs again. An object is put back as the same object: keep a handle
+ * in one (a line drawn), and change a list through `state.array`.
+ */
+export function keep<T>(init: T): Var<T> {
   const scope = currentScope('state.var');
   const cell = { value: init };
   let kept = init;

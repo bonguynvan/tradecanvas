@@ -3,7 +3,7 @@
 // quote on, a linked grid under the pointer, a replay, compares, Renko, the
 // day's limits. Picked by `?scene=` and `?theme=`; the market is made up from
 // a fixed seed and stops once loaded, so every run draws the same bars.
-import { Chart, MockAdapter, PaperExecutionAdapter, MARKET_HOSE, MARKET_KRX, renderPriceChart, detectFairValueGaps, defineIndicator } from '@tradecanvas/chart';
+import { Chart, MockAdapter, PaperExecutionAdapter, MARKET_HOSE, MARKET_KRX, renderPriceChart, detectFairValueGaps, defineIndicator, IndicatorBase, IndicatorValueMap } from '@tradecanvas/chart';
 import { ChartWidget, ChartWidgetGrid } from '@tradecanvas/chart/widget';
 
 /** A small seeded generator in place of Math.random: the same bars every time. */
@@ -1306,6 +1306,65 @@ const SCENES = {
     const checks = () => {
       const series = s.chart.getIndicatorOutput(zones)?.series ?? [];
       return series.some((p) => p?.zone !== undefined) ? [] : ['the scene has no background in its pane to draw'];
+    };
+    return { ...s, checks };
+  },
+
+  /**
+   * An indicator's own labels, lines and boxes over its bars: a bubble over
+   * each swing high and under each swing low, a level from the last of each
+   * carried to the right edge, a box over a stretch, and the same in a pane.
+   */
+  async indicatorDrawings() {
+    const s = await widget();
+    const swings = (data, highs, span) => {
+      const out = [];
+      for (let i = span; i < data.length - span; i++) {
+        const v = highs ? data[i].high : data[i].low;
+        let turn = true;
+        for (let j = i - span; j <= i + span && turn; j++) if (j !== i && (highs ? data[j].high >= v : data[j].low <= v)) turn = false;
+        if (turn) out.push({ bar: i, value: v });
+      }
+      return out;
+    };
+    class Swings extends IndicatorBase {
+      descriptor = { id: 'swingShapes', name: 'Swings', placement: 'overlay', defaultConfig: {}, plots: [{ key: 'mid', title: 'Mid', color: 0 }] };
+      calculate(data) {
+        const values = new IndicatorValueMap();
+        const series = data.map((b, i) => { const point = { mid: (b.high + b.low) / 2 }; values.set(b.time, point); return i > 0 ? point : null; });
+        const highs = swings(data, true, 8).slice(-6);
+        const lows = swings(data, false, 8).slice(-6);
+        const last = data.length - 1;
+        const drawings = [
+          ...highs.map((at) => ({ kind: 'label', at, text: 'H ' + at.value.toFixed(0), color: '#ef4444' })),
+          ...lows.map((at) => ({ kind: 'label', at, text: 'L ' + at.value.toFixed(0), color: '#22c55e', position: 'below' })),
+          ...(highs.length ? [{ kind: 'line', from: highs.at(-1), to: { bar: highs.at(-1).bar + 1, value: highs.at(-1).value }, color: '#ef4444', lineStyle: 'dashed', extend: 'right' }] : []),
+          ...(lows.length ? [{ kind: 'line', from: lows.at(-1), to: { bar: last, value: lows.at(-1).value }, color: '#22c55e', width: 2 }] : []),
+          { kind: 'box', from: { bar: last - 40, value: data[last - 40].high + 50 }, to: { bar: last - 20, value: data[last - 20].low - 50 }, color: '#3b82f6', fill: '#3b82f622', text: 'Range' },
+        ];
+        return { values, series, drawings };
+      }
+    }
+    class PaneMarks extends IndicatorBase {
+      descriptor = { id: 'paneShapes', name: 'Pane shapes', placement: 'panel', defaultConfig: {}, plots: [{ key: 'v', title: 'Momentum', color: 0 }] };
+      calculate(data) {
+        const values = new IndicatorValueMap();
+        const series = data.map((b, i) => { if (i < 10) return null; const point = { v: b.close - data[i - 10].close }; values.set(b.time, point); return point; });
+        const last = data.length - 1;
+        const drawings = [
+          { kind: 'line', from: { bar: 10, value: 0 }, to: { bar: last, value: 0 }, color: '#787b86', lineStyle: 'dotted' },
+          { kind: 'label', at: { bar: last - 5, value: series[last - 5]?.v ?? 0 }, text: 'Now', style: 'bubble', position: 'center' },
+        ];
+        return { values, series, drawings };
+      }
+    }
+    s.chart.registerIndicator(new Swings());
+    s.chart.registerIndicator(new PaneMarks());
+    const overlay = s.chart.addIndicator('swingShapes');
+    s.chart.addIndicator('paneShapes');
+    const checks = () => {
+      const drawn = s.chart.getIndicatorOutput(overlay)?.drawings ?? [];
+      return drawn.length > 4 ? [] : ['the scene has too few shapes to draw'];
     };
     return { ...s, checks };
   },

@@ -216,6 +216,11 @@ class TurningMacd extends IndicatorBase {
   <li><strong>The pane</strong>: <code>scale</code> fixes its bounds or keeps zero in view, <code>levels</code> draws
     reference lines the viewer can edit.</li>
   <li><strong>Its look</strong>: <code>defaultStyle</code>, a style or one for each theme (below).</li>
+  <li><strong>Shapes of its own</strong>: an output's <code>drawings</code> are labels, lines and boxes it draws over
+    its plots, at a bar (by its place among the chart's bars, past the last one too) and a value on its scale:
+    <code>{'{'} kind: 'label', at, text, position, color {'}'}</code>, <code>{'{'} kind: 'line', from, to, extend {'}'}</code>,
+    <code>{'{'} kind: 'box', from, to, fill, text {'}'}</code>. They are not the viewer's drawings: nothing picks,
+    moves or saves them, and they show and hide with the indicator.</li>
 </ul>
 
 <h3>Live ticks: update and revisesBefore</h3>

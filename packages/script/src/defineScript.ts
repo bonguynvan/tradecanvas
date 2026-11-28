@@ -1,5 +1,6 @@
 import type { IndicatorInputSpec, IndicatorMarkerShape } from '@tradecanvas/commons';
 import type { ScriptArray, ScriptSeries, Var } from './state.js';
+import type { DrawingLimits, ScriptDrawings } from './drawings.js';
 
 export type ScriptInputValue = number | string | boolean;
 
@@ -116,11 +117,19 @@ export interface ScriptSetup<V> {
   fill(a: PlotHandle, b: PlotHandle, options?: FillOptions): FillHandle;
   /** A colour behind the bars it is set on, the pane's whole height. */
   bgcolor(options?: BackgroundOptions): BackgroundHandle;
+  /**
+   * Labels, lines and boxes the script draws on its bars (`label()`,
+   * `line()`, `box()`), each a handle to change or take away later; past
+   * the limit of a kind, the oldest goes. Keep a handle across bars in
+   * `state.var`: a plain variable is not put back on a tick, and may then
+   * reach a shape made since in its place.
+   */
+  drawings(limits?: DrawingLimits): ScriptDrawings;
   /** A level drawn across the pane. */
   hline(price: number, options?: HlineOptions): void;
   readonly state: {
-    /** A value kept from bar to bar. */
-    var<T extends number | string | boolean>(init: T): Var<T>;
+    /** A value kept from bar to bar: a number, a text, or a handle (a drawing's), put back as it was on a tick. */
+    var<T>(init: T): Var<T>;
     /** A list of numbers kept from bar to bar. */
     array(): ScriptArray;
     /** A value a bar of the script's own, read back with `at(n)`. */

@@ -316,8 +316,9 @@ export class IndicatorEngine {
           for (let i = rewritten; i < data.length; i++) series[i] = next.series[i - start] ?? null;
           cached.aligned.values = next.values;
           cached.aligned.meta = next.meta;
-          // A colour a bar first gave grows the palette its bars index.
+          // A colour a bar first gave grows the palette its bars index; its own shapes change as it runs.
           cached.aligned.palette = next.palette;
+          cached.aligned.drawings = next.drawings;
         }
         instance.output = cached.aligned;
         instance.changedFrom = rewritten;

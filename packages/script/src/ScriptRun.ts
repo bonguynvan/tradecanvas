@@ -2,8 +2,9 @@ import type { OHLCBar } from '@tradecanvas/commons';
 import { floatColumn, type Column } from './Column.js';
 import { inputValue, type OnBar, type PriceSeries, type Script, type ScriptBar, type ScriptInputs, type ScriptPrices } from './defineScript.js';
 import { Outputs, type ScriptDeclarations, type ScriptError, type ScriptOutput } from './outputs.js';
-import { inScope, type Scope } from './scope.js';
+import { currentScope, inScope, type Scope } from './scope.js';
 import { arrayOf, keep, seriesOf } from './state.js';
+import { ScriptDrawings } from './drawings.js';
 
 const PRICES = ['time', 'open', 'high', 'low', 'close', 'volume'] as const;
 type Price = (typeof PRICES)[number];
@@ -127,6 +128,7 @@ export class ScriptRun {
       shape: (title, options) => this.outputs.shape(title, options),
       fill: (a, b, options) => this.outputs.fill(a, b, options),
       bgcolor: (options) => this.outputs.bgcolor(options),
+      drawings: (limits) => this.outputs.addDrawings(new ScriptDrawings(currentScope('drawings'), limits)),
       hline: (price, options) => this.outputs.hline(price, options),
       state: { var: keep, array: arrayOf, series: seriesOf },
     }));

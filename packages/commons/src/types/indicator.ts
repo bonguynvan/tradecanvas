@@ -335,6 +335,77 @@ export interface IndicatorStyleConfig {
   plots?: Record<string, IndicatorPlotStyle>;
 }
 
+/**
+ * A point an indicator draws at: a bar, by its place among the chart's bars
+ * (as the output's `series`; past the last bar is ahead of it), and a value
+ * on the indicator's scale (a price on the price pane).
+ */
+export interface IndicatorPoint {
+  bar: number;
+  value: number;
+}
+
+/**
+ * Text an indicator writes on its pane at a point (a pivot's "PH", a
+ * signal's price): in a bubble that points at it, or as text alone.
+ */
+export interface IndicatorLabelDrawing {
+  kind: 'label';
+  at: IndicatorPoint;
+  text: string;
+  /**
+   * Where the bubble sits: above the point, pointing down at it (default);
+   * below it, pointing up; or on it (`'center'`, no pointer).
+   */
+  position?: 'above' | 'below' | 'center';
+  /** `'text'`: the words alone, no bubble. Default `'bubble'`. */
+  style?: 'bubble' | 'text';
+  /** The bubble's colour; unset: the indicator's first colour. */
+  color?: string;
+  /** The text's colour; unset: one that reads on the bubble (or the chart's text colour with none). */
+  textColor?: string;
+  /** Its size in px; unset: the chart's small text size. */
+  size?: number;
+}
+
+/** A straight line an indicator draws between two points, carried on past either if `extend` says so. */
+export interface IndicatorLineDrawing {
+  kind: 'line';
+  from: IndicatorPoint;
+  to: IndicatorPoint;
+  /** Unset: the indicator's first colour. */
+  color?: string;
+  /** In px; default 1. */
+  width?: number;
+  lineStyle?: LineStyle;
+  /** Carried on to the pane's edge past `to` (`'right'`), past `from` (`'left'`), both ways, or not (default). */
+  extend?: 'none' | 'left' | 'right' | 'both';
+}
+
+/** A rectangle an indicator draws between two corners, with text in it if it has some. */
+export interface IndicatorBoxDrawing {
+  kind: 'box';
+  from: IndicatorPoint;
+  to: IndicatorPoint;
+  /** Its border; unset: the indicator's first colour. `'transparent'` for none. */
+  color?: string;
+  /** Its inside; unset: none. */
+  fill?: string;
+  /** Its border's width in px; default 1. */
+  width?: number;
+  lineStyle?: LineStyle;
+  text?: string;
+  /** Unset: the border's colour. */
+  textColor?: string;
+}
+
+/**
+ * A shape an indicator draws by itself over its pane: not a drawing of the
+ * viewer's (none can pick, move or delete it, and no layout saves it), but
+ * part of the indicator, shown and hidden with it.
+ */
+export type IndicatorDrawing = IndicatorLabelDrawing | IndicatorLineDrawing | IndicatorBoxDrawing;
+
 /** An indicator's values: by bar (`series`) and by bar time (`values`). */
 export interface IndicatorOutput {
   /** Its value at each bar it has one for, by the bar's time. */
@@ -346,6 +417,11 @@ export interface IndicatorOutput {
    * fill's `paletteBy` field holds an index into these.
    */
   palette?: readonly string[];
+  /**
+   * The labels, lines and boxes it draws by itself, in the order drawn, over
+   * its plots. Not on its scale: a shape far off the lines may be off the pane.
+   */
+  drawings?: readonly IndicatorDrawing[];
   meta?: Record<string, unknown>;
 }
 
