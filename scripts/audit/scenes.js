@@ -6,6 +6,9 @@
 import { Chart, MockAdapter, PaperExecutionAdapter, MARKET_HOSE, MARKET_KRX, renderPriceChart, detectFairValueGaps, defineIndicator, IndicatorBase, IndicatorValueMap } from '@tradecanvas/chart';
 import { ChartWidget, ChartWidgetGrid } from '@tradecanvas/chart/widget';
 
+/** A widget's width on a page of the docs: wide enough for the dock, narrow enough for a dialog to reach over it. */
+const NARROW_HOST = 760;
+
 /** A small seeded generator in place of Math.random: the same bars every time. */
 function seeded(seed) {
   let s = seed >>> 0;
@@ -692,6 +695,38 @@ const SCENES = {
       const box = dialog.getBoundingClientRect();
       if (box.left < 0 || box.right > innerWidth || box.top < 0 || box.bottom > innerHeight) problems.push('the question reaches outside the page');
       return problems;
+    };
+    return { ...s, broker, checks };
+  },
+
+  /**
+   * Close on a position asked about with the order ticket open in the dock
+   * (the docs' page on 3.0 showed the ticket over it, as #510's menus):
+   * the question is over the ticket, every word and button of it on top.
+   */
+  async confirmOverTicket() {
+    // A widget as narrow as one on a docs page: the question then reaches over the dock.
+    if (innerWidth > NARROW_HOST) host.style.width = `${NARROW_HOST}px`;
+    const s = await widget({ symbol: 'BTCUSDT', trading: true });
+    const last = lastClose(s.chart);
+    const broker = new PaperExecutionAdapter({ markPrice: last });
+    s.chart.connectExecution(broker);
+    await broker.placeOrder({ side: 'buy', type: 'market', price: last, quantity: 1, symbol: 'BTCUSDT' });
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    host.querySelector('.tcw-quote-buy')?.click();
+    s.widget.toggleAccountPanel(true);
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    host.querySelector('.tcw-account tbody tr button:last-of-type')?.click();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const checks = () => {
+      const dialog = host.querySelector('.tcw-confirm');
+      if (!dialog || dialog.closest('.tcw-modal-backdrop')?.hidden) return ['Close on a position asked nothing'];
+      const parts = [...dialog.querySelectorAll('.tcw-confirm-text, button')].filter((el) => el.getBoundingClientRect().width > 0);
+      const under = parts.filter((el) => {
+        const box = el.getBoundingClientRect();
+        return !dialog.contains(document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2));
+      });
+      return under.length > 0 ? [`${under.length} part(s) of the question are under something else`] : [];
     };
     return { ...s, broker, checks };
   },
