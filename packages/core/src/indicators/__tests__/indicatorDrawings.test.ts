@@ -164,6 +164,26 @@ describe('drawings, at the edges', () => {
     expect(r.marks.some((m) => m.op === 'text')).toBe(true);
   });
 
+  it('keep a label at the right edge inside the pane, its pointer still on its point', () => {
+    const marks = draw([{ kind: 'label', at: { bar: 9, value: 50 }, text: 'a long label' }]);
+    const text = marks.find((m) => m.op === 'text')!;
+    // 12 letters of 6 px and 10 px of room: 82 px wide, so its middle is 59 px from the right edge at most.
+    expect(text.at!.x).toBeLessThanOrEqual(100 - 41);
+    const tip = marks.flatMap((m) => m.points).reduce((low, p) => (p.y > low.y ? p : low), { x: 0, y: -Infinity });
+    expect(tip).toEqual({ x: 94, y: 50 });
+  });
+
+  it('fade with the indicator', () => {
+    const r = recorder();
+    let alpha = 1;
+    Object.defineProperty(r.ctx, 'globalAlpha', { get: () => alpha, set: (a: number) => { alpha = a; } });
+    const seen: number[] = [];
+    const stroke = r.ctx.stroke.bind(r.ctx);
+    Object.assign(r.ctx, { stroke: () => { seen.push(alpha); stroke(); } });
+    renderIndicatorDrawings(r.ctx, [{ kind: 'line', from: { bar: 0, value: 1 }, to: { bar: 1, value: 2 } }], viewport, { ...style, opacity: 0.5 }, 11);
+    expect(seen).toEqual([0.5]);
+  });
+
   it('pass over a shape that lacks a point, drawing the rest', () => {
     const broken = [{ kind: 'line', from: { bar: 0, value: 50 } }, { kind: 'label', text: 'no point' }] as unknown as IndicatorDrawing[];
     const marks = draw([...broken, { kind: 'line', from: { bar: 0, value: 50 }, to: { bar: 2, value: 70 } }]);

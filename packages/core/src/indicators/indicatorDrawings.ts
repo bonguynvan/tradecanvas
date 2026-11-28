@@ -159,7 +159,9 @@ function drawLabel(label: IndicatorLabelDrawing, d: Draw): void {
   const position = placeLabel(label.position ?? 'above', py, pointer + height, d.viewport);
   const reach = position !== 'center' ? pointer : 0;
   const top = position === 'above' ? py - reach - height : position === 'below' ? py + reach : py - height / 2;
-  const left = px - width / 2;
+  // Inside the pane's sides, its pointer still on its point: a label at an edge keeps its words whole.
+  const { x: paneX, width: paneWidth } = d.viewport.chartRect;
+  const left = Math.min(Math.max(px - width / 2, paneX), Math.max(paneX, paneX + paneWidth - width));
   const fill = label.color ?? d.color;
   if (bubble) {
     ctx.beginPath();
@@ -170,8 +172,10 @@ function drawLabel(label: IndicatorLabelDrawing, d: Draw): void {
     if (reach > 0) {
       const base = position === 'above' ? top + height : top;
       ctx.beginPath();
-      ctx.moveTo(px - POINTER_HALF, base);
-      ctx.lineTo(px + POINTER_HALF, base);
+      // Its base on the bubble, by its rounded corners; its tip on the point.
+      const bx = Math.min(Math.max(px, left + POINTER_HALF + LABEL_RADIUS), left + width - POINTER_HALF - LABEL_RADIUS);
+      ctx.moveTo(bx - POINTER_HALF, base);
+      ctx.lineTo(bx + POINTER_HALF, base);
       ctx.lineTo(px, py);
       ctx.closePath();
       ctx.fill();
@@ -180,7 +184,7 @@ function drawLabel(label: IndicatorLabelDrawing, d: Draw): void {
   ctx.fillStyle = label.textColor ?? (bubble ? inkOn(fill, LIGHT_INK, DARK_INK) : d.ink);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(label.text, px, top + height / 2);
+  ctx.fillText(label.text, left + width / 2, top + height / 2);
 }
 
 /**
@@ -192,7 +196,7 @@ export function renderIndicatorDrawings(
   ctx: CanvasRenderingContext2D,
   drawings: readonly IndicatorDrawing[],
   viewport: ViewportState,
-  style: Pick<ResolvedIndicatorStyle, 'colors'>,
+  style: Pick<ResolvedIndicatorStyle, 'colors'> & Partial<Pick<ResolvedIndicatorStyle, 'opacity'>>,
   fontSize: number,
   fontFamily = 'sans-serif',
   ink = '#787b86',
@@ -201,6 +205,8 @@ export function renderIndicatorDrawings(
   const d: Draw = { ctx, viewport, toY: priceToYMapper(viewport), color: style.colors[0] ?? ink, ink, fontSize, fontFamily };
   // The chart draws the next indicator on the same context: its font, alignment and pens are left as found.
   ctx.save();
+  // Faded with the indicator, as its plots are.
+  if (style.opacity !== undefined) ctx.globalAlpha *= style.opacity;
   try {
     for (const drawing of drawings) {
       if (drawing.kind === 'line') drawLine(drawing, d);
