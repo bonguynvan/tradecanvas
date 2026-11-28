@@ -50,6 +50,10 @@ chart.addIndicator('emaCross');
 - `bgcolor()` returns a background: `.set(color)` shades the pane behind that bar, behind the candles and the levels.
 - `shape(title, { position: 'top' })` marks the top or the bottom of the pane; in a pane of its own, `'aboveBar'` and `'belowBar'` are the top and the bottom.
 
+## Labels, lines and boxes
+
+`drawings({ maxLabels, maxLines, maxBoxes })` in `setup` gives a list to draw on: on a bar, `label({ at, text })`, `line({ from, to, extend })` and `box({ from, to, fill })` each return a handle to `set()` or `remove()` later. A point is `{ bar, value }`, `bar` being a bar's index (`bar.index - 5`). Past a kind's limit (50 unless set, 500 at most) the oldest goes. Keep a handle across bars in `state.var`, so a tick puts it back with the shapes.
+
 ## Not drawn yet
 
 An `hline`'s colour and title (its price is drawn as a level), and a colour for the candles themselves.

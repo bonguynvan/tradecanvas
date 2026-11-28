@@ -1507,7 +1507,11 @@ own a mark is the number it is drawn at. A plot of `kind: 'background'`
 shades the pane behind each bar that has a value. To colour bar by bar,
 return a line of colour indexes and name it in the plot's `colorBy`
 (`{ key: 'avg', title: 'Avg', color: 0, colorBy: 'avgColor' }`): bar `i` is
-drawn in `style.colors[avgColor[i]]`, a bar without one in `color`. `calculate` gets each number input within its
+drawn in `style.colors[avgColor[i]]`, a bar without one in `color`.
+An indicator of your own (`IndicatorBase`) can also return `drawings` with its
+output: labels, lines and boxes at `{ bar, value }` points (`bar` is the
+place among the chart's bars), drawn over its plots and not saved as the
+viewer's drawings. `calculate` gets each number input within its
 `min` and `max` (whole for `kind: 'int'`). Leave `plots` out and every line
 returned is drawn as a line (declare them when `calculate` returns nothing
 for too few bars). `fills`, `scale`,

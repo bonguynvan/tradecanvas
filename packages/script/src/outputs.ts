@@ -1,4 +1,5 @@
-import type { IndicatorMarkerShape } from '@tradecanvas/commons';
+import type { IndicatorDrawing, IndicatorMarkerShape } from '@tradecanvas/commons';
+import type { ScriptDrawings } from './drawings.js';
 import { colorColumn, flagColumn, floatColumn, type Column } from './Column.js';
 import type {
   BackgroundHandle,
@@ -96,6 +97,8 @@ export interface ScriptOutput {
   readonly backgrounds: readonly BackgroundOutput[];
   /** The colours bars were given, each once. */
   readonly palette: readonly string[];
+  /** The labels, lines and boxes it keeps, in the order made. */
+  readonly drawings: readonly IndicatorDrawing[];
   readonly errors: readonly ScriptError[];
 }
 
@@ -126,6 +129,7 @@ export class Outputs {
   private readonly fills: ColorSlot<FillDeclaration>[] = [];
   private readonly backgrounds: ColorSlot<BackgroundDeclaration>[] = [];
   private readonly levels: LevelDeclaration[] = [];
+  private readonly drawingLists: ScriptDrawings[] = [];
   private readonly palette: string[] = [];
   private readonly paletteIndex = new Map<string, number>();
   private open = true;
@@ -225,6 +229,12 @@ export class Outputs {
     };
   }
 
+  /** Shapes the script draws, listed with its output. */
+  addDrawings(list: ScriptDrawings): ScriptDrawings {
+    this.drawingLists.push(list);
+    return list;
+  }
+
   hline(price: number, options: HlineOptions = {}): void {
     this.declaring('hline');
     this.levels.push({ price, ...options });
@@ -250,6 +260,7 @@ export class Outputs {
       fills: this.fills.map((f) => ({ ...f.declaration, colors: f.colors.view(length) })),
       backgrounds: this.backgrounds.map((b) => ({ ...b.declaration, colors: b.colors.view(length) })),
       palette: [...this.palette],
+      drawings: this.drawingLists.flatMap((list) => list.list()),
       errors: [...errors],
     };
   }

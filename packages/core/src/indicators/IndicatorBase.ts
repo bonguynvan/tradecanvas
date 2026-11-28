@@ -12,7 +12,11 @@ import type {
 } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 import { renderPlots } from './plots.js';
+import { renderIndicatorDrawings } from './indicatorDrawings.js';
 import { LinePen, fillDenseBand, isDenseLine } from './linePen.js';
+
+/** The size of an indicator's own words when no theme gives one. */
+const DRAWING_FONT_SIZE = 11;
 
 export abstract class IndicatorBase implements IndicatorPlugin {
   abstract descriptor: IndicatorDescriptor;
@@ -52,8 +56,14 @@ export abstract class IndicatorBase implements IndicatorPlugin {
     // Its theme is not read here: an override that draws more is given it, and passes it on.
     context?: IndicatorRenderContext,
   ): void {
-    if (!this.descriptor.plots) return;
-    renderPlots(ctx, output, viewport, style, this.descriptor.plots, this.descriptor.fills, this.descriptor.placement === 'overlay', context?.layer);
+    if (this.descriptor.plots) {
+      renderPlots(ctx, output, viewport, style, this.descriptor.plots, this.descriptor.fills, this.descriptor.placement === 'overlay', context?.layer);
+    }
+    // Its own labels, lines and boxes, over its plots: never behind the bars.
+    if (output.drawings && context?.layer !== 'background') {
+      const theme = context?.theme;
+      renderIndicatorDrawings(ctx, output.drawings, viewport, style, theme?.font.sizeSmall ?? DRAWING_FONT_SIZE, theme?.font.family, theme?.text);
+    }
   }
 
   protected drawLine(
